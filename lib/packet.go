@@ -56,6 +56,7 @@ func handleSegments(ctx context.Context, segment <-chan []byte, xorOffset *uint1
 	}
 }
 
+// match operation code with handler if it exists
 func handlePacket(ctx context.Context, command *ProtocolCommand) {
 	select {
 	case <-ctx.Done():
