@@ -16,9 +16,8 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
-
 	"github.com/spf13/cobra"
+	"isya.engine.login/lib"
 )
 
 // serveCmd represents the serve command
@@ -31,16 +30,18 @@ and usage of using your command. For example:
 Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("serve called")
-	},
+	//Run: func(cmd *cobra.Command, args []string) {
+	//	fmt.Println("serve called")
+	//},
+	Run: lib.Listen,
 }
 
 func init() {
 	rootCmd.AddCommand(serveCmd)
+	log.Info("serve init()")
 
 	// Here you will define your flags and configuration settings.
-
+	//defer logger.Init("InitLogger", true, true,  ioutil.Discard).Close()
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
 	// serveCmd.PersistentFlags().String("foo", "", "A help for foo")
