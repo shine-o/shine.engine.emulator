@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
-	"github.com/spf13/viper"
 )
 
 // Read packet data from segments
@@ -46,21 +45,34 @@ func handleSegments(ctx context.Context, segment <-chan []byte, xorOffset *uint1
 				}
 
 				pd = append(pd, data[offset+skipBytes:nextOffset]...)
-
 				xorCipher(pd, xorOffset)
-				pc := processPacket(pType, pLen, pd)
 
-				//go pc.handle(ctx)
+				pc := decodePacket(pType, pLen, pd)
+				go handlePacket(ctx, &pc)
 
-				log.Infof("Got one %v", pc.pcb.String())
 				offset += skipBytes + pLen
 			}
 		}
 	}
 }
 
+func handlePacket(ctx context.Context, command *ProtocolCommand) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		hw.mu.Lock()
+		if callback, ok := hw.handlers[command.pcb.operationCode]; ok {
+			callback(ctx, command)
+		} else {
+			log.Errorf("non existent operation code from the client %v", command.pcb.operationCode)
+		}
+		hw.mu.Unlock()
+	}
+}
+
 // read packet data
-func processPacket(pType string, pLen int, packetData []byte) ProtocolCommand {
+func decodePacket(pType string, pLen int, packetData []byte) ProtocolCommand {
 	var opCode, department, command uint16
 	br := bytes.NewReader(packetData)
 	binary.Read(br, binary.LittleEndian, &opCode)
@@ -95,18 +107,5 @@ func packetBoundary(offset int, b []byte) (int, string) {
 		var pLen uint8
 		pLen = b[offset]
 		return int(pLen), "small"
-	}
-}
-
-// decrypt encrypted bytes using captured xorKey and xorTable
-func xorCipher(eb []byte, xorPos *uint16) {
-	xorLimit := uint16(viper.GetInt("crypt.xorLimit"))
-	for i, _ := range eb {
-		eb[i] ^= xorKey[*xorPos]
-		*xorPos++
-		//log.Info(*xorPos)
-		if *xorPos >= xorLimit {
-			*xorPos = 0
-		}
 	}
 }

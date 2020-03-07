@@ -12,12 +12,17 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net"
+	"sync"
 	"time"
 )
 
+type clientWriter struct {
+	w  *bufio.Writer
+	mu sync.Mutex
+}
+
 var (
-	log    *logger.Logger
-	xorKey []byte
+	log *logger.Logger
 )
 
 // open TCP socket on port 9010
@@ -64,12 +69,14 @@ func handleConnection(c net.Conn) {
 	var (
 		buf       = make([]byte, 1024)
 		r         = bufio.NewReader(c)
-		w         = bufio.NewWriter(c)
 		xorOffset uint16
 		segment   = make(chan []byte)
+		cw        = &clientWriter{
+			w: bufio.NewWriter(c),
+		}
 	)
 
-	ctx = context.WithValue(ctx, "connWriter", w)
+	ctx = context.WithValue(ctx, "connWriter", cw)
 	ctx = context.WithValue(ctx, "xorOffset", &xorOffset)
 
 	hw.mu.Lock()
@@ -81,12 +88,12 @@ func handleConnection(c net.Conn) {
 
 	go handleSegments(ctx, segment, &xorOffset)
 
-	var data []byte
 	for {
 		if n, err := r.Read(buf); err == nil {
 			log.Infof("Received %v bytes", n)
-			data = append(data, buf[:n]...)
-			segment <- buf[:n]
+			var tmpBuf []byte
+			tmpBuf = append(tmpBuf, buf[:n]...)
+			segment <- tmpBuf
 		} else {
 			if err == io.EOF {
 				break

@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "isya.engine.login/cmd"
+import "shine.engine.login/cmd"
 
 func main() {
 	cmd.Execute()

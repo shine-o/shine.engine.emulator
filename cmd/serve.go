@@ -17,7 +17,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"isya.engine.login/lib"
+	"shine.engine.login/lib"
 )
 
 // serveCmd represents the serve command

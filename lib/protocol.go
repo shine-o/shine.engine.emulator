@@ -79,20 +79,73 @@ func (pcb *ProtocolCommandBase) String() string {
 	}
 }
 
-type ncMiscSeedAck struct{}
+// RE client struct:
+// struct PROTO_NC_MISC_SEED_ACK
+// {
+//	unsigned __int16 seed;
+// };
+//
+// xorKey offset used by client to encrypt data
+// same offset is used on the server side to decrypt data sent by the client
+type ncMiscSeedAck struct {
+	seed uint16
+}
 
-type ncUserClientVersionCheckReq struct{}
+// RE client struct:
+// struct PROTO_NC_USER_CLIENT_VERSION_CHECK_REQ
+// {
+//  char sVersionKey[64];
+// };
+type ncUserClientVersionCheckReq struct {
+	VersionKey [64]byte
+}
 
+// RE client struct:
+//struct __cppobj PROTO_NC_USER_CLIENT_WRONGVERSION_CHECK_ACK
+//{
+//};
 type ncUserClientRightversionCheckAck struct{}
 
+// RE client struct:
+// struct PROTO_NC_USER_US_LOGIN_REQ
+// {
+//  char sUserName[260];
+//  char sPassword[36];
+//  Name5 spawnapps;
+// };
 type ncUserUsLoginReq struct{}
 
+// RE client struct:
+// struct PROTO_NC_USER_XTRAP_REQ
+// {
+//  char XTrapClientKeyLength;
+//  char XTrapClientKey[];
+// };
 type ncUserXtrapReq struct{}
 
+// RE client struct:
+// struct PROTO_NC_USER_XTRAP_ACK
+// {
+//  char bSuccess;
+// };
 type ncUserXtrapAck struct{}
 
-type ncUserLoginAck struct{}
+// RE client struct:
+// struct __unaligned __declspec(align(1)) PROTO_NC_USER_LOGIN_ACK
+// {
+//  char numofworld;
+//  PROTO_NC_USER_LOGIN_ACK::WorldInfo worldinfo[];
+// };
+type ncUserLoginAck struct {
+	NumOfWorld byte
+	Worlds     [1]WorldInfo
+}
 
+// RE client struct:
+// struct __cppobj PROTO_NC_USER_WORLD_STATUS_REQ
+// {
+// };
 type ncUserWorldStatusReq struct{}
 
+// OPERATION CODE ONLY 3100
 type ncUserWorldStatusAck struct{}
