@@ -1,5 +1,4 @@
 ![](shine.png)
+# Shine Online Login Service
 
-## About
-
-Emulated Login service for Shine Online. 
+> Emulated login service.
