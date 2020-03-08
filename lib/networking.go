@@ -6,15 +6,24 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/google/logger"
+	//protocol "shine.engine.packet-protocol"
+	protocol "github.com/shine-o/shine.engine.protocol"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io"
 	"io/ioutil"
 	"math/rand"
 	"net"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 )
+
+type clientReader struct {
+	r  *bufio.Reader
+	mu sync.Mutex
+}
 
 type clientWriter struct {
 	w  *bufio.Writer
@@ -25,12 +34,29 @@ var (
 	log *logger.Logger
 )
 
-// open TCP socket on port 9010
-// for each connection use Context
-func Listen(cmd *cobra.Command, args []string) {
-	serveConfig()
-	initHandlers()
+func serveSetup() {
+	settings := &protocol.Settings{}
 	log = logger.Init("LoginLogger", true, true, ioutil.Discard)
+	if xk, err := hex.DecodeString(viper.GetString("crypt.xorKey")); err != nil {
+		log.Error(err)
+		os.Exit(1)
+	} else {
+		settings.XorKey = xk
+	}
+	settings.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
+
+	if path, err := filepath.Abs(viper.GetString("protocol.nc-data")); err != nil {
+		log.Error(err)
+	} else {
+		settings.CommandsFilePath = path
+	}
+	settings.Set()
+	loginHandlers()
+}
+
+// open tcp port
+func Listen(cmd *cobra.Command, args []string) {
+	serveSetup()
 
 	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", viper.GetInt("serve.port"))); err == nil {
 		log.Infof("Listening for TCP connections on: %v", l.Addr())
@@ -40,22 +66,15 @@ func Listen(cmd *cobra.Command, args []string) {
 			if c, err := l.Accept(); err == nil {
 				go handleConnection(c)
 			} else {
-				logger.Fatal(err)
+				log.Fatal(err)
 			}
 		}
 	} else {
-		logger.Error(err)
-	}
-}
-
-func serveConfig() {
-	if b, err := hex.DecodeString(viper.GetString("crypt.xorKey")); err != nil {
 		log.Error(err)
-	} else {
-		xorKey = b
 	}
 }
 
+// for each connection launch go routine that handles tcp segment data
 func handleConnection(c net.Conn) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -67,40 +86,37 @@ func handleConnection(c net.Conn) {
 	defer log.Infof("Closing connection %v", c.RemoteAddr().String())
 
 	var (
-		buf       = make([]byte, 1024)
-		r         = bufio.NewReader(c)
-		xorOffset uint16
-		segment   = make(chan []byte)
-		cw        = &clientWriter{
+		buffer  = make([]byte, 1024)
+		segment = make(chan []byte)
+		cr      = &clientReader{
+			r: bufio.NewReader(c),
+		}
+		cw = &clientWriter{
 			w: bufio.NewWriter(c),
 		}
 	)
 
 	ctx = context.WithValue(ctx, "connWriter", cw)
-	ctx = context.WithValue(ctx, "xorOffset", &xorOffset)
 
-	hw.mu.Lock()
-	sendXorOffset := hw.handlers[2055]
-	go sendXorOffset(ctx, &ProtocolCommand{
-		pcb: ProtocolCommandBase{operationCode: 2055},
-	})
-	hw.mu.Unlock()
-
-	go handleSegments(ctx, segment, &xorOffset)
+	go handleLoginSegments(ctx, segment)
 
 	for {
-		if n, err := r.Read(buf); err == nil {
-			log.Infof("Received %v bytes", n)
-			var tmpBuf []byte
-			tmpBuf = append(tmpBuf, buf[:n]...)
-			segment <- tmpBuf
+		cr.mu.Lock()
+		if n, err := cr.r.Read(buffer); err == nil {
+			//log.Infof("Received %v bytes", n)
+			var data []byte
+			data = append(data, buffer[:n]...)
+			segment <- data
 		} else {
 			if err == io.EOF {
+				cr.mu.Unlock()
 				break
 			} else {
 				log.Fatal(err)
+				cr.mu.Unlock()
 				return
 			}
 		}
+		cr.mu.Unlock()
 	}
 }
