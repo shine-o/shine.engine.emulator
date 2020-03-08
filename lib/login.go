@@ -80,6 +80,30 @@ type ncUserWorldStatusReq struct{}
 // OPERATION CODE ONLY 3100
 type ncUserWorldStatusAck struct{}
 
+// RE client struct:
+//struct PROTO_NC_USER_WORLDSELECT_REQ
+//{
+//char worldno;
+//};
+type ncUserWorldSelectReq struct {
+	WorldNo byte
+}
+
+// RE client struct:
+// struct __unaligned __declspec(align(1)) PROTO_NC_USER_WORLDSELECT_ACK
+// {
+//	char worldstatus;
+//	Name4 ip;
+//	unsigned __int16 port;
+//	unsigned __int16 validate_new[32];
+//};
+type ncUserWorldSelectAck struct {
+	WorldStatus byte
+	Ip          ComplexName
+	Port        uint16
+	ValidateNew [32]uint16
+}
+
 type handleWarden struct {
 	handlers map[uint16]func(ctx context.Context, command *protocol.Command)
 	mu       sync.Mutex
@@ -102,6 +126,8 @@ func loginHandlers() {
 	hw.handlers[3077] = userXtrapAck
 	hw.handlers[3099] = userWorldStatusReq
 	hw.handlers[3100] = userWorldStatusAck
+	hw.handlers[3083] = userWorldSelectReq
+	hw.handlers[3084] = userWorldSelectAck
 }
 
 // Read packet data from segments
@@ -371,3 +397,7 @@ func userWorldStatusAck(ctx context.Context, pc *protocol.Command) {
 		logOutboundPacket(pc)
 	}
 }
+
+func userWorldSelectAck(ctx context.Context, pc *protocol.Command) {}
+
+func userWorldSelectReq(ctx context.Context, pc *protocol.Command) {}
