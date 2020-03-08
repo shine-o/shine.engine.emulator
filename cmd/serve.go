@@ -17,7 +17,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"shine.engine.login/lib"
+	"shine.engine.login/service"
 )
 
 // serveCmd represents the serve command
@@ -33,7 +33,7 @@ to quickly create a Cobra application.`,
 	//Run: func(cmd *cobra.Command, args []string) {
 	//	fmt.Println("serve called")
 	//},
-	Run: lib.Listen,
+	Run: service.Listen,
 }
 
 func init() {

@@ -1,4 +1,4 @@
-package lib
+package service
 
 import (
 	"encoding/hex"
@@ -41,7 +41,7 @@ func TestMain(m *testing.M) {
 	viper.SetDefault("crypt.xorLimit", 350)
 	viper.SetDefault("protocol.nc-data", "defaults/protocol-commands.yml")
 
-	serveSetup()
+	setup()
 
 	os.Exit(m.Run())
 }

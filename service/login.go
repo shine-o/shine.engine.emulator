@@ -1,11 +1,12 @@
-package lib
+package service
 
 import (
 	"bytes"
 	"context"
 	"encoding/binary"
-	//protocol "shine.engine.packet-protocol"
-	protocol "github.com/shine-o/shine.engine.protocol"
+	"fmt"
+	protocol "shine.engine.packet-protocol"
+	//protocol "github.com/shine-o/shine.engine.protocol"
 	"sync"
 )
 
@@ -43,7 +44,20 @@ type ncUserClientRightversionCheckAck struct{}
 //  char sPassword[36];
 //  Name5 spawnapps;
 // };
-type ncUserUsLoginReq struct{}
+type ncUserUsLoginReq struct {
+	UserName  [260]byte
+	Password  [36]byte
+	SpawnApps [0]ComplexName1
+}
+
+func (nc *ncUserUsLoginReq) authenticateUser(ctx context.Context) {
+	//go userLoginAck(ctx, &protocol.Command{})
+	// take username and password hash
+	// if ok
+	go userLoginAck(ctx, &protocol.Command{})
+	// else
+	// go userLoginFailAck(ctx, &protocol.Command{})
+}
 
 // RE client struct:
 // struct PROTO_NC_USER_XTRAP_REQ
@@ -68,7 +82,47 @@ type ncUserXtrapAck struct{}
 // };
 type ncUserLoginAck struct {
 	NumOfWorld byte
-	Worlds     [1]WorldInfo
+	Worlds     [2]WorldInfo
+}
+
+func (nc *ncUserLoginAck) setServerInfo(ctx context.Context) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		// in future communicate with World Service in order to get correct info about IDs of the servers, which will have a linked IP Address
+		var worlds [2]WorldInfo
+		w1 := WorldInfo{
+			WorldNumber: 0,
+			WorldName:   ComplexName{},
+			WorldStatus: 4,
+		}
+		copy(w1.WorldName.Name[:], "INITIO")
+		copy(w1.WorldName.NameCode[:], []uint16{262, 16720, 17735, 76})
+		worlds[0] = w1
+
+		w2 := WorldInfo{
+			WorldNumber: 1,
+			WorldName:   ComplexName{},
+			WorldStatus: 1,
+		}
+		worlds[1] = w2
+
+		copy(w1.WorldName.Name[:], "PAGEL")
+		copy(w1.WorldName.NameCode[:], []uint16{262, 16720, 17735, 76})
+
+		nc.NumOfWorld = byte(2)
+		nc.Worlds = worlds
+	}
+}
+
+// RE client struct:
+// struct PROTO_NC_USER_LOGINFAIL_ACK
+// {
+//	unsigned __int16 error;
+// };
+type ncUserLoginFailAck struct {
+	Err uint16
 }
 
 // RE client struct:
@@ -113,7 +167,7 @@ var (
 	hw *handleWarden
 )
 
-func loginHandlers() {
+func commandHandlers() {
 	hw = &handleWarden{
 		handlers: make(map[uint16]func(ctx context.Context, command *protocol.Command)),
 	}
@@ -121,6 +175,7 @@ func loginHandlers() {
 	hw.handlers[3173] = userClientVersionCheckReq
 	hw.handlers[3175] = userClientVersionCheckAck
 	hw.handlers[3162] = userUsLoginReq
+	hw.handlers[3081] = userLoginFailAck
 	hw.handlers[3082] = userLoginAck
 	hw.handlers[3076] = userXtrapReq
 	hw.handlers[3077] = userXtrapAck
@@ -128,6 +183,7 @@ func loginHandlers() {
 	hw.handlers[3100] = userWorldStatusAck
 	hw.handlers[3083] = userWorldSelectReq
 	hw.handlers[3084] = userWorldSelectAck
+	hw.handlers[3096] = userNormalLogoutCmd
 }
 
 // Read packet data from segments
@@ -162,10 +218,13 @@ func handleLoginSegments(ctx context.Context, segment <-chan []byte) {
 			}
 
 			if offset != len(data) {
-				var skipBytes int
-				var pLen int
-				var pType string
-				var pd []byte
+
+				var (
+					skipBytes int
+					pLen      int
+					pType     string
+					pd        []byte
+				)
 
 				pLen, pType = protocol.PacketBoundary(offset, data)
 
@@ -300,18 +359,19 @@ func userUsLoginReq(ctx context.Context, pc *protocol.Command) {
 	case <-ctx.Done():
 		return
 	default:
-		buf := bytes.NewBuffer(pc.Base.Data())
+		r := bytes.NewReader(pc.Base.Data())
 
 		nc := &ncUserUsLoginReq{}
 
-		if err := binary.Read(buf, binary.LittleEndian, nc); err != nil {
+		if err := binary.Read(r, binary.LittleEndian, nc); err != nil {
 			log.Error(err)
 		}
-		// [...] future user login checking logic
-		go userLoginAck(ctx, &protocol.Command{})
-		logOutboundPacket(pc)
+
+		go nc.authenticateUser(ctx)
 	}
 }
+
+func userLoginFailAck(ctx context.Context, pc *protocol.Command) {}
 
 func userLoginAck(ctx context.Context, pc *protocol.Command) {
 	select {
@@ -320,33 +380,24 @@ func userLoginAck(ctx context.Context, pc *protocol.Command) {
 	default:
 		cwv := ctx.Value("connWriter")
 		cw := cwv.(*clientWriter)
-		base := protocol.CommandBase{}
-		base.SetOperationCode(3082)
 
-		pc.Base = base
+		//base := protocol.CommandBase{}
+		//base.SetOperationCode(3082)
+		//pc.Base = base
+		pc.Base = protocol.CommandBase{}
+		pc.Base.SetOperationCode(3082)
+		nc := &ncUserLoginAck{}
+		nc.setServerInfo(ctx)
 
-		w1 := WorldInfo{
-			WorldNumber: 0,
-			WorldName:   ComplexName{},
-			WorldStatus: 0,
-		}
-
-		copy(w1.WorldName.Name[:], "EPITH")
-		copy(w1.WorldName.NameCode[:], []uint16{262, 16720, 17735, 76})
-
-		nc := &ncUserLoginAck{
-			NumOfWorld: byte(2),
-			Worlds: [1]WorldInfo{
-				w1,
-			},
-		}
 		buf := new(bytes.Buffer)
 
 		if err := binary.Write(buf, binary.LittleEndian, nc); err != nil {
 			log.Fatal(err)
 			return
 		}
+
 		pc.Base.SetData(buf.Bytes())
+
 		cw.mu.Lock()
 		if _, err := cw.w.Write(pc.Base.RawData()); err != nil {
 			log.Error(err)
@@ -356,6 +407,7 @@ func userLoginAck(ctx context.Context, pc *protocol.Command) {
 			}
 		}
 		cw.mu.Unlock()
+
 		logOutboundPacket(pc)
 	}
 }
@@ -369,6 +421,7 @@ func userWorldStatusReq(ctx context.Context, pc *protocol.Command) {
 	case <-ctx.Done():
 		return
 	default:
+		// ping World service for status :)
 		go userWorldStatusAck(ctx, &protocol.Command{})
 	}
 }
@@ -381,9 +434,8 @@ func userWorldStatusAck(ctx context.Context, pc *protocol.Command) {
 		cwv := ctx.Value("connWriter")
 		cw := cwv.(*clientWriter)
 
-		base := protocol.CommandBase{}
-		base.SetOperationCode(3100)
-		pc.Base = base
+		pc.Base = protocol.CommandBase{}
+		pc.Base.SetOperationCode(3100)
 
 		cw.mu.Lock()
 		if _, err := cw.w.Write(pc.Base.RawData()); err != nil {
@@ -401,3 +453,5 @@ func userWorldStatusAck(ctx context.Context, pc *protocol.Command) {
 func userWorldSelectAck(ctx context.Context, pc *protocol.Command) {}
 
 func userWorldSelectReq(ctx context.Context, pc *protocol.Command) {}
+
+func userNormalLogoutCmd(ctx context.Context, pc *protocol.Command) {}

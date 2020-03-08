@@ -1,4 +1,4 @@
-package lib
+package service
 
 import (
 	"bufio"
@@ -6,8 +6,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/google/logger"
-	//protocol "shine.engine.packet-protocol"
-	protocol "github.com/shine-o/shine.engine.protocol"
+	protocol "shine.engine.packet-protocol"
+	//protocol "github.com/shine-o/shine.engine.protocol"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io"
@@ -34,15 +34,18 @@ var (
 	log *logger.Logger
 )
 
-func serveSetup() {
-	settings := &protocol.Settings{}
+func setup() {
 	log = logger.Init("LoginLogger", true, true, ioutil.Discard)
+
+	settings := &protocol.Settings{}
+
 	if xk, err := hex.DecodeString(viper.GetString("crypt.xorKey")); err != nil {
 		log.Error(err)
 		os.Exit(1)
 	} else {
 		settings.XorKey = xk
 	}
+
 	settings.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
 
 	if path, err := filepath.Abs(viper.GetString("protocol.nc-data")); err != nil {
@@ -50,14 +53,15 @@ func serveSetup() {
 	} else {
 		settings.CommandsFilePath = path
 	}
+
 	settings.Set()
-	loginHandlers()
+
+	commandHandlers()
 }
 
 // open tcp port
 func Listen(cmd *cobra.Command, args []string) {
-	serveSetup()
-
+	setup()
 	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", viper.GetInt("serve.port"))); err == nil {
 		log.Infof("Listening for TCP connections on: %v", l.Addr())
 		defer l.Close()
