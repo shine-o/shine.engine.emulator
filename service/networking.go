@@ -6,8 +6,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/google/logger"
-	protocol "shine.engine.packet-protocol"
-	//protocol "github.com/shine-o/shine.engine.protocol"
+	//protocol "shine.engine.packet-protocol"
+	protocol "github.com/shine-o/shine.engine.protocol"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io"
@@ -107,7 +107,6 @@ func handleConnection(c net.Conn) {
 	for {
 		cr.mu.Lock()
 		if n, err := cr.r.Read(buffer); err == nil {
-			//log.Infof("Received %v bytes", n)
 			var data []byte
 			data = append(data, buffer[:n]...)
 			segment <- data
@@ -122,5 +121,25 @@ func handleConnection(c net.Conn) {
 			}
 		}
 		cr.mu.Unlock()
+	}
+}
+
+func writeToClient(ctx context.Context, pc *protocol.Command) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		cwv := ctx.Value("connWriter")
+		cw := cwv.(*clientWriter)
+		logOutboundPacket(pc)
+		cw.mu.Lock()
+		if _, err := cw.w.Write(pc.Base.RawData()); err != nil {
+			log.Error(err)
+		} else {
+			if err = cw.w.Flush(); err != nil {
+				log.Error(err)
+			}
+		}
+		cw.mu.Unlock()
 	}
 }

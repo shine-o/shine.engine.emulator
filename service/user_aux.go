@@ -1,8 +1,6 @@
 // auxiliar structs and functions for Network Commands
 package service
 
-import protocol "shine.engine.packet-protocol"
-
 //import protocol "github.com/shine-o/shine.engine.protocol"
 
 /* 3926 */
@@ -39,8 +37,4 @@ type ComplexName struct {
 type ComplexName1 struct {
 	Name     [20]byte
 	NameCode [5]uint32
-}
-
-func logOutboundPacket(pc *protocol.Command) {
-	log.Infof("Outbound packet %v", pc.Base.String())
 }
