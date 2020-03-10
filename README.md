@@ -1,6 +1,5 @@
 ![](shine.png)
-# Shine Online Packet Protocol
+# Shine Engine Packet Protocol
 
-
-> Library for reading, decrypting and decoding packets. 
-> To be used in the Shine packet sniffer and other emulated services.
+> TCP Networking and decoding and decrypting of packets from inbound or outbound connections. 
+> To be used in all the Shine Engine services or packet sniffers.
