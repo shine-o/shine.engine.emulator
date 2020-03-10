@@ -1,4 +1,8 @@
 ![](shine.png)
-# Shine Online Login Service
+# Shine Engine Login Service
 
 > Emulated login service.
+
+
+# Overview
+![](login-scheme.png)
