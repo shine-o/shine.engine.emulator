@@ -14,14 +14,14 @@ import (
 )
 
 type Settings struct {
-	XorKey []byte
-	XorLimit uint16
+	XorKey           []byte
+	XorLimit         uint16
 	CommandsFilePath string
 }
 
 type PCList struct {
 	Departments map[uint8]Department
-	mu sync.Mutex
+	mu          sync.Mutex
 }
 
 type RawPCList struct {
@@ -40,62 +40,26 @@ type Command struct {
 }
 
 type CommandBase struct {
-	packetType    string
-	length        int
-	department    uint16
-	command       uint16
-	operationCode uint16
-	data          []byte
+	PacketType    string
+	Length        int
+	Department    uint16
+	Command       uint16
+	OperationCode uint16
+	Data          []byte
 }
 
-// big or small packet
-func (pcb *CommandBase) Type() string {
-	return pcb.packetType
-}
-
-func (pcb *CommandBase) Length() int {
-	return pcb.length
-}
-
-// network command category inside the Client [ more info with the leaked pdb ]
-func (pcb *CommandBase) Department() uint16 {
-	return pcb.department
-}
-
-// network command category action inside the Client [ more info with the leaked pdb ]
-func (pcb *CommandBase) Command() uint16 {
-	return pcb.command
-}
-
-// a.k.a packet header
-func (pcb *CommandBase) OperationCode() uint16 {
-	return pcb.department<<10 | pcb.command&1023
-}
-
-// a.k.a packet header
-func (pcb *CommandBase) SetOperationCode(opCode uint16) {
-	pcb.operationCode = opCode
-}
-
-func (pcb *CommandBase) Data() []byte {
-	return pcb.data
-}
-
-func (pcb *CommandBase) SetData(data []byte) {
-	pcb.data = data
-}
 // reassemble packet raw data
 func (pcb *CommandBase) RawData() []byte {
 	var header []byte
 	var data []byte
 
 	buf := new(bytes.Buffer)
-	if err := binary.Write(buf, binary.LittleEndian, pcb.operationCode); err != nil {
+	if err := binary.Write(buf, binary.LittleEndian, pcb.OperationCode); err != nil {
 		log.Fatalf("failed writing operation code to buffer %v", err)
 	}
 
 	data = append(data, buf.Bytes()...)
-	data = append(data, pcb.data...)
+	data = append(data, pcb.Data...)
 
 	if len(data) > 255 { // means big packet
 		header = append(header, byte(0))
@@ -125,12 +89,12 @@ func (pcb *CommandBase) String() string {
 	//department = opCode >> 10
 	//command = opCode & 1023
 	ePcb := exportedPcb{
-		PacketType:    pcb.packetType,
-		Length:        pcb.length,
-		Department:    pcb.operationCode >> 10,
-		Command:       fmt.Sprintf("%X", pcb.operationCode & 1023),
-		OperationCode: pcb.operationCode,
-		Data:          hex.EncodeToString(pcb.data),
+		PacketType:    pcb.PacketType,
+		Length:        pcb.Length,
+		Department:    pcb.OperationCode >> 10,
+		Command:       fmt.Sprintf("%X", pcb.OperationCode&1023),
+		OperationCode: pcb.OperationCode,
+		Data:          hex.EncodeToString(pcb.Data),
 		RawData:       hex.EncodeToString(pcb.RawData()),
 	}
 
@@ -152,7 +116,7 @@ func (pcb *CommandBase) String() string {
 	}
 }
 
-func (s * Settings) Set()  {
+func (s *Settings) Set() {
 	if cl, err := InitCommandList(s.CommandsFilePath); err != nil {
 		log.Error(err)
 	} else {
@@ -173,7 +137,6 @@ func InitCommandList(filePath string) (PCList, error) {
 	} else {
 
 		rPcl := &RawPCList{}
-
 
 		err = yaml.Unmarshal(d, rPcl)
 

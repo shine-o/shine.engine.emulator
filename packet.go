@@ -68,12 +68,12 @@ func DecodePacket(pType string, pLen int, data []byte) (Command, error) {
 	command = opCode & 1023
 
 	pc.Base = CommandBase{
-		packetType:    pType,
-		length:        pLen,
-		department:    department,
-		command:       command,
-		operationCode: opCode,
-		data:          data[2:], // omit operationCode bytes
+		PacketType:    pType,
+		Length:        pLen,
+		Department:    department,
+		Command:       command,
+		OperationCode: opCode,
+		Data:          data[2:], // omit operationCode bytes
 	}
 
 	return pc, nil
