@@ -9,5 +9,5 @@ crypt:
   # OG Client
   xorLimit: 499
 
-protocol:
-  nc-data: "defaults/protocol-commands.yml"
+#protocol:
+#  nc-data: "defaults/protocol-commands.yml"
