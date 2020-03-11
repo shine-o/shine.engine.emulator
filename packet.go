@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"github.com/google/logger"
 	"io/ioutil"
+	dl "log"
 )
 
 var (
@@ -15,8 +16,11 @@ var (
 )
 
 func init() {
-	log = logger.Init("Packet Protocol Logger", true, true, ioutil.Discard)
-	log.Info("Packet Protocol Logger init()")
+	logger.SetFlags(dl.Llongfile)
+
+	log = logger.Init("NetworkingLogger", true, true, ioutil.Discard)
+
+	log.Info("Networking Logger init()")
 }
 
 // find out if big or small packet
