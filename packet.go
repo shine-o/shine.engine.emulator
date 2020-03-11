@@ -17,6 +17,8 @@ var (
 
 func init() {
 	log = logger.Init("NetworkingLogger", true, true, ioutil.Discard)
+	logger.SetFlags(dl.Ldate)
+	logger.SetFlags(dl.Lmicroseconds)
 	logger.SetFlags(dl.Llongfile)
 	log.Info("Networking Logger init()")
 }
