@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"github.com/google/logger"
-	"io/ioutil"
-	dl "log"
 )
 
 var (
@@ -14,14 +12,6 @@ var (
 	xorLimit    uint16
 	commandList *PCList
 )
-
-func init() {
-	log = logger.Init("NetworkingLogger", true, true, ioutil.Discard)
-	logger.SetFlags(dl.Ldate)
-	logger.SetFlags(dl.Lmicroseconds)
-	logger.SetFlags(dl.Llongfile)
-	log.Info("Networking Logger init()")
-}
 
 // find out if big or small packet
 // return length and type
