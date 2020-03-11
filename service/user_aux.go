@@ -1,7 +1,7 @@
 // auxiliar structs and functions for Network Commands
 package service
 
-//import protocol "github.com/shine-o/shine.engine.protocol"
+//import networking "github.com/shine-o/shine.engine.networking"
 
 /* 3926 */
 // struct __unaligned __declspec(align(2)) PROTO_NC_USER_LOGIN_ACK::WorldInfo

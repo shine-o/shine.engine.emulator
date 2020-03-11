@@ -2,11 +2,10 @@ package service
 
 import (
 	"context"
-	protocol "github.com/shine-o/shine.engine.protocol"
-	//protocol "shine.engine.packet-protocol"
+	networking "github.com/shine-o/shine.engine.networking"
 )
 
-func userClientVersionCheckReq(ctx context.Context, pc *protocol.Command) {
+func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
@@ -14,35 +13,35 @@ func userClientVersionCheckReq(ctx context.Context, pc *protocol.Command) {
 
 		nc := &ncUserClientVersionCheckReq{}
 
-		if err := protocol.ReadBinary(pc.Base.Data, nc); err != nil {
+		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
 
 		} else {
 			// method for checking version
-			go userClientVersionCheckAck(ctx, &protocol.Command{}) // will be triggered by method
+			go userClientVersionCheckAck(ctx, &networking.Command{}) // will be triggered by method
 		}
 	}
 }
 
-func userClientVersionCheckAck(ctx context.Context, pc *protocol.Command) {
+func userClientVersionCheckAck(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		base := protocol.CommandBase{}
+		base := networking.CommandBase{}
 		base.OperationCode = 3175
 		pc.Base = base
-		go protocol.WriteToClient(ctx, pc)
+		go networking.WriteToClient(ctx, pc)
 	}
 }
 
-func userUsLoginReq(ctx context.Context, pc *protocol.Command) {
+func userUsLoginReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
 		nc := &ncUserUsLoginReq{}
-		if err := protocol.ReadBinary(pc.Base.Data, nc); err != nil {
+		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
 		} else {
 			go nc.authenticate(ctx)
@@ -50,12 +49,12 @@ func userUsLoginReq(ctx context.Context, pc *protocol.Command) {
 	}
 }
 
-func userLoginFailAck(ctx context.Context, pc *protocol.Command) {
+func userLoginFailAck(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		pc.Base = protocol.CommandBase{
+		pc.Base = networking.CommandBase{
 			OperationCode: 3081,
 		}
 
@@ -64,61 +63,61 @@ func userLoginFailAck(ctx context.Context, pc *protocol.Command) {
 			Err: uint16(69),
 		}
 
-		if data, err := protocol.WriteBinary(nc); err != nil {
+		if data, err := networking.WriteBinary(nc); err != nil {
 
 		} else {
 			pc.Base.Data = data
-			go protocol.WriteToClient(ctx, pc)
+			go networking.WriteToClient(ctx, pc)
 		}
 	}
 }
 
-func userLoginAck(ctx context.Context, pc *protocol.Command) {
+func userLoginAck(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		pc.Base = protocol.CommandBase{
+		pc.Base = networking.CommandBase{
 			OperationCode: 3082,
 		}
 		nc := &ncUserLoginAck{}
 		nc.setServerInfo(ctx)
 
-		if data, err := protocol.WriteBinary(nc); err == nil {
+		if data, err := networking.WriteBinary(nc); err == nil {
 			pc.Base.Data = data
-			go protocol.WriteToClient(ctx, pc)
+			go networking.WriteToClient(ctx, pc)
 		}
 	}
 }
 
-func userXtrapReq(ctx context.Context, pc *protocol.Command) {}
+func userXtrapReq(ctx context.Context, pc *networking.Command) {}
 
-func userXtrapAck(ctx context.Context, pc *protocol.Command) {}
+func userXtrapAck(ctx context.Context, pc *networking.Command) {}
 
-func userWorldStatusReq(ctx context.Context, pc *protocol.Command) {
+func userWorldStatusReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
 		// ping World service for status :)
-		go userWorldStatusAck(ctx, &protocol.Command{})
+		go userWorldStatusAck(ctx, &networking.Command{})
 	}
 }
 
-func userWorldStatusAck(ctx context.Context, pc *protocol.Command) {
+func userWorldStatusAck(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		pc.Base = protocol.CommandBase{
+		pc.Base = networking.CommandBase{
 			OperationCode: 3100,
 		}
-		go protocol.WriteToClient(ctx, pc)
+		go networking.WriteToClient(ctx, pc)
 	}
 }
 
-func userWorldSelectAck(ctx context.Context, pc *protocol.Command) {}
+func userWorldSelectAck(ctx context.Context, pc *networking.Command) {}
 
-func userWorldSelectReq(ctx context.Context, pc *protocol.Command) {}
+func userWorldSelectReq(ctx context.Context, pc *networking.Command) {}
 
-func userNormalLogoutCmd(ctx context.Context, pc *protocol.Command) {}
+func userNormalLogoutCmd(ctx context.Context, pc *networking.Command) {}

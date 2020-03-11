@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	protocol "github.com/shine-o/shine.engine.protocol"
+	networking "github.com/shine-o/shine.engine.networking"
 	"strings"
 )
 
@@ -40,9 +40,9 @@ func (nc *ncUserUsLoginReq) authenticate(ctx context.Context) {
 	userName := strings.TrimRight(string(un), "\x00")
 	password := strings.TrimRight(string(pass), "\x00")
 	if userName == "admin" && password == "21232f297a57a5a743894a0e4a801fc3" { // temporary :)
-		go userLoginAck(ctx, &protocol.Command{})
+		go userLoginAck(ctx, &networking.Command{})
 	} else {
-		go userLoginFailAck(ctx, &protocol.Command{})
+		go userLoginFailAck(ctx, &networking.Command{})
 	}
 }
 
