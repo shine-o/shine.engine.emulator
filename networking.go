@@ -8,7 +8,6 @@ import (
 	"github.com/spf13/viper"
 	"io"
 	"io/ioutil"
-	dl "log"
 	"math/rand"
 	"net"
 	"sync"
@@ -17,9 +16,6 @@ import (
 
 func init() {
 	log = logger.Init("NetworkingLogger", true, true, ioutil.Discard)
-	logger.SetFlags(dl.Ldate)
-	logger.SetFlags(dl.Lmicroseconds)
-	logger.SetFlags(dl.Llongfile)
 	log.Info("Networking Logger init()")
 }
 
