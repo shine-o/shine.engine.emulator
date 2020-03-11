@@ -1,4 +1,4 @@
-package protocol
+package networking
 
 // RE client struct:
 // struct PROTO_NC_MISC_SEED_ACK

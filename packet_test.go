@@ -1,4 +1,4 @@
-package protocol
+package networking
 
 import (
 	"encoding/hex"
@@ -14,7 +14,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestStreamPacketBoundary(t *testing.T)  {
+func TestStreamPacketBoundary(t *testing.T) {
 	expectedValues := make([]map[string]int, 5)
 
 	iteration1 := make(map[string]int)
@@ -81,11 +81,11 @@ func TestStreamPacketBoundary(t *testing.T)  {
 	}
 	for i, ev := range expectedValues {
 		if ev["pLen"] != resultValues[i]["pLen"] {
-			t.Fatalf("Failed to assert that expectedValues[%v][\"pLen\"] equals resultValues[%v][\"pLen\"], that is  %v != %v ",i,i, ev["pLen"], resultValues[i]["pLen"])
+			t.Fatalf("Failed to assert that expectedValues[%v][\"pLen\"] equals resultValues[%v][\"pLen\"], that is  %v != %v ", i, i, ev["pLen"], resultValues[i]["pLen"])
 		}
 
 		if ev["offset"] != resultValues[i]["offset"] {
-			t.Fatalf("Failed to assert that expectedValues[%v][\"offset\"] equals resultValues[%v][\"offset\"], that is  %v != %v ",i,i, ev["offset"], resultValues[i]["offset"])
+			t.Fatalf("Failed to assert that expectedValues[%v][\"offset\"] equals resultValues[%v][\"offset\"], that is  %v != %v ", i, i, ev["offset"], resultValues[i]["offset"])
 		}
 	}
 }
