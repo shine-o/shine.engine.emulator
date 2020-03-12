@@ -16,7 +16,15 @@ import (
 	"time"
 )
 
-var log *logger.Logger
+type RpcClients struct {
+	services map[string]*grpc.ClientConn
+	mu       sync.Mutex
+}
+
+var (
+	log   *logger.Logger
+	grpcc *RpcClients
+)
 
 func init() {
 	log = logger.Init("LoginLogger", true, true, ioutil.Discard)
@@ -67,13 +75,6 @@ func Start(cmd *cobra.Command, args []string) {
 
 	grpcc = gRpcClients(ctx)
 	ss.Listen(ctx)
-}
-
-var grpcc *RpcClients
-
-type RpcClients struct {
-	services map[string]*grpc.ClientConn
-	mu       sync.Mutex
 }
 
 // dial gRPC services that are needed.

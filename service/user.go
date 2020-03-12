@@ -62,38 +62,6 @@ type ncUserXtrapReq struct{}
 type ncUserXtrapAck struct{}
 
 // RE client struct:
-// struct __unaligned __declspec(align(1)) PROTO_NC_USER_LOGIN_ACK
-// {
-//  char numofworld;
-//  PROTO_NC_USER_LOGIN_ACK::WorldInfo worldinfo[];
-// };
-type ncUserLoginAck struct {
-	NumOfWorld byte
-	Worlds     [1]WorldInfo
-}
-
-func (nc *ncUserLoginAck) setServerInfo(ctx context.Context) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		// in future communicate with World Service in order to get correct info about IDs of the servers, which will have a linked IP Address
-		var worlds [1]WorldInfo
-		w1 := WorldInfo{
-			WorldNumber: 0,
-			WorldName:   ComplexName{},
-			WorldStatus: 1,
-		}
-		copy(w1.WorldName.Name[:], "INITIO")
-		copy(w1.WorldName.NameCode[:], []uint16{262, 16720, 17735, 76})
-		worlds[0] = w1
-
-		nc.NumOfWorld = byte(1)
-		nc.Worlds = worlds
-	}
-}
-
-// RE client struct:
 // struct PROTO_NC_USER_LOGINFAIL_ACK
 // {
 //	unsigned __int16 error;
@@ -130,7 +98,7 @@ type ncUserWorldSelectReq struct {
 //};
 type ncUserWorldSelectAck struct {
 	WorldStatus byte
-	Ip          ComplexName
+	Ip          Name4
 	Port        uint16
 	ValidateNew [32]uint16
 }

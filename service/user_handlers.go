@@ -3,7 +3,11 @@ package service
 import (
 	"context"
 	networking "github.com/shine-o/shine.engine.networking"
+	lw "shine.engine.protocol-buffers/login-world"
+	"time"
 )
+
+const gRpcTimeout = time.Second * 2
 
 func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 	select {
@@ -77,14 +81,34 @@ func userLoginAck(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
+		log.Info("Requesting data to the World service")
+		unexpectedFailure := func() {
+			userLoginFailAck(ctx, &networking.Command{
+				NcStruct: &ncUserLoginFailAck{
+					Err: 70,
+				},
+			})
+		}
+
 		pc.Base = networking.CommandBase{
 			OperationCode: 3082,
 		}
-		nc := &ncUserLoginAck{}
-		nc.setServerInfo(ctx)
 
-		if data, err := networking.WriteBinary(nc); err == nil {
-			pc.Base.Data = data
+		grpcc.mu.Lock()
+		conn := grpcc.services["world"]
+		c := lw.NewWorldClient(conn)
+		grpcc.mu.Unlock()
+
+		rpcCtx, _ := context.WithTimeout(context.Background(), gRpcTimeout)
+		//defer cancel()
+
+		if r, err := c.AvailableWorlds(rpcCtx, &lw.ClientMetadata{
+			Ip: "127.0.0.01",
+		}); err != nil {
+			log.Error(err)
+			go unexpectedFailure()
+		} else {
+			pc.Base.Data = r.Info
 			go networking.WriteToClient(ctx, pc)
 		}
 	}
