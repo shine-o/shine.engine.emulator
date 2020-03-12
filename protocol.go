@@ -37,6 +37,7 @@ type Department struct {
 
 type Command struct {
 	Base CommandBase
+	Aux  interface{}
 }
 
 type CommandBase struct {
