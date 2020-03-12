@@ -42,9 +42,9 @@ func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
 }
 
 // listen on  tcp socket
-func (ss *ShineService) Listen(ctx context.Context) {
+func (ss *ShineService) Listen(ectx context.Context) {
 	select {
-	case <-ctx.Done():
+	case <-ectx.Done():
 		return
 	default:
 		ss.s.Set()
@@ -54,6 +54,7 @@ func (ss *ShineService) Listen(ctx context.Context) {
 			rand.Seed(time.Now().Unix())
 			for {
 				if c, err := l.Accept(); err == nil {
+					ctx := context.Background()
 					go ss.handleConnection(ctx, c)
 				} else {
 					log.Fatal(err)
