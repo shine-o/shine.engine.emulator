@@ -53,7 +53,7 @@ func (ss *ShineService) Listen() {
 			if c, err := l.Accept(); err == nil {
 				go ss.handleConnection(ctx, c)
 			} else {
-				log.Fatal(err)
+				log.Error(err)
 			}
 		}
 	} else {
@@ -97,7 +97,7 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 				cr.mu.Unlock()
 				break
 			} else {
-				log.Fatal(err)
+				log.Error(err)
 				cr.mu.Unlock()
 				return
 			}
