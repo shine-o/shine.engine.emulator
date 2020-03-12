@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	networking "github.com/shine-o/shine.engine.networking"
+	gs "shine.engine.game_structs"
 	lw "shine.engine.protocol-buffers/login-world"
 	"time"
 )
@@ -15,7 +16,7 @@ func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 
-		nc := &ncUserClientVersionCheckReq{}
+		nc := &gs.NcUserClientVersionCheckReq{}
 
 		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
@@ -44,11 +45,11 @@ func userUsLoginReq(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-		nc := &ncUserUsLoginReq{}
+		nc := &gs.NcUserUsLoginReq{}
 		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
 		} else {
-			go nc.authenticate(ctx)
+			go authenticate(ctx, nc)
 		}
 	}
 }
@@ -63,7 +64,7 @@ func userLoginFailAck(ctx context.Context, pc *networking.Command) {
 		}
 
 		// 090c 4500
-		nc := &ncUserLoginFailAck{
+		nc := &gs.NcUserLoginFailAck{
 			Err: uint16(69),
 		}
 
@@ -84,7 +85,7 @@ func userLoginAck(ctx context.Context, pc *networking.Command) {
 		log.Info("Requesting data to the World service")
 		unexpectedFailure := func() {
 			userLoginFailAck(ctx, &networking.Command{
-				NcStruct: &ncUserLoginFailAck{
+				NcStruct: &gs.NcUserLoginFailAck{
 					Err: 70,
 				},
 			})
@@ -140,8 +141,56 @@ func userWorldStatusAck(ctx context.Context, pc *networking.Command) {
 	}
 }
 
-func userWorldSelectAck(ctx context.Context, pc *networking.Command) {}
+func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		log.Info("Requesting data to the World service")
+		unexpectedFailure := func() {
+			userLoginFailAck(ctx, &networking.Command{
+				NcStruct: &gs.NcUserLoginFailAck{
+					Err: 70,
+				},
+			})
+		}
+		nc := &gs.NcUserWorldSelectReq{}
+		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
+			// TODO: define steps for this kind of errors, either kill the connection or send error code
+			go unexpectedFailure()
 
-func userWorldSelectReq(ctx context.Context, pc *networking.Command) {}
+		} else {
+			grpcc.mu.Lock()
+			conn := grpcc.services["world"]
+			c := lw.NewWorldClient(conn)
+			grpcc.mu.Unlock()
 
-func userNormalLogoutCmd(ctx context.Context, pc *networking.Command) {}
+			rpcCtx, _ := context.WithTimeout(context.Background(), gRpcTimeout)
+
+			if r, err := c.ConnectionInfo(rpcCtx, &lw.SelectedWorld{Num: 1}); err != nil {
+				log.Error(err)
+				go unexpectedFailure()
+			} else {
+				go userWorldSelectAck(ctx, &networking.Command{
+					Base: networking.CommandBase{
+						Data: r.Info,
+					},
+				})
+			}
+		}
+	}
+}
+
+func userWorldSelectAck(ctx context.Context, pc *networking.Command) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		pc.Base.OperationCode = 3084
+		go networking.WriteToClient(ctx, pc)
+	}
+}
+
+func userNormalLogoutCmd(ctx context.Context, pc *networking.Command) {
+
+}

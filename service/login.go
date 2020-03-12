@@ -74,7 +74,7 @@ func Start(cmd *cobra.Command, args []string) {
 	ss := networking.NewShineService(s, hw)
 
 	grpcc = gRpcClients(ctx)
-	ss.Listen(ctx)
+	ss.Listen()
 }
 
 // dial gRPC services that are needed.
