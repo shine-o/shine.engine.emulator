@@ -2,6 +2,7 @@ package networking
 
 import (
 	"context"
+	gs "shine.engine.game_structs"
 )
 
 func miscSeedAck(ctx context.Context, pc *Command) {
@@ -17,8 +18,8 @@ func miscSeedAck(ctx context.Context, pc *Command) {
 
 		*xo = xorOffset
 
-		nc := ncMiscSeedAck{
-			seed: xorOffset,
+		nc := gs.NcMiscSeedAck{
+			Seed: xorOffset,
 		}
 
 		if data, err := WriteBinary(nc); err != nil {
