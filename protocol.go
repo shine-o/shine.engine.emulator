@@ -36,8 +36,8 @@ type Department struct {
 }
 
 type Command struct {
-	Base CommandBase
-	Aux  interface{}
+	Base     CommandBase // common data in every command, like operation code and length
+	Concrete interface{} // any kind of structure that is the representation in bytes of the network packet
 }
 
 type CommandBase struct {
