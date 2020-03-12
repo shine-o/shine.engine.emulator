@@ -37,7 +37,7 @@ func (hw *HandleWarden) handleSegments(ctx context.Context, segment <-chan []byt
 	hw.mu.Lock()
 	sendXorOffset := hw.handlers[2055]
 	go sendXorOffset(ctx, &Command{
-		CommandBase{
+		Base: CommandBase{
 			OperationCode: 2055,
 		},
 	})
