@@ -11,3 +11,9 @@ crypt:
 
 #protocol:
 #  nc-data: "defaults/protocol-commands.yml"
+
+gRPC:
+  services:
+    self:
+      - name: world
+        port: "50020"
