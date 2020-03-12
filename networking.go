@@ -42,27 +42,22 @@ func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
 }
 
 // listen on  tcp socket
-func (ss *ShineService) Listen(ectx context.Context) {
-	select {
-	case <-ectx.Done():
-		return
-	default:
-		ss.s.Set()
-		if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", viper.GetInt("serve.port"))); err == nil {
-			log.Infof("Listening for TCP connections on: %v", l.Addr())
-			defer l.Close()
-			rand.Seed(time.Now().Unix())
-			for {
-				if c, err := l.Accept(); err == nil {
-					ctx := context.Background()
-					go ss.handleConnection(ctx, c)
-				} else {
-					log.Fatal(err)
-				}
+func (ss *ShineService) Listen() {
+	ctx := context.Background()
+	ss.s.Set()
+	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", viper.GetInt("serve.port"))); err == nil {
+		log.Infof("Listening for TCP connections on: %v", l.Addr())
+		defer l.Close()
+		rand.Seed(time.Now().Unix())
+		for {
+			if c, err := l.Accept(); err == nil {
+				go ss.handleConnection(ctx, c)
+			} else {
+				log.Fatal(err)
 			}
-		} else {
-			log.Error(err)
 		}
+	} else {
+		log.Error(err)
 	}
 }
 
