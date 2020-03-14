@@ -2,7 +2,7 @@ package networking
 
 import (
 	"context"
-	gs "github.com/shine-o/shine.engine.game-structs"
+	"github.com/shine-o/shine.engine.structs"
 )
 
 func miscSeedAck(ctx context.Context, pc *Command) {
@@ -18,7 +18,7 @@ func miscSeedAck(ctx context.Context, pc *Command) {
 
 		*xo = xorOffset
 
-		nc := gs.NcMiscSeedAck{
+		nc := structs.NcMiscSeedAck{
 			Seed: xorOffset,
 		}
 
