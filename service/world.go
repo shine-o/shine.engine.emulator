@@ -5,7 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/google/logger"
-	networking "github.com/shine-o/shine.engine.networking"
+	"github.com/shine-o/shine.engine.networking"
+	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -13,7 +14,6 @@ import (
 	"net"
 	"os"
 	"path/filepath"
-	lw "shine.engine.protocol-buffers/login-world"
 	"sync"
 )
 

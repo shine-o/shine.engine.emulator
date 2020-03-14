@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
-	networking "github.com/shine-o/shine.engine.networking"
-	gs "shine.engine.game_structs"
+	"github.com/shine-o/shine.engine.networking"
+	"github.com/shine-o/shine.engine.structs"
 )
 
 // handle user, given his account
@@ -15,7 +15,7 @@ func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-		nc := &gs.NcUserLoginWorldReq{}
+		nc := &structs.NcUserLoginWorldReq{}
 		//if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
 		if err := readBinary(pc.Base.Data, nc); err != nil {
 			log.Error(err)
@@ -82,7 +82,7 @@ func userLoginWorldAck(ctx context.Context, pc *networking.Command) {
 
 		pc.Base.OperationCode = 3092
 
-		//nc := &gs.NcUserLoginWorldAck{
+		//nc := &structs.NcUserLoginWorldAck{
 		//	WorldManager: 1,
 		//	NumOfAvatar:  0,
 		//	Avatars:      nil,
