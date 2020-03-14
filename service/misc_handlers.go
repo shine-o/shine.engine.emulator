@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 	"github.com/shine-o/shine.engine.networking"
-	"shine.engine.structs"
+	"github.com/shine-o/shine.engine.structs"
 	"time"
 )
 
