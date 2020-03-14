@@ -32,7 +32,7 @@ var log *logger.Logger
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "serve",
+	Use:   "world",
 	Short: "Serve the world services needed and offer CLI support for world operations",
 	Long:  `The purpose of the world service is to handle packets related the user account and user characters.`,
 }
