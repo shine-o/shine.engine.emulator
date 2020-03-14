@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 	"io/ioutil"
 	"os"
 
@@ -32,8 +33,8 @@ var log *logger.Logger
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "Listen for login connections",
-	Long:  `The purpose of the login service is to handle packets related to user account login and server selection.`,
+	Short: "Serve the world services needed and offer CLI support for world operations",
+	Long:  `The purpose of the world service is to handle packets related the user account and user characters.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -49,7 +50,10 @@ func init() {
 	log = logger.Init("InitLogger", true, true, ioutil.Discard)
 	log.Info("root init()")
 	cobra.OnInitialize(initConfig)
-
+	err := doc.GenMarkdownTree(rootCmd, "docs")
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
