@@ -47,6 +47,8 @@ func Start(cmd *cobra.Command, args []string) {
 
 	ch := make(map[uint16]func(ctx context.Context, pc *networking.Command))
 	ch[3087] = userLoginWorldReq
+	ch[2061] = miscGametimeReq
+	ch[3123] = userWillWorldSelectReq
 	//ch[3092] = userLoginworldAck
 	// for now, nada
 

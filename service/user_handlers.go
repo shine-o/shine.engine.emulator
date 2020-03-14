@@ -29,6 +29,25 @@ func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
 	}
 }
 
+func userWillWorldSelectReq(ctx context.Context, pc *networking.Command) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		go userWillWorldSelectAck(ctx, &networking.Command{})
+	}
+}
+
+func userWillWorldSelectAck(ctx context.Context, pc *networking.Command) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		pc.Base.OperationCode = 3124
+		go networking.WriteToClient(ctx, pc)
+	}
+}
+
 func readBinary(data []byte, nc interface{}) error {
 	// data is only 83. it reads all 83 bytes into the struct
 	// then tries again, since there's still 16 bytes to read
@@ -48,7 +67,6 @@ func readBinary(data []byte, nc interface{}) error {
 		log.Error(err)
 		return err
 	}
-
 	return nil
 }
 
