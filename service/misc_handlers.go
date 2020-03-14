@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	networking "github.com/shine-o/shine.engine.networking"
-	gs "shine.engine.game_structs"
+	"github.com/shine-o/shine.engine.networking"
+	"shine.engine.structs"
 	"time"
 )
 
@@ -33,7 +33,7 @@ func miscGameTimeAck(ctx context.Context, pc *networking.Command) {
 		minute = byte(t.Minute())
 		second = byte(t.Second())
 
-		nc := &gs.NcMiscGameTimeAck{
+		nc := &structs.NcMiscGameTimeAck{
 			Hour:   hour,
 			Minute: minute,
 			Second: second,

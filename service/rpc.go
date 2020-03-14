@@ -4,11 +4,11 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
+	"github.com/shine-o/shine.engine.networking"
+	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
+	"github.com/shine-o/shine.engine.structs"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	gs "shine.engine.game_structs"
-	networking "shine.engine.networking"
-	lw "shine.engine.protocol-buffers/login-world"
 )
 
 // server is used to implement helloworld.GreeterServer.
@@ -23,13 +23,13 @@ func (s *server) AvailableWorlds(ctx context.Context, in *lw.ClientMetadata) (*l
 	case <-ctx.Done():
 		return &lw.WorldsInfo{Info: []byte{0}}, status.Errorf(codes.Canceled, "context was canceled")
 	default:
-		nc := &gs.NcUserLoginAck{}
+		nc := &structs.NcUserLoginAck{}
 		nc.NumOfWorld = byte(1)
 
-		var worlds [1]gs.WorldInfo
-		w1 := gs.WorldInfo{
+		var worlds [1]structs.WorldInfo
+		w1 := structs.WorldInfo{
 			WorldNumber: 0,
-			WorldName:   gs.Name4{},
+			WorldName:   structs.Name4{},
 			WorldStatus: 1,
 		}
 		copy(w1.WorldName.Name[:], "INITIO")
@@ -56,9 +56,9 @@ func (s *server) ConnectionInfo(ctx context.Context, req *lw.SelectedWorld) (*lw
 	case <-ctx.Done():
 		return nil, status.Errorf(codes.Canceled, "context was canceled")
 	default:
-		//nc := gs.NcUserWorldSelectAck{
+		//nc := structs.NcUserWorldSelectAck{
 		//	WorldStatus: 6,
-		//	Ip:          gs.Name4{},
+		//	Ip:          structs.Name4{},
 		//	Port:        9110,
 		//	ValidateNew: [32]uint16{},
 		//}

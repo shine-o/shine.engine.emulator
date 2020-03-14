@@ -17,7 +17,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"shine.engine.world/service"
+	"github.com/shine-o/shine.engine.world/service"
 )
 
 // serveCmd represents the serve command
