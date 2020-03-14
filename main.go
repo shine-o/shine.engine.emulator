@@ -15,7 +15,9 @@ limitations under the License.
 */
 package main
 
-import "shine.engine.login/cmd"
+import "github.com/shine-o/shine.engine.login/cmd"
+
+//import "cmd"
 
 func main() {
 	cmd.Execute()

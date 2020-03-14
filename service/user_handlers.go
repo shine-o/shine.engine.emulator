@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	networking "github.com/shine-o/shine.engine.networking"
-	gs "shine.engine.game_structs"
-	lw "shine.engine.protocol-buffers/login-world"
+	"github.com/shine-o/shine.engine.networking"
+	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
+	"github.com/shine-o/shine.engine.structs"
 	"time"
 )
 
@@ -16,7 +16,7 @@ func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 
-		nc := &gs.NcUserClientVersionCheckReq{}
+		nc := &structs.NcUserClientVersionCheckReq{}
 
 		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
@@ -45,7 +45,7 @@ func userUsLoginReq(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-		nc := &gs.NcUserUsLoginReq{}
+		nc := &structs.NcUserUsLoginReq{}
 		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
 		} else {
@@ -64,7 +64,7 @@ func userLoginFailAck(ctx context.Context, pc *networking.Command) {
 		}
 
 		// 090c 4500
-		nc := &gs.NcUserLoginFailAck{
+		nc := &structs.NcUserLoginFailAck{
 			Err: uint16(69),
 		}
 
@@ -85,7 +85,7 @@ func userLoginAck(ctx context.Context, pc *networking.Command) {
 		log.Info("Requesting data to the World service")
 		unexpectedFailure := func() {
 			userLoginFailAck(ctx, &networking.Command{
-				NcStruct: &gs.NcUserLoginFailAck{
+				NcStruct: &structs.NcUserLoginFailAck{
 					Err: 70,
 				},
 			})
@@ -149,12 +149,12 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 		log.Info("Requesting data to the World service")
 		unexpectedFailure := func() {
 			userLoginFailAck(ctx, &networking.Command{
-				NcStruct: &gs.NcUserLoginFailAck{
+				NcStruct: &structs.NcUserLoginFailAck{
 					Err: 70,
 				},
 			})
 		}
-		nc := &gs.NcUserWorldSelectReq{}
+		nc := &structs.NcUserWorldSelectReq{}
 		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
 			go unexpectedFailure()

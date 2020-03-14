@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
-	networking "github.com/shine-o/shine.engine.networking"
-	gs "shine.engine.game_structs"
+	"github.com/shine-o/shine.engine.networking"
+	"github.com/shine-o/shine.engine.structs"
 	"strings"
 )
 
-func authenticate(ctx context.Context, nc *gs.NcUserUsLoginReq) {
+type User struct {}
+
+func authenticate(ctx context.Context, nc *structs.NcUserUsLoginReq) {
 	select {
 	case <-ctx.Done():
 		go userLoginFailAck(ctx, &networking.Command{})

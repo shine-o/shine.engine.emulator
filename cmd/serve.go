@@ -16,8 +16,8 @@ limitations under the License.
 package cmd
 
 import (
+	"github.com/shine-o/shine.engine.login/service"
 	"github.com/spf13/cobra"
-	"shine.engine.login/service"
 )
 
 // serveCmd represents the serve command
