@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 	"io/ioutil"
 	"os"
 
@@ -31,14 +32,9 @@ var log *logger.Logger
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "shine.engine.login",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Use:   "login",
+	Short: "Serve the login services needed and offer CLI support for account operations",
+	Long:  `The purpose of the login service is to handle packets related to user account login and server selection.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	//	Run: func(cmd *cobra.Command, args []string) { },
@@ -57,7 +53,10 @@ func init() {
 	log = logger.Init("InitLogger", true, true, ioutil.Discard)
 	log.Info("root init()")
 	cobra.OnInitialize(initConfig)
-
+	err := doc.GenMarkdownTree(rootCmd, "docs")
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Here you will define your flags and configuration settings.
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
