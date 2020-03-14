@@ -7,8 +7,6 @@ import (
 	"strings"
 )
 
-type User struct {}
-
 func authenticate(ctx context.Context, nc *structs.NcUserUsLoginReq) {
 	select {
 	case <-ctx.Done():
@@ -19,10 +17,17 @@ func authenticate(ctx context.Context, nc *structs.NcUserUsLoginReq) {
 		pass := nc.Password[:]
 		userName := strings.TrimRight(string(un), "\x00")
 		password := strings.TrimRight(string(pass), "\x00")
-		if userName == "admin" && password == "21232f297a57a5a743894a0e4a801fc3" { // temporary :)
-			go userLoginAck(ctx, &networking.Command{})
-		} else {
+
+		var user User
+		if database.Where("user_name = ?", userName).First(&user).RecordNotFound() {
 			go userLoginFailAck(ctx, &networking.Command{})
+		} else {
+			log.Info(user)
+			if user.Password == password {
+				go userLoginAck(ctx, &networking.Command{})
+			} else {
+				go userLoginFailAck(ctx, &networking.Command{})
+			}
 		}
 	}
 }
