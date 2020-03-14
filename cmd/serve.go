@@ -18,6 +18,7 @@ package cmd
 import (
 	"github.com/shine-o/shine.engine.world/service"
 	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 )
 
 // serveCmd represents the serve command
@@ -31,6 +32,10 @@ var serveCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(serveCmd)
 	log.Info("serve init()")
+	err := doc.GenMarkdownTree(serveCmd, "docs")
+	if err != nil {
+		log.Fatal(err)
+	}
 	// Here you will define your flags and configuration settings.
 	//defer logger.Init("InitLogger", true, true,  ioutil.Discard).Close()
 	// Cobra supports Persistent Flags which will work for this command
