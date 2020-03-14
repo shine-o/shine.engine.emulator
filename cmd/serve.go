@@ -25,7 +25,6 @@ import (
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Listen for World connections",
-	Long:  `The purpose of the World service is to account characters of a server and connecting characters to separate zones`,
 	Run:   service.Start,
 }
 
