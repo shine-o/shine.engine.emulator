@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
-	networking "github.com/shine-o/shine.engine.networking"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	gs "shine.engine.game_structs"
+	networking "shine.engine.networking"
 	lw "shine.engine.protocol-buffers/login-world"
 )
 
@@ -38,6 +38,10 @@ func (s *server) AvailableWorlds(ctx context.Context, in *lw.ClientMetadata) (*l
 
 		nc.NumOfWorld = byte(1)
 		nc.Worlds = worlds
+		//
+
+		// unaligned structures =/
+		//return &lw.WorldsInfo{Info: []byte{1, 0, 1}}, nil
 
 		if data, err := networking.WriteBinary(nc); err == nil {
 			return &lw.WorldsInfo{Info: data}, nil
