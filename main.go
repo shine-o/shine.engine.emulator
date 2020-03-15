@@ -17,8 +17,6 @@ package main
 
 import "github.com/shine-o/shine.engine.login/cmd"
 
-//import "cmd"
-
 func main() {
 	cmd.Execute()
 }
