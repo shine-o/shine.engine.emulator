@@ -32,6 +32,7 @@ type clientWriter struct {
 type ShineService struct {
 	s  *Settings
 	hw *HandleWarden
+	sf SessionFactory
 }
 
 func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
@@ -42,8 +43,7 @@ func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
 }
 
 // listen on  tcp socket
-func (ss *ShineService) Listen() {
-	ctx := context.Background()
+func (ss *ShineService) Listen(ctx context.Context) {
 	ss.s.Set()
 	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", viper.GetInt("serve.port"))); err == nil {
 		log.Infof("Listening for TCP connections on: %v", l.Addr())
@@ -59,6 +59,10 @@ func (ss *ShineService) Listen() {
 	} else {
 		log.Error(err)
 	}
+}
+
+func (ss *ShineService) UseSessionFactory(sf SessionFactory)  {
+	ss.sf = sf
 }
 
 // for each connection launch go routine that handles tcp segment data
@@ -82,6 +86,7 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 		}
 	)
 
+	ctx = context.WithValue(ctx, "session", ss.sf.New())
 	ctx = context.WithValue(ctx, "connWriter", cw)
 
 	go ss.hw.handleSegments(ctx, segment)
