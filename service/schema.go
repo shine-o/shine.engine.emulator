@@ -49,6 +49,7 @@ func initDatabase() {
 	} else {
 		database = db
 	}
+	log.Infof("connected to the database postgres://v:v@%v:%v/%v?sslmode=disable", host, port, dbName)
 }
 
 func migrations() {

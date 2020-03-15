@@ -33,6 +33,7 @@ func init() {
 
 func Start(cmd *cobra.Command, args []string) {
 	initDatabase()
+	initRedis()
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -67,10 +68,11 @@ func Start(cmd *cobra.Command, args []string) {
 	hw := networking.NewHandlerWarden(ch)
 
 	ss := networking.NewShineService(s, hw)
-
+	wsf := &sessionFactory{}
+	ss.UseSessionFactory(wsf)
 	grpcc = gRpcClients(ctx)
 
-	ss.Listen()
+	ss.Listen(ctx)
 }
 
 // dial gRPC services that are needed.
