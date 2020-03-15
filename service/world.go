@@ -25,6 +25,7 @@ func init() {
 }
 
 func Start(cmd *cobra.Command, args []string) {
+
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -54,9 +55,12 @@ func Start(cmd *cobra.Command, args []string) {
 
 	ss := networking.NewShineService(s, hw)
 
+	wsf := &sessionFactory{}
+	ss.UseSessionFactory(wsf)
+
 	go selfRPC(ctx)
 
-	ss.Listen()
+	ss.Listen(ctx)
 }
 
 type InRPC struct {
