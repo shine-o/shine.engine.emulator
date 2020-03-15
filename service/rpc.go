@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"encoding/binary"
 	"encoding/hex"
 	"github.com/shine-o/shine.engine.networking"
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
 	"github.com/shine-o/shine.engine.structs"
+	"github.com/spf13/viper"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -38,10 +38,6 @@ func (s *server) AvailableWorlds(ctx context.Context, in *lw.ClientMetadata) (*l
 
 		nc.NumOfWorld = byte(1)
 		nc.Worlds = worlds
-		//
-
-		// unaligned structures =/
-		//return &lw.WorldsInfo{Info: []byte{1, 0, 1}}, nil
 
 		if data, err := networking.WriteBinary(nc); err == nil {
 			return &lw.WorldsInfo{Info: data}, nil
@@ -56,29 +52,30 @@ func (s *server) ConnectionInfo(ctx context.Context, req *lw.SelectedWorld) (*lw
 	case <-ctx.Done():
 		return nil, status.Errorf(codes.Canceled, "context was canceled")
 	default:
-		//nc := structs.NcUserWorldSelectAck{
-		//	WorldStatus: 6,
-		//	Ip:          structs.Name4{},
-		//	Port:        9110,
-		//	ValidateNew: [32]uint16{},
-		//}
+		nc := structs.NcUserWorldSelectAck{
+			WorldStatus: 6,
+			Ip:          structs.Name4{
+				Name:     [16]byte{},
+				NameCode: [4]uint32{},
+			},
+			Port:        9110,
+		}
+
+		copy(nc.Ip.Name[:], viper.GetString("serve.external_ip"))
 
 		data := make([]byte, 0)
-		data = append(data, byte(6))
-		data = append(data, []byte("192.168.1.131")...)
-		data = append(data, []byte{0, 0, 0}...)
+		data = append(data, nc.WorldStatus)
 
-		var port int16 = 9110
-		b := make([]byte, 2)
-		binary.LittleEndian.PutUint16(b, uint16(port))
-		data = append(data, b...)
+		if b, err := networking.WriteBinary(nc.Ip.Name); err == nil {
+			data = append(data, b...)
+		}
+
+		if b, err := networking.WriteBinary(nc.Port); err == nil {
+			data = append(data, b...)
+		}
+
 		log.Info(hex.EncodeToString(data))
-		return &lw.WorldConnectionInfo{Info: data}, nil
 
-		//if data, err := networking.WriteBinary(nc); err == nil {
-		//	return &lw.WorldConnectionInfo{Info: data}, nil
-		//} else {
-		//	return &lw.WorldConnectionInfo{Info: []byte{0}}, err
-		//}
+		return &lw.WorldConnectionInfo{Info: data}, nil
 	}
 }

@@ -4,14 +4,13 @@
 > Emulated World service.
 
 
-
 This project has dependencies on the modules: 
 
 - [Networking](https://github.com/shine-o/shine.engine.networking)
 - [Structs](https://github.com/shine-o/shine.engine.structs)
 - [Protocol Buffers](https://github.com/shine-o/shine.engine.protocol-buffers)
 
-If changes are needed on those packets, inside this project, use [gohack](https://github.com/rogpeppe/gohack) (a tool to go around using cached modules): 
+If changes are needed on these modules, inside this project, use [gohack](https://github.com/rogpeppe/gohack) (a tool to go around using cached modules): 
 
 
     $ gohack get -vcs github.com/shine-o/shine.engine.networking 
