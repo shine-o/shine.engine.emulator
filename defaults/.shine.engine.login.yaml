@@ -1,11 +1,3 @@
-### POSTGRES, alternatives can be added if required
-database:
-  host: 192.168.111.129
-  port: 5432
-  db_name: login
-  db_user: user
-  db_password: password
-
 serve:
   port: 9010
 
@@ -29,3 +21,16 @@ crypt:
   xorLimit: 499
 #protocol:
 #  nc-data: "defaults/protocol-commands.yml"
+### POSTGRES, alternatives can be added if required
+database:
+  host: 192.168.111.129
+  port: 5432
+  db_name: login
+  db_user: user
+  db_password: password
+
+session:
+  redis:
+    host: 192.168.111.129
+    port: 6379
+    db: 1
