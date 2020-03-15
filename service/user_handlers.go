@@ -53,17 +53,17 @@ func userLoginWorldAck(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-
-		// for now hardcoded... for testing purposes
-
 		pc.Base.OperationCode = 3092
 
-		//nc := &structs.NcUserLoginWorldAck{
-		//	WorldManager: 1,
-		//	NumOfAvatar:  0,
-		//	Avatars:      nil,
-		//}
-		pc.Base.Data = []byte{1, 0}
+		nc := &structs.NcUserLoginWorldAck{
+			WorldManager: 1,
+			NumOfAvatar:  0,
+		}
+
+		if b, err := networking.WriteBinary(nc.WorldManager); err == nil {
+			pc.Base.Data = append(pc.Base.Data, b...)
+		}
+		pc.Base.Data = append(pc.Base.Data, nc.NumOfAvatar)
 
 		go networking.WriteToClient(ctx, pc)
 

@@ -49,8 +49,6 @@ func Start(cmd *cobra.Command, args []string) {
 	ch[3087] = userLoginWorldReq
 	ch[2061] = miscGametimeReq
 	ch[3123] = userWillWorldSelectReq
-	//ch[3092] = userLoginworldAck
-	// for now, nada
 
 	hw := networking.NewHandlerWarden(ch)
 
@@ -110,9 +108,7 @@ func gRpcServers(ctx context.Context, service map[string]string) {
 			log.Errorf("could listen on port %v for service %v : %v", service["port"], service["name"], err)
 		}
 		s := grpc.NewServer()
-		//switch service["name"] { in case more than one rpc service
-		//case "world":
-		//}
+
 		lw.RegisterWorldServer(s, &server{})
 
 		log.Infof("Loading gRPC server connections %v@::%v", service["name"], service["port"])
