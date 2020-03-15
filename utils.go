@@ -6,7 +6,10 @@ import (
 )
 
 func ReadBinary(data []byte, nc interface{}) error {
-	buf := bytes.NewBuffer(data)
+	structSize := binary.Size(nc)
+	buffer := make([]byte, structSize)
+	copy(buffer, data)
+	buf := bytes.NewBuffer(buffer)
 	if err := binary.Read(buf, binary.LittleEndian, nc); err != nil {
 		log.Error(err)
 		return err
