@@ -1,9 +1,7 @@
 package service
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.structs"
 )
@@ -16,8 +14,8 @@ func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		nc := &structs.NcUserLoginWorldReq{}
-		//if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
-		if err := readBinary(pc.Base.Data, nc); err != nil {
+		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
+			//if err := readBinary(pc.Base.Data, nc); err != nil {
 			log.Error(err)
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
 		} else {
@@ -46,28 +44,6 @@ func userWillWorldSelectAck(ctx context.Context, pc *networking.Command) {
 		pc.Base.OperationCode = 3124
 		go networking.WriteToClient(ctx, pc)
 	}
-}
-
-func readBinary(data []byte, nc interface{}) error {
-	// data is only 83. it reads all 83 bytes into the struct
-	// then tries again, since there's still 16 bytes to read
-	// but of course, there is nothing to read from.
-	// so. if struct is
-	//fmt.Println(binary.Size(loginAck))
-	//structSize := binary.Size(loginAck)
-	//buffer := make([]byte, structSize)
-	//actualData := b[3:]
-	//copy(buffer, actualData)
-	structSize := binary.Size(nc)
-	buffer := make([]byte, structSize)
-	copy(buffer, data)
-
-	buf := bytes.NewBuffer(buffer)
-	if err := binary.Read(buf, binary.LittleEndian, nc); err != nil {
-		log.Error(err)
-		return err
-	}
-	return nil
 }
 
 // acknowledge request of login to the world
