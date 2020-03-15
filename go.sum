@@ -110,6 +110,7 @@ github.com/shine-o/shine.engine.networking v0.0.0-20200315122312-83d33bf907e4 h1
 github.com/shine-o/shine.engine.networking v0.0.0-20200315122312-83d33bf907e4/go.mod h1:vEbiRw2o3Z4ZQGBqleLO4RGhqTDjfbTmpJfFJLl/XFU=
 github.com/shine-o/shine.engine.protocol-buffers/login-world v0.0.0-20200314174953-2f346ed277bf h1:kB/LCvD9qXpjvfrjTQv22O8R5heLRJJWga1SxQ0InzU=
 github.com/shine-o/shine.engine.protocol-buffers/login-world v0.0.0-20200314174953-2f346ed277bf/go.mod h1:fdrxi/z55uuazzZXOmKc7e9b0zNRvVX/PfUIanFqml4=
+github.com/shine-o/shine.engine.structs v0.0.0-20200314171927-3d86b5b8595d h1:KpSi7YiRqokP/0rm+VwGe6rq1ps5yTQGhQJeVlvRw2U=
 github.com/shine-o/shine.engine.structs v0.0.0-20200314171927-3d86b5b8595d/go.mod h1:AGsuJmxdOHMVm5C/V7fTAv2kY03cAzN1pkryoE1gnfQ=
 github.com/shurcooL/sanitized_anchor_name v1.0.0 h1:PdmoCO6wvbs+7yrJyMORt4/BmY5IYyJwS/kOiWx8mHo=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
