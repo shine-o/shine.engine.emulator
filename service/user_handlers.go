@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.structs"
+	"strings"
 )
 
 // handle user, given his account
@@ -19,9 +20,11 @@ func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
 			log.Error(err)
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
 		} else {
-			//go authenticate(ctx, nc)
-			// query character data for the user with given id
+			wsi := ctx.Value("session")
+			ws := wsi.(*session)
 			// [ future game logic: anything that should be checked before allowing the account to connect to the world ]
+			userName := strings.TrimRight(string(nc.User.Name[:]), "\x00")
+			ws.userName = userName
 			go userLoginWorldAck(ctx, &networking.Command{})
 		}
 	}
@@ -32,6 +35,9 @@ func userWillWorldSelectReq(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
+		wsi := ctx.Value("session")
+		ws := wsi.(*session)
+		log.Infof("session is %v", ws)
 		go userWillWorldSelectAck(ctx, &networking.Command{})
 	}
 }
