@@ -65,6 +65,8 @@ func Start(cmd *cobra.Command, args []string) {
 	ch[3083] = userWorldSelectReq
 	ch[3096] = userNormalLogoutCmd
 
+	ch[3127] = userLoginWithOtpReq
+
 	hw := networking.NewHandlerWarden(ch)
 
 	ss := networking.NewShineService(s, hw)
