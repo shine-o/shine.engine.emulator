@@ -22,13 +22,13 @@ func PacketBoundary(offset int, data []byte) (int, string) {
 			d    []byte
 		)
 
-		d = append(d, data[offset:]...)
-
+		d = append(d, data[offset+1:]...)
 		br := bytes.NewReader(d)
+		//br := bytes.NewBuffer(d)
 
-		if _, err := br.ReadAt(d, 1); err != nil {
-			log.Error(err)
-		}
+		//if _, err := br.ReadAt(d, 1); err != nil {
+		//	log.Error(err)
+		//}
 
 		if err := binary.Read(br, binary.LittleEndian, &pLen); err != nil {
 			log.Error(err)
