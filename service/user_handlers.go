@@ -20,7 +20,6 @@ func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 
 		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
-
 		} else {
 			// method for checking version
 			go userClientVersionCheckAck(ctx, &networking.Command{}) // will be triggered by method
@@ -102,7 +101,6 @@ func userLoginAck(ctx context.Context, pc *networking.Command) {
 
 		rpcCtx, _ := context.WithTimeout(context.Background(), gRpcTimeout)
 		//defer cancel()
-
 		if r, err := c.AvailableWorlds(rpcCtx, &lw.ClientMetadata{
 			Ip: "127.0.0.01",
 		}); err != nil {
@@ -192,5 +190,32 @@ func userWorldSelectAck(ctx context.Context, pc *networking.Command) {
 }
 
 func userNormalLogoutCmd(ctx context.Context, pc *networking.Command) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+	}
+}
 
+func userLoginWithOtpReq(ctx context.Context, pc *networking.Command)  {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		nc := &structs.NcUserLoginWithOtpReq{}
+		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
+			log.Info(err)
+			go userLoginFailAck(ctx, &networking.Command{})
+		} else {
+			b := make([]byte, len(nc.Otp.Name))
+			copy(b, nc.Otp.Name[:])
+			if r, err := redisClient.Get(string(b)).Result(); err != nil {
+				log.Info(err)
+				go userLoginFailAck(ctx, &networking.Command{})
+			} else {
+				log.Infof("logging user using otp code: %v", r)
+				go userLoginAck(ctx, &networking.Command{})
+			}
+		}
+	}
 }
