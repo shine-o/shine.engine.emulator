@@ -5,6 +5,7 @@ import (
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.structs"
 	"strings"
+	"time"
 )
 
 // handle user, given his account
@@ -22,10 +23,13 @@ func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
 		} else {
 			wsi := ctx.Value("session")
 			ws := wsi.(*session)
-			// [ future game logic: anything that should be checked before allowing the account to connect to the world ]
 			userName := strings.TrimRight(string(nc.User.Name[:]), "\x00")
-			ws.userName = userName
-			go userLoginWorldAck(ctx, &networking.Command{})
+			ws.UserName = userName
+			if err := persistSession(ws); err != nil {
+				return
+			} else {
+				go userLoginWorldAck(ctx, &networking.Command{})
+			}
 		}
 	}
 }
@@ -35,9 +39,6 @@ func userWillWorldSelectReq(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-		wsi := ctx.Value("session")
-		ws := wsi.(*session)
-		log.Infof("session is %v", ws)
 		go userWillWorldSelectAck(ctx, &networking.Command{})
 	}
 }
@@ -48,7 +49,24 @@ func userWillWorldSelectAck(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		pc.Base.OperationCode = 3124
-		go networking.WriteToClient(ctx, pc)
+		otp := RandStringBytesMaskImprSrcUnsafe(32)
+		//otp := "a85472c3841de5fc22433560fe32a2a3"
+		if err := redisClient.Set(otp, otp, 20 * time.Second).Err(); err != nil {
+			// err opcode
+			return
+		} else {
+			nc := structs.NcUserWillWorldSelectAck{
+				Error: 7768,
+			}
+			data := make([]byte, 0)
+
+			if b, err := networking.WriteBinary(nc.Error); err == nil {
+				data = append(data, b...)
+			}
+			data = append(data, otp...)
+			pc.Base.Data = data
+			go networking.WriteToClient(ctx, pc)
+		}
 	}
 }
 
@@ -75,3 +93,12 @@ func userLoginWorldAck(ctx context.Context, pc *networking.Command) {
 
 	}
 }
+
+//func userLoginWorldFailAck(ctx context.Context, pc *networking.Command) {
+//	select {
+//	case <-ctx.Done():
+//		return
+//	default:
+//
+//	}
+//}

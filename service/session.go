@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/go-redis/redis/v7"
 	"github.com/google/uuid"
@@ -11,18 +12,18 @@ import (
 type sessionFactory struct {}
 
 type session struct {
-	id string
-	userName string
+	Id string `json:"id"`
+	UserName string `json:"user_name"`
 }
 
 func (s sessionFactory) New() networking.Session  {
-	return &session{
-		id:	fmt.Sprintf("world-%v", uuid.New().String()),
+	return &session {
+		Id:	uuid.New().String(),
 	}
 }
 
 func (s * session) Identifier() string  {
-	return s.id
+	return s.Id
 }
 
 var redisClient * redis.Client
@@ -30,7 +31,7 @@ var redisClient * redis.Client
 func initRedis()  {
 	host := viper.GetString("session.redis.host")
 	port := viper.GetString("session.redis.port")
-	db := viper.GetInt("session.redis.port")
+	db := viper.GetInt("session.redis.db")
 	addr := fmt.Sprintf("%v:%v", host, port)
 	log.Infof("initializing redis instance: %v", addr)
 	client := redis.NewClient(&redis.Options{
@@ -39,4 +40,20 @@ func initRedis()  {
 		DB:       db,  // use default DB
 	})
 	redisClient = client
+}
+
+func persistSession(ws *session) error {
+	if sd, err := json.Marshal(ws); err != nil {
+		log.Error(err)
+		return err
+	} else {
+		key := fmt.Sprintf("%v-world", ws.UserName)
+		if err := redisClient.Set(key, sd, 0).Err(); err != nil {
+			log.Error(err)
+			return err
+		} else {
+			log.Infof("persisting session %v -> %v", key, string(sd))
+			return nil
+		}
+	}
 }

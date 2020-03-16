@@ -25,6 +25,7 @@ func init() {
 }
 
 func Start(cmd *cobra.Command, args []string) {
+	initRedis()
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
