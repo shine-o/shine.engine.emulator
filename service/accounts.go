@@ -22,7 +22,6 @@ func authenticate(ctx context.Context, nc *structs.NcUserUsLoginReq) {
 		if database.Where("user_name = ?", userName).First(&user).RecordNotFound() {
 			go userLoginFailAck(ctx, &networking.Command{})
 		} else {
-			log.Info(user)
 			if user.Password == password {
 				go userLoginAck(ctx, &networking.Command{})
 			} else {

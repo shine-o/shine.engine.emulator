@@ -30,7 +30,7 @@ var redisClient * redis.Client
 func initRedis()  {
 	host := viper.GetString("session.redis.host")
 	port := viper.GetString("session.redis.port")
-	db := viper.GetInt("session.redis.port")
+	db := viper.GetInt("session.redis.db")
 
 	addr := fmt.Sprintf("%v:%v", host, port)
 	log.Infof("initializing redis instance: %v", addr)
