@@ -23,4 +23,4 @@ session:
   redis:
     host: 192.168.111.129
     port: 6379
-    db: 1
+    db: 0
