@@ -73,9 +73,7 @@ func (s *server) ConnectionInfo(ctx context.Context, req *lw.SelectedWorld) (*lw
 		if b, err := networking.WriteBinary(nc.Port); err == nil {
 			data = append(data, b...)
 		}
-
-		log.Info(hex.EncodeToString(data))
-
+		log.Infof("sending server connection info to client %v", hex.EncodeToString(data))
 		return &lw.WorldConnectionInfo{Info: data}, nil
 	}
 }
