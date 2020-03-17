@@ -14,10 +14,10 @@ jobs:
       # specify any bash command here prefixed with `run: `
       - run:
           name: download module dependencies
-          command: go get -u
+          command: go get -u -v -d
       - run:
           name: run tests
-          command: go test -v
+          command: go test --race -v
 #version: 2.1
 #jobs:
 #  build:
