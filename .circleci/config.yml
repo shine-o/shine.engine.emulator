@@ -16,8 +16,5 @@ jobs:
           name: download module dependencies
           command: go mod download
       - run:
-          name: build binary
-          command: GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o world
-      - run:
           name: run tests
           command: go test
