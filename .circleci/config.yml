@@ -17,4 +17,4 @@ jobs:
           command: go mod download
       - run:
           name: run tests
-          command: go test
+          command: go test -v
