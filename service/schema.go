@@ -18,6 +18,10 @@ type User struct {
 	Password string `gorm:"type:varchar(36);not null"`
 }
 
+func (User) TableName() string {
+	return "accounts.user"
+}
+
 func Migrate(cmd *cobra.Command, args []string) {
 	initDatabase()
 	defer database.Close()
@@ -53,7 +57,10 @@ func initDatabase() {
 }
 
 func migrations() {
+	database.Exec("CREATE SCHEMA IF NOT EXISTS accounts;")
+	//database.Exec("set search_path to accounts")
 	database.AutoMigrate(&User{})
+	//database.Sc
 }
 
 func purge() {
