@@ -3,26 +3,21 @@ module github.com/shine-o/shine.engine.login
 go 1.13
 
 require (
-	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-redis/redis/v7 v7.2.0
 	github.com/google/logger v1.0.1
 	github.com/google/uuid v1.1.1
 	github.com/jinzhu/gorm v1.9.12
 	github.com/lib/pq v1.3.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/pelletier/go-toml v1.6.0 // indirect
-	github.com/shine-o/shine.engine.networking v0.0.0-20200316164925-f46de98b7616
+	github.com/shine-o/shine.engine.networking v0.0.0-20200317193756-3f4ef9b27934
 	github.com/shine-o/shine.engine.protocol-buffers/login-world v0.0.0-20200314174953-2f346ed277bf
-	github.com/shine-o/shine.engine.structs v0.0.0-20200317104410-52f2373b49b1
-	github.com/spf13/afero v1.2.2 // indirect
-	github.com/spf13/cast v1.3.1 // indirect
+	github.com/shine-o/shine.engine.structs v0.0.0-20200317164417-264763e42420
+	github.com/shine-o/shine.engine.world v0.0.0-20200317162035-b5df72e4dc88
+	github.com/shine-o/shine.engine.world/service v0.0.0-20200314172549-7283ba661f79 // indirect
 	github.com/spf13/cobra v0.0.6
-	github.com/spf13/jwalterweatherman v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.6.2
-	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
-	golang.org/x/sys v0.0.0-20200316230553-a7d97aace0b0 // indirect
-	google.golang.org/genproto v0.0.0-20200316142031-303a05041dad // indirect
+	google.golang.org/genproto v0.0.0-20200317114155-1f3552e48f24 // indirect
 	google.golang.org/grpc v1.28.0
-	gopkg.in/ini.v1 v1.55.0 // indirect
 )
+
+replace github.com/shine-o/shine.engine.networking => C:\Users\marbo\go\src\github.com\shine-o\shine.engine.networking
