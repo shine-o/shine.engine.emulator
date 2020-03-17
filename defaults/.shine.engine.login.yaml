@@ -23,9 +23,10 @@ crypt:
 #  nc-data: "defaults/protocol-commands.yml"
 ### POSTGRES, alternatives can be added if required
 database:
-  host: 192.168.111.129
+#  host: 192.168.111.129
+  host: 192.168.1.238
   port: 5432
-  db_name: login
+  db_name: shine
   db_user: user
   db_password: password
 
