@@ -5,7 +5,7 @@
 
 ---
 <p align="left">
-    <a href="https://circleci.com/gh/shine-o/shine.engine.login/tree/dev"><img src="https://circleci.com/gh/shine-o/shine.engine.login/tree/dev.svg?style=shield" alt="Build Status"></a>
+    <a href="https://circleci.com/gh/shine-o/shine.engine.login/tree/master"><img src="https://circleci.com/gh/shine-o/shine.engine.login/tree/master.svg?style=shield" alt="Build Status"></a>
 </p>
 
 This project has dependencies on the modules: 
