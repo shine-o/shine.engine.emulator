@@ -34,3 +34,5 @@ jobs:
           failfast: true
           race: true
           verbose: true
+orbs:
+  go: circleci/go@x.y
