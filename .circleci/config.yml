@@ -8,19 +8,23 @@ jobs:
       # specify the version
       - image: circleci/golang:1.13
 
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
-    #### TEMPLATE_NOTE: go expects specific checkout path representing url
-    #### expecting it in the form of
-    ####   /go/src/github.com/circleci/go-tool
-    ####   /go/src/bitbucket.org/circleci/go-tool
     working_directory: /go/src/github.com/shine-o/shine.engine.login
     steps:
       - checkout
       # specify any bash command here prefixed with `run: `
-      - run: go mod download
-      - run: go build
-     # - run: go test -v ./...
+      - run:
+          name: download module dependencies
+          command: go mod download
+      - run:
+          name: build binary
+          command: GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o login
+      - setup_remote_docker:
+          # only available if you pay
+          # docker_layer_caching: true
+      - run:
+          name: build docker image and push upstream
+          command: |-
+              TAG=0.1.$CIRCLE_BUILD_NUM
+              docker build -t shineo/login:$TAG .
+              echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin
+              docker push shineo/login:$TAG
