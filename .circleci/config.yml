@@ -53,5 +53,5 @@ jobs:
           failfast: true
           race: true
 orbs:
-  go: circleci/go@0.1.6
+  go: circleci/go@1.1.0
 version: 2.1
