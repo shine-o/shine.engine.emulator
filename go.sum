@@ -104,12 +104,16 @@ github.com/russross/blackfriday/v2 v2.0.1 h1:lPqVAte+HuHNfhJ/0LC98ESWRz8afy9tM/0
 github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/shine-o/shine.engine.networking v0.0.0-20200315234331-f9946aa28246 h1:7IGMLWLlPWS3j9KlHnU2u5yuM8t7Mmq/R22wayDzFPY=
 github.com/shine-o/shine.engine.networking v0.0.0-20200315234331-f9946aa28246/go.mod h1:vEbiRw2o3Z4ZQGBqleLO4RGhqTDjfbTmpJfFJLl/XFU=
+github.com/shine-o/shine.engine.networking v0.0.0-20200316164925-f46de98b7616 h1:7FsK/Qzy6lLr+adz+bRdYt0rVjW16JvolMwI2ZDpjaE=
+github.com/shine-o/shine.engine.networking v0.0.0-20200316164925-f46de98b7616/go.mod h1:vEbiRw2o3Z4ZQGBqleLO4RGhqTDjfbTmpJfFJLl/XFU=
 github.com/shine-o/shine.engine.protocol-buffers/login-world v0.0.0-20200314174953-2f346ed277bf h1:kB/LCvD9qXpjvfrjTQv22O8R5heLRJJWga1SxQ0InzU=
 github.com/shine-o/shine.engine.protocol-buffers/login-world v0.0.0-20200314174953-2f346ed277bf/go.mod h1:fdrxi/z55uuazzZXOmKc7e9b0zNRvVX/PfUIanFqml4=
 github.com/shine-o/shine.engine.structs v0.0.0-20200314171927-3d86b5b8595d h1:KpSi7YiRqokP/0rm+VwGe6rq1ps5yTQGhQJeVlvRw2U=
 github.com/shine-o/shine.engine.structs v0.0.0-20200314171927-3d86b5b8595d/go.mod h1:AGsuJmxdOHMVm5C/V7fTAv2kY03cAzN1pkryoE1gnfQ=
 github.com/shine-o/shine.engine.structs v0.0.0-20200315221027-3b386251ad3b h1:EJKmsVYlVlUuJOF4s9yyOfvS5M8KtryunO5FotSvsJo=
 github.com/shine-o/shine.engine.structs v0.0.0-20200315221027-3b386251ad3b/go.mod h1:AGsuJmxdOHMVm5C/V7fTAv2kY03cAzN1pkryoE1gnfQ=
+github.com/shine-o/shine.engine.structs v0.0.0-20200316165411-0effe4c86cda h1:yooSYcVU3uCW5b30uf0ddnZ8+8HnrswecEB2kbuSvmw=
+github.com/shine-o/shine.engine.structs v0.0.0-20200316165411-0effe4c86cda/go.mod h1:AGsuJmxdOHMVm5C/V7fTAv2kY03cAzN1pkryoE1gnfQ=
 github.com/shurcooL/sanitized_anchor_name v1.0.0 h1:PdmoCO6wvbs+7yrJyMORt4/BmY5IYyJwS/kOiWx8mHo=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
@@ -195,6 +199,8 @@ google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8/go.mod h1:JiN7NxoA
 google.golang.org/genproto v0.0.0-20190819201941-24fa4b261c55/go.mod h1:DMBHOl98Agz4BDEuKkezgsaosCRResVns1a3J2ZsMNc=
 google.golang.org/genproto v0.0.0-20200313141609-30c55424f95d h1:pyQjO6BnPvrPMldYxgDlXq9PLahtc0EKnUTYX1pWwXU=
 google.golang.org/genproto v0.0.0-20200313141609-30c55424f95d/go.mod h1:55QSHmfGQM9UVYDPBsyGGes0y52j32PQ3BqQfXhyH3c=
+google.golang.org/genproto v0.0.0-20200316142031-303a05041dad h1:X7UJIdVkigJ9Se+KCiK9ERNUhYAmzSqPe/jIZPoODjw=
+google.golang.org/genproto v0.0.0-20200316142031-303a05041dad/go.mod h1:55QSHmfGQM9UVYDPBsyGGes0y52j32PQ3BqQfXhyH3c=
 google.golang.org/grpc v1.19.0/go.mod h1:mqu4LbDTu4XGKhr4mRzUsmM4RtVoemTSY81AxZiDr8c=
 google.golang.org/grpc v1.21.0/go.mod h1:oYelfM1adQP15Ek0mdvEgi9Df8B9CZIaU1084ijfRaM=
 google.golang.org/grpc v1.23.0/go.mod h1:Y5yQAOtifL1yxbo5wqy6BxZv8vAUGQwXBOALyacEbxg=
