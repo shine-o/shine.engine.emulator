@@ -1,11 +1,11 @@
 jobs:
+  install:
+    version: '1.13.6'
   build:
     executor:
       name: go/default
       tag: '1.13'
     steps:
-      - install:
-          version: 1.13.6
       - checkout
       - go/load-cache
       - go/mod-download
@@ -17,3 +17,7 @@ jobs:
 orbs:
   go: circleci/go@1.1.0
 version: 2.1
+  main:
+    jobs:
+      - install
+      - test
