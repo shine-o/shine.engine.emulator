@@ -17,6 +17,7 @@ jobs:
 orbs:
   go: circleci/go@1.1.0
 version: 2.1
+workflows:
   main:
     jobs:
       - install
