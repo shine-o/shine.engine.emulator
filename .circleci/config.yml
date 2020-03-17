@@ -1,49 +1,11 @@
-# Golang CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-go/ for more details
-#version: 2
-#jobs:
-#  build:
-#    docker:
-#      # specify the version
-#      - image: circleci/golang:1.13.6
-#
-#    working_directory: /go/src/github.com/shine-o/shine.engine.networking
-#    steps:
-#      - checkout
-#      # specify any bash command here prefixed with `run: `
-#      - run:
-#          name: download module dependencies
-#          command: go get -u -v -d
-#      - run:
-#          name: run tests
-#          command: go test --race -v
-
-#version: 2.1
-#jobs:
-#  build:
-#    executor:
-#      name: go/default
-#      tag: '1.13'
-#    steps:
-#      - checkout
-#      - go/load-cache
-#      - go/mod-download
-#      - go/save-cache
-#      - go/test:
-#          covermode: atomic
-#          failfast: true
-#          race: true
-#          verbose: true
-#orbs:
-#  go: circleci/go@1.13
-
 jobs:
   build:
     executor:
       name: go/default
       tag: '1.13'
     steps:
+      - install:
+          version: 1.13.6
       - checkout
       - go/load-cache
       - go/mod-download
