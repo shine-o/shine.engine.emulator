@@ -2,6 +2,8 @@
 # Shine Engine World Service
 
 > Emulated World service.
+---
+ [![CircleCI](https://circleci.com/gh/shine-o/shine.engine.world/tree/master.svg?style=shield)](https://circleci.com/gh/shine-o/shine.engine.world/tree/master.svg?style=shield)
 
 
 This project has dependencies on the modules: 
