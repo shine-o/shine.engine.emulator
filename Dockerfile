@@ -10,7 +10,7 @@ RUN apk add -U --no-cache ca-certificates
 FROM scratch
 
 COPY --from=0 /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
-COPY login /usr/bin/hydra
+COPY login /usr/bin/login
 
 USER 1000
 
