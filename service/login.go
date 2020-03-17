@@ -2,142 +2,80 @@ package service
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
-	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.networking"
-	"github.com/spf13/cobra"
+	"github.com/shine-o/shine.engine.structs"
 	"github.com/spf13/viper"
-	"google.golang.org/grpc"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"sync"
-	"time"
+	"reflect"
+	"strings"
 )
 
-type RpcClients struct {
-	services map[string]*grpc.ClientConn
-	mu       sync.Mutex
+type LoginCommand struct {
+	pc * networking.Command
 }
 
-var (
-	log   *logger.Logger
-	grpcc *RpcClients
-)
-
-func init() {
-	log = logger.Init("LoginLogger", true, true, ioutil.Discard)
-	log.Info("LoginLogger init()")
-}
-
-func Start(cmd *cobra.Command, args []string) {
-	initDatabase()
-	initRedis()
-
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cleanupRPC()
-	defer cancel()
-
-	s := &networking.Settings{}
-
-	if xk, err := hex.DecodeString(viper.GetString("crypt.xorKey")); err != nil {
-		log.Error(err)
-		os.Exit(1)
-	} else {
-		s.XorKey = xk
+// check that the client version is correct
+func (lc * LoginCommand) checkClientVersion(ctx context.Context) ([]byte, error) {
+	select {
+	case <- ctx.Done():
+		return nil, fmt.Errorf("cancel signal received")
+	default:
+		var data []byte
+		if s, ok := lc.pc.NcStruct.(structs.NcUserClientVersionCheckReq); ok {
+			vk := strings.TrimRight(string(s.VersionKey[:]), "\x00")
+			if vk == viper.GetString("crypt.client_version") {
+				// xtrap info goes here, but we dont use xtrap so we don't have to send anything.
+				return data, nil
+			} else {
+				return data, fmt.Errorf("client sent incorrect client version key %v", vk)
+			}
+		} else {
+			return data, fmt.Errorf("bad NcStruct: %v", reflect.TypeOf(lc.pc.NcStruct).String())
+		}
 	}
-
-	s.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
-
-	if path, err := filepath.Abs(viper.GetString("protocol.nc-data")); err != nil {
-		log.Error(err)
-	} else {
-		s.CommandsFilePath = path
-	}
-
-	ch := make(map[uint16]func(ctx context.Context, pc *networking.Command))
-	ch[3173] = userClientVersionCheckReq
-	ch[3162] = userUsLoginReq
-	ch[3076] = userXtrapReq
-	ch[3099] = userWorldStatusReq
-	ch[3083] = userWorldSelectReq
-	ch[3096] = userNormalLogoutCmd
-
-	ch[3127] = userLoginWithOtpReq
-
-	hw := networking.NewHandlerWarden(ch)
-
-	ss := networking.NewShineService(s, hw)
-	wsf := &sessionFactory{}
-	ss.UseSessionFactory(wsf)
-	grpcc = gRpcClients(ctx)
-
-	ss.Listen(ctx)
 }
 
-// dial gRPC services that are needed.
-func gRpcClients(ctx context.Context) *RpcClients {
+// check against database that the user name and password combination are correct
+func  (lc * LoginCommand) checkCredentials(ctx context.Context) ([]byte, error) {
+	return nil, nil
+}
+
+// check the world service is up and running
+func (lc * LoginCommand) checkWorldStatus(ctx context.Context) ([]byte, error) {
+	return nil, nil
+}
+
+// request info about selected world
+func (lc * LoginCommand) userSelectedServer(ctx context.Context) ([]byte, error) {
+	return nil, nil
+}
+
+// verify the token matches the one stored [on redis] by the world service
+func (lc * LoginCommand) loginByCode(ctx context.Context) ([]byte, error) {
+	return nil, nil
+}
+
+
+func authenticate(ctx context.Context, nc *structs.NcUserUsLoginReq) {
 	select {
 	case <-ctx.Done():
-		return &RpcClients{}
+		go userLoginFailAck(ctx, &networking.Command{})
+		return
 	default:
-		inRPC := &RpcClients{
-			services: make(map[string]*grpc.ClientConn),
-		}
+		un := nc.UserName[:]
+		pass := nc.Password[:]
+		userName := strings.TrimRight(string(un), "\x00")
+		password := strings.TrimRight(string(pass), "\x00")
 
-		if viper.IsSet("gRPC.services.external") {
-			// snippet for loading yaml array
-			services := make([]map[string]string, 0)
-			var m map[string]string
-			servicesI := viper.Get("gRPC.services.external")
-			servicesS := servicesI.([]interface{})
-			for _, s := range servicesS {
-				serviceMap := s.(map[interface{}]interface{})
-				m = make(map[string]string)
-				for k, v := range serviceMap {
-					m[k.(string)] = v.(string)
-				}
-				services = append(services, m)
-			}
-
-			for _, v := range services {
-				address := fmt.Sprintf("%v:%v", v["host"], v["port"])
-				conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
-				if err != nil {
-					log.Error("could not connect service %v : %v", v["name"], err)
-					os.Exit(1)
-				}
-				log.Infof("Loading gRPC client connections %v@%v:%v", v["name"], v["host"], v["port"])
-				inRPC.services[v["name"]] = conn
-				go statusConn(ctx, v, conn)
-			}
-		}
-		return inRPC
-	}
-}
-
-func statusConn(ctx context.Context, service map[string]string, conn *grpc.ClientConn) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			time.Sleep(15 * time.Second)
-			log.Infof("[%v] gRPC client connection: %v@%v:%v ", conn.GetState(), service["name"], service["host"], service["port"])
-		}
-	}
-}
-
-func cleanupRPC() {
-	grpcc.mu.Lock()
-	for _, s := range grpcc.services {
-		if err := s.Close(); err != nil {
-			log.Error(err)
+		var user User
+		if database.Where("user_name = ?", userName).First(&user).RecordNotFound() {
+			go userLoginFailAck(ctx, &networking.Command{})
 		} else {
-			log.Info("Closing down external gRPC connection")
+			if user.Password == password {
+				go userLoginAck(ctx, &networking.Command{})
+			} else {
+				go userLoginFailAck(ctx, &networking.Command{})
+			}
 		}
 	}
-	grpcc.mu.Unlock()
 }
