@@ -53,9 +53,5 @@ jobs:
           failfast: true
           race: true
 orbs:
-  go: circleci/go
+  go: circleci/go@1.13
 version: 2.1
-workflows:
-  main:
-    jobs:
-      - build
