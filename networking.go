@@ -4,20 +4,18 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/google/logger"
 	"github.com/spf13/viper"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"sync"
 	"time"
 )
 
-func init() {
-	log = logger.Init("NetworkingLogger", true, true, ioutil.Discard)
-	log.Info("Networking Logger init()")
-}
+//func init() {
+//	log = logger.Init("NetworkingLogger", true, false, ioutil.Discard)
+//	log.Info("Networking Logger init()")
+//}
 
 type clientReader struct {
 	r  *bufio.Reader
