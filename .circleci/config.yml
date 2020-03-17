@@ -28,7 +28,8 @@ jobs:
           name: build binary
           command: GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o login
       - setup_remote_docker:
-          docker_layer_caching: true
+          # only available if you pay
+          # docker_layer_caching: true
       - run:
           name: build docker image and push upstream
           command: |-
