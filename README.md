@@ -3,6 +3,11 @@
 
 > Emulated login service.
 
+---
+<p align="left">
+    <a href="https://circleci.com/gh/shine-o/shine.engine.login/tree/dev"><img src="https://circleci.com/gh/shine-o/shine.engine.login/tree/dev.svg?style=shield" alt="Build Status"></a>
+</p>
+
 This project has dependencies on the modules: 
 
 - [Networking](https://github.com/shine-o/shine.engine.networking)
