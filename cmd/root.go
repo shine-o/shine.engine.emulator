@@ -85,7 +85,7 @@ func initConfig() {
 		// Search config in home directory with name ".shine.engine.login" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".shine.engine.login")
+		viper.SetConfigName(".login")
 	}
 
 	// If a config file is found, read it in.

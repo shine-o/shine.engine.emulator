@@ -22,7 +22,7 @@ func (lc * LoginCommand) checkClientVersion(ctx context.Context) ([]byte, error)
 	default:
 		var data []byte
 		if s, ok := lc.pc.NcStruct.(structs.NcUserClientVersionCheckReq); ok {
-			vk := strings.TrimRight(string(s.VersionKey[1:33]), "\x00") // will replace with direct binary comparison
+			vk := strings.TrimRight(string(s.VersionKey[:33]), "\x00") // will replace with direct binary comparison
 			if vk == viper.GetString("crypt.client_version") {
 				// xtrap info goes here, but we dont use xtrap so we don't have to send anything.
 				return data, nil

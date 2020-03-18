@@ -15,14 +15,20 @@ func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-
-		nc := &structs.NcUserClientVersionCheckReq{}
-
-		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
-			// TODO: define steps for this kind of errors, either kill the connection or send error code
+		nc := structs.NcUserClientVersionCheckReq{}
+		if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			log.Error(err)
+			go userClientWrongVersionAck(ctx, &networking.Command{})
 		} else {
-			// method for checking version
-			go userClientVersionCheckAck(ctx, &networking.Command{}) // will be triggered by method
+			pc.NcStruct = nc
+			lc := &LoginCommand{pc:pc}
+
+			if _, err := lc.checkClientVersion(ctx); err != nil {// data is irrelevant in this call
+				log.Error(err)
+				go userClientWrongVersionAck(ctx, &networking.Command{})
+			} else {
+				go userClientVersionCheckAck(ctx, &networking.Command{}) // will be triggered by method
+			}
 		}
 	}
 }
@@ -34,6 +40,18 @@ func userClientVersionCheckAck(ctx context.Context, pc *networking.Command) {
 	default:
 		base := networking.CommandBase{}
 		base.OperationCode = 3175
+		pc.Base = base
+		go networking.WriteToClient(ctx, pc)
+	}
+}
+
+func userClientWrongVersionAck(ctx context.Context, pc *networking.Command) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		base := networking.CommandBase{}
+		base.OperationCode = 3176
 		pc.Base = base
 		go networking.WriteToClient(ctx, pc)
 	}
