@@ -26,11 +26,6 @@ var (
 	grpcc *RpcClients
 )
 
-//func init() {
-//	log = logger.Init("LoginLogger", true, false, ioutil.Discard)
-//	log.Info("LoginLogger init()")
-//}
-
 // handle here command args if necessary
 func Start(cmd *cobra.Command, args []string) {
 	start()
