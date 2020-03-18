@@ -78,15 +78,15 @@ func start() {
 	ss := networking.NewShineService(s, hw)
 	wsf := &sessionFactory{}
 	ss.UseSessionFactory(wsf)
-	grpcc = gRpcClients(ctx)
+	gRpcClients(ctx)
 	ss.Listen(ctx)
 }
 
 // dial gRPC services that are needed.
-func gRpcClients(ctx context.Context) *RpcClients {
+func gRpcClients(ctx context.Context) {
 	select {
 	case <-ctx.Done():
-		return &RpcClients{}
+		return
 	default:
 		inRPC := &RpcClients{
 			services: make(map[string]*grpc.ClientConn),
@@ -118,8 +118,8 @@ func gRpcClients(ctx context.Context) *RpcClients {
 				inRPC.services[v["name"]] = conn
 				go statusConn(ctx, v, conn)
 			}
+			grpcc = inRPC
 		}
-		return inRPC
 	}
 }
 

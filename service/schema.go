@@ -41,11 +41,11 @@ func Migrate(cmd *cobra.Command, args []string) {
 
 func initDatabase() {
 	var (
-		dbUser     = viper.GetString("database.db_user")
-		dbPassword = viper.GetString("database.db_password")
-		host       = viper.GetString("database.host")
-		port       = viper.GetString("database.port")
-		dbName     = viper.GetString("database.db_name")
+		dbUser     = viper.GetString("database.postgres.db_user")
+		dbPassword = viper.GetString("database.postgres.db_password")
+		host       = viper.GetString("database.postgres.host")
+		port       = viper.GetString("database.postgres.port")
+		dbName     = viper.GetString("database.postgres.db_name")
 	)
 	dsn := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable", dbUser, dbPassword, host, port, dbName)
 	if db, err := gorm.Open("postgres", dsn); err != nil {

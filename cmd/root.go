@@ -100,10 +100,10 @@ func initConfig() {
 	viper.SetDefault("protocol.nc-data", "defaults/protocol-commands.yml")
 
 	requiredParams := []string{
-		"database.host",
-		"database.port",
-		"database.db_user",
-		"database.db_password",
+		"database.postgres.host",
+		"database.postgres.port",
+		"database.postgres.db_user",
+		"database.postgres.db_password",
 	}
 	for _, rp := range requiredParams {
 		if !viper.IsSet(rp) {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/shine-o/shine.engine.networking"
+	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
 	"github.com/shine-o/shine.engine.structs"
 	"github.com/spf13/viper"
 	"reflect"
@@ -71,8 +72,6 @@ func  (lc * LoginCommand) checkCredentials(ctx context.Context) error {
 				return BC
 			}
 
-			//log.Info(user)
-
 		} else {
 			return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
 		}
@@ -80,41 +79,62 @@ func  (lc * LoginCommand) checkCredentials(ctx context.Context) error {
 }
 
 // check the world service is up and running
-func (lc * LoginCommand) checkWorldStatus(ctx context.Context) ([]byte, error) {
-	return nil, nil
+func (lc * LoginCommand) checkWorldStatus(ctx context.Context) error {
+	select {
+	case <- ctx.Done():
+		return CC
+	default:
+		grpcc.mu.Lock()
+		conn := grpcc.services["world"]
+		state := conn.GetState().String()
+		grpcc.mu.Unlock()
+
+		if state == "READY" || state == "IDLE" {
+			return nil
+		} else {
+			return WTO
+		}
+	}
 }
 
 // request info about selected world
 func (lc * LoginCommand) userSelectedServer(ctx context.Context) ([]byte, error) {
-	return nil, nil
+	var data []byte
+	select {
+	case <- ctx.Done():
+		return data, CC
+	default:
+		grpcc.mu.Lock()
+		conn := grpcc.services["world"]
+		c := lw.NewWorldClient(conn)
+		grpcc.mu.Unlock()
+
+		rpcCtx, _ := context.WithTimeout(context.Background(), gRpcTimeout)
+
+		if r, err := c.ConnectionInfo(rpcCtx, &lw.SelectedWorld{Num: 1}); err != nil {
+			return data, err
+		} else {
+			return r.Info, nil
+		}
+	}
 }
 
 // verify the token matches the one stored [on redis] by the world service
-func (lc * LoginCommand) loginByCode(ctx context.Context) ([]byte, error) {
-	return nil, nil
-}
-
-
-func authenticate(ctx context.Context, nc *structs.NcUserUsLoginReq) {
+func (lc * LoginCommand) loginByCode(ctx context.Context) error {
 	select {
-	case <-ctx.Done():
-		go userLoginFailAck(ctx, &networking.Command{})
-		return
+	case <- ctx.Done():
+		return CC
 	default:
-		un := nc.UserName[:]
-		pass := nc.Password[:]
-		userName := strings.TrimRight(string(un), "\x00")
-		password := strings.TrimRight(string(pass), "\x00")
-
-		var user User
-		if database.Where("user_name = ?", userName).First(&user).RecordNotFound() {
-			go userLoginFailAck(ctx, &networking.Command{})
-		} else {
-			if user.Password == password {
-				go userLoginAck(ctx, &networking.Command{})
+		if ncs, ok := lc.pc.NcStruct.(structs.NcUserLoginWithOtpReq); ok {
+			b := make([]byte, len(ncs.Otp.Name))
+			copy(b, ncs.Otp.Name[:])
+			if _, err := redisClient.Get(string(b)).Result(); err != nil {
+				return err
 			} else {
-				go userLoginFailAck(ctx, &networking.Command{})
+				return nil
 			}
+		} else {
+			return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
 		}
 	}
 }

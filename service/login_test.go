@@ -12,9 +12,13 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 )
 
 func TestMain(m *testing.M) {
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	log = logger.Init("test logger", true, true, ioutil.Discard)
 	log.Info("test logger")
 	if path, err := filepath.Abs("../defaults"); err != nil {
@@ -36,10 +40,10 @@ func TestMain(m *testing.M) {
 		viper.SetDefault("protocol.nc-data", "defaults/protocol-commands.yml")
 
 		requiredParams := []string{
-			"database.host",
-			"database.port",
-			"database.db_user",
-			"database.db_password",
+			"database.postgres.host",
+			"database.postgres.port",
+			"database.postgres.db_user",
+			"database.postgres.db_password",
 		}
 		for _, rp := range requiredParams {
 			if !viper.IsSet(rp) {
@@ -48,6 +52,8 @@ func TestMain(m *testing.M) {
 		}
 	}
 	initDatabase()
+	initRedis()
+	gRpcClients(ctx)
 	os.Exit(m.Run())
 }
 
@@ -87,7 +93,6 @@ func TestCheckCredentials(t *testing.T) {
 	defer cancel()
 	// sniffer output -> {"packetType":"big","length":318,"department":3,"command":"5A","opCode":3162,"data":"61646d696e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003231323332663239376135376135613734333839346130653461383031666333000000004f726967696e616c000000000000000000000000","rawData":"005a0c5a0c61646d696e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003231323332663239376135376135613734333839346130653461383031666333000000004f726967696e616c000000000000000000000000","friendlyName":"NC_USER_US_LOGIN_REQ"}
 	if data, err := hex.DecodeString("003e015a0c61646d696e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000003231323332663239376135376135613734333839346130653461383031666333000000004f726967696e616c000000000000000000000000"); err != nil {
-
 		t.Error(err)
 	} else {
 		if pc, err := networking.DecodePacket("big", 318, data[3:]); err != nil { // from index 3, as previous bytes are length info for this packet
@@ -109,8 +114,86 @@ func TestCheckCredentials(t *testing.T) {
 	}
 }
 
-//func TestCheckWorldStatus(t *testing.T) {}
+// depends on external service and manages no data
+// for completeness sake, test it returns correct ERROR
+func TestCheckWorldStatus(t *testing.T) {
+	// timeout
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	lc := LoginCommand{}
+	if err := lc.checkWorldStatus(ctx); err != nil {
+		t.Error(err)
+	}
+}
+
+// depends on external service and data is handled on the server side
+func TestUserSelectedServer(t *testing.T) {
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	// sniffer output -> {"packetType":"small","length":3,"department":3,"command":"B","opCode":3083,"data":"00","rawData":"030b0c00","friendlyName":"NC_USER_WORLDSELECT_REQ"}
+	if data, err := hex.DecodeString("030b0c00"); err != nil {
+		t.Error(err)
+	} else {
+		if pc, err := networking.DecodePacket("small", 3, data[1:]); err != nil { // from index 1, as previous bytes are length info for this packet
+			t.Error(err)
+		} else {
+			nc := structs.NcUserUsLoginReq{}
+			if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+				t.Error(err)
+			} else {
+				pc.NcStruct = nc
+				lc := LoginCommand{
+					pc: &pc,
+				}
+				if data, err := lc.userSelectedServer(ctx); err != nil {
+					t.Error(err)
+				} else {
+					rnc := structs.NcUserWorldSelectAck{}
+					if err := networking.ReadBinary(data, &rnc); err != nil {
+						t.Error(err)
+					} else {
+						if rnc.WorldStatus != byte(6) {
+							t.Errorf("unexpected world status %v", rnc.WorldStatus)
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 //
-//func TestUserSelectedServer(t *testing.T) {}
-//
-//func TestLoginByCode(t *testing.T) {}
+func TestLoginByCode(t *testing.T) {
+	// setup dummy otp token in redis store
+	otp := "tEGMohMSNboCclYHGIXUOGHKZTKcjLfr"
+	if err := redisClient.Set(otp, otp, 20 * time.Second).Err(); err != nil {
+		t.Error(err)
+	} else {
+		ctx := context.Background()
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		// sniffer output -> {"packetType":"small","length":34,"department":3,"command":"37","opCode":3127,"data":"7445474d6f684d534e626f43636c5948474958554f47484b5a544b636a4c6672","rawData":"22370c7445474d6f684d534e626f43636c5948474958554f47484b5a544b636a4c6672","friendlyName":"NC_USER_LOGIN_WITH_OTP_REQ"}
+		if data, err := hex.DecodeString("22370c7445474d6f684d534e626f43636c5948474958554f47484b5a544b636a4c6672"); err != nil {
+			t.Error(err)
+		} else {
+			if pc, err := networking.DecodePacket("small", 34, data[1:]); err != nil { // from index 1, as previous bytes are length info for this packet
+				t.Error(err)
+			} else {
+				nc := structs.NcUserLoginWithOtpReq{}
+				if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+					t.Error(err)
+				} else {
+					pc.NcStruct = nc
+					lc := LoginCommand{
+						pc: &pc,
+					}
+					if err := lc.loginByCode(ctx); err != nil {
+						t.Error(err)
+					}
+				}
+			}
+		}
+	}
+}
