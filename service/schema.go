@@ -4,10 +4,12 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"github.com/google/logger"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"io/ioutil"
 )
 
 var database *gorm.DB
@@ -23,9 +25,10 @@ func (User) TableName() string {
 }
 
 func Migrate(cmd *cobra.Command, args []string) {
+	log = logger.Init("Database Logger", true, false, ioutil.Discard)
+	log.Info("Database Logger Migrate()")
 	initDatabase()
 	defer database.Close()
-
 	if yes, err := cmd.Flags().GetBool("fixtures"); err != nil {
 		log.Error(err)
 	} else {
@@ -41,11 +44,11 @@ func Migrate(cmd *cobra.Command, args []string) {
 
 func initDatabase() {
 	var (
-		dbUser     = viper.GetString("database.db_user")
-		dbPassword = viper.GetString("database.db_password")
-		host       = viper.GetString("database.host")
-		port       = viper.GetString("database.port")
-		dbName     = viper.GetString("database.db_name")
+		dbUser     = viper.GetString("database.postgres.db_user")
+		dbPassword = viper.GetString("database.postgres.db_password")
+		host       = viper.GetString("database.postgres.host")
+		port       = viper.GetString("database.postgres.port")
+		dbName     = viper.GetString("database.postgres.db_name")
 	)
 	dsn := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable", dbUser, dbPassword, host, port, dbName)
 	if db, err := gorm.Open("postgres", dsn); err != nil {
@@ -58,9 +61,7 @@ func initDatabase() {
 
 func migrations() {
 	database.Exec("CREATE SCHEMA IF NOT EXISTS accounts;")
-	//database.Exec("set search_path to accounts")
 	database.AutoMigrate(&User{})
-	//database.Sc
 }
 
 func purge() {

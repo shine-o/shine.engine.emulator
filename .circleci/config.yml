@@ -5,8 +5,19 @@ version: 2
 jobs:
   build:
     docker:
-      # specify the version
-      - image: circleci/golang:1.13
+      # primary image, where commands are run
+      - image: shineo/golang:1.13.6-alpine3.10
+      # secondary images, needed for running tests
+      - image: redis:alpine3.11
+        name: redis
+        command: ["redis-server"]
+      - image: postgres:12.2-alpine
+        name: postgres
+        environment:
+        - POSTGRES_DB=shine
+        - POSTGRES_USER=user
+        - POSTGRES_PASSWORD=password
+        command: ["postgres"]
 
     working_directory: /go/src/github.com/shine-o/shine.engine.login
     steps:
@@ -18,13 +29,15 @@ jobs:
       - run:
           name: build binary
           command: GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o login
+      - run:
+          name: migrate test database
+          command: ./login migrate --config "defaults/.login.circleci.yaml" --fixtures "true"
+      - run:
+          name: run tests
+          command: go test github.com/shine-o/shine.engine.login/service
       - setup_remote_docker:
           # only available if you pay
           # docker_layer_caching: true
       - run:
           name: build docker image and push upstream
-          command: |-
-              TAG=$CIRCLE_BRANCH-0.1.$CIRCLE_BUILD_NUM
-              docker build -t shineo/login:$TAG .
-              echo $DOCKER_PASSWORD | docker login -u $DOCKER_USER --password-stdin
-              docker push shineo/login:$TAG
+          command: /root/docker-image.sh

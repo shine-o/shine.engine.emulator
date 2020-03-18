@@ -2,142 +2,139 @@ package service
 
 import (
 	"context"
-	"encoding/hex"
+	"errors"
 	"fmt"
-	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.networking"
-	"github.com/spf13/cobra"
+	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
+	"github.com/shine-o/shine.engine.structs"
 	"github.com/spf13/viper"
-	"google.golang.org/grpc"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"sync"
-	"time"
+	"reflect"
+	"strings"
 )
 
-type RpcClients struct {
-	services map[string]*grpc.ClientConn
-	mu       sync.Mutex
+var WTO = errors.New("world timed out")
+var UNF = errors.New("user not found")
+var CC = errors.New("context was canceled")
+var BC = errors.New("bad credentials")
+var DBE = errors.New("database exception")
+
+type LoginCommand struct {
+	pc * networking.Command
 }
 
-var (
-	log   *logger.Logger
-	grpcc *RpcClients
-)
-
-func init() {
-	log = logger.Init("LoginLogger", true, true, ioutil.Discard)
-	log.Info("LoginLogger init()")
-}
-
-func Start(cmd *cobra.Command, args []string) {
-	initDatabase()
-	initRedis()
-
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cleanupRPC()
-	defer cancel()
-
-	s := &networking.Settings{}
-
-	if xk, err := hex.DecodeString(viper.GetString("crypt.xorKey")); err != nil {
-		log.Error(err)
-		os.Exit(1)
-	} else {
-		s.XorKey = xk
+// check that the client version is correct
+func (lc * LoginCommand) checkClientVersion(ctx context.Context) ([]byte, error) {
+	var data []byte
+	select {
+	case <- ctx.Done():
+		return data, CC
+	default:
+		if ncs, ok := lc.pc.NcStruct.(structs.NcUserClientVersionCheckReq); ok {
+			vk := strings.TrimRight(string(ncs.VersionKey[:33]), "\x00") // will replace with direct binary comparison
+			if vk == viper.GetString("crypt.client_version") {
+				// xtrap info goes here, but we dont use xtrap so we don't have to send anything.
+				return data, nil
+			} else {
+				return data, fmt.Errorf("client sent incorrect client version key:%v", vk)
+			}
+		} else {
+			return data, fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
+		}
 	}
-
-	s.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
-
-	if path, err := filepath.Abs(viper.GetString("protocol.nc-data")); err != nil {
-		log.Error(err)
-	} else {
-		s.CommandsFilePath = path
-	}
-
-	ch := make(map[uint16]func(ctx context.Context, pc *networking.Command))
-	ch[3173] = userClientVersionCheckReq
-	ch[3162] = userUsLoginReq
-	ch[3076] = userXtrapReq
-	ch[3099] = userWorldStatusReq
-	ch[3083] = userWorldSelectReq
-	ch[3096] = userNormalLogoutCmd
-
-	ch[3127] = userLoginWithOtpReq
-
-	hw := networking.NewHandlerWarden(ch)
-
-	ss := networking.NewShineService(s, hw)
-	wsf := &sessionFactory{}
-	ss.UseSessionFactory(wsf)
-	grpcc = gRpcClients(ctx)
-
-	ss.Listen(ctx)
 }
 
-// dial gRPC services that are needed.
-func gRpcClients(ctx context.Context) *RpcClients {
+// check against database that the user name and password combination are correct
+func  (lc * LoginCommand) checkCredentials(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
-		return &RpcClients{}
+		return CC
 	default:
-		inRPC := &RpcClients{
-			services: make(map[string]*grpc.ClientConn),
-		}
+		if ncs, ok := lc.pc.NcStruct.(structs.NcUserUsLoginReq); ok {
+			un := ncs.UserName[:]
+			pass := ncs.Password[:]
+			userName := strings.TrimRight(string(un), "\x00")
+			password := strings.TrimRight(string(pass), "\x00")
 
-		if viper.IsSet("gRPC.services.external") {
-			// snippet for loading yaml array
-			services := make([]map[string]string, 0)
-			var m map[string]string
-			servicesI := viper.Get("gRPC.services.external")
-			servicesS := servicesI.([]interface{})
-			for _, s := range servicesS {
-				serviceMap := s.(map[interface{}]interface{})
-				m = make(map[string]string)
-				for k, v := range serviceMap {
-					m[k.(string)] = v.(string)
+			var user User
+			db := database.Where("user_name = ?", userName).First(&user)
+
+			if len(db.GetErrors()) > 0 {
+				if db.RecordNotFound() {
+					return UNF
+				} else {
+					return fmt.Errorf("%v: [ %v ]", DBE, db.GetErrors())
 				}
-				services = append(services, m)
 			}
 
-			for _, v := range services {
-				address := fmt.Sprintf("%v:%v", v["host"], v["port"])
-				conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
-				if err != nil {
-					log.Error("could not connect service %v : %v", v["name"], err)
-					os.Exit(1)
-				}
-				log.Infof("Loading gRPC client connections %v@%v:%v", v["name"], v["host"], v["port"])
-				inRPC.services[v["name"]] = conn
-				go statusConn(ctx, v, conn)
+			if user.Password == password {
+				return nil
+			} else {
+				return BC
 			}
-		}
-		return inRPC
-	}
-}
 
-func statusConn(ctx context.Context, service map[string]string, conn *grpc.ClientConn) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			time.Sleep(15 * time.Second)
-			log.Infof("[%v] gRPC client connection: %v@%v:%v ", conn.GetState(), service["name"], service["host"], service["port"])
-		}
-	}
-}
-
-func cleanupRPC() {
-	grpcc.mu.Lock()
-	for _, s := range grpcc.services {
-		if err := s.Close(); err != nil {
-			log.Error(err)
 		} else {
-			log.Info("Closing down external gRPC connection")
+			return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
 		}
 	}
-	grpcc.mu.Unlock()
+}
+
+// check the world service is up and running
+func (lc * LoginCommand) checkWorldStatus(ctx context.Context) error {
+	select {
+	case <- ctx.Done():
+		return CC
+	default:
+		grpcc.mu.Lock()
+		conn := grpcc.services["world"]
+		state := conn.GetState().String()
+		grpcc.mu.Unlock()
+
+		if state == "READY" || state == "IDLE" {
+			return nil
+		} else {
+			return WTO
+		}
+	}
+}
+
+// request info about selected world
+func (lc * LoginCommand) userSelectedServer(ctx context.Context) ([]byte, error) {
+	var data []byte
+	select {
+	case <- ctx.Done():
+		return data, CC
+	default:
+		grpcc.mu.Lock()
+		conn := grpcc.services["world"]
+		c := lw.NewWorldClient(conn)
+		grpcc.mu.Unlock()
+
+		rpcCtx, _ := context.WithTimeout(context.Background(), gRpcTimeout)
+
+		if r, err := c.ConnectionInfo(rpcCtx, &lw.SelectedWorld{Num: 1}); err != nil {
+			return data, err
+		} else {
+			return r.Info, nil
+		}
+	}
+}
+
+// verify the token matches the one stored [on redis] by the world service
+func (lc * LoginCommand) loginByCode(ctx context.Context) error {
+	select {
+	case <- ctx.Done():
+		return CC
+	default:
+		if ncs, ok := lc.pc.NcStruct.(structs.NcUserLoginWithOtpReq); ok {
+			b := make([]byte, len(ncs.Otp.Name))
+			copy(b, ncs.Otp.Name[:])
+			if _, err := redisClient.Get(string(b)).Result(); err != nil {
+				return err
+			} else {
+				return nil
+			}
+		} else {
+			return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
+		}
+	}
 }
