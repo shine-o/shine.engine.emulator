@@ -13,8 +13,6 @@ import (
 )
 
 func TestMain(m *testing.M) {
-
-	// Search config in home directory with name ".shine.engine.login" (without extension).
 	if path, err := filepath.Abs("../defaults"); err != nil {
 		log.Fatal(err)
 	} else {
@@ -45,7 +43,6 @@ func TestMain(m *testing.M) {
 			}
 		}
 	}
-
 	os.Exit(m.Run())
 }
 
@@ -53,13 +50,12 @@ func TestCheckClientVersion(t *testing.T) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	// sniffer output
-	// {"packetType":"small","length":66,"department":3,"command":"65","opCode":3173,"data":"656265393531323930626535623435663166623037356635353035613930623600ad5f76d8f61e1630ad5f7678fc1900c5b88d00fc17dd020118dd0200000000","rawData":"42650c656265393531323930626535623435663166623037356635353035613930623600ad5f76d8f61e1630ad5f7678fc1900c5b88d00fc17dd020118dd0200000000","friendlyName":"NC_USER_CLIENT_VERSION_CHECK_REQ"}
+	// sniffer output -> {"packetType":"small","length":66,"department":3,"command":"65","opCode":3173,"data":"656265393531323930626535623435663166623037356635353035613930623600ad5f76d8f61e1630ad5f7678fc1900c5b88d00fc17dd020118dd0200000000","rawData":"42650c656265393531323930626535623435663166623037356635353035613930623600ad5f76d8f61e1630ad5f7678fc1900c5b88d00fc17dd020118dd0200000000","friendlyName":"NC_USER_CLIENT_VERSION_CHECK_REQ"}
 	if data, err := hex.DecodeString("42650c656265393531323930626535623435663166623037356635353035613930623600ad5f76d8f61e1630ad5f7678fc1900c5b88d00fc17dd020118dd0200000000"); err != nil {
 		t.Error(err)
 	} else {
 
-		if pc, err := networking.DecodePacket("small", 66, data); err != nil {
+		if pc, err := networking.DecodePacket("small", 66, data[1:]); err != nil {// from index 1, as that is the length byte for this packet
 			t.Error(err)
 		} else {
 			nc := structs.NcUserClientVersionCheckReq{}
