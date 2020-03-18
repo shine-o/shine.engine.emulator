@@ -9,11 +9,14 @@ jobs:
       - image: circleci/golang:1.13
       # secondary images, needed for running tests
       - image: redis:alpine3.11
+        command: ["redis-server"]
       - image: postgres:12.2-alpine
         environment:
         - POSTGRES_DB=shine
         - POSTGRES_USER=user
         - POSTGRES_PASSWORD=password
+        command: ["postgres"]
+
     working_directory: /go/src/github.com/shine-o/shine.engine.login
     steps:
       - checkout
