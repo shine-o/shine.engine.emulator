@@ -62,11 +62,18 @@ func userUsLoginReq(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-		nc := &structs.NcUserUsLoginReq{}
-		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
-			// TODO: define steps for this kind of errors, either kill the connection or send error code
+		nc := structs.NcUserUsLoginReq{}
+		if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			//go userLoginFailAck(ctx, &networking.Command{})
 		} else {
-			go authenticate(ctx, nc)
+			pc.NcStruct = nc
+			lc := &LoginCommand{pc:pc}
+			if err := lc.checkCredentials(ctx); err != nil {
+				log.Error(err)
+				go userLoginFailAck(ctx, &networking.Command{})
+			} else {
+				go userLoginAck(ctx, &networking.Command{})
+			}
 		}
 	}
 }
