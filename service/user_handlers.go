@@ -64,7 +64,7 @@ func userUsLoginReq(ctx context.Context, pc *networking.Command) {
 	default:
 		nc := structs.NcUserUsLoginReq{}
 		if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
-			//go userLoginFailAck(ctx, &networking.Command{})
+			go userLoginFailAck(ctx, &networking.Command{})
 		} else {
 			pc.NcStruct = nc
 			lc := &LoginCommand{pc:pc}
@@ -125,7 +125,6 @@ func userLoginAck(ctx context.Context, pc *networking.Command) {
 		grpcc.mu.Unlock()
 
 		rpcCtx, _ := context.WithTimeout(context.Background(), gRpcTimeout)
-		//defer cancel()
 		if r, err := c.AvailableWorlds(rpcCtx, &lw.ClientMetadata{
 			Ip: "127.0.0.01",
 		}); err != nil {
@@ -147,7 +146,10 @@ func userWorldStatusReq(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-		// ping World service for status :)
+		lc := &LoginCommand{pc:pc}
+		if err := lc.checkWorldStatus(ctx); err != nil {
+			return
+		}
 		go userWorldStatusAck(ctx, &networking.Command{})
 	}
 }
@@ -179,24 +181,16 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 		}
 		nc := &structs.NcUserWorldSelectReq{}
 		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
-			// TODO: define steps for this kind of errors, either kill the connection or send error code
 			go unexpectedFailure()
-
 		} else {
-			grpcc.mu.Lock()
-			conn := grpcc.services["world"]
-			c := lw.NewWorldClient(conn)
-			grpcc.mu.Unlock()
 
-			rpcCtx, _ := context.WithTimeout(context.Background(), gRpcTimeout)
-
-			if r, err := c.ConnectionInfo(rpcCtx, &lw.SelectedWorld{Num: 1}); err != nil {
-				log.Error(err)
-				go unexpectedFailure()
+			lc := &LoginCommand{pc:pc}
+			if data, err := lc.userSelectedServer(ctx); err != nil {
+				return
 			} else {
 				go userWorldSelectAck(ctx, &networking.Command{
 					Base: networking.CommandBase{
-						Data: r.Info,
+						Data: data,
 					},
 				})
 			}
