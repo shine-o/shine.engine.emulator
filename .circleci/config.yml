@@ -5,9 +5,15 @@ version: 2
 jobs:
   build:
     docker:
-      # specify the version
+      # primary image, where commands are run
       - image: circleci/golang:1.13
-
+      # secondary images, needed for running tests
+      - image: redis:alpine3.11
+      - image: postgres:12.2-alpine
+        environment:
+        - POSTGRES_DB=shine
+        - POSTGRES_USER=user
+        - POSTGRES_PASSWORD=password
     working_directory: /go/src/github.com/shine-o/shine.engine.login
     steps:
       - checkout
@@ -18,6 +24,12 @@ jobs:
       - run:
           name: build binary
           command: GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o login
+      - run:
+          name: migrate test database
+          command: login migrate --config "defaults/.login.test.yaml" --fixtures "true"
+      - run:
+          name: run tests
+          command: go test --race -v
       - setup_remote_docker:
           # only available if you pay
           # docker_layer_caching: true

@@ -26,7 +26,10 @@ func TestMain(m *testing.M) {
 	} else {
 		viper.AddConfigPath(path)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".login.test")
+
+		viper.SetConfigName(".login.circleci")
+		// for running tests locally, use this:
+		//viper.SetConfigName(".login.test")
 
 		// If a config file is found, read it in.
 		if err := viper.ReadInConfig(); err == nil {
@@ -53,7 +56,7 @@ func TestMain(m *testing.M) {
 	}
 	initDatabase()
 	initRedis()
-	gRpcClients(ctx)
+	//gRpcClients(ctx)
 	os.Exit(m.Run())
 }
 
@@ -115,54 +118,55 @@ func TestCheckCredentials(t *testing.T) {
 }
 
 // depends on external service and manages no data
-// for completeness sake, test it returns correct ERROR
-func TestCheckWorldStatus(t *testing.T) {
-	// timeout
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	lc := LoginCommand{}
-	if err := lc.checkWorldStatus(ctx); err != nil {
-		t.Error(err)
-	}
-}
+// for completeness sake, run this test when developing
+//func TestCheckWorldStatus(t *testing.T) {
+//	// timeout
+//	ctx := context.Background()
+//	ctx, cancel := context.WithCancel(ctx)
+//	defer cancel()
+//	lc := LoginCommand{}
+//	if err := lc.checkWorldStatus(ctx); err != nil {
+//		t.Error(err)
+//	}
+//}
 
 // depends on external service and data is handled on the server side
-func TestUserSelectedServer(t *testing.T) {
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	// sniffer output -> {"packetType":"small","length":3,"department":3,"command":"B","opCode":3083,"data":"00","rawData":"030b0c00","friendlyName":"NC_USER_WORLDSELECT_REQ"}
-	if data, err := hex.DecodeString("030b0c00"); err != nil {
-		t.Error(err)
-	} else {
-		if pc, err := networking.DecodePacket("small", 3, data[1:]); err != nil { // from index 1, as previous bytes are length info for this packet
-			t.Error(err)
-		} else {
-			nc := structs.NcUserUsLoginReq{}
-			if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
-				t.Error(err)
-			} else {
-				pc.NcStruct = nc
-				lc := LoginCommand{
-					pc: &pc,
-				}
-				if data, err := lc.userSelectedServer(ctx); err != nil {
-					t.Error(err)
-				} else {
-					rnc := structs.NcUserWorldSelectAck{}
-					if err := networking.ReadBinary(data, &rnc); err != nil {
-						t.Error(err)
-					} else {
-						if rnc.WorldStatus != byte(6) {
-							t.Errorf("unexpected world status %v", rnc.WorldStatus)
-						}
-					}
-				}
-			}
-		}
-	}
-}
+// for completeness sake, run this test when developing
+//func TestUserSelectedServer(t *testing.T) {
+//	ctx := context.Background()
+//	ctx, cancel := context.WithCancel(ctx)
+//	defer cancel()
+//	// sniffer output -> {"packetType":"small","length":3,"department":3,"command":"B","opCode":3083,"data":"00","rawData":"030b0c00","friendlyName":"NC_USER_WORLDSELECT_REQ"}
+//	if data, err := hex.DecodeString("030b0c00"); err != nil {
+//		t.Error(err)
+//	} else {
+//		if pc, err := networking.DecodePacket("small", 3, data[1:]); err != nil { // from index 1, as previous bytes are length info for this packet
+//			t.Error(err)
+//		} else {
+//			nc := structs.NcUserUsLoginReq{}
+//			if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+//				t.Error(err)
+//			} else {
+//				pc.NcStruct = nc
+//				lc := LoginCommand{
+//					pc: &pc,
+//				}
+//				if data, err := lc.userSelectedServer(ctx); err != nil {
+//					t.Error(err)
+//				} else {
+//					rnc := structs.NcUserWorldSelectAck{}
+//					if err := networking.ReadBinary(data, &rnc); err != nil {
+//						t.Error(err)
+//					} else {
+//						if rnc.WorldStatus != byte(6) {
+//							t.Errorf("unexpected world status %v", rnc.WorldStatus)
+//						}
+//					}
+//				}
+//			}
+//		}
+//	}
+//}
 
 //
 func TestLoginByCode(t *testing.T) {
