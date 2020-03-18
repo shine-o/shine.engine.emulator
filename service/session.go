@@ -10,26 +10,26 @@ import (
 	"io/ioutil"
 )
 
-type sessionFactory struct {}
+type sessionFactory struct{}
 
 type session struct {
-	id string
+	id       string
 	userName string
 }
 
-func (s sessionFactory) New() networking.Session  {
+func (s sessionFactory) New() networking.Session {
 	return &session{
-		id:	fmt.Sprintf("login-%v", uuid.New().String()),
+		id: fmt.Sprintf("login-%v", uuid.New().String()),
 	}
 }
 
-func (s * session) Identifier() string  {
+func (s *session) Identifier() string {
 	return s.id
 }
 
-var redisClient * redis.Client
+var redisClient *redis.Client
 
-func initRedis()  {
+func initRedis() {
 	log = logger.Init("LoginLogger", true, false, ioutil.Discard)
 	log.Info("LoginLogger init()")
 	host := viper.GetString("session.redis.host")
@@ -41,7 +41,7 @@ func initRedis()  {
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: "", // no password set
-		DB:      db,  // use default DB
+		DB:       db, // use default DB
 	})
 	redisClient = client
 }

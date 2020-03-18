@@ -26,7 +26,7 @@ var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Listen for login connections",
 	Long:  `The purpose of the login service is to handle packets related to user account login and server selection.`,
-	Run:  service.Start,
+	Run:   service.Start,
 }
 
 func init() {
