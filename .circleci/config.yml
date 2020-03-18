@@ -34,7 +34,7 @@ jobs:
           command: ./login migrate --config "defaults/.login.circleci.yaml" --fixtures "true"
       - run:
           name: run tests
-          command: go test --race -v
+          command: go test -v
       - setup_remote_docker:
           # only available if you pay
           # docker_layer_caching: true
