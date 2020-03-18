@@ -6,7 +6,7 @@ jobs:
   build:
     docker:
       # primary image, where commands are run
-      - image: circleci/golang:1.13
+      - image: shineo/golang:1.13.6-alpine3.10
       # secondary images, needed for running tests
       - image: redis:alpine3.11
         name: redis
