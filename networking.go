@@ -4,8 +4,10 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"github.com/google/logger"
 	"github.com/spf13/viper"
 	"io"
+	"io/ioutil"
 	"math/rand"
 	"net"
 	"sync"
@@ -42,6 +44,8 @@ func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
 
 // listen on  tcp socket
 func (ss *ShineService) Listen(ctx context.Context) {
+	log = logger.Init("NetworkingLogger", true, false, ioutil.Discard)
+	log.Info("Networking Logger init()")
 	ss.s.Set()
 	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", viper.GetInt("serve.port"))); err == nil {
 		log.Infof("Listening for TCP connections on: %v", l.Addr())

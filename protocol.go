@@ -65,10 +65,11 @@ func (pcb *CommandBase) RawData() []byte {
 	if len(data) > 255 { // means big packet
 		header = append(header, byte(0))
 		lenBuf := new(bytes.Buffer)
-		if err := binary.Write(lenBuf, binary.LittleEndian, uint16(buf.Len())); err != nil {
+		//if err := binary.Write(lenBuf, binary.LittleEndian, uint16(buf.Len())); err != nil {
+		if err := binary.Write(lenBuf, binary.LittleEndian, uint16(len(data))); err != nil {
 			log.Fatalf("failed writing length for big packet to buffer %v", err)
 		}
-		header = append(header, buf.Bytes()...)
+		header = append(header, lenBuf.Bytes()...)
 	} else {
 		header = append(header, byte(len(data)))
 	}
