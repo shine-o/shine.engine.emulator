@@ -27,7 +27,7 @@ var (
 )
 
 //func init() {
-//	log = logger.Init("LoginLogger", true, true, ioutil.Discard)
+//	log = logger.Init("LoginLogger", true, false, ioutil.Discard)
 //	log.Info("LoginLogger init()")
 //}
 
@@ -37,7 +37,7 @@ func Start(cmd *cobra.Command, args []string) {
 }
 
 func start() {
-	log = logger.Init("LoginLogger", true, true, ioutil.Discard)
+	log = logger.Init("LoginLogger", true, false, ioutil.Discard)
 	log.Info("LoginLogger init()")
 	initDatabase()
 	initRedis()

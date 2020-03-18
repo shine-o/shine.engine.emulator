@@ -30,7 +30,7 @@ func (s * session) Identifier() string  {
 var redisClient * redis.Client
 
 func initRedis()  {
-	log = logger.Init("LoginLogger", true, true, ioutil.Discard)
+	log = logger.Init("LoginLogger", true, false, ioutil.Discard)
 	log.Info("LoginLogger init()")
 	host := viper.GetString("session.redis.host")
 	port := viper.GetString("session.redis.port")

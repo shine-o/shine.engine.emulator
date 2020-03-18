@@ -19,7 +19,7 @@ func TestMain(m *testing.M) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	log = logger.Init("test logger", true, true, ioutil.Discard)
+	log = logger.Init("test logger", true, false, ioutil.Discard)
 	log.Info("test logger")
 	if path, err := filepath.Abs("../defaults"); err != nil {
 		log.Fatal(err)
