@@ -32,9 +32,10 @@ database:
     db_name: shine
     db_user: user
     db_password: password
+
 session:
   redis:
 #    host: 192.168.111.129
-    host: 192.168.1.238
+    host: redis
     port: 6379
     db: 0

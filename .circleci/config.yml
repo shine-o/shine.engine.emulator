@@ -9,8 +9,10 @@ jobs:
       - image: circleci/golang:1.13
       # secondary images, needed for running tests
       - image: redis:alpine3.11
+        name: redis
         command: ["redis-server"]
       - image: postgres:12.2-alpine
+        name: postgres
         environment:
         - POSTGRES_DB=shine
         - POSTGRES_USER=user
