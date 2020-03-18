@@ -44,6 +44,7 @@ func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
 
 // listen on  tcp socket
 func (ss *ShineService) Listen(ctx context.Context) {
+
 	log = logger.Init("NetworkingLogger", true, false, ioutil.Discard)
 	log.Info("Networking Logger init()")
 	ss.s.Set()
@@ -69,6 +70,7 @@ func (ss *ShineService) UseSessionFactory(sf SessionFactory)  {
 
 // for each connection launch go routine that handles tcp segment data
 func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
+
 	ctx, cancel := context.WithCancel(ctx)
 
 	log.Infof("Serving %v", c.RemoteAddr().String())
