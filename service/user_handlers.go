@@ -21,9 +21,9 @@ func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 			go userClientWrongVersionAck(ctx, &networking.Command{})
 		} else {
 			pc.NcStruct = nc
-			lc := &LoginCommand{pc:pc}
+			lc := &LoginCommand{pc: pc}
 
-			if _, err := lc.checkClientVersion(ctx); err != nil {// data is irrelevant in this call
+			if _, err := lc.checkClientVersion(ctx); err != nil { // data is irrelevant in this call
 				log.Error(err)
 				go userClientWrongVersionAck(ctx, &networking.Command{})
 			} else {
@@ -67,7 +67,7 @@ func userUsLoginReq(ctx context.Context, pc *networking.Command) {
 			go userLoginFailAck(ctx, &networking.Command{})
 		} else {
 			pc.NcStruct = nc
-			lc := &LoginCommand{pc:pc}
+			lc := &LoginCommand{pc: pc}
 			if err := lc.checkCredentials(ctx); err != nil {
 				log.Error(err)
 				go userLoginFailAck(ctx, &networking.Command{})
@@ -146,7 +146,7 @@ func userWorldStatusReq(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-		lc := &LoginCommand{pc:pc}
+		lc := &LoginCommand{pc: pc}
 		if err := lc.checkWorldStatus(ctx); err != nil {
 			return
 		}
@@ -184,7 +184,7 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 			go unexpectedFailure()
 		} else {
 
-			lc := &LoginCommand{pc:pc}
+			lc := &LoginCommand{pc: pc}
 			if data, err := lc.userSelectedServer(ctx); err != nil {
 				return
 			} else {
@@ -216,23 +216,24 @@ func userNormalLogoutCmd(ctx context.Context, pc *networking.Command) {
 	}
 }
 
-func userLoginWithOtpReq(ctx context.Context, pc *networking.Command)  {
+func userLoginWithOtpReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		nc := &structs.NcUserLoginWithOtpReq{}
-		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
+		nc := structs.NcUserLoginWithOtpReq{}
+		if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
 			log.Info(err)
 			go userLoginFailAck(ctx, &networking.Command{})
 		} else {
-			b := make([]byte, len(nc.Otp.Name))
-			copy(b, nc.Otp.Name[:])
-			if r, err := redisClient.Get(string(b)).Result(); err != nil {
+
+			pc.NcStruct = nc
+			lc := &LoginCommand{pc: pc}
+
+			if err := lc.loginByCode(ctx); err != nil {
 				log.Info(err)
 				go userLoginFailAck(ctx, &networking.Command{})
 			} else {
-				log.Infof("logging user using otp code: %v", r)
 				go userLoginAck(ctx, &networking.Command{})
 			}
 		}

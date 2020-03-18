@@ -70,7 +70,7 @@ func TestCheckClientVersion(t *testing.T) {
 		t.Error(err)
 	} else {
 
-		if pc, err := networking.DecodePacket("small", 66, data[1:]); err != nil {// from index 1, as previous bytes are length info for this packet
+		if pc, err := networking.DecodePacket("small", 66, data[1:]); err != nil { // from index 1, as previous bytes are length info for this packet
 			t.Error(err)
 		} else {
 			nc := structs.NcUserClientVersionCheckReq{}
@@ -109,7 +109,7 @@ func TestCheckCredentials(t *testing.T) {
 				lc := LoginCommand{
 					pc: &pc,
 				}
-				if  err := lc.checkCredentials(ctx); err != nil {
+				if err := lc.checkCredentials(ctx); err != nil {
 					t.Error(err)
 				}
 			}
@@ -172,7 +172,7 @@ func TestCheckCredentials(t *testing.T) {
 func TestLoginByCode(t *testing.T) {
 	// setup dummy otp token in redis store
 	otp := "tEGMohMSNboCclYHGIXUOGHKZTKcjLfr"
-	if err := redisClient.Set(otp, otp, 20 * time.Second).Err(); err != nil {
+	if err := redisClient.Set(otp, otp, 20*time.Second).Err(); err != nil {
 		t.Error(err)
 	} else {
 		ctx := context.Background()

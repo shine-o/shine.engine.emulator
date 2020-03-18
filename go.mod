@@ -9,13 +9,12 @@ require (
 	github.com/jinzhu/gorm v1.9.12
 	github.com/lib/pq v1.3.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/shine-o/shine.engine.networking v0.0.0-20200317193756-3f4ef9b27934
+	github.com/shine-o/shine.engine.networking v0.0.0-20200318175217-b392bf4d0e22
 	github.com/shine-o/shine.engine.protocol-buffers/login-world v0.0.0-20200314174953-2f346ed277bf
 	github.com/shine-o/shine.engine.structs v0.0.0-20200317164417-264763e42420
-	github.com/shine-o/shine.engine.world v0.0.0-20200317162035-b5df72e4dc88
-	github.com/shine-o/shine.engine.world/service v0.0.0-20200314172549-7283ba661f79 // indirect
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.2
-	google.golang.org/genproto v0.0.0-20200317114155-1f3552e48f24 // indirect
+	golang.org/x/net v0.0.0-20200301022130-244492dfa37a // indirect
+	google.golang.org/genproto v0.0.0-20200318110522-7735f76e9fa5 // indirect
 	google.golang.org/grpc v1.28.0
 )

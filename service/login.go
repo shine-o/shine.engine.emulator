@@ -19,14 +19,14 @@ var BC = errors.New("bad credentials")
 var DBE = errors.New("database exception")
 
 type LoginCommand struct {
-	pc * networking.Command
+	pc *networking.Command
 }
 
 // check that the client version is correct
-func (lc * LoginCommand) checkClientVersion(ctx context.Context) ([]byte, error) {
+func (lc *LoginCommand) checkClientVersion(ctx context.Context) ([]byte, error) {
 	var data []byte
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return data, CC
 	default:
 		if ncs, ok := lc.pc.NcStruct.(structs.NcUserClientVersionCheckReq); ok {
@@ -44,7 +44,7 @@ func (lc * LoginCommand) checkClientVersion(ctx context.Context) ([]byte, error)
 }
 
 // check against database that the user name and password combination are correct
-func  (lc * LoginCommand) checkCredentials(ctx context.Context) error {
+func (lc *LoginCommand) checkCredentials(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		return CC
@@ -79,9 +79,9 @@ func  (lc * LoginCommand) checkCredentials(ctx context.Context) error {
 }
 
 // check the world service is up and running
-func (lc * LoginCommand) checkWorldStatus(ctx context.Context) error {
+func (lc *LoginCommand) checkWorldStatus(ctx context.Context) error {
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return CC
 	default:
 		grpcc.mu.Lock()
@@ -98,10 +98,10 @@ func (lc * LoginCommand) checkWorldStatus(ctx context.Context) error {
 }
 
 // request info about selected world
-func (lc * LoginCommand) userSelectedServer(ctx context.Context) ([]byte, error) {
+func (lc *LoginCommand) userSelectedServer(ctx context.Context) ([]byte, error) {
 	var data []byte
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return data, CC
 	default:
 		grpcc.mu.Lock()
@@ -120,9 +120,9 @@ func (lc * LoginCommand) userSelectedServer(ctx context.Context) ([]byte, error)
 }
 
 // verify the token matches the one stored [on redis] by the world service
-func (lc * LoginCommand) loginByCode(ctx context.Context) error {
+func (lc *LoginCommand) loginByCode(ctx context.Context) error {
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return CC
 	default:
 		if ncs, ok := lc.pc.NcStruct.(structs.NcUserLoginWithOtpReq); ok {
