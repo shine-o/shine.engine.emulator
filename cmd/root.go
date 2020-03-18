@@ -50,7 +50,7 @@ func Execute() {
 }
 
 func init() {
-	log = logger.Init("InitLogger", true, true, ioutil.Discard)
+	log = logger.Init("InitLogger", true, false, ioutil.Discard)
 	log.Info("root init()")
 	cobra.OnInitialize(initConfig)
 	err := doc.GenMarkdownTree(rootCmd, "docs")
@@ -62,7 +62,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.shine.engine.login.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.login.yaml)")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -85,7 +85,7 @@ func initConfig() {
 		// Search config in home directory with name ".shine.engine.login" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".shine.engine.login")
+		viper.SetConfigName(".login")
 	}
 
 	// If a config file is found, read it in.
@@ -100,10 +100,10 @@ func initConfig() {
 	viper.SetDefault("protocol.nc-data", "defaults/protocol-commands.yml")
 
 	requiredParams := []string{
-		"database.host",
-		"database.port",
-		"database.db_user",
-		"database.db_password",
+		"database.postgres.host",
+		"database.postgres.port",
+		"database.postgres.db_user",
+		"database.postgres.db_password",
 	}
 	for _, rp := range requiredParams {
 		if !viper.IsSet(rp) {

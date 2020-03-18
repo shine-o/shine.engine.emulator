@@ -15,14 +15,20 @@ func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-
-		nc := &structs.NcUserClientVersionCheckReq{}
-
-		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
-			// TODO: define steps for this kind of errors, either kill the connection or send error code
+		nc := structs.NcUserClientVersionCheckReq{}
+		if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			log.Error(err)
+			go userClientWrongVersionAck(ctx, &networking.Command{})
 		} else {
-			// method for checking version
-			go userClientVersionCheckAck(ctx, &networking.Command{}) // will be triggered by method
+			pc.NcStruct = nc
+			lc := &LoginCommand{pc:pc}
+
+			if _, err := lc.checkClientVersion(ctx); err != nil {// data is irrelevant in this call
+				log.Error(err)
+				go userClientWrongVersionAck(ctx, &networking.Command{})
+			} else {
+				go userClientVersionCheckAck(ctx, &networking.Command{}) // will be triggered by method
+			}
 		}
 	}
 }
@@ -39,16 +45,35 @@ func userClientVersionCheckAck(ctx context.Context, pc *networking.Command) {
 	}
 }
 
+func userClientWrongVersionAck(ctx context.Context, pc *networking.Command) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		base := networking.CommandBase{}
+		base.OperationCode = 3176
+		pc.Base = base
+		go networking.WriteToClient(ctx, pc)
+	}
+}
+
 func userUsLoginReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		nc := &structs.NcUserUsLoginReq{}
-		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
-			// TODO: define steps for this kind of errors, either kill the connection or send error code
+		nc := structs.NcUserUsLoginReq{}
+		if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			go userLoginFailAck(ctx, &networking.Command{})
 		} else {
-			go authenticate(ctx, nc)
+			pc.NcStruct = nc
+			lc := &LoginCommand{pc:pc}
+			if err := lc.checkCredentials(ctx); err != nil {
+				log.Error(err)
+				go userLoginFailAck(ctx, &networking.Command{})
+			} else {
+				go userLoginAck(ctx, &networking.Command{})
+			}
 		}
 	}
 }
@@ -100,7 +125,6 @@ func userLoginAck(ctx context.Context, pc *networking.Command) {
 		grpcc.mu.Unlock()
 
 		rpcCtx, _ := context.WithTimeout(context.Background(), gRpcTimeout)
-		//defer cancel()
 		if r, err := c.AvailableWorlds(rpcCtx, &lw.ClientMetadata{
 			Ip: "127.0.0.01",
 		}); err != nil {
@@ -122,7 +146,10 @@ func userWorldStatusReq(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-		// ping World service for status :)
+		lc := &LoginCommand{pc:pc}
+		if err := lc.checkWorldStatus(ctx); err != nil {
+			return
+		}
 		go userWorldStatusAck(ctx, &networking.Command{})
 	}
 }
@@ -154,24 +181,16 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 		}
 		nc := &structs.NcUserWorldSelectReq{}
 		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
-			// TODO: define steps for this kind of errors, either kill the connection or send error code
 			go unexpectedFailure()
-
 		} else {
-			grpcc.mu.Lock()
-			conn := grpcc.services["world"]
-			c := lw.NewWorldClient(conn)
-			grpcc.mu.Unlock()
 
-			rpcCtx, _ := context.WithTimeout(context.Background(), gRpcTimeout)
-
-			if r, err := c.ConnectionInfo(rpcCtx, &lw.SelectedWorld{Num: 1}); err != nil {
-				log.Error(err)
-				go unexpectedFailure()
+			lc := &LoginCommand{pc:pc}
+			if data, err := lc.userSelectedServer(ctx); err != nil {
+				return
 			} else {
 				go userWorldSelectAck(ctx, &networking.Command{
 					Base: networking.CommandBase{
-						Data: r.Info,
+						Data: data,
 					},
 				})
 			}
