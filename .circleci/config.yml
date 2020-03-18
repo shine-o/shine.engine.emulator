@@ -34,7 +34,7 @@ jobs:
           command: ./login migrate --config "defaults/.login.circleci.yaml" --fixtures "true"
       - run:
           name: run tests
-          command: go test -v
+          command: go test github.com/shine-o/shine.engine.login/service
       - setup_remote_docker:
           # only available if you pay
           # docker_layer_caching: true
