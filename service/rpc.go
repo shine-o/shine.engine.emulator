@@ -73,11 +73,11 @@ func (s *server) ConnectionInfo(ctx context.Context, req *lw.SelectedWorld) (*lw
 
 		nc := structs.NcUserWorldSelectAck{
 			WorldStatus: 6,
-			Ip:          structs.Name4{
+			Ip: structs.Name4{
 				Name:     [16]byte{},
 				NameCode: [4]uint32{},
 			},
-			Port:       uint16(port),
+			Port: uint16(port),
 		}
 
 		copy(nc.Ip.Name[:], w.extIP)

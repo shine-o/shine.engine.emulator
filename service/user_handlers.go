@@ -20,7 +20,7 @@ func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
 		} else {
 			pc.NcStruct = nc
-			wc := WorldCommand{pc:pc}
+			wc := WorldCommand{pc: pc}
 			if err := wc.loginToWorld(ctx); err != nil {
 				log.Error(err)
 				return
@@ -38,7 +38,7 @@ func userLoginWorldAck(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		pc.Base.OperationCode = 3092
-		wc := &WorldCommand{pc:pc}
+		wc := &WorldCommand{pc: pc}
 
 		data, err := wc.userWorldInfo(ctx)
 		if err != nil {
@@ -66,7 +66,7 @@ func userWillWorldSelectAck(ctx context.Context, pc *networking.Command) {
 		pc.Base.OperationCode = 3124
 		otp := randStringBytesMaskImprSrcUnsafe(32)
 		//otp := "a85472c3841de5fc22433560fe32a2a3"
-		err := redisClient.Set(otp, otp, 20 * time.Second).Err()
+		err := redisClient.Set(otp, otp, 20*time.Second).Err()
 		if err != nil {
 			// err opcode
 			return

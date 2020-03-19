@@ -19,23 +19,23 @@ import (
 )
 
 type world struct {
-	id   string
-	name string
-	port string
+	id    string
+	name  string
+	port  string
 	extIP string
 }
 
 type activeWorlds struct {
-	activeWorlds map[string] * world
-	mu sync.Mutex
+	activeWorlds map[string]*world
+	mu           sync.Mutex
 }
 
 var (
 	log *logger.Logger
-    aw * activeWorlds
+	aw  *activeWorlds
 )
 
-func init()  {
+func init() {
 	log = logger.Init("world service default logger", true, false, ioutil.Discard)
 }
 
@@ -83,9 +83,9 @@ func startWorlds(ctx context.Context) {
 
 		for _, s := range services {
 			w := world{
-				id: s["id"],
-				name: s["name"],
-				port: s["port"],
+				id:    s["id"],
+				name:  s["name"],
+				port:  s["port"],
 				extIP: s["external_ip"],
 			}
 			go startWorld(ctx, w)
@@ -95,7 +95,7 @@ func startWorlds(ctx context.Context) {
 
 func startWorld(ctx context.Context, w world) {
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return
 	default:
 		log = logger.Init(fmt.Sprintf("%v logger", w.name), true, false, ioutil.Discard)
