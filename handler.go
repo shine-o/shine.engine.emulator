@@ -5,12 +5,26 @@ import (
 	"sync"
 )
 
+// ContextKey identifier for values of common use within the Context
+type ContextKey int
+
+const (
+	// XorOffset indicates what offset in the xor hex table to use to start decrypting client data
+	XorOffset ContextKey = iota
+	// ShineSession if used, shine service can access session data within their handler's context
+	ShineSession
+	// ConnectionWriter is a utility struct which contains the tcp connection object and a mutex
+	// it is used to write data to the client from any shine service handler
+	ConnectionWriter
+)
+
+// HandleWarden utility struct for triggering functions implemented by the calling shine service
 type HandleWarden struct {
 	handlers map[uint16]func(ctx context.Context, command *Command)
 	mu       sync.Mutex
 }
 
-// handlers are callbacks to be called when an operationcode is detected in a packet.
+// NewHandlerWarden handlers are callbacks to be called when an operationcode is detected in a packet.
 func NewHandlerWarden(customHandlers map[uint16]func(ctx context.Context, command *Command)) *HandleWarden {
 	hw := &HandleWarden{
 		handlers: make(map[uint16]func(ctx context.Context, command *Command)),
@@ -32,7 +46,8 @@ func (hw *HandleWarden) handleSegments(ctx context.Context, segment <-chan []byt
 		xorOffset uint16
 	)
 
-	ctx = context.WithValue(ctx, "xorOffset", &xorOffset)
+	//ctx = context.WithValue(ctx, "xorOffset", &xorOffset)
+	ctx = context.WithValue(ctx, XorOffset, &xorOffset)
 
 	hw.mu.Lock()
 	sendXorOffset := hw.handlers[2055]

@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 )
 
+// ReadBinary data into a given struct
+// if struct size is bigger than available data, fill with zeros
 func ReadBinary(data []byte, nc interface{}) error {
 	var buffer []byte
 	structSize := binary.Size(nc)
@@ -22,6 +24,7 @@ func ReadBinary(data []byte, nc interface{}) error {
 	return nil
 }
 
+// WriteBinary data into a given struct and return bytes
 func WriteBinary(nc interface{}) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	if err := binary.Write(buf, binary.LittleEndian, nc); err != nil {

@@ -10,7 +10,7 @@ func miscSeedAck(ctx context.Context, pc *Command) {
 	case <-ctx.Done():
 		return
 	default:
-		xov := ctx.Value("xorOffset")
+		xov := ctx.Value(XorOffset)
 		xo := xov.(*uint16)
 
 		xorOffset := RandomXorKey()

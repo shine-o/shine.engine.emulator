@@ -13,10 +13,13 @@ var (
 	commandList *PCList
 )
 
-// find out if big or small packet
-// return length and type
+// PacketBoundary of a packet in a data segment
+// Shine packets can be small or big
+// small packets specify the length in the first byte
+// big packets ignore the first byte (that is, is 0 value), and set the length in the next 2 bytes
+// the data segment is usually a local variable in a goroutine
 func PacketBoundary(offset int, data []byte) (int, string) {
-	if data[offset] == 0 {
+	if data[offset] == 0 { // big packet
 		var (
 			pLen uint16
 			d    []byte
@@ -24,25 +27,20 @@ func PacketBoundary(offset int, data []byte) (int, string) {
 
 		d = append(d, data[offset+1:]...)
 		br := bytes.NewReader(d)
-		//br := bytes.NewBuffer(d)
-
-		//if _, err := br.ReadAt(d, 1); err != nil {
-		//	log.Error(err)
-		//}
 
 		if err := binary.Read(br, binary.LittleEndian, &pLen); err != nil {
 			log.Error(err)
 		}
 
 		return int(pLen), "big"
-	} else {
-		var pLen uint8
-		pLen = data[offset]
-		return int(pLen), "small"
+
 	}
+	var pLen uint8
+	pLen = data[offset]
+	return int(pLen), "small"
 }
 
-// read packet data
+// DecodePacket data into a struct
 func DecodePacket(pType string, pLen int, data []byte) (Command, error) {
 	var (
 		opCode     uint16
