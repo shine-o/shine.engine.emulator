@@ -16,9 +16,9 @@ import (
 // Settings for decoding the packets detected by this library
 type Settings struct {
 	// xor hex table used to encrypt data on the client side, we use it here to decrypt data sent by the client
-	XorKey           []byte
+	XorKey []byte
 	// xor hex table has a limit, when that limit is reached, while decrypting, we start from offset 0 of the xor hex table
-	XorLimit         uint16
+	XorLimit uint16
 	// operation codes are the result of bit operation on the Department (category) and Command (category item) values on the client side
 	// each Department has a DN and each Command has a a FQDN
 	// the FQDN of a Command is used to give useful info about a detected packet
@@ -90,7 +90,7 @@ func (pcb *CommandBase) RawData() []byte {
 }
 
 // PacketLength of a packet, which includes de operation code bytes
-func (pcb *CommandBase) PacketLength() int  {
+func (pcb *CommandBase) PacketLength() int {
 	return len(pcb.Data) + 2
 }
 
@@ -117,7 +117,7 @@ func (pcb *CommandBase) String() string {
 	}
 	if pcb.PacketLength() > 255 {
 		ePcb.PacketType = "big"
-	}  else {
+	} else {
 		ePcb.PacketType = "small"
 	}
 
@@ -131,7 +131,7 @@ func (pcb *CommandBase) String() string {
 		commandList.mu.Unlock()
 	}
 
-	rawJSON, err := json.Marshal(&ePcb);
+	rawJSON, err := json.Marshal(&ePcb)
 
 	if err != nil {
 		log.Error(err)

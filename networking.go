@@ -66,7 +66,7 @@ func (ss *ShineService) Listen(ctx context.Context, port string) {
 }
 
 // UseSessionFactory given by the shine service
-func (ss *ShineService) UseSessionFactory(sf SessionFactory)  {
+func (ss *ShineService) UseSessionFactory(sf SessionFactory) {
 	ss.sf = sf
 }
 
