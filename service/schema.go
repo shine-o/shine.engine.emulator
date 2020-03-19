@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
+	_ "github.com/jinzhu/gorm/dialects/postgres" // GORM needs this
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -14,16 +14,19 @@ import (
 
 var database *gorm.DB
 
+// User model for schema: accounts
 type User struct {
 	gorm.Model
 	UserName string `gorm:"type:varchar(260);unique_index;not null"`
 	Password string `gorm:"type:varchar(36);not null"`
 }
 
+// TableName schema identifier
 func (User) TableName() string {
 	return "accounts.user"
 }
 
+// Migrate schemas and models
 func Migrate(cmd *cobra.Command, args []string) {
 	log = logger.Init("Database Logger", true, false, ioutil.Discard)
 	log.Info("Database Logger Migrate()")
