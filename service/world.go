@@ -22,14 +22,14 @@ type WorldCommand struct {
 	pc *networking.Command
 }
 
-func (wc * WorldCommand) worldTime(ctx context.Context) ([]byte, error) {
+func (wc *WorldCommand) worldTime(ctx context.Context) ([]byte, error) {
 	var data []byte
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return data, errCC
 	default:
 		var (
-			t time.Time
+			t                    time.Time
 			hour, minute, second byte
 		)
 
@@ -55,9 +55,9 @@ func (wc * WorldCommand) worldTime(ctx context.Context) ([]byte, error) {
 // user wants to log to given world
 // check if world is okay
 // take user name, persist to redis
-func (wc * WorldCommand) loginToWorld(ctx context.Context) error {
+func (wc *WorldCommand) loginToWorld(ctx context.Context) error {
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return errCC
 	default:
 		if ncs, ok := wc.pc.NcStruct.(structs.NcUserLoginWorldReq); ok {
@@ -74,7 +74,7 @@ func (wc * WorldCommand) loginToWorld(ctx context.Context) error {
 	}
 }
 
-func (wc * WorldCommand) userWorldInfo(ctx context.Context) ([]byte, error)  {
+func (wc *WorldCommand) userWorldInfo(ctx context.Context) ([]byte, error) {
 	var data []byte
 	select {
 	case <-ctx.Done():
@@ -110,7 +110,7 @@ func (wc * WorldCommand) userWorldInfo(ctx context.Context) ([]byte, error)  {
 // user clicked previous
 // generate a otp token and store it in redis
 // login service will use the token to authenticate the user and send him to server select
-func (wc * WorldCommand) returnToServerSelect() ([]byte, error) {
+func (wc *WorldCommand) returnToServerSelect() ([]byte, error) {
 	var data []byte
 	return data, nil
 }
