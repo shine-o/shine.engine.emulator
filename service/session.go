@@ -10,6 +10,8 @@ import (
 	"io/ioutil"
 )
 
+var redisClient *redis.Client
+
 type sessionFactory struct{}
 
 type session struct {
@@ -26,8 +28,6 @@ func (s sessionFactory) New() networking.Session {
 func (s *session) Identifier() string {
 	return s.id
 }
-
-var redisClient *redis.Client
 
 func initRedis() {
 	log = logger.Init("LoginLogger", true, false, ioutil.Discard)

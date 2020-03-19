@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-const gRpcTimeout = time.Second * 2
+const gRPCTimeout = time.Second * 2
 
 func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 	select {
@@ -124,7 +124,7 @@ func userLoginAck(ctx context.Context, pc *networking.Command) {
 		c := lw.NewWorldClient(conn)
 		grpcc.mu.Unlock()
 
-		rpcCtx, _ := context.WithTimeout(context.Background(), gRpcTimeout)
+		rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
 		if r, err := c.AvailableWorlds(rpcCtx, &lw.ClientMetadata{
 			Ip: "127.0.0.01",
 		}); err != nil {
@@ -185,15 +185,15 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 		} else {
 
 			lc := &LoginCommand{pc: pc}
-			if data, err := lc.userSelectedServer(ctx); err != nil {
+			data, err := lc.userSelectedServer(ctx)
+			if err != nil {
 				return
-			} else {
-				go userWorldSelectAck(ctx, &networking.Command{
-					Base: networking.CommandBase{
-						Data: data,
-					},
-				})
 			}
+			go userWorldSelectAck(ctx, &networking.Command{
+				Base: networking.CommandBase{
+					Data: data,
+				},
+			})
 		}
 	}
 }
