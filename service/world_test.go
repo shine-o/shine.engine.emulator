@@ -92,7 +92,7 @@ func TestLoginToWorld(t *testing.T) {
 		WorldID:  "1",
 		UserName: "admin",
 	}
-	ctx = context.WithValue(ctx, networking.ShineSession, s)
+	ctx  = context.WithValue(ctx, networking.ShineSession, s)
 
 	defer cancel()
 	// sniffer output -> {"packetType":"big","length":322,"department":3,"command":"F","opCode":3087,"data":"61646d696e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000050410000474500004c00000001e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868","rawData":"0042010f0c61646d696e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000050410000474500004c00000001e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868","friendlyName":"NC_USER_LOGINWORLD_REQ"}
@@ -143,21 +143,21 @@ func TestUserWorldInfo(t *testing.T) {
 		UserName: "admin",
 	}
 
-	ctx = context.WithValue(ctx, networking.ShineSession, s)
+	ctx  = context.WithValue(ctx, networking.ShineSession, s)
 	defer cancel()
 
 	pc := &networking.Command{
-		Base: networking.CommandBase{
+		Base:     networking.CommandBase{
 			OperationCode: 3092,
-		}}
+	}}
 
-	wc := &WorldCommand{pc: pc}
+	wc := &WorldCommand{pc:pc}
 
 	if data, err := wc.userWorldInfo(ctx); err != nil {
 		t.Error(err)
 	} else {
 		var (
-			worldID         uint16
+			worldID uint16
 			numOfCharacters byte
 		)
 
@@ -167,7 +167,7 @@ func TestUserWorldInfo(t *testing.T) {
 			t.Error(err)
 		} else {
 			if worldID != uint16(1) {
-				t.Errorf("result nc.WorldManager: %v is diferent that the expected nc.WorldManager: %v", worldID, 1)
+				t.Errorf("result nc.WorldManager: %v is different that the expected nc.WorldManager: %v", worldID, 1)
 			}
 		}
 
@@ -175,7 +175,7 @@ func TestUserWorldInfo(t *testing.T) {
 			t.Error(err)
 		} else {
 			if numOfCharacters != byte(0) {
-				t.Errorf("result nc.NumOfAvatar: %v is diferent that the expected nc.NumOfAvatar: %v", numOfCharacters, 0)
+				t.Errorf("result nc.NumOfAvatar: %v is different that the expected nc.NumOfAvatar: %v", numOfCharacters, 0)
 			}
 		}
 	}
