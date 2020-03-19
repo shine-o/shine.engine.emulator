@@ -19,7 +19,9 @@ crypt:
 #  xorLimit: 350
   # OG Client
   xorLimit: 499
-  client_version: ebe951290be5b45f1fb075f5505a90b6
+  client_version:
+    ignore: true
+    key: ebe951290be5b45f1fb075f5505a90b6
 
 #protocol:
 #  nc-data: "defaults/protocol-commands.yml"
