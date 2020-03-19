@@ -12,11 +12,12 @@ import (
 	"time"
 )
 
-var CC = errors.New("context was canceled")
+var errCC = errors.New("context was canceled")
 
-var HF = errors.New("hardcoded feature")
+var errHF = errors.New("hardcoded feature")
 
-
+// WorldCommand wrapper for networking command
+// any information scoped to this service and its handlers can be added here
 type WorldCommand struct {
 	pc *networking.Command
 }
@@ -25,7 +26,7 @@ func (wc * WorldCommand) worldTime(ctx context.Context) ([]byte, error) {
 	var data []byte
 	select {
 	case <- ctx.Done():
-		return data, CC
+		return data, errCC
 	default:
 		var (
 			t time.Time
@@ -43,11 +44,11 @@ func (wc * WorldCommand) worldTime(ctx context.Context) ([]byte, error) {
 			Second: second,
 		}
 
-		if data, err := networking.WriteBinary(nc); err != nil {
+		data, err := networking.WriteBinary(nc)
+		if err != nil {
 			return data, err
-		} else {
-			return data, nil
 		}
+		return data, nil
 	}
 }
 
@@ -57,21 +58,19 @@ func (wc * WorldCommand) worldTime(ctx context.Context) ([]byte, error) {
 func (wc * WorldCommand) loginToWorld(ctx context.Context) error {
 	select {
 	case <- ctx.Done():
-		return CC
+		return errCC
 	default:
 		if ncs, ok := wc.pc.NcStruct.(structs.NcUserLoginWorldReq); ok {
-			wsi := ctx.Value("session")
+			wsi := ctx.Value(networking.ShineSession)
 			ws := wsi.(*session)
 			userName := strings.TrimRight(string(ncs.User.Name[:]), "\x00")
 			ws.UserName = userName
 			if err := persistSession(ws); err != nil {
 				return err
-			} else {
-				return nil
 			}
-		} else {
-			return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(wc.pc.NcStruct).String())
+			return nil
 		}
+		return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(wc.pc.NcStruct).String())
 	}
 }
 
@@ -79,34 +78,32 @@ func (wc * WorldCommand) userWorldInfo(ctx context.Context) ([]byte, error)  {
 	var data []byte
 	select {
 	case <-ctx.Done():
-		return data, CC
+		return data, errCC
 	default:
 		// world id is in the session
 		// user name is in the session
-		wsi := ctx.Value("session")
+		wsi := ctx.Value(networking.ShineSession)
 		ws := wsi.(*session)
 
 		if ws.UserName == "admin" { // no database for now, so I hardcode the avatar info
-			if worldId, err := strconv.Atoi(ws.WorldId); err != nil {
+			worldID, err := strconv.Atoi(ws.WorldID)
+			if err != nil {
 				return data, err
-			} else {
-
-				nc := structs.NcUserLoginWorldAck{
-					WorldManager: uint16(worldId),
-					NumOfAvatar:  0,
-				}
-
-				if b, err := networking.WriteBinary(nc.WorldManager); err != nil {
-					return data, err
-				} else {
-					data = append(data, b...)
-					data = append(data, nc.NumOfAvatar)
-				}
 			}
+			nc := structs.NcUserLoginWorldAck{
+				WorldManager: uint16(worldID),
+				NumOfAvatar:  0,
+			}
+
+			b, err := networking.WriteBinary(nc.WorldManager)
+			if err != nil {
+				return data, err
+			}
+			data = append(data, b...)
+			data = append(data, nc.NumOfAvatar)
 			return data, nil
-		} else {
-			return data, HF
 		}
+		return data, errHF
 	}
 }
 

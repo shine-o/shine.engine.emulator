@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/google/logger"
 	"math/rand"
 	"time"
 	"unsafe"
@@ -20,7 +19,7 @@ const (
 
 var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 
-func RandStringRunes(n int) string {
+func randStringRunes(n int) string {
 	b := make([]rune, n)
 	for i := range b {
 		b[i] = letterRunes[rand.Intn(len(letterRunes))]
@@ -28,7 +27,7 @@ func RandStringRunes(n int) string {
 	return string(b)
 }
 
-func RandStringBytesMaskImprSrcUnsafe(n int) string {
+func randStringBytesMaskImprSrcUnsafe(n int) string {
 	b := make([]byte, n)
 	// A src.Int63() generates 63 random bits, enough for letterIdxMax characters!
 	for i, cache, remain := n-1, rand.Int63(), letterIdxMax; i >= 0; {
@@ -44,8 +43,4 @@ func RandStringBytesMaskImprSrcUnsafe(n int) string {
 	}
 
 	return *(*string)(unsafe.Pointer(&b))
-}
-
-func SetLogger(l * logger.Logger)  {
-	log = l
 }
