@@ -16,17 +16,20 @@ import (
 	"time"
 )
 
-type RpcClients struct {
+// RPCClients that this service will use to communicate with other services
+type RPCClients struct {
 	services map[string]*grpc.ClientConn
 	mu       sync.Mutex
 }
 
 var (
 	log   *logger.Logger
-	grpcc *RpcClients
+	grpcc *RPCClients
 )
 
-// handle here command args if necessary
+// Start the login service
+// that is, use networking library to handle TCP connection
+// configure networking library to use handlers implemented in this package for packets
 func Start(cmd *cobra.Command, args []string) {
 	start()
 }
@@ -73,17 +76,17 @@ func start() {
 	ss := networking.NewShineService(s, hw)
 	wsf := &sessionFactory{}
 	ss.UseSessionFactory(wsf)
-	gRpcClients(ctx)
+	gRPCClients(ctx)
 	ss.Listen(ctx, viper.GetString("serve.port"))
 }
 
 // dial gRPC services that are needed.
-func gRpcClients(ctx context.Context) {
+func gRPCClients(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		inRPC := &RpcClients{
+		inRPC := &RPCClients{
 			services: make(map[string]*grpc.ClientConn),
 		}
 
