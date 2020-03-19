@@ -13,33 +13,45 @@ import (
 	"sync"
 )
 
+// Settings for decoding the packets detected by this library
 type Settings struct {
+	// xor hex table used to encrypt data on the client side, we use it here to decrypt data sent by the client
 	XorKey           []byte
+	// xor hex table has a limit, when that limit is reached, while decrypting, we start from offset 0 of the xor hex table
 	XorLimit         uint16
+	// operation codes are the result of bit operation on the Department (category) and Command (category item) values on the client side
+	// each Department has a DN and each Command has a a FQDN
+	// the FQDN of a Command is used to give useful info about a detected packet
 	CommandsFilePath string
 }
 
+// PCList protocol command list
+// friendly names for each Department and Commands within a Department
 type PCList struct {
 	Departments map[uint8]Department
 	mu          sync.Mutex
 }
 
+// RawPCList struct used to unmarshal the protocol commands file
 type RawPCList struct {
 	Departments []Department `yaml:"departments,flow"`
 }
 
+// Department type used to unmarshal data from the protocol commands file
 type Department struct {
-	HexId             string `yaml:"hexId"`
+	HexID             string `yaml:"hexId"`
 	Name              string `yaml:"name"`
 	RawCommands       string `yaml:"commands"`
 	ProcessedCommands map[string]string
 }
 
+// Command type used to unmarshal data from the protocol commands file
 type Command struct {
 	Base     CommandBase // common data in every command, like operation code and length
 	NcStruct interface{} // any kind of structure that is the representation in bytes of the network packet
 }
 
+// CommandBase type used to store decoded data from a packet
 type CommandBase struct {
 	PacketType    string
 	Length        int
@@ -49,7 +61,7 @@ type CommandBase struct {
 	Data          []byte
 }
 
-// reassemble packet raw data
+// RawData of a packet that contains the length, operation code and packet data
 func (pcb *CommandBase) RawData() []byte {
 	var header []byte
 	var data []byte
@@ -77,7 +89,7 @@ func (pcb *CommandBase) RawData() []byte {
 	return append(header, data...)
 }
 
-// length of the bytes: opcode + content
+// PacketLength of a packet, which includes de operation code bytes
 func (pcb *CommandBase) PacketLength() int  {
 	return len(pcb.Data) + 2
 }
@@ -119,16 +131,16 @@ func (pcb *CommandBase) String() string {
 		commandList.mu.Unlock()
 	}
 
-	// if length is 0
+	rawJSON, err := json.Marshal(&ePcb);
 
-	if rawJson, err := json.Marshal(&ePcb); err != nil {
+	if err != nil {
 		log.Error(err)
 		return ""
-	} else {
-		return string(rawJson)
 	}
+	return string(rawJSON)
 }
 
+// Set Settings specified by the shine service
 func (s *Settings) Set() {
 	if cl, err := InitCommandList(s.CommandsFilePath); err != nil {
 		log.Error(err)
@@ -139,48 +151,51 @@ func (s *Settings) Set() {
 	xorLimit = s.XorLimit
 }
 
-// struct information about captured network packets
+// InitCommandList from protocol commands file
 func InitCommandList(filePath string) (PCList, error) {
 	pcl := PCList{
 		Departments: make(map[uint8]Department),
 	}
-	if d, err := ioutil.ReadFile(filePath); err != nil {
+
+	d, err := ioutil.ReadFile(filePath)
+
+	if err != nil {
 		log.Error(err)
 		return PCList{}, err
-	} else {
-
-		rPcl := &RawPCList{}
-
-		err = yaml.Unmarshal(d, rPcl)
-
-		for _, d := range rPcl.Departments {
-
-			dptHexVal := strings.ReplaceAll(d.HexId, "0x", "")
-
-			dptIntVal, _ := strconv.ParseUint(dptHexVal, 16, 32)
-
-			department := Department{
-				HexId:             d.HexId,
-				Name:              d.Name,
-				ProcessedCommands: make(map[string]string),
-			}
-			cmdsRaw := d.RawCommands
-			cmdsRaw = strings.ReplaceAll(cmdsRaw, "\n", "")
-			cmdsRaw = strings.ReplaceAll(cmdsRaw, " ", "")
-			cmdsRaw = strings.ReplaceAll(cmdsRaw, "0x", "")
-			cmdsRaw = strings.ReplaceAll(cmdsRaw, "\t", "")
-
-			cmds := strings.Split(cmdsRaw, ",")
-
-			for _, c := range cmds {
-				if c == "" {
-					continue
-				}
-				cs := strings.Split(c, "=")
-				department.ProcessedCommands[cs[1]] = cs[0]
-			}
-			pcl.Departments[uint8(dptIntVal)] = department
-		}
 	}
+
+	rPcl := &RawPCList{}
+
+	err = yaml.Unmarshal(d, rPcl)
+
+	for _, d := range rPcl.Departments {
+
+		dptHexVal := strings.ReplaceAll(d.HexID, "0x", "")
+
+		dptIntVal, _ := strconv.ParseUint(dptHexVal, 16, 32)
+
+		department := Department{
+			HexID:             d.HexID,
+			Name:              d.Name,
+			ProcessedCommands: make(map[string]string),
+		}
+		cmdsRaw := d.RawCommands
+		cmdsRaw = strings.ReplaceAll(cmdsRaw, "\n", "")
+		cmdsRaw = strings.ReplaceAll(cmdsRaw, " ", "")
+		cmdsRaw = strings.ReplaceAll(cmdsRaw, "0x", "")
+		cmdsRaw = strings.ReplaceAll(cmdsRaw, "\t", "")
+
+		cmds := strings.Split(cmdsRaw, ",")
+
+		for _, c := range cmds {
+			if c == "" {
+				continue
+			}
+			cs := strings.Split(c, "=")
+			department.ProcessedCommands[cs[1]] = cs[0]
+		}
+		pcl.Departments[uint8(dptIntVal)] = department
+	}
+
 	return pcl, nil
 }

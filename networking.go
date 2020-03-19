@@ -28,12 +28,17 @@ type clientWriter struct {
 	mu sync.Mutex
 }
 
+// ShineService to be used by the calling shine service to:
+// 	1. configure the settings for TCP socket
+// 	2. assign the handlers for the operation codes handled by the shine service
+//  3. use session factory specific to the shine service to create a session object in the context of each TCP connection
 type ShineService struct {
 	s  *Settings
 	hw *HandleWarden
 	sf SessionFactory
 }
 
+// NewShineService create new, the calling shine service must configure Settings and a HandlerWarden
 func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
 	return &ShineService{
 		s:  s,
@@ -41,10 +46,8 @@ func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
 	}
 }
 
-// listen on  tcp socket
+// Listen on TPC socket for connection on given port
 func (ss *ShineService) Listen(ctx context.Context, port string) {
-	//log = logger.Init("NetworkingLogger", true, false, ioutil.Discard)
-	//log.Info("Networking Logger init()")
 	ss.s.Set()
 	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", port)); err == nil {
 		log.Infof("Listening for TCP connections on: %v", l.Addr())
@@ -62,6 +65,7 @@ func (ss *ShineService) Listen(ctx context.Context, port string) {
 	}
 }
 
+// UseSessionFactory given by the shine service
 func (ss *ShineService) UseSessionFactory(sf SessionFactory)  {
 	ss.sf = sf
 }
@@ -88,8 +92,8 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 		}
 	)
 
-	ctx = context.WithValue(ctx, "session", ss.sf.New())
-	ctx = context.WithValue(ctx, "connWriter", cw)
+	ctx = context.WithValue(ctx, ShineSession, ss.sf.New())
+	ctx = context.WithValue(ctx, ConnectionWriter, cw)
 
 	go ss.hw.handleSegments(ctx, segment)
 
@@ -113,12 +117,15 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 	}
 }
 
+// WriteToClient data
+// all shine service handlers will call this function to write data to the TCP client
+// the TCP connection object is stored in the context
 func WriteToClient(ctx context.Context, pc *Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		cwv := ctx.Value("connWriter")
+		cwv := ctx.Value(ConnectionWriter)
 		cw := cwv.(*clientWriter)
 		log.Infof("Outbound packet: %v", pc.Base.String())
 		cw.mu.Lock()
