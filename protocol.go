@@ -77,6 +77,11 @@ func (pcb *CommandBase) RawData() []byte {
 	return append(header, data...)
 }
 
+// length of the bytes: opcode + content
+func (pcb *CommandBase) PacketLength() int  {
+	return len(pcb.Data) + 2
+}
+
 func (pcb *CommandBase) String() string {
 	type exportedPcb struct {
 		PacketType    string `json:"packetType"`
@@ -91,13 +96,17 @@ func (pcb *CommandBase) String() string {
 	//department = opCode >> 10
 	//command = opCode & 1023
 	ePcb := exportedPcb{
-		PacketType:    pcb.PacketType,
-		Length:        pcb.Length,
+		Length:        pcb.PacketLength(),
 		Department:    pcb.OperationCode >> 10,
 		Command:       fmt.Sprintf("%X", pcb.OperationCode&1023),
 		OperationCode: pcb.OperationCode,
 		Data:          hex.EncodeToString(pcb.Data),
 		RawData:       hex.EncodeToString(pcb.RawData()),
+	}
+	if pcb.PacketLength() > 255 {
+		ePcb.PacketType = "big"
+	}  else {
+		ePcb.PacketType = "small"
 	}
 
 	if (&PCList{}) != commandList {
@@ -109,6 +118,8 @@ func (pcb *CommandBase) String() string {
 		}
 		commandList.mu.Unlock()
 	}
+
+	// if length is 0
 
 	if rawJson, err := json.Marshal(&ePcb); err != nil {
 		log.Error(err)
