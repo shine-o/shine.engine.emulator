@@ -126,7 +126,7 @@ func (pcb *CommandBase) String() string {
 		if dpt, ok := commandList.Departments[uint8(ePcb.Department)]; ok {
 			ePcb.FriendlyName = dpt.ProcessedCommands[ePcb.Command]
 		} else {
-			log.Warningf("Missing friendly name for command with: operationCode %v,  department %v, commmand %v, ", ePcb.OperationCode, ePcb.Department, ePcb.Command)
+			log.Warningf("Missing friendly name for command with: operationCode %v,  department %v, command %v, ", ePcb.OperationCode, ePcb.Department, ePcb.Command)
 		}
 		commandList.mu.Unlock()
 	}
