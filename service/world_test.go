@@ -29,9 +29,9 @@ func TestMain(m *testing.M) {
 		viper.AddConfigPath(path)
 		viper.SetConfigType("yaml")
 
-		//viper.SetConfigName(".world.circleci")
+		viper.SetConfigName(".world.circleci")
 		// for running tests locally, use this:
-		viper.SetConfigName(".world.test")
+		//viper.SetConfigName(".world.test")
 
 		// If a config file is found, read it in.
 		if err := viper.ReadInConfig(); err == nil {
