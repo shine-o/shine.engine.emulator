@@ -24,9 +24,8 @@ func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
 			if err := wc.loginToWorld(ctx); err != nil {
 				log.Error(err)
 				return
-			} else {
-				go userLoginWorldAck(ctx, &networking.Command{})
 			}
+			go userLoginWorldAck(ctx, &networking.Command{})
 		}
 	}
 }
@@ -41,12 +40,12 @@ func userLoginWorldAck(ctx context.Context, pc *networking.Command) {
 		pc.Base.OperationCode = 3092
 		wc := &WorldCommand{pc:pc}
 
-		if data, err := wc.userWorldInfo(ctx); err != nil {
+		data, err := wc.userWorldInfo(ctx)
+		if err != nil {
 			return
-		} else {
-			pc.Base.Data = data
-			go networking.WriteToClient(ctx, pc)
 		}
+		pc.Base.Data = data
+		go networking.WriteToClient(ctx, pc)
 	}
 }
 
@@ -65,24 +64,24 @@ func userWillWorldSelectAck(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		pc.Base.OperationCode = 3124
-		otp := RandStringBytesMaskImprSrcUnsafe(32)
+		otp := randStringBytesMaskImprSrcUnsafe(32)
 		//otp := "a85472c3841de5fc22433560fe32a2a3"
-		if err := redisClient.Set(otp, otp, 20 * time.Second).Err(); err != nil {
+		err := redisClient.Set(otp, otp, 20 * time.Second).Err()
+		if err != nil {
 			// err opcode
 			return
-		} else {
-			nc := structs.NcUserWillWorldSelectAck{
-				Error: 7768,
-			}
-			data := make([]byte, 0)
-
-			if b, err := networking.WriteBinary(nc.Error); err == nil {
-				data = append(data, b...)
-			}
-			data = append(data, otp...)
-			pc.Base.Data = data
-			go networking.WriteToClient(ctx, pc)
 		}
+		nc := structs.NcUserWillWorldSelectAck{
+			Error: 7768,
+		}
+		data := make([]byte, 0)
+
+		if b, err := networking.WriteBinary(nc.Error); err == nil {
+			data = append(data, b...)
+		}
+		data = append(data, otp...)
+		pc.Base.Data = data
+		go networking.WriteToClient(ctx, pc)
 	}
 }
 
