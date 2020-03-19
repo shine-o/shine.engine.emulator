@@ -17,11 +17,12 @@ import (
 	"path/filepath"
 	"sync"
 )
+
 type world struct {
 	id   string
 	name string
 	port string
-	externalIp string
+	extIP string
 }
 
 type activeWorlds struct {
@@ -38,7 +39,9 @@ func init()  {
 	log = logger.Init("world service default logger", true, false, ioutil.Discard)
 }
 
-
+// Start the world service
+// that is, use networking library to handle TCP connection
+// configure networking library to use handlers implemented in this package for packets
 func Start(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -83,7 +86,7 @@ func startWorlds(ctx context.Context) {
 				id: s["id"],
 				name: s["name"],
 				port: s["port"],
-				externalIp: s["external_ip"],
+				extIP: s["external_ip"],
 			}
 			go startWorld(ctx, w)
 		}
@@ -125,7 +128,7 @@ func startWorld(ctx context.Context, w world) {
 		ss := networking.NewShineService(s, hw)
 
 		wsf := &sessionFactory{
-			worldId: w.id,
+			worldID: w.id,
 		}
 		ss.UseSessionFactory(wsf)
 
@@ -135,16 +138,6 @@ func startWorld(ctx context.Context, w world) {
 
 		ss.Listen(ctx, w.port)
 	}
-}
-
-type InRPC struct {
-	services map[string]*grpc.ClientConn
-	mu       sync.Mutex
-}
-
-type OutRPC struct {
-	services map[string]*grpc.ClientConn
-	mu       sync.Mutex
 }
 
 // listen on gRPC TCP connections related to this project
@@ -169,13 +162,13 @@ func selfRPC(ctx context.Context) {
 				services = append(services, m)
 			}
 			for _, v := range services {
-				go gRpcServers(ctx, v)
+				go gRPCServers(ctx, v)
 			}
 		}
 	}
 }
 
-func gRpcServers(ctx context.Context, service map[string]string) {
+func gRPCServers(ctx context.Context, service map[string]string) {
 	select {
 	case <-ctx.Done():
 		return
