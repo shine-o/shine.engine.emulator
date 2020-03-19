@@ -12,12 +12,23 @@ import (
 	"strings"
 )
 
-var WTO = errors.New("world timed out")
-var UNF = errors.New("user not found")
-var CC = errors.New("context was canceled")
-var BC = errors.New("bad credentials")
-var DBE = errors.New("database exception")
+// ErrWTO world service timed out
+var ErrWTO = errors.New("world timed out")
 
+// ErrUNF user does not exist in the database
+var ErrUNF = errors.New("user not found")
+
+// ErrCC ctx.Done() signal was received
+var ErrCC = errors.New("context was canceled")
+
+// ErrBC user sent bad userName and password combination
+var ErrBC = errors.New("bad credentials")
+
+// ErrDBE database exception
+var ErrDBE = errors.New("database exception")
+
+// LoginCommand wrapper for networking command
+// any information scoped to this service and its handlers can be added here
 type LoginCommand struct {
 	pc *networking.Command
 }
@@ -27,19 +38,17 @@ func (lc *LoginCommand) checkClientVersion(ctx context.Context) ([]byte, error) 
 	var data []byte
 	select {
 	case <-ctx.Done():
-		return data, CC
+		return data, ErrCC
 	default:
 		if ncs, ok := lc.pc.NcStruct.(structs.NcUserClientVersionCheckReq); ok {
 			vk := strings.TrimRight(string(ncs.VersionKey[:33]), "\x00") // will replace with direct binary comparison
 			if vk == viper.GetString("crypt.client_version") {
 				// xtrap info goes here, but we dont use xtrap so we don't have to send anything.
 				return data, nil
-			} else {
-				return data, fmt.Errorf("client sent incorrect client version key:%v", vk)
 			}
-		} else {
-			return data, fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
+			return data, fmt.Errorf("client sent incorrect client version key:%v", vk)
 		}
+		return data, fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
 	}
 }
 
@@ -47,7 +56,7 @@ func (lc *LoginCommand) checkClientVersion(ctx context.Context) ([]byte, error) 
 func (lc *LoginCommand) checkCredentials(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
-		return CC
+		return ErrCC
 	default:
 		if ncs, ok := lc.pc.NcStruct.(structs.NcUserUsLoginReq); ok {
 			un := ncs.UserName[:]
@@ -59,22 +68,23 @@ func (lc *LoginCommand) checkCredentials(ctx context.Context) error {
 			db := database.Where("user_name = ?", userName).First(&user)
 
 			if len(db.GetErrors()) > 0 {
+
 				if db.RecordNotFound() {
-					return UNF
-				} else {
-					return fmt.Errorf("%v: [ %v ]", DBE, db.GetErrors())
+					return ErrUNF
 				}
+
+				return fmt.Errorf("%v: [ %v ]", ErrDBE, db.GetErrors())
 			}
 
 			if user.Password == password {
 				return nil
-			} else {
-				return BC
 			}
 
-		} else {
-			return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
+			return ErrBC
+
 		}
+
+		return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
 	}
 }
 
@@ -82,7 +92,7 @@ func (lc *LoginCommand) checkCredentials(ctx context.Context) error {
 func (lc *LoginCommand) checkWorldStatus(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
-		return CC
+		return ErrCC
 	default:
 		grpcc.mu.Lock()
 		conn := grpcc.services["world"]
@@ -91,9 +101,8 @@ func (lc *LoginCommand) checkWorldStatus(ctx context.Context) error {
 
 		if state == "READY" || state == "IDLE" {
 			return nil
-		} else {
-			return WTO
 		}
+		return ErrWTO
 	}
 }
 
@@ -102,20 +111,20 @@ func (lc *LoginCommand) userSelectedServer(ctx context.Context) ([]byte, error) 
 	var data []byte
 	select {
 	case <-ctx.Done():
-		return data, CC
+		return data, ErrCC
 	default:
 		grpcc.mu.Lock()
 		conn := grpcc.services["world"]
 		c := lw.NewWorldClient(conn)
 		grpcc.mu.Unlock()
 
-		rpcCtx, _ := context.WithTimeout(context.Background(), gRpcTimeout)
+		rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
 
-		if r, err := c.ConnectionInfo(rpcCtx, &lw.SelectedWorld{Num: 1}); err != nil {
+		r, err := c.ConnectionInfo(rpcCtx, &lw.SelectedWorld{Num: 1})
+		if err != nil {
 			return data, err
-		} else {
-			return r.Info, nil
 		}
+		return r.Info, nil
 	}
 }
 
@@ -123,18 +132,16 @@ func (lc *LoginCommand) userSelectedServer(ctx context.Context) ([]byte, error) 
 func (lc *LoginCommand) loginByCode(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
-		return CC
+		return ErrCC
 	default:
 		if ncs, ok := lc.pc.NcStruct.(structs.NcUserLoginWithOtpReq); ok {
 			b := make([]byte, len(ncs.Otp.Name))
 			copy(b, ncs.Otp.Name[:])
 			if _, err := redisClient.Get(string(b)).Result(); err != nil {
 				return err
-			} else {
-				return nil
 			}
-		} else {
-			return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
+			return nil
 		}
+		return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
 	}
 }

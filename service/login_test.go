@@ -56,7 +56,7 @@ func TestMain(m *testing.M) {
 	}
 	initDatabase()
 	initRedis()
-	//gRpcClients(ctx)
+	//gRPCClients(ctx)
 	os.Exit(m.Run())
 }
 
