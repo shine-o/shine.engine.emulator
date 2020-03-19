@@ -10,24 +10,24 @@ import (
 )
 
 type sessionFactory struct {
-	worldId string
+	worldID string
 }
 
 type session struct {
-	Id string `json:"id"`
-	WorldId string
+	ID string `json:"id"`
+	WorldID string
 	UserName string `json:"user_name"`
 }
 
 func (s sessionFactory) New() networking.Session  {
 	return &session {
-		Id:	uuid.New().String(),
-		WorldId: s.worldId,
+		ID:	uuid.New().String(),
+		WorldID: s.worldID,
 	}
 }
 
 func (s * session) Identifier() string  {
-	return s.Id
+	return s.ID
 }
 
 var redisClient * redis.Client
@@ -47,17 +47,17 @@ func initRedis()  {
 }
 
 func persistSession(ws *session) error {
-	if sd, err := json.Marshal(ws); err != nil {
+	sd, err := json.Marshal(ws)
+	if err != nil {
 		log.Error(err)
 		return err
-	} else {
-		key := fmt.Sprintf("%v-world", ws.UserName)
-		if err := redisClient.Set(key, sd, 0).Err(); err != nil {
-			log.Error(err)
-			return err
-		} else {
-			log.Infof("persisting session %v -> %v", key, string(sd))
-			return nil
-		}
 	}
+	key := fmt.Sprintf("%v-world", ws.UserName)
+ 	err = redisClient.Set(key, sd, 0).Err()
+ 	if err != nil {
+		log.Error(err)
+		return err
+	}
+	log.Infof("persisting session %v -> %v", key, string(sd))
+	return nil
 }
