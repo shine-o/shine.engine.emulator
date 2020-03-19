@@ -166,7 +166,10 @@ func InitCommandList(filePath string) (PCList, error) {
 
 	rPcl := &RawPCList{}
 
-	err = yaml.Unmarshal(d, rPcl)
+	if err = yaml.Unmarshal(d, rPcl); err != nil {
+		log.Error(err)
+		return PCList{}, err
+	}
 
 	for _, d := range rPcl.Departments {
 
