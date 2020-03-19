@@ -2,124 +2,118 @@ package service
 
 import (
 	"context"
-	"encoding/hex"
+	"errors"
 	"fmt"
-	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.networking"
-	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"google.golang.org/grpc"
-	"io/ioutil"
-	"net"
-	"os"
-	"path/filepath"
-	"sync"
+	"github.com/shine-o/shine.engine.structs"
+	"reflect"
+	"strconv"
+	"strings"
+	"time"
 )
 
-var log *logger.Logger
+var CC = errors.New("context was canceled")
 
-func init() {
-	log = logger.Init("WorldLogger", true, true, ioutil.Discard)
-	log.Info("WorldLogger init()")
+var HF = errors.New("hardcoded feature")
+
+
+type WorldCommand struct {
+	pc *networking.Command
 }
 
-func Start(cmd *cobra.Command, args []string) {
-	initRedis()
+func (wc * WorldCommand) worldTime(ctx context.Context) ([]byte, error) {
+	var data []byte
+	select {
+	case <- ctx.Done():
+		return data, CC
+	default:
+		var (
+			t time.Time
+			hour, minute, second byte
+		)
 
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	s := &networking.Settings{}
+		t = time.Now()
+		hour = byte(t.Hour())
+		minute = byte(t.Minute())
+		second = byte(t.Second())
 
-	if xk, err := hex.DecodeString(viper.GetString("crypt.xorKey")); err != nil {
-		log.Error(err)
-		os.Exit(1)
-	} else {
-		s.XorKey = xk
+		nc := &structs.NcMiscGameTimeAck{
+			Hour:   hour,
+			Minute: minute,
+			Second: second,
+		}
+
+		if data, err := networking.WriteBinary(nc); err != nil {
+			return data, err
+		} else {
+			return data, nil
+		}
 	}
+}
 
-	s.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
-
-	if path, err := filepath.Abs(viper.GetString("protocol.nc-data")); err != nil {
-		log.Error(err)
-	} else {
-		s.CommandsFilePath = path
+// user wants to log to given world
+// check if world is okay
+// take user name, persist to redis
+func (wc * WorldCommand) loginToWorld(ctx context.Context) error {
+	select {
+	case <- ctx.Done():
+		return CC
+	default:
+		if ncs, ok := wc.pc.NcStruct.(structs.NcUserLoginWorldReq); ok {
+			wsi := ctx.Value("session")
+			ws := wsi.(*session)
+			userName := strings.TrimRight(string(ncs.User.Name[:]), "\x00")
+			ws.UserName = userName
+			if err := persistSession(ws); err != nil {
+				return err
+			} else {
+				return nil
+			}
+		} else {
+			return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(wc.pc.NcStruct).String())
+		}
 	}
-
-	ch := make(map[uint16]func(ctx context.Context, pc *networking.Command))
-	ch[3087] = userLoginWorldReq
-	ch[2061] = miscGametimeReq
-	ch[3123] = userWillWorldSelectReq
-
-	hw := networking.NewHandlerWarden(ch)
-
-	ss := networking.NewShineService(s, hw)
-
-	wsf := &sessionFactory{}
-	ss.UseSessionFactory(wsf)
-
-	go selfRPC(ctx)
-
-	ss.Listen(ctx)
 }
 
-type InRPC struct {
-	services map[string]*grpc.ClientConn
-	mu       sync.Mutex
-}
-
-type OutRPC struct {
-	services map[string]*grpc.ClientConn
-	mu       sync.Mutex
-}
-
-// listen on gRPC TCP connections related to this project
-// not needed for now, as login is not expecting to act as server
-func selfRPC(ctx context.Context) {
+func (wc * WorldCommand) userWorldInfo(ctx context.Context) ([]byte, error)  {
+	var data []byte
 	select {
 	case <-ctx.Done():
-		return
+		return data, CC
 	default:
-		if viper.IsSet("gRPC.services.self") {
-			// snippet for loading yaml array
-			services := make([]map[string]string, 0)
-			var m map[string]string
-			servicesI := viper.Get("gRPC.services.self")
-			servicesS := servicesI.([]interface{})
-			for _, s := range servicesS {
-				serviceMap := s.(map[interface{}]interface{})
-				m = make(map[string]string)
-				for k, v := range serviceMap {
-					m[k.(string)] = v.(string)
+		// world id is in the session
+		// user name is in the session
+		wsi := ctx.Value("session")
+		ws := wsi.(*session)
+
+		if ws.UserName == "admin" { // no database for now, so I hardcode the avatar info
+			if worldId, err := strconv.Atoi(ws.WorldId); err != nil {
+				return data, err
+			} else {
+
+				nc := structs.NcUserLoginWorldAck{
+					WorldManager: uint16(worldId),
+					NumOfAvatar:  0,
 				}
-				services = append(services, m)
+
+				if b, err := networking.WriteBinary(nc.WorldManager); err != nil {
+					return data, err
+				} else {
+					data = append(data, b...)
+					data = append(data, nc.NumOfAvatar)
+				}
 			}
-			for _, v := range services {
-				go gRpcServers(ctx, v)
-			}
+			return data, nil
+		} else {
+			return data, HF
 		}
 	}
 }
 
-func gRpcServers(ctx context.Context, service map[string]string) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		address := fmt.Sprintf(":%v", service["port"])
-		lis, err := net.Listen("tcp", address)
-		if err != nil {
-			log.Errorf("could listen on port %v for service %v : %v", service["port"], service["name"], err)
-		}
-		s := grpc.NewServer()
-
-		lw.RegisterWorldServer(s, &server{})
-
-		log.Infof("Loading gRPC server connections %v@::%v", service["name"], service["port"])
-
-		if err := s.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
-		}
-	}
+// user clicked previous
+// generate a otp token and store it in redis
+// login service will use the token to authenticate the user and send him to server select
+func (wc * WorldCommand) returnToServerSelect() ([]byte, error) {
+	var data []byte
+	return data, nil
 }
