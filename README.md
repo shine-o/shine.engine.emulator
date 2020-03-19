@@ -3,8 +3,8 @@
 
 > Emulated World service.
 ---
- [![CircleCI](https://circleci.com/gh/shine-o/shine.engine.world/tree/master.svg?style=shield)](https://circleci.com/gh/shine-o/shine.engine.world/tree/master.svg?style=shield)
-
+[![CircleCI](https://circleci.com/gh/shine-o/shine.engine.world/tree/master.svg?style=shield)](https://circleci.com/gh/shine-o/shine.engine.world/tree/master.svg?style=shield)
+[![Go Report Card](https://goreportcard.com/badge/github.com/shine-o/shine.engine.world)](https://goreportcard.com/report/github.com/shine-o/shine.engine.world)
 
 This project has dependencies on the modules: 
 
