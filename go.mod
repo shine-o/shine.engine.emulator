@@ -9,7 +9,7 @@ require (
 	github.com/jinzhu/gorm v1.9.12
 	github.com/lib/pq v1.3.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0
-	github.com/shine-o/shine.engine.networking v0.0.0-20200318175217-b392bf4d0e22
+	github.com/shine-o/shine.engine.networking v0.0.0-20200319001014-56ac0080099d
 	github.com/shine-o/shine.engine.protocol-buffers/login-world v0.0.0-20200314174953-2f346ed277bf
 	github.com/shine-o/shine.engine.structs v0.0.0-20200317164417-264763e42420
 	github.com/spf13/cobra v0.0.6
