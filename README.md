@@ -4,7 +4,8 @@
 
 > Emulated login service.
 ---
- [![CircleCI](https://circleci.com/gh/shine-o/shine.engine.login/tree/master.svg?style=shield)](https://circleci.com/gh/circleci/circleci-docs)
+[![CircleCI](https://circleci.com/gh/shine-o/shine.engine.login/tree/master.svg?style=shield)](https://circleci.com/gh/circleci/circleci-docs)
+[![Go Report Card](https://goreportcard.com/badge/github.com/shine-o/shine.engine.login)](https://goreportcard.com/report/github.com/shine-o/shine.engine.login)
 
 This project has dependencies on the modules: 
 
