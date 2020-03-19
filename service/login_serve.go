@@ -74,7 +74,7 @@ func start() {
 	wsf := &sessionFactory{}
 	ss.UseSessionFactory(wsf)
 	gRpcClients(ctx)
-	ss.Listen(ctx)
+	ss.Listen(ctx, viper.GetString("serve.port"))
 }
 
 // dial gRPC services that are needed.
