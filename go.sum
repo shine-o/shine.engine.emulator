@@ -114,6 +114,8 @@ github.com/shine-o/shine.engine.structs v0.0.0-20200315221027-3b386251ad3b h1:EJ
 github.com/shine-o/shine.engine.structs v0.0.0-20200315221027-3b386251ad3b/go.mod h1:AGsuJmxdOHMVm5C/V7fTAv2kY03cAzN1pkryoE1gnfQ=
 github.com/shine-o/shine.engine.structs v0.0.0-20200316165411-0effe4c86cda h1:yooSYcVU3uCW5b30uf0ddnZ8+8HnrswecEB2kbuSvmw=
 github.com/shine-o/shine.engine.structs v0.0.0-20200316165411-0effe4c86cda/go.mod h1:AGsuJmxdOHMVm5C/V7fTAv2kY03cAzN1pkryoE1gnfQ=
+github.com/shine-o/shine.engine.structs v0.0.0-20200317164417-264763e42420 h1:uCPniKBXzJxPB+yQKksK6c25oche4kiKXy/W7iHl5zM=
+github.com/shine-o/shine.engine.structs v0.0.0-20200317164417-264763e42420/go.mod h1:AGsuJmxdOHMVm5C/V7fTAv2kY03cAzN1pkryoE1gnfQ=
 github.com/shurcooL/sanitized_anchor_name v1.0.0 h1:PdmoCO6wvbs+7yrJyMORt4/BmY5IYyJwS/kOiWx8mHo=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
@@ -182,6 +184,8 @@ golang.org/x/sys v0.0.0-20191005200804-aed5e4c7ecf9/go.mod h1:h1NjWce9XRLGQEsW7w
 golang.org/x/sys v0.0.0-20191010194322-b09406accb47/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527 h1:uYVVQ9WP/Ds2ROhcaGPeIdVq0RIXVLwsHlnvJ+cT1So=
 golang.org/x/sys v0.0.0-20200302150141-5c8b2ff67527/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+golang.org/x/sys v0.0.0-20200317113312-5766fd39f98d h1:62ap6LNOjDU6uGmKXHJbSfciMoV+FeI1sRXx/pLDL44=
+golang.org/x/sys v0.0.0-20200317113312-5766fd39f98d/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=
 golang.org/x/text v0.3.2 h1:tW2bmiBqwgJj/UpqtC8EpXEZVYOwU0yG4iWbprSVAcs=
 golang.org/x/text v0.3.2/go.mod h1:bEr9sfX3Q8Zfm5fL9x+3itogRgK3+ptLWKqgva+5dAk=
