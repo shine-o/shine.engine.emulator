@@ -14,25 +14,25 @@ type sessionFactory struct {
 }
 
 type session struct {
-	ID string `json:"id"`
-	WorldID string
+	ID       string `json:"id"`
+	WorldID  string
 	UserName string `json:"user_name"`
 }
 
-func (s sessionFactory) New() networking.Session  {
-	return &session {
-		ID:	uuid.New().String(),
+func (s sessionFactory) New() networking.Session {
+	return &session{
+		ID:      uuid.New().String(),
 		WorldID: s.worldID,
 	}
 }
 
-func (s * session) Identifier() string  {
+func (s *session) Identifier() string {
 	return s.ID
 }
 
-var redisClient * redis.Client
+var redisClient *redis.Client
 
-func initRedis()  {
+func initRedis() {
 	host := viper.GetString("session.redis.host")
 	port := viper.GetString("session.redis.port")
 	db := viper.GetInt("session.redis.db")
@@ -41,7 +41,7 @@ func initRedis()  {
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
 		Password: "", // no password set
-		DB:       db,  // use default DB
+		DB:       db, // use default DB
 	})
 	redisClient = client
 }
@@ -53,8 +53,8 @@ func persistSession(ws *session) error {
 		return err
 	}
 	key := fmt.Sprintf("%v-world", ws.UserName)
- 	err = redisClient.Set(key, sd, 0).Err()
- 	if err != nil {
+	err = redisClient.Set(key, sd, 0).Err()
+	if err != nil {
 		log.Error(err)
 		return err
 	}
