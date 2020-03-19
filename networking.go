@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/logger"
-	"github.com/spf13/viper"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -14,10 +13,10 @@ import (
 	"time"
 )
 
-//func init() {
-//	log = logger.Init("NetworkingLogger", true, false, ioutil.Discard)
-//	log.Info("Networking Logger init()")
-//}
+func init() {
+	log = logger.Init("NetworkingLogger", true, false, ioutil.Discard)
+	log.Info("networking logger init()")
+}
 
 type clientReader struct {
 	r  *bufio.Reader
@@ -43,12 +42,11 @@ func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
 }
 
 // listen on  tcp socket
-func (ss *ShineService) Listen(ctx context.Context) {
-
-	log = logger.Init("NetworkingLogger", true, false, ioutil.Discard)
-	log.Info("Networking Logger init()")
+func (ss *ShineService) Listen(ctx context.Context, port string) {
+	//log = logger.Init("NetworkingLogger", true, false, ioutil.Discard)
+	//log.Info("Networking Logger init()")
 	ss.s.Set()
-	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", viper.GetInt("serve.port"))); err == nil {
+	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", port)); err == nil {
 		log.Infof("Listening for TCP connections on: %v", l.Addr())
 		defer l.Close()
 		rand.Seed(time.Now().Unix())
