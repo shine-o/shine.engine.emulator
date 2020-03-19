@@ -9,16 +9,20 @@ import (
 	"github.com/spf13/viper"
 )
 
-type sessionFactory struct {}
+type sessionFactory struct {
+	worldId string
+}
 
 type session struct {
 	Id string `json:"id"`
+	WorldId string
 	UserName string `json:"user_name"`
 }
 
 func (s sessionFactory) New() networking.Session  {
 	return &session {
 		Id:	uuid.New().String(),
+		WorldId: s.worldId,
 	}
 }
 

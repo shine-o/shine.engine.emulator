@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/google/logger"
 	"math/rand"
 	"time"
 	"unsafe"
@@ -43,4 +44,8 @@ func RandStringBytesMaskImprSrcUnsafe(n int) string {
 	}
 
 	return *(*string)(unsafe.Pointer(&b))
+}
+
+func SetLogger(l * logger.Logger)  {
+	log = l
 }

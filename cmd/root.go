@@ -47,7 +47,7 @@ func Execute() {
 }
 
 func init() {
-	log = logger.Init("InitLogger", true, true, ioutil.Discard)
+	log = logger.Init("InitLogger", true, false, ioutil.Discard)
 	log.Info("root init()")
 	cobra.OnInitialize(initConfig)
 	err := doc.GenMarkdownTree(rootCmd, "docs")
