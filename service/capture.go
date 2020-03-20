@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -49,6 +50,7 @@ type shineStreamFactory struct {
 
 type shineStream struct {
 	net, transport gopacket.Flow
+	flowName	   string
 	segments       chan<- shineSegment
 	xorKey         chan<- uint16 // only used by decodeClientPackets()
 	cancel         context.CancelFunc
@@ -187,8 +189,13 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 	}
 	key := fmt.Sprintf("%v:%v", srcIP, srcPort)
 	if srcPort >= 9000 && srcPort <= 9600 {
-		log.Infof("new server stream from => [ %v - %v]", srcIP, srcPort) // ip of the stream, port of the stream
 		// server - client
+		service, ok := shine.knownServices[srcPort]
+		if !ok {
+			log.Fatal("something went horribly wrong")
+		}
+		s.flowName = fmt.Sprintf("%v-client", strings.ToLower(service.name))
+		log.Infof("new server stream from => [ %v - %v] [%v]", srcIP, srcPort, s.flowName)
 		ss, ok := ssf.shineContext.Value(activeShineStreams).(*shineStreams)
 		ss.mu.Lock()
 		if !ok {
@@ -198,9 +205,17 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 		key := fmt.Sprintf("%v:%v", srcIP, srcPort)
 		ss.toClient[key] = s
 		ss.mu.Unlock()
+
 		go s.decodeServerPackets(ctx, segments)
 	} else {
-		log.Infof("new client stream from => [ %v - %v]", srcIP, srcPort) // ip of the stream, port of the stream
+		// server - client
+		dstPort, _ := strconv.Atoi(transport.Dst().String())
+		service, ok := shine.knownServices[dstPort]
+		if !ok {
+			log.Fatal("something went horribly wrong")
+		}
+		s.flowName = fmt.Sprintf("client-%v", strings.ToLower(service.name))
+		log.Infof("new server stream from => [ %v - %v] [%v]", srcIP, srcPort, s.flowName)
 		ss, ok := ssf.shineContext.Value(activeShineStreams).(*shineStreams)
 		ss.mu.Lock()
 		if !ok {
@@ -216,25 +231,26 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 	return s
 }
 
-func (fs *shineStream) Reassembled(reassemblies []tcpassembly.Reassembly) {
+func (ss *shineStream) Reassembled(reassemblies []tcpassembly.Reassembly) {
 	for _, reassembly := range reassemblies {
 		if len(reassembly.Bytes) == 0 {
 			continue
 		}
 		seg := shineSegment{data: reassembly.Bytes, seen: reassembly.Seen}
-		fs.segments <- seg
+		ss.segments <- seg
 	}
 }
 
-func (fs *shineStream) ReassemblyComplete() {
-	log.Warningf("reassembly complete for stream [ %v - %v]", fs.net.String(), fs.transport.String()) // ip of the stream, port of the stream
+func (ss *shineStream) ReassemblyComplete() {
+	log.Warningf("reassembly complete for stream [ %v - %v]", ss.net.String(), ss.transport.String()) // ip of the stream, port of the stream
 
 }
 
-func (fs *shineStream) decodeClientPackets(ctx context.Context, segments <-chan shineSegment, xorKey <-chan uint16) {
+func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan shineSegment, xorKey <-chan uint16) {
 	var d []byte
 	var offset int
 	var xorOffset uint16
+	var wg sync.WaitGroup
 	offset = 0
 	xorOffset = 1500 // impossible value
 	// block until xorKey is found
@@ -282,20 +298,21 @@ func (fs *shineStream) decodeClientPackets(ctx context.Context, segments <-chan 
 				if err != nil {
 					log.Error(err)
 				}
-				log.Infof("[%v] %v", segment.seen, pc.Base.String())
+				wg.Add(1)
+				go ss.handlePacket(ctx, &wg, segment.seen, pc)
 				offset += skipBytes + pLen
 			}
+			wg.Wait()
 		}
 	}
 }
 
-func (fs *shineStream) decodeServerPackets(ctx context.Context, segments <-chan shineSegment) {
-	// decode packets normally
-	// if xorKey is found, use ctx.value.fiestaStreams to find opposite stream
+func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan shineSegment) {
 	var (
 		d              []byte
 		offset         int
 		xorOffsetFound bool
+		wg sync.WaitGroup
 	)
 	xorOffsetFound = false
 	offset = 0
@@ -348,36 +365,40 @@ func (fs *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 							return
 						}
 						xorOffsetFound = true
-						ss, ok := ctx.Value(activeShineStreams).(*shineStreams)
+						// LOL
+						ass, ok := ctx.Value(activeShineStreams).(*shineStreams)
 						if !ok {
 							log.Errorf("unexpected struct type: %v", reflect.TypeOf(ss).String())
 							return
 						}
-						ss.mu.Lock()
+						ass.mu.Lock()
 
-						//srcIP := fs.net.Src().String()
-						dstIP := fs.net.Dst().String()
-						//srcPort, _ := strconv.Atoi(fs.transport.Src().String())
-						dstPort, _ := strconv.Atoi(fs.transport.Dst().String())
+						dstIP := ss.net.Dst().String()
+						dstPort, _ := strconv.Atoi(ss.transport.Dst().String())
+
 						key := fmt.Sprintf("%v:%v", dstIP, dstPort)
 
-						if ss, ok := ss.fromClient[key]; ok {
+						if ss, ok := ass.fromClient[key]; ok {
 							ss.xorKey <- xorOffset
 						} else {
 							log.Errorf("unexpected struct type: %v", reflect.TypeOf(ss).String())
-
 						}
-						ss.mu.Unlock()
+						ass.mu.Unlock()
 						log.Errorf("xorOffset: %v found for client  %v", xorOffset, key)
 					}
 				}
-
-				log.Infof("[%v] %v", segment.seen, pc.Base.String())
+				wg.Add(1)
+				go ss.handlePacket(ctx, &wg, segment.seen, pc)
 				offset += skipBytes + pLen
-				// go fs.handlePacketDAta
 			}
+			wg.Wait()
 		}
 	}
+}
+
+func (ss * shineStream) handlePacket(ctx context.Context, wg * sync.WaitGroup, seen time.Time, pc networking.Command) {
+	defer wg.Done()
+	log.Infof("[%v] [%v] %v", ss.flowName, seen, pc.Base.String())
 }
 
 // Capture packets and decode them
@@ -419,7 +440,17 @@ func Capture(cmd *cobra.Command, args []string) {
 	}
 }
 
-func parseForFrontend() {
+func (ss *shineStream) packetView() {
+
+	// frontend filters
+	//{
+	//	"filters" : [
+	//	{
+	//		"opCode": 8216,
+	//		"friendlyName": "NC_ACT_SOMEONEMOVEWALK_CMD"
+	//	}
+	//	]
+	//}
 
 	// send to the client, the following
 	//	{
