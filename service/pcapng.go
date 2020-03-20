@@ -1,4 +1,4 @@
-package lib
+package service
 
 import (
 	"fmt"
@@ -11,6 +11,7 @@ import (
 	"sync"
 )
 
+// Flows utility struct for storing raw packets
 type Flows struct {
 	pfm map[string][]gopacket.Packet
 	m   sync.Mutex
@@ -23,14 +24,14 @@ func (pf *Flows) add(p gopacket.Packet) {
 	dst, _ := strconv.Atoi(p.TransportLayer().TransportFlow().Dst().String())
 
 	var fkey string
-
+	shine.mu.Lock()
 	if src >= 9000 && src <= 9600 {
 		// server - client
 		fkey = fmt.Sprintf("%v-Client.pcapng", shine.knownServices[src].name)
 	} else {
 		fkey = fmt.Sprintf("Client-%v.pcapng", shine.knownServices[dst].name)
 	}
-
+	shine.mu.Unlock()
 	pf.m.Lock()
 	pf.pfm[fkey] = append(pf.pfm[fkey], p)
 	pf.m.Unlock()
@@ -41,12 +42,13 @@ func (pf *Flows) persist() {
 	pf.m.Lock()
 	for k, v := range pf.pfm {
 		pathName, err := filepath.Abs(fmt.Sprintf("%v%v", "output/", k))
-
+		if err != nil {
+			log.Fatal(err)
+		}
 		f, err := os.OpenFile(pathName, os.O_WRONLY|os.O_CREATE, 0666)
-		panicError(err)
 
 		r, err := pcapgo.NewNgWriter(f, layers.LinkTypeEthernet)
-		logError(err)
+
 		for _, p := range v {
 			err = r.WritePacket(p.Metadata().CaptureInfo, p.Data())
 		}
@@ -56,24 +58,3 @@ func (pf *Flows) persist() {
 	}
 	pf.m.Unlock()
 }
-
-// persist the available xorKeys
-//func persistXorKeys() {
-//	xorKeysFile, err := filepath.Abs(fmt.Sprintf("%v%v", "output/", "xorKeys.txt"))
-//
-//	xkf, err := os.OpenFile(xorKeysFile, os.O_WRONLY|os.O_CREATE, 0666)
-//
-//	if err != nil {
-//		fmt.Println(err)
-//	}
-//	for _, v := range knownServices {
-//		if v.xorKey != nil {
-//			sx := fmt.Sprintf("%v -> %v\n", v.name, *	v.xorKey)
-//			_, err := xkf.Write([]byte(sx))
-//			if err != nil {
-//				fmt.Println(err)
-//			}
-//		}
-//	}
-//	xkf.Close()
-//}
