@@ -1,4 +1,4 @@
-// Package for cmd config
+// Package cmd used for various command configs
 package cmd
 
 import (
