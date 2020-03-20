@@ -5,6 +5,8 @@ go 1.13
 require (
 	github.com/google/gopacket v1.1.17
 	github.com/google/logger v1.0.1
+	github.com/google/uuid v1.1.1
+	github.com/gorilla/websocket v1.4.2
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/shine-o/shine.engine.networking v0.0.0-20200319111042-22eb3d32c823
 	github.com/spf13/cobra v0.0.6

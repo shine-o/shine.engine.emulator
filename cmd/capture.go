@@ -21,4 +21,6 @@ to quickly create a Cobra application.`,
 
 func init() {
 	rootCmd.AddCommand(captureCmd)
+	// if ui true, launch go routine for websocket
+
 }

@@ -11,7 +11,8 @@ import (
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/logger"
-	networking "github.com/shine-o/shine.engine.networking"
+	"github.com/google/uuid"
+	"github.com/shine-o/shine.engine.networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -49,6 +50,7 @@ type shineStreamFactory struct {
 }
 
 type shineStream struct {
+	flowID			string
 	net, transport gopacket.Flow
 	flowName	   string
 	segments       chan<- shineSegment
@@ -160,7 +162,6 @@ func captureConfig() {
 	}
 
 	s.XorLimit = uint16(xorLimit)
-	log.Error(filepath.Abs(viper.GetString("protocol.commands")))
 	if path, err := filepath.Abs(viper.GetString("protocol.commands")); err != nil {
 		log.Error(err)
 	} else {
@@ -181,12 +182,14 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 	xorKey := make(chan uint16)
 
 	s := &shineStream{
+		flowID:	   uuid.New().String(),
 		net:       net,
 		transport: transport,
 		segments:  segments,
 		xorKey:    xorKey,
 		cancel:    cancel,
 	}
+
 	key := fmt.Sprintf("%v:%v", srcIP, srcPort)
 	if srcPort >= 9000 && srcPort <= 9600 {
 		// server - client
@@ -205,10 +208,9 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 		key := fmt.Sprintf("%v:%v", srcIP, srcPort)
 		ss.toClient[key] = s
 		ss.mu.Unlock()
-
 		go s.decodeServerPackets(ctx, segments)
 	} else {
-		// server - client
+		// client-server
 		dstPort, _ := strconv.Atoi(transport.Dst().String())
 		service, ok := shine.knownServices[dstPort]
 		if !ok {
@@ -243,28 +245,34 @@ func (ss *shineStream) Reassembled(reassemblies []tcpassembly.Reassembly) {
 
 func (ss *shineStream) ReassemblyComplete() {
 	log.Warningf("reassembly complete for stream [ %v - %v]", ss.net.String(), ss.transport.String()) // ip of the stream, port of the stream
-
+	ss.cancel()
+	// go notify ui that his flow has closed
 }
 
 func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan shineSegment, xorKey <-chan uint16) {
-	var d []byte
-	var offset int
-	var xorOffset uint16
-	var wg sync.WaitGroup
+	var (
+		d 			[]byte
+		offset  	int
+		xorOffset 	uint16
+		wg 			sync.WaitGroup
+	)
 	offset = 0
 	xorOffset = 1500 // impossible value
+
+	logActivated := viper.GetBool("protocol.log.client")
+
 	// block until xorKey is found
 	for {
 		select {
 		case <-ctx.Done():
-			log.Error("context was canceled")
+			log.Warningf("[%v] decodeClientPackets(): context was canceled", ss.flowName)
 			return
 		case xorOffset = <-xorKey:
 			break
 		case segment := <-segments:
 			d = append(d, segment.data...)
 			if offset > len(d) {
-				log.Info("not enough data, next offset is %v ", offset)
+				log.Warningf("not enough data, next offset is %v ", offset)
 				break
 			}
 
@@ -288,7 +296,7 @@ func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan 
 
 				nextOffset := offset + skipBytes + pLen
 				if nextOffset > len(d) {
-					log.Info("not enough data, next offset is %v ", nextOffset)
+					log.Warningf("not enough data, next offset is %v ", nextOffset)
 					break
 				}
 
@@ -298,8 +306,14 @@ func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan 
 				if err != nil {
 					log.Error(err)
 				}
+
+				if logActivated {
+					log.Infof("[%v] [%v] %v", ss.flowName, segment.seen, pc.Base.String())
+				}
+
 				wg.Add(1)
 				go ss.handlePacket(ctx, &wg, segment.seen, pc)
+
 				offset += skipBytes + pLen
 			}
 			wg.Wait()
@@ -312,20 +326,22 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 		d              []byte
 		offset         int
 		xorOffsetFound bool
-		wg sync.WaitGroup
+		wg 			   sync.WaitGroup
 	)
 	xorOffsetFound = false
 	offset = 0
 
+	logActivated := viper.GetBool("protocol.log.server")
+
 	for {
 		select {
 		case <-ctx.Done():
-			log.Error("context was canceled")
+			log.Warningf("[%v] decodeServerPackets(): context was canceled", ss.flowName)
 			return
 		case segment := <-segments:
 			d = append(d, segment.data...)
 			if offset > len(d) {
-				log.Info("not enough data, next offset is %v ", offset)
+				log.Warningf("not enough data, next offset is %v ", offset)
 				break
 			}
 
@@ -345,7 +361,7 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 
 				nextOffset := offset + skipBytes + pLen
 				if nextOffset > len(d) {
-					log.Info("not enough data, next offset is %v ", nextOffset)
+					log.Warningf("not enough data, next offset is %v ", nextOffset)
 					break
 				}
 
@@ -384,11 +400,16 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 							log.Errorf("unexpected struct type: %v", reflect.TypeOf(ss).String())
 						}
 						ass.mu.Unlock()
-						log.Errorf("xorOffset: %v found for client  %v", xorOffset, key)
+						log.Warningf("xorOffset: %v found for client  %v", xorOffset, key)
 					}
 				}
+				if logActivated {
+					log.Infof("[%v] [%v] %v", ss.flowName, segment.seen, pc.Base.String())
+				}
+
 				wg.Add(1)
 				go ss.handlePacket(ctx, &wg, segment.seen, pc)
+
 				offset += skipBytes + pLen
 			}
 			wg.Wait()
@@ -396,15 +417,9 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 	}
 }
 
-func (ss * shineStream) handlePacket(ctx context.Context, wg * sync.WaitGroup, seen time.Time, pc networking.Command) {
-	defer wg.Done()
-	log.Infof("[%v] [%v] %v", ss.flowName, seen, pc.Base.String())
-}
-
 // Capture packets and decode them
 func Capture(cmd *cobra.Command, args []string) {
 	captureConfig()
-
 	pf := &Flows{
 		pfm: make(map[string][]gopacket.Packet),
 	}
@@ -423,9 +438,11 @@ func Capture(cmd *cobra.Command, args []string) {
 	sf := &shineStreamFactory{
 		shineContext: ctx,
 	}
-
 	sp := tcpassembly.NewStreamPool(sf)
 	a := tcpassembly.NewAssembler(sp)
+
+	go startUI(ctx)
+
 	if handle, err := pcap.OpenLive(iface, int32(snaplen), true, pcap.BlockForever); err != nil {
 		log.Fatal(err)
 	} else if err := handle.SetBPFFilter(filter); err != nil { //
@@ -438,73 +455,4 @@ func Capture(cmd *cobra.Command, args []string) {
 			a.AssembleWithTimestamp(packet.NetworkLayer().NetworkFlow(), tcp, packet.Metadata().Timestamp)
 		}
 	}
-}
-
-func (ss *shineStream) packetView() {
-
-	// frontend filters
-	//{
-	//	"filters" : [
-	//	{
-	//		"opCode": 8216,
-	//		"friendlyName": "NC_ACT_SOMEONEMOVEWALK_CMD"
-	//	}
-	//	]
-	//}
-
-	// send to the client, the following
-	//	{
-	//		"clients": [
-	//	{
-	//		"uuid": "123e4567-e89b-12d3-a456-426655440000",
-	//		"status": "alive",
-	//		"ip" : "192.168.1.131",
-	//		"flows": [
-	//		{
-	//			"key": "client-login",
-	//			"status": "closed",
-	//			"packets": [
-	//			{
-	//				"metadata": {
-	//
-	//				},
-	//				"data": {
-	//					"packetType": "small",
-	//					"length": 24,
-	//					"department": 8,
-	//					"command": "1A",
-	//					"opCode": 8218,
-	//					"data": "a1086c0e0000560800006c0e0000560800006e006c20",
-	//					"rawData": "181a20a1086c0e0000560800006c0e0000560800006e006c20",
-	//					"friendlyName": "NC_ACT_SOMEONEMOVERUN_CMD"
-	//				}
-	//			}
-	//		]
-	//		},
-	//		{
-	//			"key": "client-zone01",
-	//			"status": "active",
-	//			"packets": [
-	//			{
-	//				"metadata": {
-	//
-	//				},
-	//				"data": {
-	//					"packetType": "small",
-	//					"length": 24,
-	//					"department": 8,
-	//					"command": "1A",
-	//					"opCode": 8218,
-	//					"data": "a1086c0e0000560800006c0e0000560800006e006c20",
-	//					"rawData": "181a20a1086c0e0000560800006c0e0000560800006e006c20",
-	//					"friendlyName": "NC_ACT_SOMEONEMOVERUN_CMD"
-	//				}
-	//			}
-	//		]
-	//		}
-	//	]
-	//	}
-	//]
-	//}
-
 }

@@ -41,3 +41,6 @@ protocol:
     client: true
     server: true
   commands: "defaults/commands.yml"
+
+ui:
+  port: 9090
