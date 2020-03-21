@@ -30,6 +30,21 @@ func init() {
 	log.Info("sniffer logger init()")
 }
 
+type shineStreamFactory struct {
+	shineContext context.Context
+}
+
+type shineStream struct {
+	flowID         string
+	net, transport gopacket.Flow
+	flowName       string
+	clientIP       string
+	serverIP       string
+	segments       chan<- shineSegment
+	xorKey         chan<- uint16 // only used by decodeClientPackets()
+	cancel         context.CancelFunc
+}
+
 // Shine utility struct for storing service data
 type Shine struct {
 	knownServices map[int]*service // port => serviceName
@@ -43,19 +58,6 @@ type service struct {
 type shineSegment struct {
 	data []byte
 	seen time.Time
-}
-
-type shineStreamFactory struct {
-	shineContext context.Context
-}
-
-type shineStream struct {
-	flowID			string
-	net, transport gopacket.Flow
-	flowName	   string
-	segments       chan<- shineSegment
-	xorKey         chan<- uint16 // only used by decodeClientPackets()
-	cancel         context.CancelFunc
 }
 
 type shineStreams struct {
@@ -74,11 +76,9 @@ var (
 	iface   string
 	snaplen int
 	filter  string
-
-	log *logger.Logger
+	shine   Shine
+	log     *logger.Logger
 )
-
-var shine Shine
 
 func captureConfig() {
 	// remove output folder if exists, create it again
@@ -171,18 +171,24 @@ func captureConfig() {
 }
 
 func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Stream {
+
+	var (
+		clientIP string
+		serverIP string
+	)
+
+	// create new cancel func from context [will be called from reassembly complete]
+	// assign context to shineStream
 	ctx, cancel := context.WithCancel(ssf.shineContext)
 
 	srcIP := net.Src().String()
 	srcPort, _ := strconv.Atoi(transport.Src().String())
 
-	// create new cancel func from context [will be called from reassembly complete]
-	// assign context to shinestream
 	segments := make(chan shineSegment, 512)
 	xorKey := make(chan uint16)
 
 	s := &shineStream{
-		flowID:	   uuid.New().String(),
+		flowID:    uuid.New().String(),
 		net:       net,
 		transport: transport,
 		segments:  segments,
@@ -191,8 +197,13 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 	}
 
 	key := fmt.Sprintf("%v:%v", srcIP, srcPort)
+
 	if srcPort >= 9000 && srcPort <= 9600 {
 		// server - client
+
+		serverIP = net.Src().String()
+		clientIP = net.Dst().String()
+
 		service, ok := shine.knownServices[srcPort]
 		if !ok {
 			log.Fatal("something went horribly wrong")
@@ -211,6 +222,10 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 		go s.decodeServerPackets(ctx, segments)
 	} else {
 		// client-server
+
+		clientIP = net.Src().String()
+		serverIP = net.Dst().String()
+
 		dstPort, _ := strconv.Atoi(transport.Dst().String())
 		service, ok := shine.knownServices[dstPort]
 		if !ok {
@@ -229,7 +244,8 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 		go s.decodeClientPackets(ctx, segments, xorKey)
 		return s
 	}
-
+	s.clientIP = clientIP
+	s.serverIP = serverIP
 	return s
 }
 
@@ -249,12 +265,13 @@ func (ss *shineStream) ReassemblyComplete() {
 	// go notify ui that his flow has closed
 }
 
+// handle stream data flowing from the client
 func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan shineSegment, xorKey <-chan uint16) {
 	var (
-		d 			[]byte
-		offset  	int
-		xorOffset 	uint16
-		wg 			sync.WaitGroup
+		d         []byte
+		offset    int
+		xorOffset uint16
+		wg        sync.WaitGroup
 	)
 	offset = 0
 	xorOffset = 1500 // impossible value
@@ -321,12 +338,13 @@ func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan 
 	}
 }
 
+// handle stream data flowing from the server
 func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan shineSegment) {
 	var (
 		d              []byte
 		offset         int
 		xorOffsetFound bool
-		wg 			   sync.WaitGroup
+		wg             sync.WaitGroup
 	)
 	xorOffsetFound = false
 	offset = 0
@@ -414,6 +432,26 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 			}
 			wg.Wait()
 		}
+	}
+}
+
+// prepare for frontend and send it to the active socket connections
+func (ss *shineStream) handlePacket(ctx context.Context, wg *sync.WaitGroup, seen time.Time, pc networking.Command) {
+	defer wg.Done()
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		pv := PacketView{
+			FlowID:     ss.flowID,
+			FlowName:   ss.flowName,
+			PacketID:   0,
+			ClientIP:   ss.clientIP,
+			ServerIP:   ss.serverIP,
+			TimeStamp:  seen.String(),
+			PacketData: pc.Base.String(),
+		}
+		go notifySockets(pv)
 	}
 }
 
