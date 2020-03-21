@@ -11,6 +11,7 @@ import (
 	"sync"
 )
 
+// PacketView is used to represent data to the frontend UI
 type PacketView struct {
 	// unique uuid
 	// when a stream finished its reassembly, notify the frontend that the flow with uuid is closed
@@ -88,7 +89,7 @@ func packets(w http.ResponseWriter, r *http.Request) {
 		return true
 	}
 	c, err := upgrader.Upgrade(w, r, nil)
-	
+
 	if err != nil {
 		log.Info("upgrade:", err)
 		return
