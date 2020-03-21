@@ -18,7 +18,7 @@ type PacketView struct {
 	FlowID   string `json:"flow_id"`
 	FlowName string `json:"flow_name"`
 	// numerary for the packets processed in this flow, informational only
-	PacketID uint32 `json:"packet_id"`
+	PacketID uint64 `json:"packet_id"`
 	// IP that is not the server
 	// to be used in the frontend as an abstraction for the many flows between the client and the server
 	// a clientIP with 0 active flows is considered inactive
@@ -69,12 +69,43 @@ func (pv *PacketView) String() string {
 	return string(sd)
 }
 
-func notifySockets(pv PacketView) {
+func sendPacketToUI(wg * sync.WaitGroup, pv PacketView) {
+	defer wg.Done()
 	ws.mu.Lock()
 	// check if it can be done with goroutine
 	for c, active := range ws.cons {
 		if active {
 			err := c.WriteMessage(websocket.TextMessage, []byte(pv.String()))
+			if err != nil {
+				log.Error("write:", err)
+				break
+			}
+		}
+		//time.Sleep(time.Millisecond * 150)
+	}
+	ws.mu.Unlock()
+}
+
+type CompletedFlow struct {
+	FlowCompleted bool `json:"flow_completed"`
+	ClientIP string `json:"client_ip"`
+	FlowID string `json:"flow_id"`
+}
+
+func (cf *CompletedFlow) String() string {
+	sd, err := json.Marshal(&cf)
+	if err != nil {
+		log.Error(err)
+	}
+	return string(sd)
+}
+
+func uiCompletedFlow(cf CompletedFlow) {
+	ws.mu.Lock()
+	// check if it can be done with goroutine
+	for c, active := range ws.cons {
+		if active {
+			err := c.WriteMessage(websocket.TextMessage, []byte(cf.String()))
 			if err != nil {
 				log.Error("write:", err)
 				break
@@ -102,17 +133,12 @@ func packets(w http.ResponseWriter, r *http.Request) {
 	defer closeWebSocket(c)
 	log.Info("websocket connection made")
 	for {
-		mt, message, err := c.ReadMessage()
+		_, message, err := c.ReadMessage()
 		if err != nil {
 			log.Info("read:", err)
 			break
 		}
 		log.Info("recv: %s", message)
-		err = c.WriteMessage(mt, message)
-		if err != nil {
-			log.Info("write:", err)
-			break
-		}
 	}
 }
 

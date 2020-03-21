@@ -42,6 +42,7 @@ type shineStream struct {
 	serverIP       string
 	segments       chan<- shineSegment
 	xorKey         chan<- uint16 // only used by decodeClientPackets()
+	packetID		uint64
 	cancel         context.CancelFunc
 }
 
@@ -192,6 +193,7 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 		net:       net,
 		transport: transport,
 		segments:  segments,
+		packetID:  0,
 		xorKey:    xorKey,
 		cancel:    cancel,
 	}
@@ -213,8 +215,7 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 		ss, ok := ssf.shineContext.Value(activeShineStreams).(*shineStreams)
 		ss.mu.Lock()
 		if !ok {
-			log.Errorf("unexpected struct type: %v", reflect.TypeOf(ss).String())
-			return s
+			log.Fatalf("unexpected struct type: %v", reflect.TypeOf(ss).String())
 		}
 		key := fmt.Sprintf("%v:%v", srcIP, srcPort)
 		ss.toClient[key] = s
@@ -236,13 +237,11 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 		ss, ok := ssf.shineContext.Value(activeShineStreams).(*shineStreams)
 		ss.mu.Lock()
 		if !ok {
-			log.Errorf("unexpected struct type: %v", reflect.TypeOf(ss).String())
-			return s
+			log.Fatalf("unexpected struct type: %v", reflect.TypeOf(ss).String())
 		}
 		ss.fromClient[key] = s
 		ss.mu.Unlock()
 		go s.decodeClientPackets(ctx, segments, xorKey)
-		return s
 	}
 	s.clientIP = clientIP
 	s.serverIP = serverIP
@@ -262,7 +261,12 @@ func (ss *shineStream) Reassembled(reassemblies []tcpassembly.Reassembly) {
 func (ss *shineStream) ReassemblyComplete() {
 	log.Warningf("reassembly complete for stream [ %v - %v]", ss.net.String(), ss.transport.String()) // ip of the stream, port of the stream
 	ss.cancel()
-	// go notify ui that his flow has closed
+	cf := CompletedFlow{
+		FlowCompleted: true,
+		ClientIP: ss.clientIP,
+		FlowID:   ss.flowID,
+	}
+	go uiCompletedFlow(cf)
 }
 
 // handle stream data flowing from the client
@@ -275,7 +279,6 @@ func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan 
 	)
 	offset = 0
 	xorOffset = 1500 // impossible value
-
 	logActivated := viper.GetBool("protocol.log.client")
 
 	// block until xorKey is found
@@ -323,14 +326,13 @@ func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan 
 				if err != nil {
 					log.Error(err)
 				}
-
+				ss.packetID++
 				if logActivated {
-					log.Infof("[%v] [%v] %v", ss.flowName, segment.seen, pc.Base.String())
+					log.Infof("[%v] [%v] [%v] %v", ss.packetID, ss.flowName, segment.seen, pc.Base.String())
 				}
 
 				wg.Add(1)
 				go ss.handlePacket(ctx, &wg, segment.seen, pc)
-
 				offset += skipBytes + pLen
 			}
 			wg.Wait()
@@ -421,8 +423,10 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 						log.Warningf("xorOffset: %v found for client  %v", xorOffset, key)
 					}
 				}
+				ss.packetID++
+
 				if logActivated {
-					log.Infof("[%v] [%v] %v", ss.flowName, segment.seen, pc.Base.String())
+					log.Infof("[%v] [%v] [%v] %v", ss.packetID, ss.flowName, segment.seen, pc.Base.String())
 				}
 
 				wg.Add(1)
@@ -442,16 +446,19 @@ func (ss *shineStream) handlePacket(ctx context.Context, wg *sync.WaitGroup, see
 	case <-ctx.Done():
 		return
 	default:
+		var wg sync.WaitGroup
 		pv := PacketView{
 			FlowID:     ss.flowID,
 			FlowName:   ss.flowName,
-			PacketID:   0,
+			PacketID:   ss.packetID,
 			ClientIP:   ss.clientIP,
 			ServerIP:   ss.serverIP,
 			TimeStamp:  seen.String(),
 			PacketData: pc.Base.String(),
 		}
-		go notifySockets(pv)
+		wg.Add(1)
+		go sendPacketToUI(&wg, pv)
+		wg.Wait()
 	}
 }
 
