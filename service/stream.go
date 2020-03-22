@@ -102,12 +102,13 @@ func captureConfig() {
 	iface = viper.GetString("network.interface")
 	snaplen = viper.GetInt("network.snaplen")
 
-	serverIP := viper.GetString("network.serverIP")
+	//serverIP := viper.GetString("network.serverIP")
 	startPort := viper.GetString("network.portRange.start")
 	endPort := viper.GetString("network.portRange.end")
 	portRange := fmt.Sprintf("%v-%v", startPort, endPort)
 
-	filter = fmt.Sprintf("(dst net %v or src net %v) and (dst portrange %v or src portrange %v)", serverIP, serverIP, portRange, portRange)
+	//filter = fmt.Sprintf("(dst net %v or src net %v) and (dst portrange %v or src portrange %v)", serverIP, serverIP, portRange, portRange)
+	filter = fmt.Sprintf("dst portrange %v or src portrange %v", portRange, portRange)
 
 	shine.mu.Lock()
 	shine.knownServices = make(map[int]*service)
@@ -208,9 +209,11 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 
 		service, ok := shine.knownServices[srcPort]
 		if !ok {
-			log.Fatal("something went horribly wrong")
+			//log.Fatal("something went horribly wrong")
+			s.flowName = fmt.Sprintf("%v-client", "unknown")
+		} else {
+			s.flowName = fmt.Sprintf("%v-client", strings.ToLower(service.name))
 		}
-		s.flowName = fmt.Sprintf("%v-client", strings.ToLower(service.name))
 		log.Infof("new server stream from => [ %v - %v] [%v]", srcIP, srcPort, s.flowName)
 		ss, ok := ssf.shineContext.Value(activeShineStreams).(*shineStreams)
 		ss.mu.Lock()
@@ -228,11 +231,18 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 		serverIP = net.Dst().String()
 
 		dstPort, _ := strconv.Atoi(transport.Dst().String())
+		//service, ok := shine.knownServices[dstPort]
+		//if !ok {
+		//	log.Fatal("something went horribly wrong")
+		//}
+		//s.flowName = fmt.Sprintf("client-%v", strings.ToLower(service.name))
 		service, ok := shine.knownServices[dstPort]
 		if !ok {
-			log.Fatal("something went horribly wrong")
+			//log.Fatal("something went horribly wrong")
+			s.flowName = fmt.Sprintf("clien-%v", "unknown")
+		} else {
+			s.flowName = fmt.Sprintf("client-%v", strings.ToLower(service.name))
 		}
-		s.flowName = fmt.Sprintf("client-%v", strings.ToLower(service.name))
 		log.Infof("new server stream from => [ %v - %v] [%v]", srcIP, srcPort, s.flowName)
 		ss, ok := ssf.shineContext.Value(activeShineStreams).(*shineStreams)
 		ss.mu.Lock()

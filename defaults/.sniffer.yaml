@@ -7,7 +7,7 @@ network:
   serverIP: "192.168.1.248"
   portRange:
     start: 9000
-    end: 9600
+    end: 9900
   # SnapLen for pcap packet capture
   snaplen: 65536
 

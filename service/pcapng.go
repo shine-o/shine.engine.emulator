@@ -5,9 +5,11 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcapgo"
+	"github.com/spf13/viper"
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -20,16 +22,27 @@ type Flows struct {
 // asses the package flow, either Client-Service or Service-Client
 func (pf *Flows) add(p gopacket.Packet) {
 
-	src, _ := strconv.Atoi(p.TransportLayer().TransportFlow().Src().String())
-	dst, _ := strconv.Atoi(p.TransportLayer().TransportFlow().Dst().String())
+	srcPort, _ := strconv.Atoi(p.TransportLayer().TransportFlow().Src().String())
+	dstPort, _ := strconv.Atoi(p.TransportLayer().TransportFlow().Dst().String())
 
 	var fkey string
 	shine.mu.Lock()
-	if src >= 9000 && src <= 9600 {
+	if srcPort >= viper.GetInt("network.portRange.start") && srcPort <= viper.GetInt("network.portRange.end")  {
 		// server - client
-		fkey = fmt.Sprintf("%v-Client.pcapng", shine.knownServices[src].name)
+		service, ok := shine.knownServices[srcPort]
+		if !ok {
+			//log.Fatal("something went horribly wrong")
+			fkey = fmt.Sprintf("%v-client.pcapng", "unknown")
+			return
+		}
+		fkey = fmt.Sprintf("%v-client.pcapng", strings.ToLower(service.name))
 	} else {
-		fkey = fmt.Sprintf("Client-%v.pcapng", shine.knownServices[dst].name)
+		service, ok := shine.knownServices[dstPort]
+		if !ok {
+			return
+		}
+		fkey = fmt.Sprintf("client-%v.pcapng", strings.ToLower(service.name))
+
 	}
 	shine.mu.Unlock()
 	pf.m.Lock()
