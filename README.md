@@ -19,6 +19,5 @@ Optional:
 
 #### Packet info
 
-**NOTE**: current implementation doesn't represent the flow defined in the Stream graphic.
 
 ![](packet-flow-draw.png)
