@@ -5,9 +5,17 @@
 > The program also saves the streams between the flows to a pcapng file.
 >
  [![Go Report Card](https://goreportcard.com/badge/github.com/shine-o/shine.engine.packet-sniffer)](https://goreportcard.com/report/github.com/shine-o/shine.engine.packet-sniffer)
+ 
+#### The road so far: [video showcase](https://www.youtube.com/watch?v=Y08oHJucHRI)
+
+
 #### Configuration
 
-Adjust the **config.yml** file to your needs
+Adjust the **defaults/.sniffer.yml** file to your needs
+
+Optional:
+
+   use the packet sniffer ui: https://github.com/shine-o/shine.engine.packet-sniffer-ui
 
 #### Packet info
 
