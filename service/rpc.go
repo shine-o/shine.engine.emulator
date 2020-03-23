@@ -2,9 +2,7 @@ package service
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
-	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
 	"google.golang.org/grpc/codes"
@@ -24,23 +22,25 @@ func (s *server) AvailableWorlds(ctx context.Context, in *lw.ClientMetadata) (*l
 	case <-ctx.Done():
 		return &lw.WorldsInfo{Info: []byte{0}}, status.Errorf(codes.Canceled, "context was canceled")
 	default:
-		nc := &structs.NcUserLoginAck{}
+		nc := structs.NcUserLoginAck{}
 		nc.NumOfWorld = byte(1)
 
-		var worlds [1]structs.WorldInfo
 		w1 := structs.WorldInfo{
 			WorldNumber: 0,
 			WorldName:   structs.Name4{},
-			WorldStatus: 1,
+			// 1: behaviour -> cannot enter, message -> The server is under maintenance.
+			// 2: behaviour -> cannot enter, message -> You cannot connect to an empty server.
+			// 3: behaviour -> cannot enter, message -> The server has been reserved for a special use.
+			// 4: behaviour -> cannot enter, message -> Login failed due to an unknown error.
+			// 5: behaviour -> cannot enter, message -> The server is full.
+			// 6: behaviour -> ok
+			WorldStatus: 6,
 		}
-		copy(w1.WorldName.Name[:], "INITIO")
-		//copy(w1.WorldName.NameCode[:], []uint32{262, 16720, 17735, 76})
-		//worlds[0] = w1
+		copy(w1.WorldName.Name[:], "PAGEL")
 
-		nc.NumOfWorld = byte(1)
-		nc.Worlds = worlds
+		nc.Worlds = append(nc.Worlds, w1)
 
-		data, err := networking.WriteBinary(nc)
+		data, err := structs.Pack(&nc)
 		if err != nil {
 			return &lw.WorldsInfo{Info: []byte{0}}, err
 		}
@@ -73,25 +73,15 @@ func (s *server) ConnectionInfo(ctx context.Context, req *lw.SelectedWorld) (*lw
 
 		nc := structs.NcUserWorldSelectAck{
 			WorldStatus: 6,
-			Ip: structs.Name4{
-				Name: [16]byte{},
-			},
+			Ip: structs.Name4{},
 			Port: uint16(port),
 		}
-
 		copy(nc.Ip.Name[:], w.extIP)
 
-		data := make([]byte, 0)
-		data = append(data, nc.WorldStatus)
-
-		if b, err := networking.WriteBinary(nc.Ip.Name); err == nil {
-			data = append(data, b...)
+		data, err := structs.Pack(&nc)
+		if err != nil {
+			return nil, status.Errorf(codes.Unavailable, "something went horribly wrong")
 		}
-
-		if b, err := networking.WriteBinary(nc.Port); err == nil {
-			data = append(data, b...)
-		}
-		log.Infof("sending server connection info to client %v", hex.EncodeToString(data))
 		return &lw.WorldConnectionInfo{Info: data}, nil
 	}
 }

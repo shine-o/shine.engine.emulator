@@ -122,9 +122,9 @@ func startWorld(ctx context.Context, w world) {
 		ch[3087] = userLoginWorldReq
 		ch[2061] = miscGametimeReq
 		ch[3123] = userWillWorldSelectReq
+		ch[5121] = avatarCreateReq
 
-		nwf := NcWorldFactory{}
-		hw := networking.NewHandlerWarden(ch, &nwf)
+		hw := networking.NewHandlerWarden(ch)
 
 		ss := networking.NewShineService(s, hw)
 
