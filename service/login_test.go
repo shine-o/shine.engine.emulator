@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.structs"
+	"github.com/shine-o/shine.engine.networking/structs"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
@@ -75,7 +75,8 @@ func TestCheckClientVersion(t *testing.T) {
 			t.Error(err)
 		} else {
 			nc := structs.NcUserClientVersionCheckReq{}
-			if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			//if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 				t.Error(err)
 			} else {
 				pc.NcStruct = nc
@@ -103,7 +104,8 @@ func TestCheckCredentials(t *testing.T) {
 			t.Error(err)
 		} else {
 			nc := structs.NcUserUsLoginReq{}
-			if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			//if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 				t.Error(err)
 			} else {
 				pc.NcStruct = nc
