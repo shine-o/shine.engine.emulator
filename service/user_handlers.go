@@ -3,8 +3,8 @@ package service
 import (
 	"context"
 	"github.com/shine-o/shine.engine.networking"
+	"github.com/shine-o/shine.engine.networking/structs"
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
-	"github.com/shine-o/shine.engine.structs"
 	"time"
 )
 
@@ -63,7 +63,8 @@ func userUsLoginReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		nc := structs.NcUserUsLoginReq{}
-		if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+		//if err := restruct.Unpack(pc.Base.Data, binary.LittleEndian, &nc); err != nil {
+		if err := structs.Unpack(pc.Base.Data,  &nc); err != nil {
 			go userLoginFailAck(ctx, &networking.Command{})
 		} else {
 			pc.NcStruct = nc
@@ -92,7 +93,8 @@ func userLoginFailAck(ctx context.Context, pc *networking.Command) {
 			Err: uint16(69),
 		}
 
-		if data, err := networking.WriteBinary(nc); err != nil {
+		//if data, err := restruct.Pack(binary.LittleEndian, nc); err != nil {
+		if data, err := structs.Pack(nc); err != nil {
 
 		} else {
 			pc.Base.Data = data
@@ -180,10 +182,9 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 			})
 		}
 		nc := &structs.NcUserWorldSelectReq{}
-		if err := networking.ReadBinary(pc.Base.Data, nc); err != nil {
+		if err := structs.Unpack(pc.Base.Data, nc); err != nil {
 			go unexpectedFailure()
 		} else {
-
 			lc := &LoginCommand{pc: pc}
 			data, err := lc.userSelectedServer(ctx)
 			if err != nil {
@@ -222,7 +223,8 @@ func userLoginWithOtpReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		nc := structs.NcUserLoginWithOtpReq{}
-		if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+		//if err := restruct.Unpack(pc.Base.Data, binary.LittleEndian, &nc); err != nil {
+		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 			log.Info(err)
 			go userLoginFailAck(ctx, &networking.Command{})
 		} else {

@@ -19,7 +19,7 @@ crypt:
   # possible values: 350, 499
   xorLimit: 499
   client_version:
-    ignore: true
+    ignore: false
     key: ebe951290be5b45f1fb075f5505a90b6
 
 #protocol:
