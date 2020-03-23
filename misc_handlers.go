@@ -2,7 +2,7 @@ package networking
 
 import (
 	"context"
-	"github.com/shine-o/shine.engine.structs"
+	"github.com/shine-o/shine.engine.networking/structs"
 )
 
 func miscSeedAck(ctx context.Context, pc *Command) {

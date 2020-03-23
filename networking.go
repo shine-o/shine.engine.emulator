@@ -5,10 +5,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/logger"
+	"github.com/shine-o/shine.engine.networking/structs"
 	"io"
 	"io/ioutil"
 	"math/rand"
 	"net"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -128,6 +130,37 @@ func WriteToClient(ctx context.Context, pc *Command) {
 		cwv := ctx.Value(ConnectionWriter)
 		cw := cwv.(*clientWriter)
 		log.Infof("Outbound packet: %v", pc.Base.String())
+		cw.mu.Lock()
+		if _, err := cw.w.Write(pc.Base.RawData()); err != nil {
+			log.Error(err)
+		} else {
+			if err = cw.w.Flush(); err != nil {
+				log.Error(err)
+			}
+		}
+		cw.mu.Unlock()
+	}
+}
+
+func (pc *Command) Send(ctx context.Context) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		cwv := ctx.Value(ConnectionWriter)
+		cw := cwv.(*clientWriter)
+
+		// in order to use restruct library, i should check which struct corresponds to this operation code (using a map) and cast it to the type if it exists
+		data, err := structs.Pack(pc.NcStruct)
+
+		if err != nil {
+			log.Errorf("pc: %v,  failed to pack the struct %v - %v", pc, reflect.TypeOf(pc.NcStruct).String(), pc.NcStruct)
+			return
+		}
+		pc.Base.Data = data
+		log.Infof("sending data nc of type % with data ", reflect.TypeOf(pc.NcStruct).String(), pc.NcStruct)
+		log.Infof("Outbound packet: %v", pc.Base.String())
+
 		cw.mu.Lock()
 		if _, err := cw.w.Write(pc.Base.RawData()); err != nil {
 			log.Error(err)
