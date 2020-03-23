@@ -30,9 +30,9 @@ func TestMain(m *testing.M) {
 		viper.AddConfigPath(path)
 		viper.SetConfigType("yaml")
 
-		//viper.SetConfigName(".world.circleci")
+		viper.SetConfigName(".world.circleci")
 		// for running tests locally, use this:
-		viper.SetConfigName(".world.test")
+		//viper.SetConfigName(".world.test")
 
 		// If a config file is found, read it in.
 		if err := viper.ReadInConfig(); err == nil {
@@ -161,8 +161,8 @@ func TestUserWorldInfo(t *testing.T) {
 		if err := binary.Read(buf, binary.LittleEndian, &worldID); err != nil {
 			t.Error(err)
 		} else {
-			if worldID != uint16(1) {
-				t.Errorf("result nc.WorldManager: %v is different that the expected nc.WorldManager: %v", worldID, 1)
+			if worldID != uint16(0) {
+				t.Errorf("result nc.WorldManager: %v is different that the expected nc.WorldManager: %v", worldID, 0)
 			}
 		}
 
