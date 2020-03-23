@@ -9,11 +9,12 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.structs"
+	"github.com/shine-o/shine.engine.networking/structs"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -29,9 +30,9 @@ func TestMain(m *testing.M) {
 		viper.AddConfigPath(path)
 		viper.SetConfigType("yaml")
 
-		viper.SetConfigName(".world.circleci")
+		//viper.SetConfigName(".world.circleci")
 		// for running tests locally, use this:
-		//viper.SetConfigName(".world.test")
+		viper.SetConfigName(".world.test")
 
 		// If a config file is found, read it in.
 		if err := viper.ReadInConfig(); err == nil {
@@ -61,23 +62,16 @@ func TestWorldTime(t *testing.T) {
 		if pc, err := networking.DecodePacket("small", 2, data[1:]); err != nil { // as previous bytes are length info for this packet
 			t.Error(err)
 		} else {
-			nc := structs.NcMiscGameTimeAck{}
-			if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			wc := WorldCommand{
+				pc: &pc,
+			}
+			if rnc, err := wc.worldTime(ctx); err != nil {
 				t.Error(err)
 			} else {
-				pc.NcStruct = nc
-				wc := WorldCommand{
-					pc: &pc,
+				if reflect.TypeOf(rnc) != reflect.TypeOf(structs.NcMiscGameTimeAck{}) {
+					t.Errorf("expected nc struct of type: %v but instead got %v", reflect.TypeOf(rnc).String(), reflect.TypeOf(structs.NcMiscGameTimeAck{}).String())
 				}
-				if data, err := wc.worldTime(ctx); err != nil {
-					t.Error(err)
-				} else {
-					// expected network command
-					enc := structs.NcMiscGameTimeAck{}
-					if err := networking.ReadBinary(data, &enc); err != nil {
-						t.Error(err)
-					}
-				}
+				// test if it can be Packed for network send
 			}
 		}
 	}
@@ -92,7 +86,7 @@ func TestLoginToWorld(t *testing.T) {
 		WorldID:  "1",
 		UserName: "admin",
 	}
-	ctx  = context.WithValue(ctx, networking.ShineSession, s)
+	ctx = context.WithValue(ctx, networking.ShineSession, s)
 
 	defer cancel()
 	// sniffer output -> {"packetType":"big","length":322,"department":3,"command":"F","opCode":3087,"data":"61646d696e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000050410000474500004c00000001e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868","rawData":"0042010f0c61646d696e000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000050410000474500004c00000001e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868e80868","friendlyName":"NC_USER_LOGINWORLD_REQ"}
@@ -103,7 +97,8 @@ func TestLoginToWorld(t *testing.T) {
 			t.Error(err)
 		} else {
 			nc := structs.NcUserLoginWorldReq{}
-			if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			//if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 				t.Error(err)
 			} else {
 				pc.NcStruct = nc
@@ -143,21 +138,21 @@ func TestUserWorldInfo(t *testing.T) {
 		UserName: "admin",
 	}
 
-	ctx  = context.WithValue(ctx, networking.ShineSession, s)
+	ctx = context.WithValue(ctx, networking.ShineSession, s)
 	defer cancel()
 
 	pc := &networking.Command{
-		Base:     networking.CommandBase{
+		Base: networking.CommandBase{
 			OperationCode: 3092,
-	}}
+		}}
 
-	wc := &WorldCommand{pc:pc}
+	wc := &WorldCommand{pc: pc}
 
 	if data, err := wc.userWorldInfo(ctx); err != nil {
 		t.Error(err)
 	} else {
 		var (
-			worldID uint16
+			worldID         uint16
 			numOfCharacters byte
 		)
 
@@ -179,4 +174,24 @@ func TestUserWorldInfo(t *testing.T) {
 			}
 		}
 	}
+}
+
+
+func TestReturnToServerSelect(t *testing.T) {
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	wc := WorldCommand{
+		pc: &networking.Command{},
+	}
+
+	if rnc, err := wc.returnToServerSelect(ctx); err != nil {
+		t.Error(err)
+	} else {
+		if reflect.TypeOf(rnc) != reflect.TypeOf(structs.NcUserWillWorldSelectAck{}) {
+			t.Errorf("expected nc struct of type: %v but instead got %v", reflect.TypeOf(rnc).String(), reflect.TypeOf(structs.NcUserWillWorldSelectAck{}).String())
+		}
+		// test if it can be Packed for network send
+	}
+	//structs.NcUserWillWorldSelectAck
 }

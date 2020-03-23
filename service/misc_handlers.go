@@ -21,11 +21,11 @@ func miscGameTimeAck(ctx context.Context, pc *networking.Command) {
 	default:
 		pc.Base.OperationCode = 2062
 		wc := &WorldCommand{pc: pc}
-		data, err := wc.worldTime(ctx)
+		nc, err := wc.worldTime(ctx)
+		pc.NcStruct = nc
 		if err != nil {
 			return
 		}
-		pc.Base.Data = data
-		go networking.WriteToClient(ctx, pc)
+		go pc.Send(ctx)
 	}
 }
