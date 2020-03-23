@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"encoding/binary"
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
+	"gopkg.in/restruct.v1"
 )
 
 // handle user, given his account
@@ -14,7 +16,7 @@ func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		nc := structs.NcUserLoginWorldReq{}
-		if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+		if err := restruct.Unpack(pc.Base.Data, binary.LittleEndian, &nc); err != nil {
 			log.Error(err)
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
 		} else {
@@ -69,8 +71,14 @@ func userWillWorldSelectAck(ctx context.Context, pc *networking.Command) {
 		if err != nil {
 			return
 		}
-		pc.NcStruct = nc
-		go pc.Send(ctx)
+
+		data, err := structs.Pack(&nc)
+		if err != nil {
+			return
+		}
+
+		pc.Base.Data = data
+		go networking.WriteToClient(ctx, pc)
 	}
 }
 

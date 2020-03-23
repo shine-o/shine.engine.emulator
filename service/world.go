@@ -2,10 +2,12 @@ package service
 
 import (
 	"context"
+	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
+	"gopkg.in/restruct.v1"
 	"reflect"
 	"strconv"
 	"strings"
@@ -73,8 +75,6 @@ func (wc *WorldCommand) userWorldInfo(ctx context.Context) ([]byte, error) {
 	case <-ctx.Done():
 		return data, errCC
 	default:
-		// world id is in the session
-		// user name is in the session
 		wsi := ctx.Value(networking.ShineSession)
 		ws := wsi.(*session)
 
@@ -88,12 +88,10 @@ func (wc *WorldCommand) userWorldInfo(ctx context.Context) ([]byte, error) {
 				NumOfAvatar:  0,
 			}
 
-			b, err := networking.WriteBinary(nc.WorldManager)
+			data, err := restruct.Pack(binary.LittleEndian, nc)
 			if err != nil {
 				return data, err
 			}
-			data = append(data, b...)
-			data = append(data, nc.NumOfAvatar)
 			return data, nil
 		}
 		return data, errHF
@@ -109,7 +107,6 @@ func (wc *WorldCommand) returnToServerSelect(ctx context.Context) (structs.NcUse
 		return structs.NcUserWillWorldSelectAck{}, errCC
 	default:
 		otp := randStringBytesMaskImprSrcUnsafe(32)
-		//otp := "a85472c3841de5fc22433560fe32a2a3"
 		err := redisClient.Set(otp, otp, 20*time.Second).Err()
 		if err != nil {
 			return structs.NcUserWillWorldSelectAck{}, err
@@ -119,8 +116,6 @@ func (wc *WorldCommand) returnToServerSelect(ctx context.Context) (structs.NcUse
 			Otp:   structs.Name8{},
 		}
 		copy(nc.Otp.Name[:], otp)
-
-		log.Error(nc)
 
 		return nc, nil
 	}
