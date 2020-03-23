@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.structs"
+	"github.com/shine-o/shine.engine.networking/structs"
 	"reflect"
 	"strconv"
 	"strings"
@@ -22,11 +22,10 @@ type WorldCommand struct {
 	pc *networking.Command
 }
 
-func (wc *WorldCommand) worldTime(ctx context.Context) ([]byte, error) {
-	var data []byte
+func (wc *WorldCommand) worldTime(ctx context.Context) (structs.NcMiscGameTimeAck, error) {
 	select {
 	case <-ctx.Done():
-		return data, errCC
+		return structs.NcMiscGameTimeAck{}, errCC
 	default:
 		var (
 			t                    time.Time
@@ -38,17 +37,11 @@ func (wc *WorldCommand) worldTime(ctx context.Context) ([]byte, error) {
 		minute = byte(t.Minute())
 		second = byte(t.Second())
 
-		nc := &structs.NcMiscGameTimeAck{
+		return structs.NcMiscGameTimeAck{
 			Hour:   hour,
 			Minute: minute,
 			Second: second,
-		}
-
-		data, err := networking.WriteBinary(nc)
-		if err != nil {
-			return data, err
-		}
-		return data, nil
+		}, nil
 	}
 }
 
@@ -110,7 +103,25 @@ func (wc *WorldCommand) userWorldInfo(ctx context.Context) ([]byte, error) {
 // user clicked previous
 // generate a otp token and store it in redis
 // login service will use the token to authenticate the user and send him to server select
-func (wc *WorldCommand) returnToServerSelect() ([]byte, error) {
-	var data []byte
-	return data, nil
+func (wc *WorldCommand) returnToServerSelect(ctx context.Context) (structs.NcUserWillWorldSelectAck, error) {
+	select {
+	case <-ctx.Done():
+		return structs.NcUserWillWorldSelectAck{}, errCC
+	default:
+		otp := randStringBytesMaskImprSrcUnsafe(32)
+		//otp := "a85472c3841de5fc22433560fe32a2a3"
+		err := redisClient.Set(otp, otp, 20*time.Second).Err()
+		if err != nil {
+			return structs.NcUserWillWorldSelectAck{}, err
+		}
+		nc := structs.NcUserWillWorldSelectAck{
+			Error: 7768,
+			Otp:   structs.Name8{},
+		}
+		copy(nc.Otp.Name[:], otp)
+
+		log.Error(nc)
+
+		return nc, nil
+	}
 }

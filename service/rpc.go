@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/shine-o/shine.engine.networking"
+	"github.com/shine-o/shine.engine.networking/structs"
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
-	"github.com/shine-o/shine.engine.structs"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"strconv"
@@ -34,8 +34,8 @@ func (s *server) AvailableWorlds(ctx context.Context, in *lw.ClientMetadata) (*l
 			WorldStatus: 1,
 		}
 		copy(w1.WorldName.Name[:], "INITIO")
-		copy(w1.WorldName.NameCode[:], []uint32{262, 16720, 17735, 76})
-		worlds[0] = w1
+		//copy(w1.WorldName.NameCode[:], []uint32{262, 16720, 17735, 76})
+		//worlds[0] = w1
 
 		nc.NumOfWorld = byte(1)
 		nc.Worlds = worlds
@@ -74,8 +74,7 @@ func (s *server) ConnectionInfo(ctx context.Context, req *lw.SelectedWorld) (*lw
 		nc := structs.NcUserWorldSelectAck{
 			WorldStatus: 6,
 			Ip: structs.Name4{
-				Name:     [16]byte{},
-				NameCode: [4]uint32{},
+				Name: [16]byte{},
 			},
 			Port: uint16(port),
 		}

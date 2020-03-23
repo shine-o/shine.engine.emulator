@@ -3,8 +3,7 @@ package service
 import (
 	"context"
 	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.structs"
-	"time"
+	"github.com/shine-o/shine.engine.networking/structs"
 )
 
 // handle user, given his account
@@ -64,24 +63,14 @@ func userWillWorldSelectAck(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		pc.Base.OperationCode = 3124
-		otp := randStringBytesMaskImprSrcUnsafe(32)
-		//otp := "a85472c3841de5fc22433560fe32a2a3"
-		err := redisClient.Set(otp, otp, 20*time.Second).Err()
+		wc := &WorldCommand{pc: pc}
+
+		nc, err :=  wc.returnToServerSelect(ctx)
 		if err != nil {
-			// err opcode
 			return
 		}
-		nc := structs.NcUserWillWorldSelectAck{
-			Error: 7768,
-		}
-		data := make([]byte, 0)
-
-		if b, err := networking.WriteBinary(nc.Error); err == nil {
-			data = append(data, b...)
-		}
-		data = append(data, otp...)
-		pc.Base.Data = data
-		go networking.WriteToClient(ctx, pc)
+		pc.NcStruct = nc
+		go pc.Send(ctx)
 	}
 }
 
