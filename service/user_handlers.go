@@ -2,10 +2,8 @@ package service
 
 import (
 	"context"
-	"encoding/binary"
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
-	"gopkg.in/restruct.v1"
 )
 
 // handle user, given his account
@@ -16,11 +14,11 @@ func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		nc := structs.NcUserLoginWorldReq{}
-		if err := restruct.Unpack(pc.Base.Data, binary.LittleEndian, &nc); err != nil {
+		if err := nc.Unpack(pc.Base.Data); err != nil {
 			log.Error(err)
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
 		} else {
-			pc.NcStruct = nc
+			pc.NcStruct = &nc
 			wc := WorldCommand{pc: pc}
 			if err := wc.loginToWorld(ctx); err != nil {
 				log.Error(err)
@@ -41,12 +39,12 @@ func userLoginWorldAck(ctx context.Context, pc *networking.Command) {
 		pc.Base.OperationCode = 3092
 		wc := &WorldCommand{pc: pc}
 
-		data, err := wc.userWorldInfo(ctx)
+		nc, err := wc.userWorldInfo(ctx)
 		if err != nil {
 			return
 		}
-		pc.Base.Data = data
-		go networking.WriteToClient(ctx, pc)
+		pc.NcStruct = &nc
+		go pc.Send(ctx)
 	}
 }
 
@@ -71,14 +69,15 @@ func userWillWorldSelectAck(ctx context.Context, pc *networking.Command) {
 		if err != nil {
 			return
 		}
-
-		data, err := structs.Pack(&nc)
-		if err != nil {
-			return
-		}
-
-		pc.Base.Data = data
-		go networking.WriteToClient(ctx, pc)
+		pc.NcStruct = &nc
+		go pc.Send(ctx)
+		//
+		//data, err := nc.Pack()
+		//if err != nil {
+		//	return
+		//}
+		//pc.Base.Data = data
+		//go networking.WriteToClient(ctx, pc)
 	}
 }
 
