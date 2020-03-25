@@ -93,7 +93,7 @@ func (hw *HandleWarden) handleSegments(ctx context.Context, segment <-chan []byt
 
 				pc, _ := DecodePacket(pType, pLen, pd)
 
-				log.Infof("Inbound packet %v", pc.Base.String())
+				log.Infof("[inbound] metadata %v", pc.Base.String())
 
 				go hw.handleCommand(ctx, &pc)
 

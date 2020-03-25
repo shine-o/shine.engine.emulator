@@ -7,6 +7,17 @@ import (
 	"io/ioutil"
 )
 
+type Aux interface {
+	String()    string
+	PdbAnalog() string
+}
+
+type NC interface {
+	Aux
+	Pack() ([]byte, error)
+	Unpack([]byte) error
+}
+
 var log *logger.Logger
 
 func init() {
@@ -18,15 +29,22 @@ func init() {
 // if struct size is bigger than available data, fill with zeros
 func Unpack(data []byte, nc interface{}) error {
 	var buffer []byte
-	structSize := binary.Size(nc)
+	structSize , err := restruct.SizeOf(nc)
+
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
 	if structSize == -1 {
 		buffer = make([]byte, 0)
 	} else {
 		buffer = make([]byte, structSize)
 	}
 	copy(buffer, data)
-	err := restruct.Unpack(buffer, binary.LittleEndian, nc)
-	//log.Errorf("unpacking packet data for struct %v  %v", reflect.TypeOf(nc).String(), data)
+
+	err = restruct.Unpack(buffer, binary.LittleEndian, nc)
+
 	if err != nil {
 		log.Error(err)
 		return err

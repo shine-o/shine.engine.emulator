@@ -14,7 +14,7 @@ func miscSeedAck(ctx context.Context, pc *Command) {
 		xo := xov.(*uint16)
 
 		xorOffset := RandomXorKey()
-		log.Infof("XorKey: %v", xorOffset)
+		log.Infof("[xor offset] %v", xorOffset)
 
 		*xo = xorOffset
 
