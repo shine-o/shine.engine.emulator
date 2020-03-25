@@ -18,7 +18,6 @@ type RPCClients struct {
 
 // dial gRPC services that are needed.
 func gRPCClients(ctx context.Context) {
-	log.Info("Loading gRPC clients")
 	select {
 	case <-ctx.Done():
 		return
@@ -50,7 +49,7 @@ func gRPCClients(ctx context.Context) {
 					log.Errorf("could not connect service %v : %v", v["name"], err)
 					os.Exit(1)
 				}
-				log.Infof("Loading gRPC client connections %v@%v:%v", v["name"], v["host"], v["port"])
+				log.Infof("[gRPC] client connection: %v@%v:%v", v["name"], v["host"], v["port"])
 				inRPC.services[v["name"]] = conn
 				go statusConn(ctx, v, conn)
 			}
@@ -65,8 +64,8 @@ func statusConn(ctx context.Context, service map[string]string, conn *grpc.Clien
 		case <-ctx.Done():
 			return
 		default:
-			time.Sleep(15 * time.Second)
-			log.Infof("[%v] gRPC client connection: %v@%v:%v ", conn.GetState(), service["name"], service["host"], service["port"])
+			time.Sleep(120 * time.Second)
+			log.Infof("[gRPC] [client] [%v]: %v@%v:%v ", conn.GetState(), service["name"], service["host"], service["port"])
 		}
 	}
 }

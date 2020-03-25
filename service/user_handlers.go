@@ -16,11 +16,12 @@ func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		nc := structs.NcUserClientVersionCheckReq{}
-		if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+		if err := nc.Unpack(pc.Base.Data); err != nil {
 			log.Error(err)
 			go userClientWrongVersionAck(ctx, &networking.Command{})
 		} else {
-			pc.NcStruct = nc
+
+			pc.NcStruct = &nc
 			lc := &LoginCommand{pc: pc}
 
 			if _, err := lc.checkClientVersion(ctx); err != nil { // data is irrelevant in this call
@@ -38,10 +39,10 @@ func userClientVersionCheckAck(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-		base := networking.CommandBase{}
-		base.OperationCode = 3175
-		pc.Base = base
-		go networking.WriteToClient(ctx, pc)
+		pc.Base = networking.CommandBase{
+			OperationCode: 3175,
+		}
+		go pc.Send(ctx)
 	}
 }
 
@@ -50,10 +51,10 @@ func userClientWrongVersionAck(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-		base := networking.CommandBase{}
-		base.OperationCode = 3176
-		pc.Base = base
-		go networking.WriteToClient(ctx, pc)
+		pc.Base = networking.CommandBase{
+			OperationCode: 3176,
+		}
+		go pc.Send(ctx)
 	}
 }
 
@@ -63,17 +64,16 @@ func userUsLoginReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		nc := structs.NcUserUsLoginReq{}
-		//if err := restruct.Unpack(pc.Base.Data, binary.LittleEndian, &nc); err != nil {
-		if err := structs.Unpack(pc.Base.Data,  &nc); err != nil {
+		if err := nc.Unpack(pc.Base.Data); err != nil {
 			go userLoginFailAck(ctx, &networking.Command{})
 		} else {
-			pc.NcStruct = nc
+			pc.NcStruct = &nc
 			lc := &LoginCommand{pc: pc}
 			if err := lc.checkCredentials(ctx); err != nil {
 				log.Error(err)
 				go userLoginFailAck(ctx, &networking.Command{})
 			} else {
-				go userLoginAck(ctx, &networking.Command{})
+				go userLoginAck(ctx)
 			}
 		}
 	}
@@ -87,23 +87,16 @@ func userLoginFailAck(ctx context.Context, pc *networking.Command) {
 		pc.Base = networking.CommandBase{
 			OperationCode: 3081,
 		}
-
 		// 090c 4500
-		nc := &structs.NcUserLoginFailAck{
+		nc := structs.NcUserLoginFailAck{
 			Err: uint16(69),
 		}
-
-		//if data, err := restruct.Pack(binary.LittleEndian, nc); err != nil {
-		if data, err := structs.Pack(nc); err != nil {
-
-		} else {
-			pc.Base.Data = data
-			go networking.WriteToClient(ctx, pc)
-		}
+		pc.NcStruct = &nc
+		go pc.Send(ctx)
 	}
 }
 
-func userLoginAck(ctx context.Context, pc *networking.Command) {
+func userLoginAck(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		return
@@ -117,31 +110,27 @@ func userLoginAck(ctx context.Context, pc *networking.Command) {
 			})
 		}
 
-		pc.Base = networking.CommandBase{
-			OperationCode: 3082,
+		pc := &networking.Command{
+			Base:     networking.CommandBase{
+				OperationCode: 3082,
+			},
 		}
+		lc := &LoginCommand{pc:pc}
 
-		grpcc.mu.Lock()
-		conn := grpcc.services["world"]
-		c := lw.NewWorldClient(conn)
-		grpcc.mu.Unlock()
+		nc, err := lc.serverSelectScreen(ctx)
 
-		rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
-		if r, err := c.AvailableWorlds(rpcCtx, &lw.ClientMetadata{
-			Ip: "127.0.0.01",
-		}); err != nil {
-			log.Error(err)
+		if err != nil {
 			go unexpectedFailure()
-		} else {
-			pc.Base.Data = r.Info
-			go networking.WriteToClient(ctx, pc)
+			log.Error(err)
+			return
 		}
+		pc.NcStruct = &nc
+
+		go pc.Send(ctx)
 	}
 }
 
 func userXtrapReq(ctx context.Context, pc *networking.Command) {}
-
-func userXtrapAck(ctx context.Context, pc *networking.Command) {}
 
 func userWorldStatusReq(ctx context.Context, pc *networking.Command) {
 	select {
@@ -164,7 +153,7 @@ func userWorldStatusAck(ctx context.Context, pc *networking.Command) {
 		pc.Base = networking.CommandBase{
 			OperationCode: 3100,
 		}
-		go networking.WriteToClient(ctx, pc)
+		go pc.Send(ctx)
 	}
 }
 
@@ -182,30 +171,40 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 			})
 		}
 		nc := &structs.NcUserWorldSelectReq{}
-		if err := structs.Unpack(pc.Base.Data, nc); err != nil {
+		if err := nc.Unpack(pc.Base.Data); err != nil {
 			go unexpectedFailure()
+			return
 		} else {
 			lc := &LoginCommand{pc: pc}
-			data, err := lc.userSelectedServer(ctx)
+			wci, err := lc.userSelectedServer(ctx)
 			if err != nil {
+				go unexpectedFailure()
 				return
 			}
-			go userWorldSelectAck(ctx, &networking.Command{
-				Base: networking.CommandBase{
-					Data: data,
-				},
-			})
+			go userWorldSelectAck(ctx, wci)
 		}
 	}
 }
 
-func userWorldSelectAck(ctx context.Context, pc *networking.Command) {
+func userWorldSelectAck(ctx context.Context, wci * lw.WorldConnectionInfo) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		pc.Base.OperationCode = 3084
-		go networking.WriteToClient(ctx, pc)
+		nc := structs.NcUserWorldSelectAck{
+			WorldStatus: 6,
+			Ip: structs.Name4{},
+			Port: uint16(wci.Port),
+		}
+		copy(nc.Ip.Name[:], wci.IP)
+
+		pc := &networking.Command{
+			Base:     networking.CommandBase{
+				OperationCode: 3084,
+			},
+			NcStruct: &nc,
+		}
+		go pc.Send(ctx)
 	}
 }
 
@@ -224,19 +223,19 @@ func userLoginWithOtpReq(ctx context.Context, pc *networking.Command) {
 	default:
 		nc := structs.NcUserLoginWithOtpReq{}
 		//if err := restruct.Unpack(pc.Base.Data, binary.LittleEndian, &nc); err != nil {
-		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
+		if err := nc.Unpack(pc.Base.Data); err != nil {
 			log.Info(err)
 			go userLoginFailAck(ctx, &networking.Command{})
 		} else {
 
-			pc.NcStruct = nc
+			pc.NcStruct = &nc
 			lc := &LoginCommand{pc: pc}
 
 			if err := lc.loginByCode(ctx); err != nil {
 				log.Info(err)
 				go userLoginFailAck(ctx, &networking.Command{})
 			} else {
-				go userLoginAck(ctx, &networking.Command{})
+				go userLoginAck(ctx)
 			}
 		}
 	}
