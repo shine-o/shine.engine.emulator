@@ -29,3 +29,5 @@ require (
 )
 
 replace github.com/shine-o/shine.engine.networking => C:\Users\marbo\go\src\github.com\shine-o\shine.engine.networking
+
+replace github.com/shine-o/shine.engine.protocol-buffers/login-world => C:\Users\marbo\go\src\github.com\shine-o\shine.engine.protocol-buffers/login-world

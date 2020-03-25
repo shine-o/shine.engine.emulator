@@ -27,9 +27,9 @@ func TestMain(m *testing.M) {
 		viper.AddConfigPath(path)
 		viper.SetConfigType("yaml")
 
-		viper.SetConfigName(".login.circleci")
+		//viper.SetConfigName(".login.circleci")
 		// for running tests locally, use this:
-		//viper.SetConfigName(".login.test")
+		viper.SetConfigName(".login.test")
 
 		// If a config file is found, read it in.
 		if err := viper.ReadInConfig(); err == nil {
@@ -79,7 +79,7 @@ func TestCheckClientVersion(t *testing.T) {
 			if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 				t.Error(err)
 			} else {
-				pc.NcStruct = nc
+				pc.NcStruct = &nc
 				lc := LoginCommand{
 					pc: &pc,
 				}
@@ -108,7 +108,7 @@ func TestCheckCredentials(t *testing.T) {
 			if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 				t.Error(err)
 			} else {
-				pc.NcStruct = nc
+				pc.NcStruct = &nc
 				lc := LoginCommand{
 					pc: &pc,
 				}
@@ -192,7 +192,7 @@ func TestLoginByCode(t *testing.T) {
 				if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
 					t.Error(err)
 				} else {
-					pc.NcStruct = nc
+					pc.NcStruct = &nc
 					lc := LoginCommand{
 						pc: &pc,
 					}

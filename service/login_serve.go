@@ -22,7 +22,7 @@ var (
 // configure networking library to use handlers implemented in this package for packets
 func Start(cmd *cobra.Command, args []string) {
 	log = logger.Init("LoginLogger", true, false, ioutil.Discard)
-	log.Info("LoginLogger init()")
+	log.Info("login logger init()")
 	initDatabase()
 	initRedis()
 	ctx := context.Background()
