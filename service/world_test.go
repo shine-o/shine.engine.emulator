@@ -1,9 +1,7 @@
 package service
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -32,7 +30,7 @@ func TestMain(m *testing.M) {
 
 		viper.SetConfigName(".world.circleci")
 		// for running tests locally, use this:
-		//viper.SetConfigName(".world.test")
+		viper.SetConfigName(".world.test")
 
 		// If a config file is found, read it in.
 		if err := viper.ReadInConfig(); err == nil {
@@ -101,7 +99,7 @@ func TestLoginToWorld(t *testing.T) {
 			if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 				t.Error(err)
 			} else {
-				pc.NcStruct = nc
+				pc.NcStruct = &nc
 				wc := WorldCommand{
 					pc: &pc,
 				}
@@ -122,55 +120,6 @@ func TestLoginToWorld(t *testing.T) {
 						}
 					}
 				}
-			}
-		}
-	}
-}
-
-func TestUserWorldInfo(t *testing.T) {
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-
-	// session key is required in context
-	s := &session{
-		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
-		WorldID:  "1",
-		UserName: "admin",
-	}
-
-	ctx = context.WithValue(ctx, networking.ShineSession, s)
-	defer cancel()
-
-	pc := &networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 3092,
-		}}
-
-	wc := &WorldCommand{pc: pc}
-
-	if data, err := wc.userWorldInfo(ctx); err != nil {
-		t.Error(err)
-	} else {
-		var (
-			worldID         uint16
-			numOfCharacters byte
-		)
-
-		buf := bytes.NewBuffer(data)
-
-		if err := binary.Read(buf, binary.LittleEndian, &worldID); err != nil {
-			t.Error(err)
-		} else {
-			if worldID != uint16(0) {
-				t.Errorf("result nc.WorldManager: %v is different that the expected nc.WorldManager: %v", worldID, 0)
-			}
-		}
-
-		if err := binary.Read(buf, binary.LittleEndian, &numOfCharacters); err != nil {
-			t.Error(err)
-		} else {
-			if numOfCharacters != byte(0) {
-				t.Errorf("result nc.NumOfAvatar: %v is different that the expected nc.NumOfAvatar: %v", numOfCharacters, 0)
 			}
 		}
 	}

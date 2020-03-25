@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.networking/structs"
 )
 
 func miscGametimeReq(ctx context.Context, pc *networking.Command) {
@@ -26,11 +25,7 @@ func miscGameTimeAck(ctx context.Context, pc *networking.Command) {
 		if err != nil {
 			return
 		}
-		data, err := structs.Pack(nc)
-		if err != nil {
-			return
-		}
-		pc.Base.Data = data
-		go networking.WriteToClient(ctx, pc)
+		pc.NcStruct = &nc
+		go pc.Send(ctx)
 	}
 }

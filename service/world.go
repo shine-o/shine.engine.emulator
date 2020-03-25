@@ -2,12 +2,10 @@ package service
 
 import (
 	"context"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
-	"gopkg.in/restruct.v1"
 	"reflect"
 	"strconv"
 	"strings"
@@ -55,7 +53,7 @@ func (wc *WorldCommand) loginToWorld(ctx context.Context) error {
 	case <-ctx.Done():
 		return errCC
 	default:
-		if ncs, ok := wc.pc.NcStruct.(structs.NcUserLoginWorldReq); ok {
+		if ncs, ok := wc.pc.NcStruct.(*structs.NcUserLoginWorldReq); ok {
 			wsi := ctx.Value(networking.ShineSession)
 			ws := wsi.(*session)
 			userName := strings.TrimRight(string(ncs.User.Name[:]), "\x00")
@@ -69,11 +67,10 @@ func (wc *WorldCommand) loginToWorld(ctx context.Context) error {
 	}
 }
 
-func (wc *WorldCommand) userWorldInfo(ctx context.Context) ([]byte, error) {
-	var data []byte
+func (wc *WorldCommand) userWorldInfo(ctx context.Context) (structs.NcUserLoginWorldAck, error) {
 	select {
 	case <-ctx.Done():
-		return data, errCC
+		return structs.NcUserLoginWorldAck{}, errCC
 	default:
 		wsi := ctx.Value(networking.ShineSession)
 		ws := wsi.(*session)
@@ -81,20 +78,15 @@ func (wc *WorldCommand) userWorldInfo(ctx context.Context) ([]byte, error) {
 		if ws.UserName == "admin" { // no database for now, so I hardcode the avatar info
 			worldID, err := strconv.Atoi(ws.WorldID)
 			if err != nil {
-				return data, err
+				return structs.NcUserLoginWorldAck{}, err
 			}
 			nc := structs.NcUserLoginWorldAck{
 				WorldManager: uint16(worldID),
 				NumOfAvatar:  0,
 			}
-
-			data, err := restruct.Pack(binary.LittleEndian, nc)
-			if err != nil {
-				return data, err
-			}
-			return data, nil
+			return nc, nil
 		}
-		return data, errHF
+		return structs.NcUserLoginWorldAck{}, errHF
 	}
 }
 
