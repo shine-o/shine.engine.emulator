@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/shine-o/shine.engine.networking/structs"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"strconv"
@@ -48,7 +49,8 @@ type Department struct {
 // Command type used to unmarshal data from the protocol commands file
 type Command struct {
 	Base     CommandBase // common data in every command, like operation code and length
-	NcStruct interface{} // any kind of structure that is the representation in bytes of the network packet
+	//NcStruct interface{} // any kind of structure that is the representation in bytes of the network packet
+	NcStruct structs.NC // any kind of structure that is the representation in bytes of the network packet
 }
 
 // CommandBase type used to store decoded data from a packet
