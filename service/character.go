@@ -2,7 +2,23 @@ package service
 
 import (
 	"context"
+	"errors"
 	"github.com/shine-o/shine.engine.networking/structs"
+)
+
+type noSlot error
+type invalidSlot error
+type invalidName error
+type invalidClassGender error
+
+var errNoSlot = errors.New("no slot available").(noSlot)
+var errInvalidSlot = errors.New("invalid slot").(invalidSlot)
+var errInvalidName = errors.New("invalid name").(invalidName)
+var errInvalidShape = errors.New("invalid shape data").(invalidClassGender)
+
+const (
+	startLevel = 1
+	startMap = "Rou"
 )
 
 func newCharacter(ctx context.Context, req structs.NcAvatarCreateReq) (structs.AvatarInformation, error) {
@@ -11,14 +27,14 @@ func newCharacter(ctx context.Context, req structs.NcAvatarCreateReq) (structs.A
 		return structs.AvatarInformation{}, errCC
 	default:
 		//
-
 		avatar := structs.AvatarInformation{}
+
+		// new Character model
 
 		copy(avatar.Name.Name[:], "works")
 		avatar.Slot = 0
 		avatar.Level = 1
 		copy(avatar.LoginMap.Name[:], "Rou")
-		avatar.DelInfo.Year = byte(43)
 
 		avatar.Shape = req.Shape
 
@@ -28,28 +44,34 @@ func newCharacter(ctx context.Context, req structs.NcAvatarCreateReq) (structs.A
 		avatar.TutorialInfo.TutorialStep = 0
 
 		ei := structs.ProtoEquipment{
-			EquHead:         -1,
-			EquMouth:        -1,
-			EquRightHand:    -1,
-			EquBody:         -1,
-			EquLeftHand:     -1,
-			EquPant:         -1,
-			EquBoot:         -1,
-			EquAccBoot:      -1,
-			EquAccPant:      -1,
-			EquAccHeadA:     -1,
-			EquMinimonR:     -1,
-			EquEye:          -1,
-			EquAccLeftHand:  -1,
-			EquAccRightHand: -1,
-			EquAccBack:      -1,
-			EquCosEff:       -1,
-			EquAccHip:       -1,
-			EquMinimon:      -1,
-			EquAccShield:    -1,
+			EquHead:         65535,
+			EquMouth:        65535,
+			EquRightHand:    65535,
+			EquBody:         11,
+			EquLeftHand:     65535,
+			EquPant:         10,
+			EquBoot:         8,
+			EquAccBoot:      35421,
+			EquAccPant:      65535,
+			EquAccHeadA:     65535,
+			EquMinimonR:     65535,
+			EquEye:          65535,
+			EquAccLeftHand:  65535,
+			EquAccRightHand: 65535,
+			EquAccBack:      65535,
+			EquCosEff:       65535,
+			EquAccHip:       65535,
+			EquMinimon:      65535,
+			EquAccShield:    65535,
 		}
+
 		avatar.Equip = ei
 
 		return avatar, nil
 	}
+}
+
+
+func validateCharacter(ctx context.Context, req structs.NcAvatarCreateReq) error {
+	return nil
 }
