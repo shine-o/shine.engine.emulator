@@ -134,23 +134,24 @@ type ProtoAvatarShapeInfo struct {
 //  $050E0EECA9116B4E3A3935292D917DD5 upgrade; ???
 // };
 type ProtoEquipment struct {
-	EquHead         int16 `struct:"int16"`
-	EquMouth        int16 `struct:"int16"`
-	EquRightHand    int16 `struct:"int16"`
-	EquBody         int16 `struct:"int16"`
-	EquLeftHand     int16 `struct:"int16"`
-	EquPant         int16 `struct:"int16"`
-	EquBoot         int16 `struct:"int16"`
-	EquAccBoot      int16 `struct:"int16"`
-	EquAccPant      int16 `struct:"int16"`
-	EquAccHeadA     int16 `struct:"int16"`
-	EquMinimonR     int16 `struct:"int16"`
-	EquEye          int16 `struct:"int16"`
-	EquAccLeftHand  int16 `struct:"int16"`
-	EquAccRightHand int16 `struct:"int16"`
-	EquAccBack      int16 `struct:"int16"`
-	EquCosEff       int16 `struct:"int16"`
-	EquAccHip       int16 `struct:"int16"`
-	EquMinimon      int16 `struct:"int16"`
-	EquAccShield    int16 `struct:"int16"`
+	EquHead         uint16 `struct:"uint16"`
+	EquMouth        uint16 `struct:"uint16"`
+	EquRightHand    uint16 `struct:"uint16"`
+	EquBody         uint16 `struct:"uint16"`
+	EquLeftHand     uint16 `struct:"uint16"`
+	EquPant         uint16 `struct:"uint16"`
+	EquBoot         uint16 `struct:"uint16"`
+	EquAccBoot      uint16 `struct:"uint16"`
+	EquAccPant      uint16 `struct:"uint16"`
+	EquAccHeadA     uint16 `struct:"uint16"`
+	EquMinimonR     uint16 `struct:"uint16"`
+	EquEye          uint16 `struct:"uint16"`
+	EquAccLeftHand  uint16 `struct:"uint16"`
+	EquAccRightHand uint16 `struct:"uint16"`
+	EquAccBack      uint16 `struct:"uint16"`
+	EquCosEff       uint16 `struct:"uint16"`
+	EquAccHip       uint16 `struct:"uint16"`
+	EquMinimon      uint16 `struct:"uint16"`
+	EquAccShield    uint16 `struct:"uint16"`
 }
+

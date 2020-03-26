@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -157,7 +158,7 @@ func (pc *Command) Send(ctx context.Context) {
 				return
 			}
 			pc.Base.Data = data
-			log.Infof("[outbound] structured packet data: %v", pc.NcStruct.String())
+			log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), pc.NcStruct.String())
 		}
 
 		cw.mu.Lock()
