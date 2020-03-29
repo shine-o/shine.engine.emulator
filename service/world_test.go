@@ -45,6 +45,8 @@ func TestMain(m *testing.M) {
 	}
 
 	initRedis()
+	worldDB = dbConn(ctx, "world")
+
 	go selfRPC(ctx)
 	os.Exit(m.Run())
 }

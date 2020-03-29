@@ -16,8 +16,8 @@ type sessionFactory struct {
 type session struct {
 	ID       string `json:"id"`
 	WorldID  string
+	UserID   uint64 `json:"user_id"`
 	UserName string `json:"user_name"`
-	UserID   string `json:"user_name"`
 }
 
 func (s sessionFactory) New() networking.Session {

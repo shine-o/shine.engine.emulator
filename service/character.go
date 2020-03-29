@@ -3,98 +3,399 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
+	"regexp"
+	"strings"
+	"time"
 )
 
-type noSession error
-type noSlot error
-type invalidSlot error
-type invalidName error
-type invalidClassGender error
+// User model for schema: accounts
+type Character struct {
+	tableName     struct{} `pg:"world.characters"`
+	ID            uint64
+	UserID        uint64 `pg:",notnull"`
+	Name          string `pg:",notnull,unique"`
+	Appearance    *CharacterAppearance
+	Attributes    *CharacterAttributes
+	Location      *CharacterLocation
+	Inventory     *CharacterInventory
+	EquippedItems *CharacterEquippedItems
+	AdminLevel    uint8     `pg:",notnull,use_zero"`
+	Slot          uint8     `pg:",notnull,use_zero"`
+	IsDeleted     bool      `pg:",use_zero"`
+	DeletedAt     time.Time `pg:",soft_delete"`
+}
 
-var errNoSession = errors.New("no login session was found").(noSession)
-var errNoSlot = errors.New("no slot available").(noSlot)
-var errInvalidSlot = errors.New("invalid slot").(invalidSlot)
-var errInvalidName = errors.New("invalid name").(invalidName)
-var errInvalidClassGender = errors.New("invalid Class Gender data").(invalidClassGender)
+type CharacterAppearance struct {
+	tableName   struct{} `pg:"world.character_appearance"`
+	ID          uint64
+	CharacterID uint64 //
+	Character   *Character
+	Class       uint8     `pg:",notnull"`
+	Gender      uint8     `pg:",notnull,use_zero"`
+	HairType    uint8     `pg:",notnull,use_zero"`
+	HairColor   uint8     `pg:",notnull,use_zero"`
+	FaceType    uint8     `pg:",notnull,use_zero"`
+	DeletedAt   time.Time `pg:",soft_delete"`
+}
+
+type CharacterAttributes struct {
+	tableName    struct{} `pg:"world.character_attributes"`
+	ID           uint64
+	CharacterID  uint64
+	Character    *Character
+	Level        uint16    `pg:",notnull"`
+	Experience   uint64    `pg:",notnull,use_zero"`
+	Fame         uint64    `pg:",notnull,use_zero"`
+	Hp           uint32    `pg:",notnull"`
+	Sp           uint32    `pg:",notnull"`
+	Intelligence uint32    `pg:",notnull"`
+	Strength     uint32    `pg:",notnull"`
+	Dexterity    uint32    `pg:",notnull"`
+	Endurance    uint32    `pg:",notnull"`
+	Spirit       uint32    `pg:",notnull"`
+	Money        uint64    `pg:",notnull,use_zero"`
+	KillPoints   uint32    `pg:",notnull,use_zero"`
+	HpStones     uint16    `pg:",notnull"`
+	SpStones     uint16    `pg:",notnull"`
+	DeletedAt    time.Time `pg:",soft_delete"`
+}
+
+type CharacterLocation struct {
+	tableName   struct{} `pg:"world.character_location"`
+	ID          uint64
+	CharacterID uint64 //
+	Character   *Character
+	MapName     string    `pg:",notnull"`
+	X           uint32    `pg:",notnull"`
+	Y           uint32    `pg:",notnull"`
+	D           uint32    `pg:",notnull"`
+	IsKQ        bool      `pg:",notnull,use_zero"`
+	DeletedAt   time.Time `pg:",soft_delete"`
+}
+
+type CharacterInventory struct {
+	tableName   struct{} `pg:"world.character_inventory"`
+	ID          uint64
+	CharacterID uint64 //
+	Character   *Character
+	ShnID       uint16    `pg:",notnull"`
+	Slot        uint16    `pg:",notnull,use_zero"`
+	IsStack     bool      `pg:",notnull,use_zero"`
+	IsStored    bool      `pg:",notnull,use_zero"`
+	FromMonarch bool      `pg:",notnull,use_zero"`
+	FromStore   bool      `pg:",notnull,use_zero"`
+	DeletedAt   time.Time `pg:",soft_delete"`
+}
+
+type CharacterEquippedItems struct {
+	tableName        struct{} `pg:"world.character_equipped_items"`
+	ID               uint64
+	CharacterID      uint64 //
+	Character        *Character
+	Head             uint16
+	Face             uint16
+	Body             uint16
+	Pants            uint16
+	Boots            uint16
+	LeftHand         uint16
+	RightHand        uint16
+	LeftMiniPet      uint16
+	RightMiniPet     uint16
+	ApparelHead      uint16
+	ApparelFace      uint16
+	ApparelEye       uint16
+	ApparelBody      uint16
+	ApparelPants     uint16
+	ApparelBoots     uint16
+	ApparelLeftHand  uint16
+	ApparelRightHand uint16
+	ApparelBack      uint16
+	ApparelTail      uint16
+	ApparelAura      uint16
+	ApparelShield    uint16
+	DeletedAt        time.Time `pg:",soft_delete"`
+}
+
+var errNoSession = errors.New("no login session was found")
+var errNoSlot = errors.New("no slot available")
+var errInvalidSlot = errors.New("invalid slot")
+var errInvalidName = errors.New("invalid name")
+var errNameTaken  = errors.New("name already in use")
+var errInvalidClassGender = errors.New("invalid Class Gender data")
 
 const (
 	startLevel = 1
-	startMap = "Rou"
+	startMap   = "Rou"
 )
 
 func newCharacter(ctx context.Context, req structs.NcAvatarCreateReq) (structs.AvatarInformation, error) {
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return structs.AvatarInformation{}, errCC
 	default:
-		//
-		avatar := structs.AvatarInformation{}
-
-		// new Character model
-
-		copy(avatar.Name.Name[:], "works")
-		avatar.Slot = 0
-		avatar.Level = 1
-		copy(avatar.LoginMap.Name[:], "Rou")
-
-		avatar.Shape = req.Shape
-
-		avatar.ChrRegNum = 1007
-
-		avatar.TutorialInfo.TutorialState = 2
-		avatar.TutorialInfo.TutorialStep = 0
-
-		ei := structs.ProtoEquipment{
-			EquHead:         65535,
-			EquMouth:        65535,
-			EquRightHand:    65535,
-			EquBody:         11,
-			EquLeftHand:     65535,
-			EquPant:         10,
-			EquBoot:         8,
-			EquAccBoot:      35421,
-			EquAccPant:      65535,
-			EquAccHeadA:     65535,
-			EquMinimonR:     65535,
-			EquEye:          65535,
-			EquAccLeftHand:  65535,
-			EquAccRightHand: 65535,
-			EquAccBack:      65535,
-			EquCosEff:       65535,
-			EquAccHip:       65535,
-			EquMinimon:      65535,
-			EquAccShield:    65535,
+		err := validateCharacter(ctx, req)
+		if err != nil {
+			return structs.AvatarInformation{}, err
 		}
 
-		avatar.Equip = ei
+		newCharacterTx, err := worldDB.Begin()
 
-		return avatar, nil
+		if err != nil {
+			return structs.AvatarInformation{}, err
+		}
+
+		defer newCharacterTx.Close()
+
+		wsi := ctx.Value(networking.ShineSession)
+		ws := wsi.(*session)
+
+		name := strings.TrimRight(string(req.Name.Name[:]), "\x00")
+		char := Character{
+			UserID:     ws.UserID,
+			AdminLevel: 0,
+			Name:       name,
+			Slot:       req.SlotNum,
+		}
+
+		_, err = newCharacterTx.Model(&char).Returning("*").Insert()
+
+		if err != nil {
+			err := newCharacterTx.Rollback()
+			return structs.AvatarInformation{}, err
+		}
+
+		char.
+			initialAppearance(req.Shape).
+			initialAttributes().
+			initialLocation().
+			initialInventory().
+			initialEquippedItems()
+
+		if _, err = newCharacterTx.Model(char.Appearance).Returning("*").Insert(); err != nil {
+			err := newCharacterTx.Rollback()
+			return structs.AvatarInformation{}, err
+		}
+
+		if _, err = newCharacterTx.Model(char.Attributes).Returning("*").Insert(); err != nil {
+			err := newCharacterTx.Rollback()
+			return structs.AvatarInformation{}, err
+		}
+
+		if _, err = newCharacterTx.Model(char.Location).Returning("*").Insert(); err != nil {
+			err := newCharacterTx.Rollback()
+			return structs.AvatarInformation{}, err
+		}
+
+		if _, err = newCharacterTx.Model(char.Inventory).Returning("*").Insert(); err != nil {
+			err := newCharacterTx.Rollback()
+			return structs.AvatarInformation{}, err
+		}
+
+		if _, err = newCharacterTx.Model(char.EquippedItems).Returning("*").Insert(); err != nil {
+			err := newCharacterTx.Rollback()
+			return structs.AvatarInformation{}, err
+		}
+
+		err = newCharacterTx.Commit()
+
+		return char.ncRepresentation(), nil
 	}
 }
 
 func validateCharacter(ctx context.Context, req structs.NcAvatarCreateReq) error {
 	// fetch session
+	wsi := ctx.Value(networking.ShineSession)
+	ws := wsi.(*session)
 
-	session, ok := ctx.Value("session").(session)
-
-	if !ok {
-		return errNoSession
+	if req.SlotNum > 5 {
+		return errInvalidSlot
 	}
 
-	// query all characters for this account
-	// if no slot is available, return errNoSlot
-	//req.SlotNum
-	var chars []*Character
-	worldDB.Model(chars).Where("user_id = ?" , session.UserID)
+	name := strings.TrimRight(string(req.Name.Name[:]), "\x00")
 
-	// if name contains special characters, return errInvalidName (name should only contain alphanumeric characters)
-	// if a character with the same name already exists, return errNameTaken
-	// req.Name
+	var charName string
+	err := worldDB.Model((*Character)(nil)).Column("name").Where("name = ?", name).Limit(1).Select(&charName)
 
-	//
-	//req.Shape.BF
+	if err != nil {
+		return errInvalidName
+	}
 
+	if charName == name {
+		return errNameTaken
+	}
+
+	var chars []Character
+	worldDB.Model(&chars).Where("user_id = ?", ws.UserID)
+
+	if len(chars) == 6 {
+		return errNoSlot
+	}
+
+	alphaNumeric := regexp.MustCompile(`^[A-Za-z0-9]+$`).MatchString
+	if !alphaNumeric(name) {
+		return errInvalidName
+	}
+
+	isMale := (req.Shape.BF >> 7) & 1
+	class := (req.Shape.BF >> 2) & 31
+
+	if isMale > 1 {
+		return errInvalidClassGender
+	}
+
+	if class < 1 || class > 27 {
+		return errInvalidClassGender
+	}
 
 	return nil
+}
+
+func (c *Character) initialAppearance(shape structs.ProtoAvatarShapeInfo) *Character {
+	isMale := (shape.BF >> 7) & 1
+	class := (shape.BF >> 2) & 31
+
+	c.Appearance = &CharacterAppearance{
+		CharacterID: c.ID,
+		Class:       class,
+		Gender:      isMale,
+		HairType:    shape.HairType,
+		HairColor:   shape.HairColor,
+		FaceType:    shape.FaceShape,
+	}
+	return c
+}
+
+func (c *Character) initialAttributes() *Character {
+	c.Attributes = &CharacterAttributes{
+		CharacterID:  c.ID,
+		Level:        startLevel,
+		Experience:   0,
+		Fame:         0,
+		Hp:           500,
+		Sp:           500,
+		Intelligence: 27,
+		Strength:     27,
+		Dexterity:    27,
+		Endurance:    27,
+		Spirit:       27,
+		Money:        100,
+		KillPoints:   0,
+		HpStones:     15,
+		SpStones:     15,
+	}
+	return c
+}
+
+func (c *Character) initialLocation() *Character {
+	c.Location = &CharacterLocation{
+		CharacterID: c.ID,
+		MapName:     startMap,
+		X:           3000,
+		Y:           11666,
+		D:           90,
+		IsKQ:        false,
+	}
+	return c
+}
+
+func (c *Character) initialInventory() *Character {
+	c.Inventory = &CharacterInventory{
+		CharacterID: c.ID,
+		ShnID:       1,
+		Slot:        0,
+		IsStack:     false,
+		IsStored:    false,
+		FromMonarch: false,
+		FromStore:   false,
+	}
+	return c
+}
+
+func (c *Character) initialEquippedItems() *Character {
+	c.EquippedItems = &CharacterEquippedItems{
+		CharacterID:      c.ID,
+		Head:             65535,
+		Face:             65535,
+		Body:             65535,
+		Pants:            65535,
+		Boots:            65535,
+		LeftHand:         65535,
+		RightHand:        65535,
+		LeftMiniPet:      65535,
+		RightMiniPet:     65535,
+		ApparelHead:      65535,
+		ApparelFace:      65535,
+		ApparelEye:       65535,
+		ApparelBody:      65535,
+		ApparelPants:     65535,
+		ApparelBoots:     65535,
+		ApparelLeftHand:  65535,
+		ApparelRightHand: 65535,
+		ApparelBack:      65535,
+		ApparelTail:      65535,
+		ApparelAura:      65535,
+		ApparelShield:    65535,
+	}
+	return c
+}
+
+func (c *Character) ncRepresentation() structs.AvatarInformation {
+	var name [20]byte
+	var mapName [12]byte
+	copy(name[:], c.Name)
+	copy(mapName[:], c.Location.MapName)
+
+	nc := structs.AvatarInformation{
+		ChrRegNum: uint32(c.ID),
+		Name: structs.Name5{
+			Name: name,
+		},
+		Level: c.Attributes.Level,
+		Slot:  c.Slot,
+		LoginMap: structs.Name3{
+			Name: mapName,
+		},
+		Shape: c.Appearance.ncRepresentation(),
+		Equip: c.EquippedItems.ncRepresentation(),
+		TutorialInfo: structs.ProtoTutorialInfo{ // x(
+			TutorialState: 2,
+			TutorialStep:  0,
+		},
+	}
+	return nc
+}
+
+func (cei *CharacterEquippedItems) ncRepresentation() structs.ProtoEquipment {
+	return structs.ProtoEquipment{
+		EquHead:         cei.Head,
+		EquMouth:        cei.ApparelFace,
+		EquRightHand:    cei.RightHand,
+		EquBody:         cei.Body,
+		EquLeftHand:     cei.LeftHand,
+		EquPant:         cei.Pants,
+		EquBoot:         cei.Boots,
+		EquAccBoot:      cei.ApparelBoots,
+		EquAccPant:      cei.ApparelPants,
+		EquAccHeadA:     cei.ApparelHead,
+		EquMinimonR:     cei.RightMiniPet,
+		EquEye:          cei.Face,
+		EquAccLeftHand:  cei.ApparelLeftHand,
+		EquAccRightHand: cei.ApparelRightHand,
+		EquAccBack:      cei.ApparelBack,
+		EquCosEff:       cei.ApparelAura,
+		EquAccHip:       cei.ApparelTail,
+		EquMinimon:      cei.LeftMiniPet,
+		EquAccShield:    cei.ApparelShield,
+	}
+}
+
+func (ca *CharacterAppearance) ncRepresentation() structs.ProtoAvatarShapeInfo {
+	return structs.ProtoAvatarShapeInfo{
+		BF:        1 | ca.Class<<2 | ca.Gender<<7,
+		HairType:  ca.HairType,
+		HairColor: ca.HairColor,
+		FaceShape: ca.FaceType,
+	}
 }
