@@ -21,13 +21,16 @@ var (
 // that is, use networking library to handle TCP connection
 // configure networking library to use handlers implemented in this package for packets
 func Start(cmd *cobra.Command, args []string) {
-	log = logger.Init("LoginLogger", true, false, ioutil.Discard)
-	log.Info("login logger init()")
-	initDatabase()
-	initRedis()
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
+	log = logger.Init("LoginLogger", true, false, ioutil.Discard)
+	log.Info("login logger init()")
+
+	db = dbConn(ctx, "accounts")
+	initRedis()
+
 	defer cleanupRPC()
+	defer db.Close()
 	defer cancel()
 
 	s := &networking.Settings{}

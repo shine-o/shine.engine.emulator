@@ -5,10 +5,8 @@ import (
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
-	"time"
 )
 
-const gRPCTimeout = time.Second * 2
 
 func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 	select {
