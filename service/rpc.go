@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"os"
@@ -10,10 +11,23 @@ import (
 	"time"
 )
 
+type server struct {
+	lw.UnimplementedLoginServer
+}
+
 // RPCClients that this service will use to communicate with other services
 type RPCClients struct {
 	services map[string]*grpc.ClientConn
 	mu       sync.Mutex
+}
+
+const gRPCTimeout = time.Second * 2
+
+func (s *server) AccountInfo(ctx context.Context, req *lw.User) (*lw.UserInfo, error) {
+
+	// query user by user_name
+
+	return &lw.UserInfo{}, nil
 }
 
 // dial gRPC services that are needed.
@@ -43,7 +57,6 @@ func gRPCClients(ctx context.Context) {
 
 			for _, v := range services {
 				address := fmt.Sprintf("%v:%v", v["host"], v["port"])
-				//conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
 				conn, err := grpc.Dial(address, grpc.WithInsecure())
 				if err != nil {
 					log.Errorf("could not connect service %v : %v", v["name"], err)
@@ -81,4 +94,3 @@ func cleanupRPC() {
 	}
 	grpcc.mu.Unlock()
 }
-

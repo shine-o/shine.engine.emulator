@@ -67,19 +67,17 @@ func (lc *LoginCommand) checkCredentials(ctx context.Context) error {
 			userName := strings.TrimRight(string(un), "\x00")
 			password := strings.TrimRight(string(pass), "\x00")
 
-			var user User
-			db := database.Where("user_name = ?", userName).First(&user)
+			//db := database.Where("user_name = ?", userName).First(&user)
+			var storedPassword string
+			err := db.Model((*User)(nil)).Where("user_name = ?", userName).Limit(1).Select(&storedPassword)
 
-			if len(db.GetErrors()) > 0 {
-
-				if db.RecordNotFound() {
-					return ErrUNF
-				}
-
-				return fmt.Errorf("%v: [ %v ]", ErrDBE, db.GetErrors())
+			if err != nil {
+				return fmt.Errorf("%v: [ %v ]", ErrDBE, err)
 			}
 
-			if user.Password == password {
+			if storedPassword == password {
+				// save user session in redis
+
 				return nil
 			}
 
