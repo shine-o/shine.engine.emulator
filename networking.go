@@ -49,6 +49,8 @@ func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
 
 // Listen on TPC socket for connection on given port
 func (ss *ShineService) Listen(ctx context.Context, port string) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	ss.s.Set()
 	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", port)); err == nil {
 		log.Infof("Listening for TCP connections on: %v", l.Addr())
