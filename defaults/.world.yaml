@@ -2,7 +2,7 @@ serve:
   worlds:
     - id: "1"
       name: isya
-      external_ip: 192.168.1.131
+      external_ip: 192.168.1.133
       port: "9110"
 
 crypt:
@@ -23,7 +23,7 @@ gRPC:
         port: "50020"
     external:
       - name: login
-        host: 192.168.1.131
+        host: 192.168.1.133
         port: "50010"
 
 #protocol:
