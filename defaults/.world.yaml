@@ -4,14 +4,6 @@ serve:
       name: isya
       external_ip: 192.168.1.131
       port: "9110"
-#    - id: "2"
-#      name: legel
-#      external_ip: 192.168.1.131
-#      port: "9111"
-#    - id: "3"
-#      name: epith
-#      external_ip: 192.168.1.131
-#      port: "9112"
 
 crypt:
   # slice of bytes used for decrypting inbound packages
@@ -29,6 +21,10 @@ gRPC:
     self:
       - name: world
         port: "50020"
+    external:
+      - name: login
+        host: 192.168.1.131
+        port: "50010"
 
 #protocol:
 ### POSTGRES, alternatives can be added if required

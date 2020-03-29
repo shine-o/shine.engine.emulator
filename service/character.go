@@ -6,15 +6,17 @@ import (
 	"github.com/shine-o/shine.engine.networking/structs"
 )
 
+type noSession error
 type noSlot error
 type invalidSlot error
 type invalidName error
 type invalidClassGender error
 
+var errNoSession = errors.New("no login session was found").(noSession)
 var errNoSlot = errors.New("no slot available").(noSlot)
 var errInvalidSlot = errors.New("invalid slot").(invalidSlot)
 var errInvalidName = errors.New("invalid name").(invalidName)
-var errInvalidShape = errors.New("invalid shape data").(invalidClassGender)
+var errInvalidClassGender = errors.New("invalid Class Gender data").(invalidClassGender)
 
 const (
 	startLevel = 1
@@ -71,7 +73,28 @@ func newCharacter(ctx context.Context, req structs.NcAvatarCreateReq) (structs.A
 	}
 }
 
-
 func validateCharacter(ctx context.Context, req structs.NcAvatarCreateReq) error {
+	// fetch session
+
+	session, ok := ctx.Value("session").(session)
+
+	if !ok {
+		return errNoSession
+	}
+
+	// query all characters for this account
+	// if no slot is available, return errNoSlot
+	//req.SlotNum
+	var chars []*Character
+	worldDB.Model(chars).Where("user_id = ?" , session.UserID)
+
+	// if name contains special characters, return errInvalidName (name should only contain alphanumeric characters)
+	// if a character with the same name already exists, return errNameTaken
+	// req.Name
+
+	//
+	//req.Shape.BF
+
+
 	return nil
 }

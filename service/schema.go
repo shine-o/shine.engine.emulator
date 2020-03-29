@@ -1,163 +1,155 @@
 package service
 
 import (
+	"context"
 	"fmt"
+	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v9/orm"
 	"github.com/google/logger"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres" // GORM needs this
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"time"
 )
 
-var database *gorm.DB
-
-type Model struct {
-	ID        uint64 `gorm:"primary_key"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt *time.Time `sql:"index"`
-}
-
 // User model for schema: accounts
 type Character struct {
-	Model
-	Appearance CharacterAppearance
-	Attributes CharacterAttributes
-	Location   CharacterLocation
-	Inventory CharacterInventory
-	EquippedItems CharacterEquippedItems
-	UserID     uint64
-	AdminLevel uint8
-	slot       uint8
-	OnMap      string
-	IsDeleted  bool
+	tableName     struct{} `pg:"world.characters"`
+	ID            uint64
+	//Appearance    *CharacterAppearance    `pg:"unique,on_delete:RESTRICT"`
+	Appearance    *CharacterAppearance
+	Attributes    *CharacterAttributes
+	Location      *CharacterLocation
+	Inventory     *CharacterInventory
+	EquippedItems *CharacterEquippedItems
+	UserID        uint64                  `pg:"notnull"`
+	AdminLevel    uint8
+	Slot          uint8  `pg:"notnull"`
+	OnMap         string `pg:"notnull"`
+	IsDeleted     bool
+	DeletedAt     time.Time `pg:"soft_delete"`
 }
 
 type CharacterAppearance struct {
-	Model
-	CharacterID uint16
-	Race      uint8
-	Class     uint8
-	Gender    uint8
-	HairType  uint8
-	HairColor uint8
-	FaceType  uint8
+	tableName   struct{} `pg:"world.character_appearance"`
+	ID          uint64
+	CharacterID uint64 //
+	Character   *Character
+	//Race      uint8
+	Class     uint8     `pg:"notnull"`
+	Gender    uint8     `pg:"notnull"`
+	HairType  uint8     `pg:"notnull"`
+	HairColor uint8     `pg:"notnull"`
+	FaceType  uint8     `pg:"notnull"`
+	DeletedAt time.Time `pg:"soft_delete"`
 }
 
 type CharacterAttributes struct {
-	Model
-	CharacterID uint16
-	Level        uint8
-	Experience   uint64
-	Fame         uint64
-	Hp           uint32
-	Sp           uint32
-	Intelligence uint32
-	Strength     uint32
-	Dexterity    uint32
-	Endurance    uint32
-	Spirit       uint32
-	Money        uint64
-	KillPoints   uint32
-	HpStones     uint16
-	SpStones     uint16
+	tableName    struct{} `pg:"world.character_attributes"`
+	ID           uint64
+	CharacterID  uint64
+	Character    *Character  `pg:"unique"`
+	Level        uint8 `pg:"notnull"`
+	Experience   uint64`pg:"notnull"`
+	Fame         uint64`pg:"notnull"`
+	Hp           uint32`pg:"notnull"`
+	Sp           uint32`pg:"notnull"`
+	Intelligence uint32`pg:"notnull"`
+	Strength     uint32`pg:"notnull"`
+	Dexterity    uint32`pg:"notnull"`
+	Endurance    uint32`pg:"notnull"`
+	Spirit       uint32`pg:"notnull"`
+	Money        uint64`pg:"notnull"`
+	KillPoints   uint32`pg:"notnull"`
+	HpStones     uint16`pg:"notnull"`
+	SpStones     uint16`pg:"notnull"`
+	DeletedAt    time.Time `pg:"soft_delete"`
 }
 
 type CharacterLocation struct {
-	Model
-	CharacterID uint16
-	MapName string
-	X       uint32
-	Y       uint32
-	D       uint32
-	isKQ    bool
+	tableName   struct{} `pg:"world.character_location"`
+	ID          uint64
+	CharacterID uint64 //
+	Character   *Character
+	MapName     string    `pg:"notnull"`
+	X           uint32    `pg:"notnull"`
+	Y           uint32    `pg:"notnull"`
+	D           uint32    `pg:"notnull"`
+	IsKQ        bool      `pg:"notnull"`
+	DeletedAt   time.Time `pg:"soft_delete"`
 }
 
 type CharacterInventory struct {
-	Model
-	CharacterID uint16
-	ShnID uint16
-	Slot  uint16
-	IsStack bool
-	IsStored bool
-	FromMonarch bool
-	FromStore bool
+	tableName   struct{} `pg:"world.character_inventory"`
+	ID          uint64
+	CharacterID uint64 //
+	Character   *Character
+	ShnID       uint16    `pg:"notnull"`
+	Slot        uint16    `pg:"unique,notnull"`
+	IsStack     bool      `pg:"notnull"`
+	IsStored    bool      `pg:"notnull"`
+	FromMonarch bool      `pg:"notnull"`
+	FromStore   bool      `pg:"notnull"`
+	DeletedAt   time.Time `pg:"soft_delete"`
 }
 
 type CharacterEquippedItems struct {
-	Model
-	CharacterID uint16
-	Head uint16
-	Body uint16
-	Boots uint16
-	LeftHand uint16
-	RightHand uint16
-	MiniPet uint16
-	ApparelHead uint16
-	ApparelEye uint16
-	ApparelBody uint16
-	ApparelBoots uint16
-	ApparelLeftHand uint16
+	tableName        struct{} `pg:"world.character_equipped_items"`
+	ID               uint64
+	CharacterID      uint64 //
+	Character        *Character
+	Head             uint16
+	Body             uint16
+	Boots            uint16
+	LeftHand         uint16
+	RightHand        uint16
+	MiniPet          uint16
+	ApparelHead      uint16
+	ApparelEye       uint16
+	ApparelBody      uint16
+	ApparelBoots     uint16
+	ApparelLeftHand  uint16
 	ApparelRightHand uint16
-	ApparelBack uint16
-	ApparelAura uint16
-	ApparelShield uint16
-}
-
-// TableName schema identifier
-func (Character) TableName() string {
-	return "world.character"
-}
-
-// TableName schema identifier
-func (CharacterAppearance) TableName() string {
-	return "world.character_appearance"
-}
-
-// TableName schema identifier
-func (CharacterAttributes) TableName() string {
-	return "world.character_attributes"
-}
-
-// TableName schema identifier
-func (CharacterLocation) TableName() string {
-	return "world.character_location"
-}
-
-// TableName schema identifier
-func (CharacterInventory) TableName() string {
-	return "world.character_inventory"
-}
-
-// TableName schema identifier
-func (CharacterEquippedItems) TableName() string {
-	return "world.character_equipped_items"
+	ApparelBack      uint16
+	ApparelAura      uint16
+	ApparelShield    uint16
+	DeletedAt        time.Time `pg:"soft_delete"`
 }
 
 // Migrate schemas and models
 func Migrate(cmd *cobra.Command, args []string) {
+
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	log = logger.Init("Database Logger", true, false, ioutil.Discard)
 	log.Info("Database Logger Migrate()")
-	initDatabase()
-	defer database.Close()
+	db := dbConn(ctx, "world")
+	defer db.Close()
 	if yes, err := cmd.Flags().GetBool("fixtures"); err != nil {
 		log.Error(err)
 	} else {
 		if yes {
-			purge()
-			migrations()
+			err := purge(db)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = createSchema(db)
+			if err != nil {
+				log.Fatal(err)
+			}
 			fixtures()
 		} else {
-			purge()
-
-			migrations()
+			err = createSchema(db)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 }
 
-func initDatabase() {
+func dbConn(ctx context.Context, schema string) *pg.DB {
 	var (
 		dbUser     = viper.GetString("database.postgres.db_user")
 		dbPassword = viper.GetString("database.postgres.db_password")
@@ -165,41 +157,66 @@ func initDatabase() {
 		port       = viper.GetString("database.postgres.port")
 		dbName     = viper.GetString("database.postgres.db_name")
 	)
-	dsn := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable", dbUser, dbPassword, host, port, dbName)
-	if db, err := gorm.Open("postgres", dsn); err != nil {
-		log.Fatal(err)
-	} else {
-		database = db
+
+	db := pg.Connect(&pg.Options{
+		Addr:            fmt.Sprintf("%v:%v", host, port),
+		User:            dbUser,
+		Password:        dbPassword,
+		Database:        dbName,
+		ApplicationName: "world",
+		TLSConfig:       nil,
+		//DialTimeout:     15,
+		//ReadTimeout:     5,
+		//WriteTimeout:    5,
+		PoolSize:    5,
+		PoolTimeout: 5,
+	})
+	log.Info(db)
+	db = db.WithParam(schema, pg.Safe(schema))
+	return db.WithContext(ctx)
+}
+
+func createSchema(db *pg.DB) error {
+	for _, model := range []interface{}{
+		(*Character)(nil),
+		(*CharacterAppearance)(nil),
+		(*CharacterAttributes)(nil),
+		(*CharacterLocation)(nil),
+		(*CharacterInventory)(nil),
+		(*CharacterEquippedItems)(nil),
+	} {
+		err := db.CreateTable(model, &orm.CreateTableOptions{
+			IfNotExists:   true,
+			FKConstraints: true,
+		})
+		if err != nil {
+			return err
+		}
 	}
-	log.Infof("connected to the database postgres://v:v@%v:%v/%v?sslmode=disable", host, port, dbName)
+	return nil
 }
 
-func migrations() {
-	database.Exec("CREATE SCHEMA IF NOT EXISTS world;")
-	database.AutoMigrate(&Character{})
-	database.AutoMigrate(&CharacterAppearance{})
-	database.AutoMigrate(&CharacterAttributes{})
-	database.AutoMigrate(&CharacterLocation{})
-	database.AutoMigrate(&CharacterInventory{})
-	database.AutoMigrate(&CharacterEquippedItems{})
+func purge(db *pg.DB) error {
+	for _, model := range []interface{}{
+		(*Character)(nil),
+		(*CharacterAppearance)(nil),
+		(*CharacterAttributes)(nil),
+		(*CharacterLocation)(nil),
+		(*CharacterInventory)(nil),
+		(*CharacterEquippedItems)(nil),
+	} {
+		err := db.DropTable(model, &orm.DropTableOptions{
+			IfExists: true,
+			Cascade:  true,
+		})
+		if err != nil {
+			return err
+		}
+	}
 
-	//database.Model(&Character{}).AddForeignKey("")
-}
-
-func purge() {
-	database.DropTableIfExists(&Character{})
-	database.DropTableIfExists(&CharacterAppearance{})
-	database.DropTableIfExists(&CharacterAttributes{})
-	database.DropTableIfExists(&CharacterLocation{})
-	database.DropTableIfExists(&CharacterInventory{})
-	database.DropTableIfExists(&CharacterEquippedItems{})
-
+	return nil
 }
 
 func fixtures() {
-	//password := md5Hash("admin")
-	//database.Create(&User{
-	//	UserName: "admin",
-	//	Password: password,
-	//})
+
 }
