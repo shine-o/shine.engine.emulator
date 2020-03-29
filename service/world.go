@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
+	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
 	"reflect"
 	"strconv"
 	"strings"
@@ -15,6 +16,8 @@ import (
 var errCC = errors.New("context was canceled")
 
 var errHF = errors.New("hardcoded feature")
+
+var errAccountInfo = errors.New("failed to fetch account info")
 
 // WorldCommand wrapper for networking command
 // any information scoped to this service and its handlers can be added here
@@ -58,6 +61,25 @@ func (wc *WorldCommand) loginToWorld(ctx context.Context) error {
 			ws := wsi.(*session)
 			userName := strings.TrimRight(string(ncs.User.Name[:]), "\x00")
 			ws.UserName = userName
+
+			// fetch user id using user name, login serve will check if it has a session for that user
+			grpcc.mu.Lock()
+			conn := grpcc.services["login"]
+			c := lw.NewLoginClient(conn)
+			grpcc.mu.Unlock()
+
+			rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
+
+			ui, err := c.AccountInfo(rpcCtx, &lw.User{
+				UserName:             userName,
+			})
+
+			if err != nil {
+				return errAccountInfo
+			}
+
+			ws.UserID = ui.UserID
+
 			if err := persistSession(ws); err != nil {
 				return err
 			}

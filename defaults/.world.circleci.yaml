@@ -32,6 +32,10 @@ gRPC:
     self:
       - name: world
         port: "50020"
+    external:
+      - name: login
+        host: 192.168.1.131
+        port: "50010"
 
 #protocol:
 ### POSTGRES, alternatives can be added if required

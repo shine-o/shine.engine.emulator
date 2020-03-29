@@ -53,31 +53,28 @@ func userWillWorldSelectReq(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-		go userWillWorldSelectAck(ctx, &networking.Command{})
+		go userWillWorldSelectAck(ctx)
 	}
 }
 
-func userWillWorldSelectAck(ctx context.Context, pc *networking.Command) {
+func userWillWorldSelectAck(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		pc.Base.OperationCode = 3124
+		pc := &networking.Command{
+			Base:     networking.CommandBase{
+				OperationCode: 3124,
+			},
+			NcStruct: nil,
+		}
 		wc := &WorldCommand{pc: pc}
-
 		nc, err :=  wc.returnToServerSelect(ctx)
 		if err != nil {
 			return
 		}
 		pc.NcStruct = &nc
 		go pc.Send(ctx)
-		//
-		//data, err := nc.Pack()
-		//if err != nil {
-		//	return
-		//}
-		//pc.Base.Data = data
-		//go networking.WriteToClient(ctx, pc)
 	}
 }
 

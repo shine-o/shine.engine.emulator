@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/go-pg/pg/v9"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.networking"
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
@@ -33,6 +34,8 @@ type activeWorlds struct {
 var (
 	log *logger.Logger
 	aw  *activeWorlds
+	grpcc *RPCClients
+	worldDB  * pg.DB
 )
 
 func init() {
@@ -45,10 +48,16 @@ func init() {
 func Start(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-	initRedis()
-	selfRPC(ctx)
 
+
+	initRedis()
+	gRPCClients(ctx)
+	selfRPC(ctx)
+	worldDB = dbConn(ctx, "world")
+
+	defer cancel()
+	defer cleanupRPC()
+	defer worldDB.Close()
 	// for each world in serve.worlds
 	aw = &activeWorlds{
 		activeWorlds: make(map[string]*world),
@@ -65,6 +74,7 @@ func Start(cmd *cobra.Command, args []string) {
 	<-c
 }
 
+// reminder: remove this as the service will be responsible only for one server
 func startWorlds(ctx context.Context) {
 	if viper.IsSet("serve.worlds") {
 		// snippet for loading yaml array
