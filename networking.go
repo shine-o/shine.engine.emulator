@@ -151,7 +151,6 @@ func (pc *Command) Send(ctx context.Context) {
 	default:
 		cwv := ctx.Value(ConnectionWriter)
 		cw := cwv.(*clientWriter)
-		log.Infof("[outbound] metadata: %v", pc.Base.String())
 
 		if pc.NcStruct != nil {
 			data, err := pc.NcStruct.Pack()
@@ -162,6 +161,7 @@ func (pc *Command) Send(ctx context.Context) {
 			pc.Base.Data = data
 			log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), pc.NcStruct.String())
 		}
+		log.Infof("[outbound] metadata: %v", pc.Base.String())
 
 		cw.mu.Lock()
 		if _, err := cw.w.Write(pc.Base.RawData()); err != nil {

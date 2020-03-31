@@ -79,3 +79,62 @@ func (nc * NcAvatarCreateSuccAck) Pack() ([]byte, error) {
 func (nc * NcAvatarCreateSuccAck) Unpack(data []byte) error {
 	return Unpack(data, nc)
 }
+
+//struct PROTO_NC_AVATAR_ERASE_REQ
+//{
+//char slot;
+//};
+type NcAvatarEraseReq struct {
+	Slot byte `struct:"byte"`
+}
+
+func (nc * NcAvatarEraseReq) PdbAnalog() string {
+	return `
+	struct PROTO_NC_AVATAR_ERASE_REQ
+	{
+	  char slot;
+	};
+`
+}
+
+func (nc * NcAvatarEraseReq) Pack() ([]byte, error) {
+	return Pack(nc)
+}
+
+func (nc * NcAvatarEraseReq) Unpack(data []byte) error {
+	return Unpack(data, nc)
+}
+
+//struct PROTO_NC_AVATAR_ERASESUCC_ACK
+//{
+//char slot;
+//};
+type NcAvatarEraseSuccAck struct {
+	Slot byte `struct:"byte"`
+}
+
+func (nc * NcAvatarEraseSuccAck) PdbAnalog() string {
+	return `
+	struct PROTO_NC_AVATAR_ERASESUCC_ACK
+	{
+	  char slot;
+	};
+`
+}
+
+func (nc * NcAvatarEraseSuccAck) String() string {
+	// todo: refactor to common func
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc * NcAvatarEraseSuccAck) Pack() ([]byte, error) {
+	return Pack(nc)
+}
+
+func (nc * NcAvatarEraseSuccAck) Unpack(data []byte) error {
+	return Unpack(data, nc)
+}
