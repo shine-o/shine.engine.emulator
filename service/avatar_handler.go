@@ -25,10 +25,13 @@ func avatarCreateReq(ctx context.Context, pc *networking.Command)   {
 
 			err = validateCharacter(ctx, nc)
 			if err != nil {
+				log.Error(err)
 				return
 			}
+
 			ai, err := newCharacter(ctx, nc)
 			if err != nil {
+				log.Error(err)
 				return
 			}
 			go avatarCreateSuccAck(ctx, ai)
@@ -48,11 +51,46 @@ func avatarCreateSuccAck(ctx context.Context, ai structs.AvatarInformation) {
 		}
 		nc := structs.NcAvatarCreateSuccAck{}
 		nc.NumOfAvatar = 1 //
-
 		nc.Avatar = ai
 		pc.NcStruct = &nc
 		go pc.Send(ctx)
-		//hexData, _ := hex.DecodeString("01ed03000046696768747265726f6f00000000000000000000010000526f754e0000000000000000002b00000085060000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff0000f0ffffffff0000000000000000000000000000000000000000345632df0000000000000200000000")
-		//pc.Base.Data = hexData
+	}
+}
+
+func avatarEraseReq(ctx context.Context, pc *networking.Command) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		nc := structs.NcAvatarEraseReq{}
+		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
+			// todo: error nc if possible
+			log.Error(err)
+			return
+		}
+		err := deleteCharacter(ctx, nc)
+		if err != nil {
+			log.Error(err)
+			// todo: error nc if possible
+			return
+		}
+		go avatarEraseSuccAck(ctx, structs.NcAvatarEraseSuccAck{
+			Slot:nc.Slot,
+		})
+	}
+}
+
+func avatarEraseSuccAck(ctx context.Context, ack structs.NcAvatarEraseSuccAck) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		pc := networking.Command{
+			Base:     networking.CommandBase{
+				OperationCode:		5132,
+			},
+		}
+		pc.NcStruct = &ack
+		go pc.Send(ctx)
 	}
 }
