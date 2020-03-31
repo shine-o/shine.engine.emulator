@@ -96,19 +96,42 @@ func (wc *WorldCommand) userWorldInfo(ctx context.Context) (structs.NcUserLoginW
 	default:
 		wsi := ctx.Value(networking.ShineSession)
 		ws := wsi.(*session)
+		worldID, err := strconv.Atoi(ws.WorldID)
 
-		if ws.UserName == "admin" { // no database for now, so I hardcode the avatar info
-			worldID, err := strconv.Atoi(ws.WorldID)
-			if err != nil {
-				return structs.NcUserLoginWorldAck{}, err
-			}
-			nc := structs.NcUserLoginWorldAck{
-				WorldManager: uint16(worldID),
-				NumOfAvatar:  0,
-			}
-			return nc, nil
+		if err != nil {
+			return structs.NcUserLoginWorldAck{}, err
 		}
-		return structs.NcUserLoginWorldAck{}, errHF
+
+		var avatars []structs.AvatarInformation
+		var chars []Character
+
+		err = worldDB.Model(&chars).
+			Relation("Appearance").
+			//Where("user_id = ?", ws.UserID).
+			Relation("Attributes").
+			Relation("Location").
+			Relation("Inventory").
+			Relation("EquippedItems").
+			Where("user_id = ?", ws.UserID).
+			Select()
+
+		if err != nil {
+			return structs.NcUserLoginWorldAck{}, err
+		}
+
+		if len(chars) > 0 {
+			for _, c := range chars {
+				avatars = append(avatars, c.ncRepresentation())
+			}
+		}
+
+		nc := structs.NcUserLoginWorldAck{
+			WorldManager: uint16(worldID),
+			NumOfAvatar:  byte(len(chars)),
+			Avatars: avatars,
+		}
+
+		return nc, nil
 	}
 }
 

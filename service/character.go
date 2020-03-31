@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
+	"github.com/go-pg/pg/v9"
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
 	"regexp"
@@ -25,6 +27,17 @@ type Character struct {
 	Slot          uint8     `pg:",notnull,use_zero"`
 	IsDeleted     bool      `pg:",use_zero"`
 	DeletedAt     time.Time `pg:",soft_delete"`
+}
+// todo: checkout how these hooks really work
+var _ pg.BeforeDeleteHook = (*Character)(nil)
+func (c * Character) BeforeDelete(ctx context.Context)  (context.Context, error) {
+	c.Name = fmt.Sprintf("%v@%v", c.Name, "12346")
+	_, err := worldDB.Model(c).Set("name = ?name").Where("id = ?id").Update()
+	if err != nil {
+		log.Error(err)
+		return ctx, err
+	}
+	return ctx, nil
 }
 
 type CharacterAppearance struct {
@@ -122,8 +135,19 @@ var errNoSession = errors.New("no login session was found")
 var errNoSlot = errors.New("no slot available")
 var errInvalidSlot = errors.New("invalid slot")
 var errInvalidName = errors.New("invalid name")
-var errNameTaken  = errors.New("name already in use")
+var errInvalidRequest = errors.New("invalid packet data was sent")
+var errNameTaken = errors.New("name already in use")
 var errInvalidClassGender = errors.New("invalid Class Gender data")
+
+type errCharacter struct {
+	Code int
+	Message string
+}
+
+func (ec *errCharacter) Error() string  {
+	return ec.Message
+}
+
 
 const (
 	startLevel = 1
@@ -137,6 +161,22 @@ func newCharacter(ctx context.Context, req structs.NcAvatarCreateReq) (structs.A
 	default:
 		err := validateCharacter(ctx, req)
 		if err != nil {
+
+			switch err.Error() {
+			case errInvalidName.Error():
+				// name taken error
+				break
+			case errNameTaken.Error():
+				// errcode 385
+				break
+			case errInvalidSlot.Error():
+				break
+			case errInvalidClassGender.Error():
+				break
+			case errNoSlot.Error():
+				break
+			}
+
 			return structs.AvatarInformation{}, err
 		}
 
@@ -162,7 +202,7 @@ func newCharacter(ctx context.Context, req structs.NcAvatarCreateReq) (structs.A
 		_, err = newCharacterTx.Model(&char).Returning("*").Insert()
 
 		if err != nil {
-			err := newCharacterTx.Rollback()
+			newCharacterTx.Rollback()
 			return structs.AvatarInformation{}, err
 		}
 
@@ -200,9 +240,103 @@ func newCharacter(ctx context.Context, req structs.NcAvatarCreateReq) (structs.A
 
 		err = newCharacterTx.Commit()
 
+		if err != nil {
+			return structs.AvatarInformation{}, err
+		}
+
 		return char.ncRepresentation(), nil
 	}
 }
+
+func deleteCharacter(ctx context.Context, req structs.NcAvatarEraseReq) error {
+	wsi := ctx.Value(networking.ShineSession)
+	ws := wsi.(*session)
+	// ws.
+	deleteCharTx, err := worldDB.Begin()
+	defer deleteCharTx.Close()
+	if err != nil {
+		return &errCharacter{
+			Code:    1,
+			Message: fmt.Sprintf("database error, could not start transaction: %v", err),
+		}
+	}
+	var char Character
+	err = deleteCharTx.Model(&char).Where("user_id = ?", ws.UserID).Where("slot = ?", req.Slot).Select()
+
+	if err != nil {
+		return &errCharacter{
+			Code:    2,
+			Message: fmt.Sprintf("database error, character not found: %v", err),
+		}
+	}
+
+	_, err = deleteCharTx.Model(&char).Where("user_id = ?", ws.UserID).Where("slot = ?", req.Slot).Delete()
+	if err != nil {
+		return &errCharacter{
+			Code:    3,
+			Message: fmt.Sprintf("database error, failed to delete row: %v", err),
+		}
+	}
+
+	name := fmt.Sprintf("%v@%v", char.Name, "12346")
+	res, err :=  deleteCharTx.Model((*Character)(nil)).Set("name = ?", name).Where("user_id = ?", ws.UserID).Update()
+
+	log.Info(res)
+
+	_, err = deleteCharTx.Model(char.Appearance).Where("character_id = ?", char.ID).Delete()
+	if err != nil {
+		return &errCharacter{
+			Code:    3,
+			Message: fmt.Sprintf("database error, failed to delete row: %v", err),
+		}
+	}
+
+	_, err = deleteCharTx.Model(char.Attributes).Where("character_id = ?", char.ID).Delete()
+	if err != nil {
+		return &errCharacter{
+			Code:    3,
+			Message: fmt.Sprintf("database error, failed to delete row: %v", err),
+		}
+	}
+
+	_, err = deleteCharTx.Model(char.Location).Where("character_id = ?", char.ID).Delete()
+	if err != nil {
+		return &errCharacter{
+			Code:    3,
+			Message: fmt.Sprintf("database error, failed to delete row: %v", err),
+		}
+	}
+
+	_, err = deleteCharTx.Model(char.Inventory).Where("character_id = ?", char.ID).Delete()
+	if err != nil {
+		return &errCharacter{
+			Code:    3,
+			Message: fmt.Sprintf("database error, failed to delete row: %v", err),
+		}
+	}
+
+	_, err = deleteCharTx.Model(char.EquippedItems).Where("character_id = ?", char.ID).Delete()
+
+	if err != nil {
+		return &errCharacter{
+			Code:    3,
+			Message: fmt.Sprintf("database error, failed to delete row: %v", err),
+		}
+	}
+
+	err = deleteCharTx.Commit()
+
+	if err != nil {
+		return &errCharacter{
+			Code:    3,
+			Message: fmt.Sprintf("database error, could not commit transaction: %v", err),
+		}
+	}
+
+	return nil
+}
+
+
 
 func validateCharacter(ctx context.Context, req structs.NcAvatarCreateReq) error {
 	// fetch session
@@ -216,9 +350,10 @@ func validateCharacter(ctx context.Context, req structs.NcAvatarCreateReq) error
 	name := strings.TrimRight(string(req.Name.Name[:]), "\x00")
 
 	var charName string
-	err := worldDB.Model((*Character)(nil)).Column("name").Where("name = ?", name).Limit(1).Select(&charName)
+	err := worldDB.Model((*Character)(nil)).Column("name").Where("name = ?", name).Select(&charName)
 
-	if err != nil {
+	if err == nil {
+		log.Error(charName)
 		return errInvalidName
 	}
 
@@ -227,7 +362,7 @@ func validateCharacter(ctx context.Context, req structs.NcAvatarCreateReq) error
 	}
 
 	var chars []Character
-	worldDB.Model(&chars).Where("user_id = ?", ws.UserID)
+	err = worldDB.Model(&chars).Where("user_id = ?", ws.UserID).Select()
 
 	if len(chars) == 6 {
 		return errNoSlot
@@ -241,7 +376,7 @@ func validateCharacter(ctx context.Context, req structs.NcAvatarCreateReq) error
 	isMale := (req.Shape.BF >> 7) & 1
 	class := (req.Shape.BF >> 2) & 31
 
-	if isMale > 1 {
+	if isMale > 1 || isMale < 0 {
 		return errInvalidClassGender
 	}
 
@@ -357,11 +492,12 @@ func (c *Character) ncRepresentation() structs.AvatarInformation {
 		LoginMap: structs.Name3{
 			Name: mapName,
 		},
-		Shape: c.Appearance.ncRepresentation(),
-		Equip: c.EquippedItems.ncRepresentation(),
+		DelInfo: structs.ProtoAvatarDeleteInfo{},
+		Shape:   c.Appearance.ncRepresentation(),
+		Equip:   c.EquippedItems.ncRepresentation(),
 		TutorialInfo: structs.ProtoTutorialInfo{ // x(
 			TutorialState: 2,
-			TutorialStep:  0,
+			TutorialStep:  byte(0),
 		},
 	}
 	return nc
@@ -378,6 +514,7 @@ func (cei *CharacterEquippedItems) ncRepresentation() structs.ProtoEquipment {
 		EquBoot:         cei.Boots,
 		EquAccBoot:      cei.ApparelBoots,
 		EquAccPant:      cei.ApparelPants,
+		EquAccBody:      cei.ApparelBody,
 		EquAccHeadA:     cei.ApparelHead,
 		EquMinimonR:     cei.RightMiniPet,
 		EquEye:          cei.Face,
@@ -388,6 +525,7 @@ func (cei *CharacterEquippedItems) ncRepresentation() structs.ProtoEquipment {
 		EquAccHip:       cei.ApparelTail,
 		EquMinimon:      cei.LeftMiniPet,
 		EquAccShield:    cei.ApparelShield,
+		Upgrade:         structs.EquipmentUpgrade{},
 	}
 }
 
