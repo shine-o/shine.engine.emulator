@@ -1,28 +1,24 @@
 package structs
 
-
-
-// /* 3809 */
-// struct __unaligned __declspec(align(2)) CHAR_ID_CHANGE_DATA
-// {
+//struct CHAR_ID_CHANGE_DATA
+//{
 //  char bNeedChangeID;
 //  char bInit;
 //  unsigned int nRowNo;
-// };
+//};
 type CharIdChangeData struct {
 	NeedChangeId byte   `struct:"byte"`
 	Init         byte   `struct:"byte"`
 	RowNo        uint32 `struct:"uint32"`
 }
 
-///* 3810 */
-// struct __unaligned __declspec(align(1)) PROTO_TUTORIAL_INFO
-// {
-//	TUTORIAL_STATE nTutorialState;
-//	char nTutorialStep;
-// };
+//struct PROTO_TUTORIAL_INFO
+//{
+//  TUTORIAL_STATE nTutorialState;
+//  char nTutorialStep;
+//};
 type ProtoTutorialInfo struct {
-	TutorialState int  `struct:"int32"`
+	TutorialState int32  `struct:"int32"`
 	TutorialStep  byte `struct:"byte"`
 }
 
@@ -43,7 +39,7 @@ const (
 	TsMax       = 4
 )
 
-// struct PROTO_AVATARINFORMATION
+//struct PROTO_AVATARINFORMATION
 //{
 //  unsigned int chrregnum;
 //  Name5 name;
@@ -108,9 +104,18 @@ type ProtoAvatarShapeInfo struct {
 	FaceShape byte `struct:"byte"`
 }
 
-// /* 2317 */
-// struct __unaligned __declspec(align(1)) PROTO_EQUIPMENT
-// {
+//struct PROTO_EQUIPMENT::<unnamed-type-upgrade>
+//{
+// _BYTE gap0[2];
+// char _bf2;
+//};
+type EquipmentUpgrade struct {
+	Gap [2]uint8 `struct:"[2]uint8"`
+	BF2 byte	 `struct:"byte"`
+}
+
+//struct PROTO_EQUIPMENT
+//{
 //  unsigned __int16 Equ_Head;
 //  unsigned __int16 Equ_Mouth;
 //  unsigned __int16 Equ_RightHand;
@@ -131,8 +136,8 @@ type ProtoAvatarShapeInfo struct {
 //  unsigned __int16 Equ_AccHip;
 //  unsigned __int16 Equ_Minimon;
 //  unsigned __int16 Equ_AccShield;
-//  $050E0EECA9116B4E3A3935292D917DD5 upgrade; ???
-// };
+//  PROTO_EQUIPMENT::<unnamed-type-upgrade> upgrade;
+//};
 type ProtoEquipment struct {
 	EquHead         uint16 `struct:"uint16"`
 	EquMouth        uint16 `struct:"uint16"`
@@ -143,6 +148,7 @@ type ProtoEquipment struct {
 	EquBoot         uint16 `struct:"uint16"`
 	EquAccBoot      uint16 `struct:"uint16"`
 	EquAccPant      uint16 `struct:"uint16"`
+	EquAccBody      uint16 `struct:"uint16"`
 	EquAccHeadA     uint16 `struct:"uint16"`
 	EquMinimonR     uint16 `struct:"uint16"`
 	EquEye          uint16 `struct:"uint16"`
@@ -153,5 +159,6 @@ type ProtoEquipment struct {
 	EquAccHip       uint16 `struct:"uint16"`
 	EquMinimon      uint16 `struct:"uint16"`
 	EquAccShield    uint16 `struct:"uint16"`
+	Upgrade 		EquipmentUpgrade
 }
 
