@@ -3,11 +3,9 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
-	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -25,7 +23,7 @@ type WorldCommand struct {
 	pc *networking.Command
 }
 
-func (wc *WorldCommand) worldTime(ctx context.Context) (structs.NcMiscGameTimeAck, error) {
+func worldTime(ctx context.Context) (structs.NcMiscGameTimeAck, error) {
 	select {
 	case <-ctx.Done():
 		return structs.NcMiscGameTimeAck{}, errCC
@@ -51,41 +49,39 @@ func (wc *WorldCommand) worldTime(ctx context.Context) (structs.NcMiscGameTimeAc
 // user wants to log to given world
 // check if world is okay
 // take user name, persist to redis
-func (wc *WorldCommand) loginToWorld(ctx context.Context) error {
+func loginToWorld(ctx context.Context, req structs.NcUserLoginWorldReq) error {
 	select {
 	case <-ctx.Done():
 		return errCC
 	default:
-		if ncs, ok := wc.pc.NcStruct.(*structs.NcUserLoginWorldReq); ok {
-			wsi := ctx.Value(networking.ShineSession)
-			ws := wsi.(*session)
-			userName := strings.TrimRight(string(ncs.User.Name[:]), "\x00")
-			ws.UserName = userName
+		wsi := ctx.Value(networking.ShineSession)
+		ws := wsi.(*session)
+		userName := strings.TrimRight(string(req.User.Name[:]), "\x00")
+		ws.UserName = userName
 
-			// fetch user id using user name, login serve will check if it has a session for that user
-			grpcc.mu.Lock()
-			conn := grpcc.services["login"]
-			c := lw.NewLoginClient(conn)
-			grpcc.mu.Unlock()
+		// fetch user id using user name, login serve will check if it has a session for that user
+		grpcc.mu.Lock()
+		conn := grpcc.services["login"]
+		c := lw.NewLoginClient(conn)
+		grpcc.mu.Unlock()
 
-			rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
+		rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
 
-			ui, err := c.AccountInfo(rpcCtx, &lw.User{
-				UserName:             userName,
-			})
+		ui, err := c.AccountInfo(rpcCtx, &lw.User{
+			UserName: userName,
+		})
 
-			if err != nil {
-				return errAccountInfo
-			}
-
-			ws.UserID = ui.UserID
-
-			if err := persistSession(ws); err != nil {
-				return err
-			}
-			return nil
+		if err != nil {
+			return errAccountInfo
 		}
-		return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(wc.pc.NcStruct).String())
+
+		ws.UserID = ui.UserID
+
+		if err := persistSession(ws); err != nil {
+			return err
+		}
+		return nil
+
 	}
 }
 
@@ -128,7 +124,7 @@ func (wc *WorldCommand) userWorldInfo(ctx context.Context) (structs.NcUserLoginW
 		nc := structs.NcUserLoginWorldAck{
 			WorldManager: uint16(worldID),
 			NumOfAvatar:  byte(len(chars)),
-			Avatars: avatars,
+			Avatars:      avatars,
 		}
 
 		return nc, nil

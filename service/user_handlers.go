@@ -19,8 +19,7 @@ func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
 		} else {
 			pc.NcStruct = &nc
-			wc := WorldCommand{pc: pc}
-			if err := wc.loginToWorld(ctx); err != nil {
+			if err := loginToWorld(ctx, nc); err != nil {
 				log.Error(err)
 				return
 			}
@@ -63,13 +62,13 @@ func userWillWorldSelectAck(ctx context.Context) {
 		return
 	default:
 		pc := &networking.Command{
-			Base:     networking.CommandBase{
+			Base: networking.CommandBase{
 				OperationCode: 3124,
 			},
 			NcStruct: nil,
 		}
 		wc := &WorldCommand{pc: pc}
-		nc, err :=  wc.returnToServerSelect(ctx)
+		nc, err := wc.returnToServerSelect(ctx)
 		if err != nil {
 			return
 		}

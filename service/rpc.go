@@ -42,9 +42,9 @@ func (s *server) AvailableWorlds(ctx context.Context, in *lw.ClientMetadata) (*l
 			}
 
 			worlds = append(worlds, &lw.WorldInfo{
-				WorldNumber:          int32(id),
-				WorldName:            w.name,
-				WorldStatus:          6,
+				WorldNumber: int32(id),
+				WorldName:   w.name,
+				WorldStatus: 6,
 			})
 		}
 
@@ -77,9 +77,9 @@ func (s *server) ConnectionInfo(ctx context.Context, req *lw.SelectedWorld) (*lw
 			return nil, status.Errorf(codes.FailedPrecondition, "incorrect world port %v", port)
 		}
 		return &lw.WorldConnectionInfo{
-			Name:                 w.name,
-			IP:                   w.extIP,
-			Port:                int32(port),
+			Name: w.name,
+			IP:   w.extIP,
+			Port: int32(port),
 		}, nil
 	}
 }

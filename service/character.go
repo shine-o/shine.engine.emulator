@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"github.com/go-pg/pg/v9"
 	"github.com/google/uuid"
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// User model for schema: accounts
+// Character model for the database layer
 type Character struct {
 	tableName     struct{} `pg:"world.characters"`
 	ID            uint64
@@ -29,7 +29,7 @@ type Character struct {
 	DeletedAt     time.Time `pg:",soft_delete"`
 }
 
-
+// CharacterAppearance model for the database layer
 type CharacterAppearance struct {
 	tableName   struct{} `pg:"world.character_appearance"`
 	ID          uint64
@@ -43,6 +43,7 @@ type CharacterAppearance struct {
 	DeletedAt   time.Time `pg:",soft_delete"`
 }
 
+// CharacterAttributes model for the database layer
 type CharacterAttributes struct {
 	tableName    struct{} `pg:"world.character_attributes"`
 	ID           uint64
@@ -65,6 +66,7 @@ type CharacterAttributes struct {
 	DeletedAt    time.Time `pg:",soft_delete"`
 }
 
+// CharacterLocation model for the database layer
 type CharacterLocation struct {
 	tableName   struct{} `pg:"world.character_location"`
 	ID          uint64
@@ -78,6 +80,7 @@ type CharacterLocation struct {
 	DeletedAt   time.Time `pg:",soft_delete"`
 }
 
+// CharacterInventory model for the database layer
 type CharacterInventory struct {
 	tableName   struct{} `pg:"world.character_inventory"`
 	ID          uint64
@@ -92,6 +95,7 @@ type CharacterInventory struct {
 	DeletedAt   time.Time `pg:",soft_delete"`
 }
 
+// CharacterEquippedItems model for the database layer
 type CharacterEquippedItems struct {
 	tableName        struct{} `pg:"world.character_equipped_items"`
 	ID               uint64
@@ -121,36 +125,48 @@ type CharacterEquippedItems struct {
 	DeletedAt        time.Time `pg:",soft_delete"`
 }
 
-var errNoSession = errors.New("no login session was found")
-var errNoSlot = errors.New("no slot available")
-var errInvalidSlot = errors.New("invalid slot")
-var errInvalidName = errors.New("invalid name")
-var errInvalidRequest = errors.New("invalid packet data was sent")
-var errNameTaken = errors.New("name already in use")
-var errInvalidClassGender = errors.New("invalid Class Gender data")
+var errInvalidSlot = &errCharacter{
+	Code:    0,
+	Message: "invalid slot",
+}
+var errNameTaken = &errCharacter{
+	Code:    1,
+	Message: "name taken",
+}
+var errNoSlot = &errCharacter{
+	Code:    2,
+	Message: "no slot available",
+}
+var errInvalidName = &errCharacter{
+	Code:    3,
+	Message: "invalid name",
+}
+var errInvalidClassGender = &errCharacter{
+	Code:    4,
+	Message: "invalid class gender data",
+}
 
 type errCharacter struct {
-	Code int
+	Code    int
 	Message string
 }
 
-func (ec *errCharacter) Error() string  {
+func (ec *errCharacter) Error() string {
 	return ec.Message
 }
-
 
 const (
 	startLevel = 1
 	startMap   = "Rou"
 )
 
-func ncAvatarCreateFailAck(ctx context.Context, errCode uint16)  {
+func ncAvatarCreateFailAck(ctx context.Context, errCode uint16) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
 		pc := networking.Command{
-			Base:     networking.CommandBase{
+			Base: networking.CommandBase{
 				OperationCode: 5124,
 			},
 		}
@@ -221,27 +237,27 @@ func newCharacter(ctx context.Context, req structs.NcAvatarCreateReq) (structs.A
 			initialEquippedItems()
 
 		if _, err = newCharacterTx.Model(char.Appearance).Returning("*").Insert(); err != nil {
-			err := newCharacterTx.Rollback()
+			handleCharacterTxError(newCharacterTx)
 			return structs.AvatarInformation{}, err
 		}
 
 		if _, err = newCharacterTx.Model(char.Attributes).Returning("*").Insert(); err != nil {
-			err := newCharacterTx.Rollback()
+			handleCharacterTxError(newCharacterTx)
 			return structs.AvatarInformation{}, err
 		}
 
 		if _, err = newCharacterTx.Model(char.Location).Returning("*").Insert(); err != nil {
-			err := newCharacterTx.Rollback()
+			handleCharacterTxError(newCharacterTx)
 			return structs.AvatarInformation{}, err
 		}
 
 		if _, err = newCharacterTx.Model(char.Inventory).Returning("*").Insert(); err != nil {
-			err := newCharacterTx.Rollback()
+			handleCharacterTxError(newCharacterTx)
 			return structs.AvatarInformation{}, err
 		}
 
 		if _, err = newCharacterTx.Model(char.EquippedItems).Returning("*").Insert(); err != nil {
-			err := newCharacterTx.Rollback()
+			handleCharacterTxError(newCharacterTx)
 			return structs.AvatarInformation{}, err
 		}
 
@@ -252,6 +268,13 @@ func newCharacter(ctx context.Context, req structs.NcAvatarCreateReq) (structs.A
 		}
 
 		return char.ncRepresentation(), nil
+	}
+}
+
+func handleCharacterTxError(newCharacterTx *pg.Tx) {
+	txErr := newCharacterTx.Rollback()
+	if txErr != nil {
+		log.Error(txErr)
 	}
 }
 
@@ -279,7 +302,7 @@ func deleteCharacter(ctx context.Context, req structs.NcAvatarEraseReq) error {
 	}
 
 	name := fmt.Sprintf("%v@%v", char.Name, uuid.New().String())
-	_, err =  deleteCharTx.Model((*Character)(nil)).Set("name = ?", name).Where("user_id = ?", ws.UserID).Where("slot = ? ", req.Slot).Update()
+	_, err = deleteCharTx.Model((*Character)(nil)).Set("name = ?", name).Where("user_id = ?", ws.UserID).Where("slot = ? ", req.Slot).Update()
 	if err != nil {
 		txErr := deleteCharTx.Rollback()
 		return &errCharacter{
@@ -350,8 +373,6 @@ func deleteCharacter(ctx context.Context, req structs.NcAvatarEraseReq) error {
 	return nil
 }
 
-
-
 func validateCharacter(ctx context.Context, req structs.NcAvatarCreateReq) error {
 	// fetch session
 	wsi := ctx.Value(networking.ShineSession)
@@ -367,13 +388,6 @@ func validateCharacter(ctx context.Context, req structs.NcAvatarCreateReq) error
 	err := worldDB.Model((*Character)(nil)).Column("name").Where("name = ?", name).Select(&charName)
 
 	if err == nil {
-		return &errCharacter{
-			Code:    1,
-			Message: "name taken",
-		}
-	}
-
-	if charName == name {
 		return errNameTaken
 	}
 

@@ -6,40 +6,40 @@ import (
 	"github.com/shine-o/shine.engine.networking/structs"
 )
 
-func avatarCreateReq(ctx context.Context, pc *networking.Command)   {
+func avatarCreateReq(ctx context.Context, pc *networking.Command) {
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return
 	default:
 		nc := structs.NcAvatarCreateReq{}
 		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 			return
-		} else {
-			nc := structs.NcAvatarCreateReq{}
-
-			err := nc.Unpack(pc.Base.Data)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-
-			err = validateCharacter(ctx, nc)
-			if err != nil {
-				go createCharErr(ctx, err)
-				return
-			}
-
-			ai, err := newCharacter(ctx, nc)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-			go avatarCreateSuccAck(ctx, ai)
 		}
+
+		nc = structs.NcAvatarCreateReq{}
+
+		err := nc.Unpack(pc.Base.Data)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		err = validateCharacter(ctx, nc)
+		if err != nil {
+			go createCharErr(ctx, err)
+			return
+		}
+
+		ai, err := newCharacter(ctx, nc)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+		go avatarCreateSuccAck(ctx, ai)
 	}
 }
 
-func createCharErr(ctx context.Context, err error)  {
+func createCharErr(ctx context.Context, err error) {
 	log.Error(err)
 	errChar, ok := err.(*errCharacter)
 	if !ok {
@@ -58,7 +58,7 @@ func avatarCreateSuccAck(ctx context.Context, ai structs.AvatarInformation) {
 		return
 	default:
 		pc := &networking.Command{
-			Base:     networking.CommandBase{
+			Base: networking.CommandBase{
 				OperationCode: 5126,
 			},
 		}
@@ -88,7 +88,7 @@ func avatarEraseReq(ctx context.Context, pc *networking.Command) {
 			return
 		}
 		go avatarEraseSuccAck(ctx, structs.NcAvatarEraseSuccAck{
-			Slot:nc.Slot,
+			Slot: nc.Slot,
 		})
 	}
 }
@@ -99,8 +99,8 @@ func avatarEraseSuccAck(ctx context.Context, ack structs.NcAvatarEraseSuccAck) {
 		return
 	default:
 		pc := networking.Command{
-			Base:     networking.CommandBase{
-				OperationCode:		5132,
+			Base: networking.CommandBase{
+				OperationCode: 5132,
 			},
 		}
 		pc.NcStruct = &ack
