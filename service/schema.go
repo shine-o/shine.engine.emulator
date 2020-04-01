@@ -1,51 +1,54 @@
 package service
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
+	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v9/orm"
 	"github.com/google/logger"
-	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres" // GORM needs this
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
+	"time"
 )
 
-var database *gorm.DB
+var db *pg.DB
 
 // User model for schema: accounts
 type User struct {
-	gorm.Model
-	UserName string `gorm:"type:varchar(260);unique_index;not null"`
-	Password string `gorm:"type:varchar(36);not null"`
-}
-
-// TableName schema identifier
-func (User) TableName() string {
-	return "accounts.user"
+	tableName struct{} `pg:"accounts.users"`
+	ID        uint64
+	UserName  string
+	Password  string
+	DeletedAt time.Time `pg:"soft_delete"`
 }
 
 // Migrate schemas and models
 func Migrate(cmd *cobra.Command, args []string) {
+
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	log = logger.Init("Database Logger", true, false, ioutil.Discard)
 	log.Info("Database Logger Migrate()")
-	initDatabase()
-	defer database.Close()
+	db := dbConn(ctx, "accounts")
+	defer db.Close()
 	if yes, err := cmd.Flags().GetBool("fixtures"); err != nil {
 		log.Error(err)
 	} else {
 		if yes {
-			purge()
-			migrations()
-			fixtures()
+			purge(db)
+			createSchema(db)
+			fixtures(db)
 		} else {
-			migrations()
+			createSchema(db)
 		}
 	}
 }
 
-func initDatabase() {
+func dbConn(ctx context.Context, schema string) *pg.DB {
 	var (
 		dbUser     = viper.GetString("database.postgres.db_user")
 		dbPassword = viper.GetString("database.postgres.db_password")
@@ -53,34 +56,69 @@ func initDatabase() {
 		port       = viper.GetString("database.postgres.port")
 		dbName     = viper.GetString("database.postgres.db_name")
 	)
-	dsn := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable", dbUser, dbPassword, host, port, dbName)
-	if db, err := gorm.Open("postgres", dsn); err != nil {
-		log.Fatal(err)
-	} else {
-		database = db
-	}
-	log.Infof("connected to the database postgres://v:v@%v:%v/%v?sslmode=disable", host, port, dbName)
-}
 
-func migrations() {
-	database.Exec("CREATE SCHEMA IF NOT EXISTS accounts;")
-	database.AutoMigrate(&User{})
-}
-
-func purge() {
-	database.DropTableIfExists(&User{})
-}
-
-func fixtures() {
-	password := md5Hash("admin")
-	database.Create(&User{
-		UserName: "admin",
-		Password: password,
+	db := pg.Connect(&pg.Options{
+		Addr:            fmt.Sprintf("%v:%v", host, port),
+		User:            dbUser,
+		Password:        dbPassword,
+		Database:        dbName,
+		ApplicationName: "login",
+		TLSConfig:       nil,
+		//DialTimeout:     15,
+		//ReadTimeout:     5,
+		//WriteTimeout:    5,
+		PoolSize:    5,
+		PoolTimeout: 5,
 	})
+	log.Info(db)
+	db = db.WithParam(schema, pg.Safe(schema))
+	return db.WithContext(ctx)
+}
+
+func createSchema(db *pg.DB) {
+	db.Exec("CREATE SCHEMA IF NOT EXISTS accounts;")
+
+	for _, model := range []interface{}{
+		(*User)(nil),
+	} {
+		err := db.CreateTable(model, &orm.CreateTableOptions{
+			IfNotExists:   true,
+			FKConstraints: true,
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func purge(db *pg.DB) {
+	for _, model := range []interface{}{
+		(*User)(nil),
+	} {
+		err := db.DropTable(model, &orm.DropTableOptions{
+			IfExists: true,
+			Cascade:  true,
+		})
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 func md5Hash(text string) string {
 	hasher := md5.New()
 	hasher.Write([]byte(text))
 	return hex.EncodeToString(hasher.Sum(nil))
+}
+
+func fixtures(db *pg.DB) {
+	password := md5Hash("admin")
+	err := db.Insert(&User{
+		UserName: "admin",
+		Password: password,
+	})
+
+	if err != nil {
+		log.Fatal(err)
+	}
 }

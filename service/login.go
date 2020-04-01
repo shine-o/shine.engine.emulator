@@ -4,9 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/shine-o/shine.engine.networking"
+	networking "github.com/shine-o/shine.engine.networking"
+	"github.com/shine-o/shine.engine.networking/structs"
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
-	"github.com/shine-o/shine.engine.structs"
 	"github.com/spf13/viper"
 	"reflect"
 	"strings"
@@ -43,7 +43,7 @@ func (lc *LoginCommand) checkClientVersion(ctx context.Context) ([]byte, error) 
 		if viper.GetBool("crypt.client_version.ignore") {
 			return data, nil
 		}
-		if ncs, ok := lc.pc.NcStruct.(structs.NcUserClientVersionCheckReq); ok {
+		if ncs, ok := lc.pc.NcStruct.(*structs.NcUserClientVersionCheckReq); ok {
 			vk := strings.TrimRight(string(ncs.VersionKey[:33]), "\x00") // will replace with direct binary comparison
 			if vk == viper.GetString("crypt.client_version.key") {
 				// xtrap info goes here, but we dont use xtrap so we don't have to send anything.
@@ -56,38 +56,28 @@ func (lc *LoginCommand) checkClientVersion(ctx context.Context) ([]byte, error) 
 }
 
 // check against database that the user name and password combination are correct
-func (lc *LoginCommand) checkCredentials(ctx context.Context) error {
+func checkCredentials(ctx context.Context, req structs.NcUserUsLoginReq) error {
 	select {
 	case <-ctx.Done():
 		return ErrCC
 	default:
-		if ncs, ok := lc.pc.NcStruct.(structs.NcUserUsLoginReq); ok {
-			un := ncs.UserName[:]
-			pass := ncs.Password[:]
-			userName := strings.TrimRight(string(un), "\x00")
-			password := strings.TrimRight(string(pass), "\x00")
+		un := req.UserName[:]
+		pass := req.Password[:]
+		userName := strings.TrimRight(string(un), "\x00")
+		password := strings.TrimRight(string(pass), "\x00")
 
-			var user User
-			db := database.Where("user_name = ?", userName).First(&user)
+		var storedPassword string
+		err := db.Model((*User)(nil)).Column("password").Where("user_name = ?", userName).Limit(1).Select(&storedPassword)
 
-			if len(db.GetErrors()) > 0 {
-
-				if db.RecordNotFound() {
-					return ErrUNF
-				}
-
-				return fmt.Errorf("%v: [ %v ]", ErrDBE, db.GetErrors())
-			}
-
-			if user.Password == password {
-				return nil
-			}
-
-			return ErrBC
-
+		if err != nil {
+			return fmt.Errorf("%v: [ %v ]", ErrDBE, err)
 		}
 
-		return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
+		if storedPassword == password {
+			// save login session in redis if necessary
+			return nil
+		}
+		return ErrBC
 	}
 }
 
@@ -109,12 +99,45 @@ func (lc *LoginCommand) checkWorldStatus(ctx context.Context) error {
 	}
 }
 
+func (lc *LoginCommand) serverSelectScreen(ctx context.Context) (structs.NcUserLoginAck, error) {
+	grpcc.mu.Lock()
+	conn := grpcc.services["world"]
+	wc := lw.NewWorldClient(conn)
+	grpcc.mu.Unlock()
+
+	rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
+	wi, err := wc.AvailableWorlds(rpcCtx, &lw.ClientMetadata{
+		Ip: "127.0.0.01",
+	})
+
+	if err != nil {
+		return structs.NcUserLoginAck{}, err
+	}
+
+	nc := structs.NcUserLoginAck{}
+	for _, w := range wi.Worlds {
+		ws := structs.WorldInfo{
+			WorldNumber: byte(w.WorldNumber),
+			// 1: behaviour -> cannot enter, message -> The server is under maintenance.
+			// 2: behaviour -> cannot enter, message -> You cannot connect to an empty server.
+			// 3: behaviour -> cannot enter, message -> The server has been reserved for a special use.
+			// 4: behaviour -> cannot enter, message -> Login failed due to an unknown error.
+			// 5: behaviour -> cannot enter, message -> The server is full.
+			// 6: behaviour -> ok
+			WorldStatus: byte(w.WorldStatus),
+		}
+		copy(ws.WorldName.Name[:], w.WorldName)
+		nc.Worlds = append(nc.Worlds, ws)
+	}
+	nc.NumOfWorld = byte(len(nc.Worlds))
+	return nc, nil
+}
+
 // request info about selected world
-func (lc *LoginCommand) userSelectedServer(ctx context.Context) ([]byte, error) {
-	var data []byte
+func userSelectedServer(ctx context.Context) (*lw.WorldConnectionInfo, error) {
 	select {
 	case <-ctx.Done():
-		return data, ErrCC
+		return &lw.WorldConnectionInfo{}, ErrCC
 	default:
 		grpcc.mu.Lock()
 		conn := grpcc.services["world"]
@@ -123,11 +146,11 @@ func (lc *LoginCommand) userSelectedServer(ctx context.Context) ([]byte, error) 
 
 		rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
 
-		r, err := c.ConnectionInfo(rpcCtx, &lw.SelectedWorld{Num: 1})
+		wci, err := c.ConnectionInfo(rpcCtx, &lw.SelectedWorld{Num: 1})
 		if err != nil {
-			return data, err
+			return &lw.WorldConnectionInfo{}, err
 		}
-		return r.Info, nil
+		return wci, nil
 	}
 }
 
@@ -137,7 +160,7 @@ func (lc *LoginCommand) loginByCode(ctx context.Context) error {
 	case <-ctx.Done():
 		return ErrCC
 	default:
-		if ncs, ok := lc.pc.NcStruct.(structs.NcUserLoginWithOtpReq); ok {
+		if ncs, ok := lc.pc.NcStruct.(*structs.NcUserLoginWithOtpReq); ok {
 			b := make([]byte, len(ncs.Otp.Name))
 			copy(b, ncs.Otp.Name[:])
 			if _, err := redisClient.Get(string(b)).Result(); err != nil {
