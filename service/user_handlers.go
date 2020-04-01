@@ -7,7 +7,6 @@ import (
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
 )
 
-
 func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
@@ -64,16 +63,15 @@ func userUsLoginReq(ctx context.Context, pc *networking.Command) {
 		nc := structs.NcUserUsLoginReq{}
 		if err := nc.Unpack(pc.Base.Data); err != nil {
 			go userLoginFailAck(ctx, &networking.Command{})
-		} else {
-			pc.NcStruct = &nc
-			lc := &LoginCommand{pc: pc}
-			if err := lc.checkCredentials(ctx); err != nil {
-				log.Error(err)
-				go userLoginFailAck(ctx, &networking.Command{})
-			} else {
-				go userLoginAck(ctx)
-			}
+			return
 		}
+		pc.NcStruct = &nc
+		if err := checkCredentials(ctx, nc); err != nil {
+			log.Error(err)
+			go userLoginFailAck(ctx, &networking.Command{})
+			return
+		}
+		go userLoginAck(ctx)
 	}
 }
 
@@ -109,11 +107,11 @@ func userLoginAck(ctx context.Context) {
 		}
 
 		pc := &networking.Command{
-			Base:     networking.CommandBase{
+			Base: networking.CommandBase{
 				OperationCode: 3082,
 			},
 		}
-		lc := &LoginCommand{pc:pc}
+		lc := &LoginCommand{pc: pc}
 
 		nc, err := lc.serverSelectScreen(ctx)
 
@@ -172,32 +170,30 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 		if err := nc.Unpack(pc.Base.Data); err != nil {
 			go unexpectedFailure()
 			return
-		} else {
-			lc := &LoginCommand{pc: pc}
-			wci, err := lc.userSelectedServer(ctx)
-			if err != nil {
-				go unexpectedFailure()
-				return
-			}
-			go userWorldSelectAck(ctx, wci)
 		}
+		wci, err := userSelectedServer(ctx)
+		if err != nil {
+			go unexpectedFailure()
+			return
+		}
+		go userWorldSelectAck(ctx, wci)
 	}
 }
 
-func userWorldSelectAck(ctx context.Context, wci * lw.WorldConnectionInfo) {
+func userWorldSelectAck(ctx context.Context, wci *lw.WorldConnectionInfo) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
 		nc := structs.NcUserWorldSelectAck{
 			WorldStatus: 6,
-			Ip: structs.Name4{},
-			Port: uint16(wci.Port),
+			Ip:          structs.Name4{},
+			Port:        uint16(wci.Port),
 		}
 		copy(nc.Ip.Name[:], wci.IP)
 
 		pc := &networking.Command{
-			Base:     networking.CommandBase{
+			Base: networking.CommandBase{
 				OperationCode: 3084,
 			},
 			NcStruct: &nc,

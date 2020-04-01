@@ -27,9 +27,9 @@ func TestMain(m *testing.M) {
 		viper.AddConfigPath(path)
 		viper.SetConfigType("yaml")
 
-		//viper.SetConfigName(".login.circleci")
+		viper.SetConfigName(".login.circleci")
 		// for running tests locally, use this:
-		viper.SetConfigName(".login.test")
+		//viper.SetConfigName(".login.test")
 
 		// If a config file is found, read it in.
 		if err := viper.ReadInConfig(); err == nil {
@@ -55,7 +55,7 @@ func TestMain(m *testing.M) {
 			}
 		}
 	}
-	initDatabase()
+	db = dbConn(ctx, "accounts")
 	initRedis()
 	//gRPCClients(ctx)
 	os.Exit(m.Run())
@@ -109,10 +109,7 @@ func TestCheckCredentials(t *testing.T) {
 				t.Error(err)
 			} else {
 				pc.NcStruct = &nc
-				lc := LoginCommand{
-					pc: &pc,
-				}
-				if err := lc.checkCredentials(ctx); err != nil {
+				if err := checkCredentials(ctx, nc); err != nil {
 					t.Error(err)
 				}
 			}
