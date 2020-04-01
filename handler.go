@@ -24,17 +24,15 @@ type HandleWarden struct {
 	mu       sync.Mutex
 }
 
-// NewHandlerWarden handlers are callbacks to be called when an operationcode is detected in a packet.
+// NewHandlerWarden handlers are callbacks to be called when an operationCode is detected in a packet.
 func NewHandlerWarden(customHandlers map[uint16]func(ctx context.Context, command *Command)) *HandleWarden {
 	hw := &HandleWarden{
 		handlers: make(map[uint16]func(ctx context.Context, command *Command)),
 	}
 	hw.handlers[2055] = miscSeedAck
-
 	for k, v := range customHandlers {
 		hw.handlers[k] = v
 	}
-
 	return hw
 }
 
@@ -46,7 +44,6 @@ func (hw *HandleWarden) handleSegments(ctx context.Context, segment <-chan []byt
 		xorOffset uint16
 	)
 
-	//ctx = context.WithValue(ctx, "xorOffset", &xorOffset)
 	ctx = context.WithValue(ctx, XorOffset, &xorOffset)
 
 	hw.mu.Lock()
@@ -96,7 +93,7 @@ func (hw *HandleWarden) handleSegments(ctx context.Context, segment <-chan []byt
 
 				pc, _ := DecodePacket(pType, pLen, pd)
 
-				log.Infof("Inbound packet %v", pc.Base.String())
+				log.Infof("[inbound] metadata %v", pc.Base.String())
 
 				go hw.handleCommand(ctx, &pc)
 

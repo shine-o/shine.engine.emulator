@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -48,6 +49,8 @@ func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
 
 // Listen on TPC socket for connection on given port
 func (ss *ShineService) Listen(ctx context.Context, port string) {
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	ss.s.Set()
 	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", port)); err == nil {
 		log.Infof("Listening for TCP connections on: %v", l.Addr())
@@ -122,12 +125,44 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 // the TCP connection object is stored in the context
 func WriteToClient(ctx context.Context, pc *Command) {
 	select {
-	case <-ctx.Done():
+	case <- ctx.Done():
 		return
 	default:
 		cwv := ctx.Value(ConnectionWriter)
 		cw := cwv.(*clientWriter)
-		log.Infof("Outbound packet: %v", pc.Base.String())
+		log.Infof("[outbound] metadata: %v", pc.Base.String())
+
+		cw.mu.Lock()
+		if _, err := cw.w.Write(pc.Base.RawData()); err != nil {
+			log.Error(err)
+		} else {
+			if err = cw.w.Flush(); err != nil {
+				log.Error(err)
+			}
+		}
+		cw.mu.Unlock()
+	}
+}
+
+func (pc *Command) Send(ctx context.Context) {
+	select {
+	case <- ctx.Done():
+		return
+	default:
+		cwv := ctx.Value(ConnectionWriter)
+		cw := cwv.(*clientWriter)
+
+		if pc.NcStruct != nil {
+			data, err := pc.NcStruct.Pack()
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			pc.Base.Data = data
+			log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), pc.NcStruct.String())
+		}
+		log.Infof("[outbound] metadata: %v", pc.Base.String())
+
 		cw.mu.Lock()
 		if _, err := cw.w.Write(pc.Base.RawData()); err != nil {
 			log.Error(err)
