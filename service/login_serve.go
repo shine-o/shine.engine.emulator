@@ -28,6 +28,7 @@ func Start(cmd *cobra.Command, args []string) {
 
 	db = dbConn(ctx, "accounts")
 	initRedis()
+	selfRPC(ctx)
 
 	defer cleanupRPC()
 	defer db.Close()

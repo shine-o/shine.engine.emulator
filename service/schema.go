@@ -11,14 +11,18 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
+	"time"
 )
 
 var db *pg.DB
 
 // User model for schema: accounts
 type User struct {
-	UserName string
-	Password string
+	tableName struct{} `pg:"accounts.users"`
+	ID        uint64
+	UserName  string
+	Password  string
+	DeletedAt time.Time `pg:"soft_delete"`
 }
 
 // Migrate schemas and models
@@ -27,29 +31,19 @@ func Migrate(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
 	log = logger.Init("Database Logger", true, false, ioutil.Discard)
 	log.Info("Database Logger Migrate()")
-	db := dbConn(ctx, "world")
+	db := dbConn(ctx, "accounts")
 	defer db.Close()
 	if yes, err := cmd.Flags().GetBool("fixtures"); err != nil {
 		log.Error(err)
 	} else {
 		if yes {
-			err := purge(db)
-			if err != nil {
-				log.Fatal(err)
-			}
-			err = createSchema(db)
-			if err != nil {
-				log.Fatal(err)
-			}
-			fixtures()
+			purge(db)
+			createSchema(db)
+			fixtures(db)
 		} else {
-			err = createSchema(db)
-			if err != nil {
-				log.Fatal(err)
-			}
+			createSchema(db)
 		}
 	}
 }
@@ -68,7 +62,7 @@ func dbConn(ctx context.Context, schema string) *pg.DB {
 		User:            dbUser,
 		Password:        dbPassword,
 		Database:        dbName,
-		ApplicationName: "world",
+		ApplicationName: "login",
 		TLSConfig:       nil,
 		//DialTimeout:     15,
 		//ReadTimeout:     5,
@@ -81,7 +75,9 @@ func dbConn(ctx context.Context, schema string) *pg.DB {
 	return db.WithContext(ctx)
 }
 
-func createSchema(db *pg.DB) error {
+func createSchema(db *pg.DB) {
+	db.Exec("CREATE SCHEMA IF NOT EXISTS accounts;")
+
 	for _, model := range []interface{}{
 		(*User)(nil),
 	} {
@@ -90,13 +86,12 @@ func createSchema(db *pg.DB) error {
 			FKConstraints: true,
 		})
 		if err != nil {
-			return err
+			log.Fatal(err)
 		}
 	}
-	return nil
 }
 
-func purge(db *pg.DB) error {
+func purge(db *pg.DB) {
 	for _, model := range []interface{}{
 		(*User)(nil),
 	} {
@@ -105,10 +100,9 @@ func purge(db *pg.DB) error {
 			Cascade:  true,
 		})
 		if err != nil {
-			return err
+			log.Fatal(err)
 		}
 	}
-	return nil
 }
 
 func md5Hash(text string) string {
@@ -117,7 +111,7 @@ func md5Hash(text string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func fixtures() {
+func fixtures(db *pg.DB) {
 	password := md5Hash("admin")
 	err := db.Insert(&User{
 		UserName: "admin",
@@ -125,7 +119,6 @@ func fixtures() {
 	})
 
 	if err != nil {
-
+		log.Fatal(err)
 	}
-
 }

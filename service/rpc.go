@@ -6,6 +6,9 @@ import (
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+	"net"
 	"os"
 	"sync"
 	"time"
@@ -26,8 +29,14 @@ const gRPCTimeout = time.Second * 2
 func (s *server) AccountInfo(ctx context.Context, req *lw.User) (*lw.UserInfo, error) {
 
 	// query user by user_name
-
-	return &lw.UserInfo{}, nil
+	var userID uint64
+	err := db.Model((*User)(nil)).Column("id").Where("user_name = ?", req.UserName).Limit(1).Select(&userID)
+	if err != nil {
+		return &lw.UserInfo{}, status.Errorf(codes.FailedPrecondition, "failed to fetch user record %v", err)
+	}
+	return &lw.UserInfo{
+		UserID: userID,
+	}, nil
 }
 
 // dial gRPC services that are needed.
@@ -67,6 +76,56 @@ func gRPCClients(ctx context.Context) {
 				go statusConn(ctx, v, conn)
 			}
 			grpcc = inRPC
+		}
+	}
+}
+
+// listen on gRPC TCP connections related to this project
+// not needed for now, as login is not expecting to act as server
+func selfRPC(ctx context.Context) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		if viper.IsSet("gRPC.services.self") {
+			// snippet for loading yaml array
+			services := make([]map[string]string, 0)
+			var m map[string]string
+			servicesI := viper.Get("gRPC.services.self")
+			servicesS := servicesI.([]interface{})
+			for _, s := range servicesS {
+				serviceMap := s.(map[interface{}]interface{})
+				m = make(map[string]string)
+				for k, v := range serviceMap {
+					m[k.(string)] = v.(string)
+				}
+				services = append(services, m)
+			}
+			for _, v := range services {
+				go gRPCServers(ctx, v)
+			}
+		}
+	}
+}
+
+func gRPCServers(ctx context.Context, service map[string]string) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		address := fmt.Sprintf(":%v", service["port"])
+		lis, err := net.Listen("tcp", address)
+		if err != nil {
+			log.Errorf("could listen on port %v for service %v : %v", service["port"], service["name"], err)
+		}
+		s := grpc.NewServer()
+
+		lw.RegisterLoginServer(s, &server{})
+
+		log.Infof("Loading gRPC server connections %v@::%v", service["name"], service["port"])
+
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
 		}
 	}
 }
