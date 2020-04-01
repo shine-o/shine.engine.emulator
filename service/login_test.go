@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.structs"
+	"github.com/shine-o/shine.engine.networking/structs"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
@@ -55,7 +55,7 @@ func TestMain(m *testing.M) {
 			}
 		}
 	}
-	initDatabase()
+	db = dbConn(ctx, "accounts")
 	initRedis()
 	//gRPCClients(ctx)
 	os.Exit(m.Run())
@@ -75,10 +75,11 @@ func TestCheckClientVersion(t *testing.T) {
 			t.Error(err)
 		} else {
 			nc := structs.NcUserClientVersionCheckReq{}
-			if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			//if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 				t.Error(err)
 			} else {
-				pc.NcStruct = nc
+				pc.NcStruct = &nc
 				lc := LoginCommand{
 					pc: &pc,
 				}
@@ -103,14 +104,12 @@ func TestCheckCredentials(t *testing.T) {
 			t.Error(err)
 		} else {
 			nc := structs.NcUserUsLoginReq{}
-			if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			//if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+			if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 				t.Error(err)
 			} else {
-				pc.NcStruct = nc
-				lc := LoginCommand{
-					pc: &pc,
-				}
-				if err := lc.checkCredentials(ctx); err != nil {
+				pc.NcStruct = &nc
+				if err := checkCredentials(ctx, nc); err != nil {
 					t.Error(err)
 				}
 			}
@@ -190,7 +189,7 @@ func TestLoginByCode(t *testing.T) {
 				if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
 					t.Error(err)
 				} else {
-					pc.NcStruct = nc
+					pc.NcStruct = &nc
 					lc := LoginCommand{
 						pc: &pc,
 					}

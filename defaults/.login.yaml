@@ -9,7 +9,7 @@ gRPC:
 
     external:
       - name: world
-        host: 192.168.1.131
+        host: 192.168.1.133
         port: "50020"
 
 crypt:

@@ -3,11 +3,9 @@ package service
 import (
 	"fmt"
 	"github.com/go-redis/redis/v7"
-	"github.com/google/logger"
 	"github.com/google/uuid"
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/spf13/viper"
-	"io/ioutil"
 )
 
 var redisClient *redis.Client
@@ -30,8 +28,8 @@ func (s *session) Identifier() string {
 }
 
 func initRedis() {
-	log = logger.Init("LoginLogger", true, false, ioutil.Discard)
-	log.Info("LoginLogger init()")
+	//log = logger.Init("LoginLogger", true, false, ioutil.Discard)
+	//log.Info("LoginLogger init()")
 	host := viper.GetString("session.redis.host")
 	port := viper.GetString("session.redis.port")
 	db := viper.GetInt("session.redis.db")
