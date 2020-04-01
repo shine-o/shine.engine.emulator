@@ -80,6 +80,40 @@ func (nc * NcAvatarCreateSuccAck) Unpack(data []byte) error {
 	return Unpack(data, nc)
 }
 
+//struct PROTO_NC_AVATAR_CREATEFAIL_ACK
+//{
+//  unsigned __int16 err;
+//};
+type NcAvatarCreateFailAck struct {
+	Err uint16 `struct:"uint16"`
+}
+
+func (nc *NcAvatarCreateFailAck) PdbAnalog() string {
+	return `
+	struct PROTO_NC_AVATAR_CREATEFAIL_ACK
+	{
+	  unsigned __int16 err;
+	};
+`
+}
+
+func (nc * NcAvatarCreateFailAck) String() string {
+	// todo: refactor to common func
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcAvatarCreateFailAck) Pack() ([]byte, error) {
+	return Pack(nc)
+}
+
+func (nc * NcAvatarCreateFailAck) Unpack(data []byte) error {
+	return Unpack(data, nc)
+}
+
 //struct PROTO_NC_AVATAR_ERASE_REQ
 //{
 //char slot;
