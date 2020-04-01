@@ -72,6 +72,8 @@ func dbConn(ctx context.Context, schema string) *pg.DB {
 }
 
 func createSchema(db *pg.DB) error {
+	db.Exec("CREATE SCHEMA IF NOT EXISTS world;")
+
 	for _, model := range []interface{}{
 		(*Character)(nil),
 		(*CharacterAppearance)(nil),
