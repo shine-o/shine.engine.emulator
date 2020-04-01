@@ -25,7 +25,7 @@ func avatarCreateReq(ctx context.Context, pc *networking.Command)   {
 
 			err = validateCharacter(ctx, nc)
 			if err != nil {
-				log.Error(err)
+				go createCharErr(ctx, err)
 				return
 			}
 
@@ -36,6 +36,19 @@ func avatarCreateReq(ctx context.Context, pc *networking.Command)   {
 			}
 			go avatarCreateSuccAck(ctx, ai)
 		}
+	}
+}
+
+func createCharErr(ctx context.Context, err error)  {
+	log.Error(err)
+	errChar, ok := err.(*errCharacter)
+	if !ok {
+		return
+	}
+	switch errChar.Code {
+	case 1:
+		go ncAvatarCreateFailAck(ctx, 385)
+		return
 	}
 }
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-pg/pg/v9"
+	"github.com/google/uuid"
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
 	"regexp"
@@ -28,17 +28,7 @@ type Character struct {
 	IsDeleted     bool      `pg:",use_zero"`
 	DeletedAt     time.Time `pg:",soft_delete"`
 }
-// todo: checkout how these hooks really work
-var _ pg.BeforeDeleteHook = (*Character)(nil)
-func (c * Character) BeforeDelete(ctx context.Context)  (context.Context, error) {
-	c.Name = fmt.Sprintf("%v@%v", c.Name, "12346")
-	_, err := worldDB.Model(c).Set("name = ?name").Where("id = ?id").Update()
-	if err != nil {
-		log.Error(err)
-		return ctx, err
-	}
-	return ctx, nil
-}
+
 
 type CharacterAppearance struct {
 	tableName   struct{} `pg:"world.character_appearance"`
@@ -154,6 +144,23 @@ const (
 	startMap   = "Rou"
 )
 
+func ncAvatarCreateFailAck(ctx context.Context, errCode uint16)  {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		pc := networking.Command{
+			Base:     networking.CommandBase{
+				OperationCode: 5124,
+			},
+		}
+		pc.NcStruct = &structs.NcAvatarCreateFailAck{
+			Err: errCode,
+		}
+		go pc.Send(ctx)
+	}
+}
+
 func newCharacter(ctx context.Context, req structs.NcAvatarCreateReq) (structs.AvatarInformation, error) {
 	select {
 	case <-ctx.Done():
@@ -264,24 +271,31 @@ func deleteCharacter(ctx context.Context, req structs.NcAvatarEraseReq) error {
 	err = deleteCharTx.Model(&char).Where("user_id = ?", ws.UserID).Where("slot = ?", req.Slot).Select()
 
 	if err != nil {
+		txErr := deleteCharTx.Rollback()
 		return &errCharacter{
 			Code:    2,
-			Message: fmt.Sprintf("database error, character not found: %v", err),
+			Message: fmt.Sprintf("database error, character not found: %v, %v", err, txErr),
+		}
+	}
+
+	name := fmt.Sprintf("%v@%v", char.Name, uuid.New().String())
+	_, err =  deleteCharTx.Model((*Character)(nil)).Set("name = ?", name).Where("user_id = ?", ws.UserID).Where("slot = ? ", req.Slot).Update()
+	if err != nil {
+		txErr := deleteCharTx.Rollback()
+		return &errCharacter{
+			Code:    3,
+			Message: fmt.Sprintf("database error: %v, %v", err, txErr),
 		}
 	}
 
 	_, err = deleteCharTx.Model(&char).Where("user_id = ?", ws.UserID).Where("slot = ?", req.Slot).Delete()
 	if err != nil {
+		txErr := deleteCharTx.Rollback()
 		return &errCharacter{
 			Code:    3,
-			Message: fmt.Sprintf("database error, failed to delete row: %v", err),
+			Message: fmt.Sprintf("database error, failed to delete row: %v, %v", err, txErr),
 		}
 	}
-
-	name := fmt.Sprintf("%v@%v", char.Name, "12346")
-	res, err :=  deleteCharTx.Model((*Character)(nil)).Set("name = ?", name).Where("user_id = ?", ws.UserID).Update()
-
-	log.Info(res)
 
 	_, err = deleteCharTx.Model(char.Appearance).Where("character_id = ?", char.ID).Delete()
 	if err != nil {
@@ -353,8 +367,10 @@ func validateCharacter(ctx context.Context, req structs.NcAvatarCreateReq) error
 	err := worldDB.Model((*Character)(nil)).Column("name").Where("name = ?", name).Select(&charName)
 
 	if err == nil {
-		log.Error(charName)
-		return errInvalidName
+		return &errCharacter{
+			Code:    1,
+			Message: "name taken",
+		}
 	}
 
 	if charName == name {
