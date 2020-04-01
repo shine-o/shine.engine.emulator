@@ -32,10 +32,10 @@ type activeWorlds struct {
 }
 
 var (
-	log *logger.Logger
-	aw  *activeWorlds
-	grpcc *RPCClients
-	worldDB  * pg.DB
+	log     *logger.Logger
+	aw      *activeWorlds
+	grpcc   *RPCClients
+	worldDB *pg.DB
 )
 
 func init() {
@@ -48,7 +48,6 @@ func init() {
 func Start(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
-
 
 	initRedis()
 	gRPCClients(ctx)
@@ -130,7 +129,7 @@ func startWorld(ctx context.Context, w world) {
 
 		ch := make(map[uint16]func(ctx context.Context, pc *networking.Command))
 		ch[3087] = userLoginWorldReq
-		ch[2061] = miscGametimeReq
+		ch[2061] = miscGameTimeReq
 		ch[3123] = userWillWorldSelectReq
 		ch[5121] = avatarCreateReq
 		ch[5127] = avatarEraseReq

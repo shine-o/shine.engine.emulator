@@ -5,16 +5,6 @@ serve:
       connection_info:
         external_ip: 192.168.1.131
         port: 9110
-#    - id: 2
-#      name: legel
-#      connection_info:
-#        external_ip: 192.168.1.131
-#        port: 9111
-#    - id: 3
-#      name: epith
-#      connection_info:
-#        external_ip: 192.168.1.131
-#        port: 9112
 
 crypt:
   # slice of bytes used for decrypting inbound packages

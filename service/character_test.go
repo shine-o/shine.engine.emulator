@@ -11,7 +11,7 @@ import (
 )
 
 // test character data is valid
-func TestValidateCharacterRequest(t *testing.T)  {
+func TestValidateCharacterRequest(t *testing.T) {
 	// assert it returns true
 
 	ctx := context.Background()
@@ -22,7 +22,7 @@ func TestValidateCharacterRequest(t *testing.T)  {
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
 		WorldID:  "1",
 		UserName: "admin",
-		UserID: 1,
+		UserID:   1,
 	}
 	ctx = context.WithValue(ctx, networking.ShineSession, s)
 
@@ -42,11 +42,6 @@ func TestValidateCharacterRequest(t *testing.T)  {
 	}
 }
 
-func cleanDB()  {
-	purge(worldDB)
-	createSchema(worldDB)
-}
-
 // foolishly assuming data is okay
 func TestCreateCharacter(t *testing.T) {
 	defer cleanDB()
@@ -59,7 +54,7 @@ func TestCreateCharacter(t *testing.T) {
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
 		WorldID:  "1",
 		UserName: "admin",
-		UserID: 1,
+		UserID:   1,
 	}
 	ctx = context.WithValue(ctx, networking.ShineSession, s)
 
@@ -90,7 +85,7 @@ func TestDeleteCharacter(t *testing.T) {
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
 		WorldID:  "1",
 		UserName: "admin",
-		UserID: 1,
+		UserID:   1,
 	}
 	ctx = context.WithValue(ctx, networking.ShineSession, s)
 
@@ -111,6 +106,7 @@ func TestDeleteCharacter(t *testing.T) {
 	var deletedAt time.Time
 	err = worldDB.Model((*Character)(nil)).
 		Column("deleted_at").
+		Deleted().
 		Where("user_id = ?", 1).
 		Where("slot = ?", 0).
 		Select(&deletedAt)
@@ -121,18 +117,59 @@ func TestDeleteCharacter(t *testing.T) {
 
 }
 
-func TestCharacterNameInUseError(t *testing.T)  {
-	
+func TestCharacterNameInUseError(t *testing.T) {
+	defer cleanDB()
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	s := &session{
+		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
+		WorldID:  "1",
+		UserName: "admin2",
+		UserID:   2,
+	}
+
+	ctx = context.WithValue(ctx, networking.ShineSession, s)
+
+	createDummyCharacters(ctx)
+
+	name := fmt.Sprintf("mob%v", 1)
+	c := structs.NcAvatarCreateReq{
+		SlotNum: byte(0),
+		Name:    structs.Name5{},
+		Shape: structs.ProtoAvatarShapeInfo{
+			BF:        133,
+			HairType:  6,
+			HairColor: 0,
+			FaceShape: 0,
+		},
+	}
+	copy(c.Name.Name[:], name)
+	_, err := newCharacter(ctx, c)
+	if err == nil {
+		log.Error(err)
+	}
+
+	errChar, ok := err.(*errCharacter)
+
+	if !ok {
+		t.Error("expected error of type errCharacter")
+	}
+
+	if errChar.Code != 1 {
+		t.Errorf("expected errorCharacter with code %v, instead got %v", 1, errChar.Code)
+	}
+
 }
 
 func createDummyCharacters(ctx context.Context) {
-
 	for i := 0; i <= 5; i++ {
 		name := fmt.Sprintf("mob%v", i+1)
-		c :=  structs.NcAvatarCreateReq{
+		c := structs.NcAvatarCreateReq{
 			SlotNum: byte(i),
 			Name:    structs.Name5{},
-			Shape:   structs.ProtoAvatarShapeInfo{
+			Shape: structs.ProtoAvatarShapeInfo{
 				BF:        133,
 				HairType:  6,
 				HairColor: 0,
@@ -147,7 +184,7 @@ func createDummyCharacters(ctx context.Context) {
 	}
 }
 
-func TestNoSlotAvailableError(t *testing.T)  {
+func TestNoSlotAvailableError(t *testing.T) {
 	defer cleanDB()
 
 	// fill database with characters for dummy account
@@ -161,7 +198,7 @@ func TestNoSlotAvailableError(t *testing.T)  {
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
 		WorldID:  "1",
 		UserName: "admin",
-		UserID: 1,
+		UserID:   1,
 	}
 	ctx = context.WithValue(ctx, networking.ShineSession, s)
 
@@ -188,7 +225,7 @@ func TestNoSlotAvailableError(t *testing.T)  {
 	}
 }
 
-func TestInvalidSlotError(t *testing.T)  {
+func TestInvalidSlotError(t *testing.T) {
 
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -198,7 +235,7 @@ func TestInvalidSlotError(t *testing.T)  {
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
 		WorldID:  "1",
 		UserName: "admin",
-		UserID: 1,
+		UserID:   1,
 	}
 	ctx = context.WithValue(ctx, networking.ShineSession, s)
 
@@ -223,7 +260,7 @@ func TestInvalidSlotError(t *testing.T)  {
 	}
 }
 
-func TestInvalidNameError(t *testing.T)  {
+func TestInvalidNameError(t *testing.T) {
 	defer cleanDB()
 	// make sure function returns error "invalid character name"
 
@@ -234,7 +271,7 @@ func TestInvalidNameError(t *testing.T)  {
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
 		WorldID:  "1",
 		UserName: "admin",
-		UserID: 1,
+		UserID:   1,
 	}
 	ctx = context.WithValue(ctx, networking.ShineSession, s)
 
@@ -261,7 +298,7 @@ func TestInvalidNameError(t *testing.T)  {
 
 // KOREAN MONKEYS!
 // test that correct gender and class are extracted using binary operators
-func TestInvalidGenderClassBinaryOperation(t *testing.T)  {
+func TestInvalidGenderClassBinaryOperation(t *testing.T) {
 	defer cleanDB()
 
 	ctx := context.Background()
@@ -271,10 +308,9 @@ func TestInvalidGenderClassBinaryOperation(t *testing.T)  {
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
 		WorldID:  "1",
 		UserName: "admin",
-		UserID: 1,
+		UserID:   1,
 	}
 	ctx = context.WithValue(ctx, networking.ShineSession, s)
-
 
 	// {"packetType":"small","length":27,"department":5,"command":"1","opCode":5121,"data":"0946696768747265726f6f0000000000000000000085060000","rawData":"1b01140046325B5D747265726F6F0000000000000000000085060000","friendlyName":"NC_AVATAR_CREATE_REQ"}
 	if data, err := hex.DecodeString("0246696768747265726f6f00000000000000000000ff060000"); err != nil {
@@ -288,11 +324,15 @@ func TestInvalidGenderClassBinaryOperation(t *testing.T)  {
 
 		err = validateCharacter(ctx, nc)
 		if err != nil {
-			if err.Error() != "invalid Class Gender data" {
-				t.Errorf("unexpected error message: %v", err.Error())
+			errChar, ok := err.(*errCharacter)
+			if !ok {
+				t.Error("expected an error of type errCharacter")
 			}
-			return
+			if errChar.Code != 4 {
+				t.Errorf("expected errorCharacter with code %v, instead got %v", 4, errChar.Code)
+			}
+		} else {
+			t.Error("expected an error but got nil")
 		}
-		t.Error("expected an error but got nil")
 	}
 }
