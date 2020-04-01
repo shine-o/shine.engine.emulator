@@ -29,9 +29,9 @@ jobs:
       - run:
           name: build binary
           command: GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o world
-#      - run:
-#          name: migrate test database
-#          command: ./world migrate --config "defaults/.world.circleci.yaml" --fixtures "true"
+      - run:
+          name: migrate test database
+          command: ./world migrate --config "defaults/.world.circleci.yaml" --fixtures "true"
       - run:
           name: run tests
           command: go test github.com/shine-o/shine.engine.world/service

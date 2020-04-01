@@ -2,14 +2,16 @@ package service
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
-	"github.com/shine-o/shine.engine.networking"
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
-	"github.com/shine-o/shine.engine.structs"
+	"github.com/spf13/viper"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"os"
 	"strconv"
+	"sync"
+	"time"
 )
 
 // server is used to implement helloworld.GreeterServer.
@@ -17,34 +19,38 @@ type server struct {
 	lw.UnimplementedWorldServer
 }
 
+const gRPCTimeout = time.Second * 2
+
 // There can be many Worlds, each World with its own Zones
 // for simplicity we use hardcoded one for now :)
 func (s *server) AvailableWorlds(ctx context.Context, in *lw.ClientMetadata) (*lw.WorldsInfo, error) {
 	select {
 	case <-ctx.Done():
-		return &lw.WorldsInfo{Info: []byte{0}}, status.Errorf(codes.Canceled, "context was canceled")
+		return &lw.WorldsInfo{}, status.Errorf(codes.Canceled, "context was canceled")
 	default:
-		nc := &structs.NcUserLoginAck{}
-		nc.NumOfWorld = byte(1)
+		var law activeWorlds
+		aw.mu.Lock()
+		law = *aw
+		aw.mu.Unlock()
 
-		var worlds [1]structs.WorldInfo
-		w1 := structs.WorldInfo{
-			WorldNumber: 0,
-			WorldName:   structs.Name4{},
-			WorldStatus: 1,
+		worlds := make([]*lw.WorldInfo, 0)
+		for _, w := range law.activeWorlds {
+			id, err := strconv.Atoi(w.id)
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+
+			worlds = append(worlds, &lw.WorldInfo{
+				WorldNumber: int32(id),
+				WorldName:   w.name,
+				WorldStatus: 6,
+			})
 		}
-		copy(w1.WorldName.Name[:], "INITIO")
-		copy(w1.WorldName.NameCode[:], []uint32{262, 16720, 17735, 76})
-		worlds[0] = w1
 
-		nc.NumOfWorld = byte(1)
-		nc.Worlds = worlds
-
-		data, err := networking.WriteBinary(nc)
-		if err != nil {
-			return &lw.WorldsInfo{Info: []byte{0}}, err
-		}
-		return &lw.WorldsInfo{Info: data}, nil
+		return &lw.WorldsInfo{
+			Worlds: worlds,
+		}, nil
 	}
 }
 
@@ -70,29 +76,82 @@ func (s *server) ConnectionInfo(ctx context.Context, req *lw.SelectedWorld) (*lw
 			log.Error(err)
 			return nil, status.Errorf(codes.FailedPrecondition, "incorrect world port %v", port)
 		}
-
-		nc := structs.NcUserWorldSelectAck{
-			WorldStatus: 6,
-			Ip: structs.Name4{
-				Name:     [16]byte{},
-				NameCode: [4]uint32{},
-			},
-			Port: uint16(port),
-		}
-
-		copy(nc.Ip.Name[:], w.extIP)
-
-		data := make([]byte, 0)
-		data = append(data, nc.WorldStatus)
-
-		if b, err := networking.WriteBinary(nc.Ip.Name); err == nil {
-			data = append(data, b...)
-		}
-
-		if b, err := networking.WriteBinary(nc.Port); err == nil {
-			data = append(data, b...)
-		}
-		log.Infof("sending server connection info to client %v", hex.EncodeToString(data))
-		return &lw.WorldConnectionInfo{Info: data}, nil
+		return &lw.WorldConnectionInfo{
+			Name: w.name,
+			IP:   w.extIP,
+			Port: int32(port),
+		}, nil
 	}
+}
+
+// RPCClients that this service will use to communicate with other services
+type RPCClients struct {
+	services map[string]*grpc.ClientConn
+	mu       sync.Mutex
+}
+
+// dial gRPC services that are needed.
+func gRPCClients(ctx context.Context) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		inRPC := &RPCClients{
+			services: make(map[string]*grpc.ClientConn),
+		}
+
+		if viper.IsSet("gRPC.services.external") {
+			// snippet for loading yaml array
+			services := make([]map[string]string, 0)
+			var m map[string]string
+			servicesI := viper.Get("gRPC.services.external")
+			servicesS := servicesI.([]interface{})
+			for _, s := range servicesS {
+				serviceMap := s.(map[interface{}]interface{})
+				m = make(map[string]string)
+				for k, v := range serviceMap {
+					m[k.(string)] = v.(string)
+				}
+				services = append(services, m)
+			}
+
+			for _, v := range services {
+				address := fmt.Sprintf("%v:%v", v["host"], v["port"])
+				//conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+				conn, err := grpc.Dial(address, grpc.WithInsecure())
+				if err != nil {
+					log.Errorf("could not connect service %v : %v", v["name"], err)
+					os.Exit(1)
+				}
+				log.Infof("[gRPC] client connection: %v@%v:%v", v["name"], v["host"], v["port"])
+				inRPC.services[v["name"]] = conn
+				go statusConn(ctx, v, conn)
+			}
+			grpcc = inRPC
+		}
+	}
+}
+
+func statusConn(ctx context.Context, service map[string]string, conn *grpc.ClientConn) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		default:
+			time.Sleep(120 * time.Second)
+			log.Infof("[gRPC] [client] [%v]: %v@%v:%v ", conn.GetState(), service["name"], service["host"], service["port"])
+		}
+	}
+}
+
+func cleanupRPC() {
+	grpcc.mu.Lock()
+	for _, s := range grpcc.services {
+		if err := s.Close(); err != nil {
+			log.Error(err)
+		} else {
+			log.Info("Closing down external gRPC connection")
+		}
+	}
+	grpcc.mu.Unlock()
 }

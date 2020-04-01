@@ -3,10 +3,9 @@ package service
 import (
 	"context"
 	"errors"
-	"fmt"
 	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.structs"
-	"reflect"
+	"github.com/shine-o/shine.engine.networking/structs"
+	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
 	"strconv"
 	"strings"
 	"time"
@@ -16,17 +15,18 @@ var errCC = errors.New("context was canceled")
 
 var errHF = errors.New("hardcoded feature")
 
+var errAccountInfo = errors.New("failed to fetch account info")
+
 // WorldCommand wrapper for networking command
 // any information scoped to this service and its handlers can be added here
 type WorldCommand struct {
 	pc *networking.Command
 }
 
-func (wc *WorldCommand) worldTime(ctx context.Context) ([]byte, error) {
-	var data []byte
+func worldTime(ctx context.Context) (structs.NcMiscGameTimeAck, error) {
 	select {
 	case <-ctx.Done():
-		return data, errCC
+		return structs.NcMiscGameTimeAck{}, errCC
 	default:
 		var (
 			t                    time.Time
@@ -38,79 +38,118 @@ func (wc *WorldCommand) worldTime(ctx context.Context) ([]byte, error) {
 		minute = byte(t.Minute())
 		second = byte(t.Second())
 
-		nc := &structs.NcMiscGameTimeAck{
+		return structs.NcMiscGameTimeAck{
 			Hour:   hour,
 			Minute: minute,
 			Second: second,
-		}
-
-		data, err := networking.WriteBinary(nc)
-		if err != nil {
-			return data, err
-		}
-		return data, nil
+		}, nil
 	}
 }
 
 // user wants to log to given world
 // check if world is okay
 // take user name, persist to redis
-func (wc *WorldCommand) loginToWorld(ctx context.Context) error {
+func loginToWorld(ctx context.Context, req structs.NcUserLoginWorldReq) error {
 	select {
 	case <-ctx.Done():
 		return errCC
 	default:
-		if ncs, ok := wc.pc.NcStruct.(structs.NcUserLoginWorldReq); ok {
-			wsi := ctx.Value(networking.ShineSession)
-			ws := wsi.(*session)
-			userName := strings.TrimRight(string(ncs.User.Name[:]), "\x00")
-			ws.UserName = userName
-			if err := persistSession(ws); err != nil {
-				return err
-			}
-			return nil
+		wsi := ctx.Value(networking.ShineSession)
+		ws := wsi.(*session)
+		userName := strings.TrimRight(string(req.User.Name[:]), "\x00")
+		ws.UserName = userName
+
+		// fetch user id using user name, login serve will check if it has a session for that user
+		grpcc.mu.Lock()
+		conn := grpcc.services["login"]
+		c := lw.NewLoginClient(conn)
+		grpcc.mu.Unlock()
+
+		rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
+
+		ui, err := c.AccountInfo(rpcCtx, &lw.User{
+			UserName: userName,
+		})
+
+		if err != nil {
+			return errAccountInfo
 		}
-		return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(wc.pc.NcStruct).String())
+
+		ws.UserID = ui.UserID
+
+		if err := persistSession(ws); err != nil {
+			return err
+		}
+		return nil
+
 	}
 }
 
-func (wc *WorldCommand) userWorldInfo(ctx context.Context) ([]byte, error) {
-	var data []byte
+func (wc *WorldCommand) userWorldInfo(ctx context.Context) (structs.NcUserLoginWorldAck, error) {
 	select {
 	case <-ctx.Done():
-		return data, errCC
+		return structs.NcUserLoginWorldAck{}, errCC
 	default:
-		// world id is in the session
-		// user name is in the session
 		wsi := ctx.Value(networking.ShineSession)
 		ws := wsi.(*session)
+		worldID, err := strconv.Atoi(ws.WorldID)
 
-		if ws.UserName == "admin" { // no database for now, so I hardcode the avatar info
-			worldID, err := strconv.Atoi(ws.WorldID)
-			if err != nil {
-				return data, err
-			}
-			nc := structs.NcUserLoginWorldAck{
-				WorldManager: uint16(worldID),
-				NumOfAvatar:  0,
-			}
-
-			b, err := networking.WriteBinary(nc.WorldManager)
-			if err != nil {
-				return data, err
-			}
-			data = append(data, b...)
-			data = append(data, nc.NumOfAvatar)
-			return data, nil
+		if err != nil {
+			return structs.NcUserLoginWorldAck{}, err
 		}
-		return data, errHF
+
+		var avatars []structs.AvatarInformation
+		var chars []Character
+
+		err = worldDB.Model(&chars).
+			Relation("Appearance").
+			//Where("user_id = ?", ws.UserID).
+			Relation("Attributes").
+			Relation("Location").
+			Relation("Inventory").
+			Relation("EquippedItems").
+			Where("user_id = ?", ws.UserID).
+			Select()
+
+		if err != nil {
+			return structs.NcUserLoginWorldAck{}, err
+		}
+
+		if len(chars) > 0 {
+			for _, c := range chars {
+				avatars = append(avatars, c.ncRepresentation())
+			}
+		}
+
+		nc := structs.NcUserLoginWorldAck{
+			WorldManager: uint16(worldID),
+			NumOfAvatar:  byte(len(chars)),
+			Avatars:      avatars,
+		}
+
+		return nc, nil
 	}
 }
 
 // user clicked previous
 // generate a otp token and store it in redis
 // login service will use the token to authenticate the user and send him to server select
-func (wc *WorldCommand) returnToServerSelect() ([]byte, error) {
-	var data []byte
-	return data, nil
+func (wc *WorldCommand) returnToServerSelect(ctx context.Context) (structs.NcUserWillWorldSelectAck, error) {
+	select {
+	case <-ctx.Done():
+		return structs.NcUserWillWorldSelectAck{}, errCC
+	default:
+		otp := randStringBytesMaskImprSrcUnsafe(32)
+		err := redisClient.Set(otp, otp, 20*time.Second).Err()
+		if err != nil {
+			return structs.NcUserWillWorldSelectAck{}, err
+		}
+		nc := structs.NcUserWillWorldSelectAck{
+			Error: 7768,
+			Otp:   structs.Name8{},
+		}
+		copy(nc.Otp.Name[:], otp)
+
+		return nc, nil
+	}
 }

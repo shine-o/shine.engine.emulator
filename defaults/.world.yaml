@@ -2,16 +2,8 @@ serve:
   worlds:
     - id: "1"
       name: isya
-      external_ip: 192.168.1.131
+      external_ip: 192.168.1.133
       port: "9110"
-#    - id: "2"
-#      name: legel
-#      external_ip: 192.168.1.131
-#      port: "9111"
-#    - id: "3"
-#      name: epith
-#      external_ip: 192.168.1.131
-#      port: "9112"
 
 crypt:
   # slice of bytes used for decrypting inbound packages
@@ -29,6 +21,22 @@ gRPC:
     self:
       - name: world
         port: "50020"
+    external:
+      - name: login
+        host: 192.168.1.133
+        port: "50010"
+
+#protocol:
+### POSTGRES, alternatives can be added if required
+database:
+  #  in_memory: false
+  postgres:
+    #  host: 192.168.111.129
+    host: 192.168.1.238
+    port: 5432
+    db_name: shine
+    db_user: user
+    db_password: password
 
 session:
   redis:
