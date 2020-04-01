@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/shine-o/shine.engine.networking"
+	networking "github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
 	"github.com/spf13/viper"
