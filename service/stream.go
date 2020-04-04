@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -17,6 +18,7 @@ import (
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"reflect"
 	"strconv"
@@ -42,7 +44,7 @@ type shineStream struct {
 	serverIP       string
 	segments       chan<- shineSegment
 	xorKey         chan<- uint16 // only used by decodeClientPackets()
-	packetID		uint64
+	packetID       uint64
 	cancel         context.CancelFunc
 }
 
@@ -81,7 +83,7 @@ var (
 	log     *logger.Logger
 )
 
-func captureConfig() {
+func config() {
 	// remove output folder if exists, create it again
 	dir, err := filepath.Abs("output/")
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -189,6 +191,8 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 	segments := make(chan shineSegment, 512)
 	xorKey := make(chan uint16)
 
+	//decodedPackets := make(chan, 500)
+
 	s := &shineStream{
 		flowID:    uuid.New().String(),
 		net:       net,
@@ -231,14 +235,9 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 		serverIP = net.Dst().String()
 
 		dstPort, _ := strconv.Atoi(transport.Dst().String())
-		//service, ok := shine.knownServices[dstPort]
-		//if !ok {
-		//	log.Fatal("something went horribly wrong")
-		//}
-		//s.flowName = fmt.Sprintf("client-%v", strings.ToLower(service.name))
+
 		service, ok := shine.knownServices[dstPort]
 		if !ok {
-			//log.Fatal("something went horribly wrong")
 			s.flowName = fmt.Sprintf("clien-%v", "unknown")
 		} else {
 			s.flowName = fmt.Sprintf("client-%v", strings.ToLower(service.name))
@@ -273,8 +272,8 @@ func (ss *shineStream) ReassemblyComplete() {
 	ss.cancel()
 	cf := CompletedFlow{
 		FlowCompleted: true,
-		ClientIP: ss.clientIP,
-		FlowID:   ss.flowID,
+		ClientIP:      ss.clientIP,
+		FlowID:        ss.flowID,
 	}
 	go uiCompletedFlow(cf)
 }
@@ -285,7 +284,6 @@ func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan 
 		d         []byte
 		offset    int
 		xorOffset uint16
-		wg        sync.WaitGroup
 	)
 	offset = 0
 	xorOffset = 1500 // impossible value
@@ -337,15 +335,12 @@ func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan 
 					log.Error(err)
 				}
 				ss.packetID++
-				if logActivated {
-					log.Infof("[%v] [%v] [%v] %v", ss.packetID, ss.flowName, segment.seen, pc.Base.String())
-				}
 
-				wg.Add(1)
-				go ss.handlePacket(ctx, &wg, segment.seen, pc)
+				if logActivated {
+					go ss.handlePacket(ctx, segment.seen, pc)
+				}
 				offset += skipBytes + pLen
 			}
-			wg.Wait()
 		}
 	}
 }
@@ -356,7 +351,6 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 		d              []byte
 		offset         int
 		xorOffsetFound bool
-		wg             sync.WaitGroup
 	)
 	xorOffsetFound = false
 	offset = 0
@@ -436,27 +430,20 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 				ss.packetID++
 
 				if logActivated {
-					log.Infof("[%v] [%v] [%v] %v", ss.packetID, ss.flowName, segment.seen, pc.Base.String())
+					go ss.handlePacket(ctx, segment.seen, pc)
 				}
-
-				wg.Add(1)
-				go ss.handlePacket(ctx, &wg, segment.seen, pc)
-
 				offset += skipBytes + pLen
 			}
-			wg.Wait()
 		}
 	}
 }
 
 // prepare for frontend and send it to the active socket connections
-func (ss *shineStream) handlePacket(ctx context.Context, wg *sync.WaitGroup, seen time.Time, pc networking.Command) {
-	defer wg.Done()
+func (ss *shineStream) handlePacket(ctx context.Context, seen time.Time, pc networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		var wg sync.WaitGroup
 		pv := PacketView{
 			FlowID:     ss.flowID,
 			FlowName:   ss.flowName,
@@ -466,29 +453,54 @@ func (ss *shineStream) handlePacket(ctx context.Context, wg *sync.WaitGroup, see
 			TimeStamp:  seen.String(),
 			PacketData: pc.Base.String(),
 		}
-		wg.Add(1)
-		go sendPacketToUI(&wg, pv)
-		wg.Wait()
+
+		nr, err := ncStructRepresentation(pc.Base.OperationCode, pc.Base.Data)
+		if err == nil {
+			pv.NcRepresentation = nr
+			b, _ := json.Marshal(pv.NcRepresentation)
+			log.Info(string(b))
+		}
+
+		data, err := json.Marshal(&pv)
+
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		if viper.GetBool("protocol.log.verbose") {
+			log.Infof("[%v] [%v] [%v] %v", ss.packetID, ss.flowName, seen, string(data))
+		} else {
+			log.Infof("[%v] [%v] [%v] %v", ss.packetID, ss.flowName, seen, pc.Base.String())
+		}
+		ocs.mu.Lock()
+		ocs.structs[pc.Base.OperationCode] = pc.Base.ClientStructName
+		//fmt.Println(ocs.structs)
+		ocs.mu.Unlock()
+		go sendPacketToUI(pv)
+		//generateStructCode(pc)
+
 	}
 }
 
+
 // Capture packets and decode them
 func Capture(cmd *cobra.Command, args []string) {
-	captureConfig()
-	pf := &Flows{
-		pfm: make(map[string][]gopacket.Packet),
-	}
-
 	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
+	config()
+
+	ocs = &OpCodeStructs{
+		structs: make(map[uint16]string),
+	}
 	ss := &shineStreams{
 		toClient:   make(map[string]*shineStream),
 		fromClient: make(map[string]*shineStream),
 	}
 
 	ctx = context.WithValue(ctx, activeShineStreams, ss)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 
 	sf := &shineStreamFactory{
 		shineContext: ctx,
@@ -496,16 +508,37 @@ func Capture(cmd *cobra.Command, args []string) {
 	sp := tcpassembly.NewStreamPool(sf)
 	a := tcpassembly.NewAssembler(sp)
 
+	go capturePackets(ctx, a)
 	go startUI(ctx)
 
-	if handle, err := pcap.OpenLive(iface, int32(snaplen), true, pcap.BlockForever); err != nil {
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+
+	select {
+	case <-c:
+		cancel()
+		generateOpCodeSwitch()
+	}
+	<-c
+
+}
+
+func capturePackets(ctx context.Context, a *tcpassembly.Assembler) {
+	handle, err := pcap.OpenLive(iface, int32(snaplen), true, pcap.BlockForever)
+	if err != nil {
 		log.Fatal(err)
-	} else if err := handle.SetBPFFilter(filter); err != nil { //
+	}
+	err = handle.SetBPFFilter(filter)
+	if err != nil {
 		log.Fatal(err)
-	} else {
-		packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
-		for packet := range packetSource.Packets() {
-			go pf.add(packet)
+	}
+	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
+	for {
+		select {
+		case <- ctx.Done():
+			return
+		case packet := <- packetSource.Packets():
 			tcp := packet.TransportLayer().(*layers.TCP)
 			a.AssembleWithTimestamp(packet.NetworkLayer().NetworkFlow(), tcp, packet.Metadata().Timestamp)
 		}

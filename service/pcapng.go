@@ -27,7 +27,7 @@ func (pf *Flows) add(p gopacket.Packet) {
 
 	var fkey string
 	shine.mu.Lock()
-	if srcPort >= viper.GetInt("network.portRange.start") && srcPort <= viper.GetInt("network.portRange.end")  {
+	if srcPort >= viper.GetInt("network.portRange.start") && srcPort <= viper.GetInt("network.portRange.end") {
 		// server - client
 		service, ok := shine.knownServices[srcPort]
 		if !ok {
