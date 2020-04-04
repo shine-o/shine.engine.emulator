@@ -1,8 +1,8 @@
-// Package cmd various CLI commands related to the login service
+// Package cmd various CLI commands related to the login manager
 package cmd
 
 import (
-	"github.com/shine-o/shine.engine.world/service"
+	"github.com/shine-o/shine.engine.world/manager"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 )
@@ -11,7 +11,7 @@ import (
 var migrateCmd = &cobra.Command{
 	Use:   "migrate",
 	Short: "Update database schema",
-	Run:   service.Migrate,
+	Run:   manager.Migrate,
 }
 
 func init() {

@@ -1,4 +1,4 @@
-package service
+package manager
 
 import (
 	"context"
@@ -14,7 +14,7 @@ func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		nc := structs.NcUserLoginWorldReq{}
-		if err := nc.Unpack(pc.Base.Data); err != nil {
+		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 			log.Error(err)
 			// TODO: define steps for this kind of errors, either kill the connection or send error code
 		} else {
@@ -36,9 +36,8 @@ func userLoginWorldAck(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		pc.Base.OperationCode = 3092
-		wc := &WorldCommand{pc: pc}
 
-		nc, err := wc.userWorldInfo(ctx)
+		nc, err := userWorldInfo(ctx)
 		if err != nil {
 			return
 		}
@@ -67,8 +66,7 @@ func userWillWorldSelectAck(ctx context.Context) {
 			},
 			NcStruct: nil,
 		}
-		wc := &WorldCommand{pc: pc}
-		nc, err := wc.returnToServerSelect(ctx)
+		nc, err := returnToServerSelect(ctx)
 		if err != nil {
 			return
 		}

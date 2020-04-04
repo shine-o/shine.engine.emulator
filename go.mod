@@ -24,3 +24,5 @@ require (
 	google.golang.org/grpc v1.28.0
 	gopkg.in/ini.v1 v1.55.0 // indirect
 )
+
+replace github.com/shine-o/shine.engine.networking => C:\Users\marbo\go\src\github.com\shine-o\shine.engine.networking

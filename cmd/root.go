@@ -1,4 +1,4 @@
-// Package cmd various CLI commands related to the world service
+// Package cmd various CLI commands related to the world manager
 package cmd
 
 import (
@@ -19,7 +19,7 @@ var log *logger.Logger
 var rootCmd = &cobra.Command{
 	Use:   "world",
 	Short: "Serve the world services needed and offer CLI support for world operations",
-	Long:  `The purpose of the world service is to handle packets related the user account and user characters.`,
+	Long:  `The purpose of the world manager is to handle packets related the user account and user characters.`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -40,7 +40,7 @@ func init() {
 		log.Fatal(err)
 	}
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.shine.engine.service.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.shine.engine.manager.yaml)")
 
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

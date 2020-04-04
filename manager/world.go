@@ -1,4 +1,4 @@
-package service
+package manager
 
 import (
 	"context"
@@ -13,15 +13,7 @@ import (
 
 var errCC = errors.New("context was canceled")
 
-var errHF = errors.New("hardcoded feature")
-
 var errAccountInfo = errors.New("failed to fetch account info")
-
-// WorldCommand wrapper for networking command
-// any information scoped to this service and its handlers can be added here
-type WorldCommand struct {
-	pc *networking.Command
-}
 
 func worldTime(ctx context.Context) (structs.NcMiscGameTimeAck, error) {
 	select {
@@ -85,7 +77,7 @@ func loginToWorld(ctx context.Context, req structs.NcUserLoginWorldReq) error {
 	}
 }
 
-func (wc *WorldCommand) userWorldInfo(ctx context.Context) (structs.NcUserLoginWorldAck, error) {
+func userWorldInfo(ctx context.Context) (structs.NcUserLoginWorldAck, error) {
 	select {
 	case <-ctx.Done():
 		return structs.NcUserLoginWorldAck{}, errCC
@@ -133,8 +125,8 @@ func (wc *WorldCommand) userWorldInfo(ctx context.Context) (structs.NcUserLoginW
 
 // user clicked previous
 // generate a otp token and store it in redis
-// login service will use the token to authenticate the user and send him to server select
-func (wc *WorldCommand) returnToServerSelect(ctx context.Context) (structs.NcUserWillWorldSelectAck, error) {
+// login manager will use the token to authenticate the user and send him to server select
+func returnToServerSelect(ctx context.Context) (structs.NcUserWillWorldSelectAck, error) {
 	select {
 	case <-ctx.Done():
 		return structs.NcUserWillWorldSelectAck{}, errCC

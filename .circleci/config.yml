@@ -34,7 +34,7 @@ jobs:
           command: ./world migrate --config "defaults/.world.circleci.yaml" --fixtures "true"
       - run:
           name: run tests
-          command: go test github.com/shine-o/shine.engine.world/service
+          command: go test github.com/shine-o/shine.engine.world/manager
       - setup_remote_docker:
         # only available if you pay
         # docker_layer_caching: true
