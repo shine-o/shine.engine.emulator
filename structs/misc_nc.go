@@ -33,7 +33,6 @@ func (nc *NcMiscSeedAck) PdbType() string {
 `
 }
 
-
 // struct PROTO_NC_MISC_GAMETIME_ACK
 // {
 //	char hour;
@@ -61,6 +60,30 @@ func (nc *NcMiscGameTimeAck) PdbType() string {
 	  char hour;
 	  char minute;
 	  char second;
+	};
+`
+}
+
+// struct PROTO_NC_MISC_HEARTBEAT_ACK
+//{
+//  char dummy[1];
+//};
+type NcMiscHeartBeatAck struct {
+}
+
+func (nc *NcMiscHeartBeatAck) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcMiscHeartBeatAck) PdbType() string {
+	return `
+	struct PROTO_NC_MISC_HEARTBEAT_ACK
+	{
+	  char dummy[1];
 	};
 `
 }

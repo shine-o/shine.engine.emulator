@@ -31,7 +31,6 @@ func (nc *NcUserClientVersionCheckReq) PdbType() string {
 `
 }
 
-
 // struct PROTO_NC_USER_CLIENT_WRONGVERSION_CHECK_ACK
 //{
 //  char dummy[1];
@@ -87,7 +86,6 @@ func (nc *NcUserUsLoginReq) PdbType() string {
 `
 }
 
-
 //struct PROTO_NC_USER_LOGIN_ACK
 //{
 //  char numofworld;
@@ -115,7 +113,6 @@ func (nc *NcUserLoginAck) PdbType() string {
 	};
 `
 }
-
 
 // RE client struct:
 // struct PROTO_NC_USER_LOGINFAIL_ACK
