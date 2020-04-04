@@ -3,6 +3,7 @@ module github.com/shine-o/shine.engine.networking
 go 1.13
 
 require (
+	github.com/go-restruct/restruct v0.0.0-20191227155143-5734170a48a1 // indirect
 	github.com/google/logger v1.0.1
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/stretchr/testify v1.5.1 // indirect
