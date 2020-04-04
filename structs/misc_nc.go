@@ -13,10 +13,10 @@ import (
 // xorKey offset used by client to encrypt data
 // same offset is used on the server side to decrypt data sent by the client
 type NcMiscSeedAck struct {
-	Seed uint16 `struct:"uint16"`
+	Seed uint16
 }
 
-func (nc * NcMiscSeedAck) String() string {
+func (nc *NcMiscSeedAck) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -24,7 +24,7 @@ func (nc * NcMiscSeedAck) String() string {
 	return string(sd)
 }
 
-func (nc * NcMiscSeedAck) PdbAnalog() string {
+func (nc *NcMiscSeedAck) PdbType() string {
 	return `
 		struct PROTO_NC_MISC_SEED_ACK
 		{
@@ -33,13 +33,6 @@ func (nc * NcMiscSeedAck) PdbAnalog() string {
 `
 }
 
-func (nc * NcMiscSeedAck) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcMiscSeedAck) Unpack(data []byte) error {
-	return Unpack(data, nc)
-}
 
 // struct PROTO_NC_MISC_GAMETIME_ACK
 // {
@@ -53,7 +46,7 @@ type NcMiscGameTimeAck struct {
 	Second byte `struct:"byte"`
 }
 
-func (nc * NcMiscGameTimeAck) String() string {
+func (nc *NcMiscGameTimeAck) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -61,7 +54,7 @@ func (nc * NcMiscGameTimeAck) String() string {
 	return string(sd)
 }
 
-func (nc * NcMiscGameTimeAck) PdbAnalog() string {
+func (nc *NcMiscGameTimeAck) PdbType() string {
 	return `
 	struct PROTO_NC_MISC_GAMETIME_ACK
 	{
@@ -70,12 +63,4 @@ func (nc * NcMiscGameTimeAck) PdbAnalog() string {
 	  char second;
 	};
 `
-}
-
-func (nc * NcMiscGameTimeAck) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcMiscGameTimeAck) Unpack(data []byte) error {
-	return Unpack(data, nc)
 }

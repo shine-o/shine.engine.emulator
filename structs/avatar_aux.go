@@ -18,8 +18,8 @@ type CharIdChangeData struct {
 //  char nTutorialStep;
 //};
 type ProtoTutorialInfo struct {
-	TutorialState int32  `struct:"int32"`
-	TutorialStep  byte `struct:"byte"`
+	TutorialState int32 `struct:"int32"`
+	TutorialStep  byte  `struct:"byte"`
 }
 
 ///* 1387 */
@@ -111,7 +111,7 @@ type ProtoAvatarShapeInfo struct {
 //};
 type EquipmentUpgrade struct {
 	Gap [2]uint8 `struct:"[2]uint8"`
-	BF2 byte	 `struct:"byte"`
+	BF2 byte     `struct:"byte"`
 }
 
 //struct PROTO_EQUIPMENT
@@ -159,6 +159,5 @@ type ProtoEquipment struct {
 	EquAccHip       uint16 `struct:"uint16"`
 	EquMinimon      uint16 `struct:"uint16"`
 	EquAccShield    uint16 `struct:"uint16"`
-	Upgrade 		EquipmentUpgrade
+	Upgrade         EquipmentUpgrade
 }
-
