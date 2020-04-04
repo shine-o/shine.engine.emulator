@@ -3,6 +3,7 @@ package networking
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"github.com/google/logger"
 )
 
@@ -66,6 +67,16 @@ func DecodePacket(pType string, pLen int, data []byte) (Command, error) {
 		Command:       command,
 		OperationCode: opCode,
 		Data:          data[2:], // omit operationCode bytes
+	}
+
+	if (&PCList{}) != commandList {
+		commandList.mu.Lock()
+		if dpt, ok := commandList.Departments[uint8(department)]; ok {
+			pc.Base.ClientStructName = dpt.ProcessedCommands[fmt.Sprintf("%X", command)]
+		} else {
+			log.Warningf("Missing friendly name for command with: operationCode %v,  department %v, command %v, ", opCode, department, fmt.Sprintf("%X", command))
+		}
+		commandList.mu.Unlock()
 	}
 
 	return pc, nil

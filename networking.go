@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/google/logger"
+	"github.com/shine-o/shine.engine.networking/structs"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -125,7 +126,7 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 // the TCP connection object is stored in the context
 func WriteToClient(ctx context.Context, pc *Command) {
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return
 	default:
 		cwv := ctx.Value(ConnectionWriter)
@@ -146,14 +147,15 @@ func WriteToClient(ctx context.Context, pc *Command) {
 
 func (pc *Command) Send(ctx context.Context) {
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return
 	default:
 		cwv := ctx.Value(ConnectionWriter)
 		cw := cwv.(*clientWriter)
 
 		if pc.NcStruct != nil {
-			data, err := pc.NcStruct.Pack()
+			//data, err := pc.NcStruct.Pack()
+			data, err := structs.Pack(pc.NcStruct)
 			if err != nil {
 				log.Error(err)
 				return

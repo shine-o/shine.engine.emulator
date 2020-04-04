@@ -10,7 +10,6 @@ type Name3 struct {
 	Name [12]byte `struct:"[12]byte"`
 }
 
-/* 3801 */
 // union Name4
 // {
 //	char n4_name[16];

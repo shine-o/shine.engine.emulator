@@ -22,7 +22,7 @@ func miscSeedAck(ctx context.Context, pc *Command) {
 			Seed: xorOffset,
 		}
 
-		if data, err := WriteBinary(nc); err != nil {
+		if data, err := structs.Pack(&nc); err != nil {
 
 		} else {
 			pc.Base.Data = data
