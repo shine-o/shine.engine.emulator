@@ -1,4 +1,4 @@
-package service
+package manager
 
 import (
 	"context"
@@ -39,10 +39,10 @@ var (
 )
 
 func init() {
-	log = logger.Init("world service default logger", true, false, ioutil.Discard)
+	log = logger.Init("world manager default logger", true, false, ioutil.Discard)
 }
 
-// Start the world service
+// Start the world manager
 // that is, use networking library to handle TCP connection
 // configure networking library to use handlers implemented in this package for packets
 func Start(cmd *cobra.Command, args []string) {
@@ -73,7 +73,7 @@ func Start(cmd *cobra.Command, args []string) {
 	<-c
 }
 
-// reminder: remove this as the service will be responsible only for one server
+// reminder: remove this as the manager will be responsible only for one server
 func startWorlds(ctx context.Context) {
 	if viper.IsSet("serve.worlds") {
 		// snippet for loading yaml array
@@ -187,7 +187,7 @@ func gRPCServers(ctx context.Context, service map[string]string) {
 		address := fmt.Sprintf(":%v", service["port"])
 		lis, err := net.Listen("tcp", address)
 		if err != nil {
-			log.Errorf("could listen on port %v for service %v : %v", service["port"], service["name"], err)
+			log.Errorf("could listen on port %v for manager %v : %v", service["port"], service["name"], err)
 		}
 		s := grpc.NewServer()
 

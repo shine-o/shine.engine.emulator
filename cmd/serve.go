@@ -1,8 +1,8 @@
-// Package cmd various CLI commands related to the world service
+// Package cmd various CLI commands related to the world manager
 package cmd
 
 import (
-	"github.com/shine-o/shine.engine.world/service"
+	"github.com/shine-o/shine.engine.world/manager"
 	"github.com/spf13/cobra"
 	"github.com/spf13/cobra/doc"
 )
@@ -11,7 +11,7 @@ import (
 var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Listen for World connections",
-	Run:   service.Start,
+	Run:   manager.Start,
 }
 
 func init() {

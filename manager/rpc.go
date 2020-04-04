@@ -1,4 +1,4 @@
-package service
+package manager
 
 import (
 	"context"
@@ -84,7 +84,7 @@ func (s *server) ConnectionInfo(ctx context.Context, req *lw.SelectedWorld) (*lw
 	}
 }
 
-// RPCClients that this service will use to communicate with other services
+// RPCClients that this manager will use to communicate with other services
 type RPCClients struct {
 	services map[string]*grpc.ClientConn
 	mu       sync.Mutex
@@ -117,10 +117,9 @@ func gRPCClients(ctx context.Context) {
 
 			for _, v := range services {
 				address := fmt.Sprintf("%v:%v", v["host"], v["port"])
-				//conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
 				conn, err := grpc.Dial(address, grpc.WithInsecure())
 				if err != nil {
-					log.Errorf("could not connect service %v : %v", v["name"], err)
+					log.Errorf("could not connect manager %v : %v", v["name"], err)
 					os.Exit(1)
 				}
 				log.Infof("[gRPC] client connection: %v@%v:%v", v["name"], v["host"], v["port"])
