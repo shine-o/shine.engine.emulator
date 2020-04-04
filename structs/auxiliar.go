@@ -8,9 +8,9 @@ package structs
 //	char worldstatus;
 //};
 type WorldInfo struct {
-	WorldNumber byte `struct:"byte"`
+	WorldNumber byte
 	WorldName   Name4
-	WorldStatus byte `struct:"byte"`
+	WorldStatus byte
 }
 
 // struct SHINE_XY_TYPE
@@ -19,8 +19,8 @@ type WorldInfo struct {
 //  unsigned int y;
 // };
 type ShineXYType struct {
-	X uint32 `struct:"uint32"`
-	Y uint32 `struct:"uint32"`
+	X uint32
+	Y uint32
 }
 
 // struct SHINE_DATETIME
@@ -28,5 +28,5 @@ type ShineXYType struct {
 //  int _bf0;
 // };
 type ShineDateTime struct {
-	BF0 int32 `struct:"int32"`
+	BF0 int32
 }

@@ -12,12 +12,12 @@ import (
 //	PROTO_AVATAR_SHAPE_INFO char_shape;
 // };
 type NcAvatarCreateReq struct {
-	SlotNum   byte `struct:"byte"`
-	Name      Name5
-	Shape ProtoAvatarShapeInfo
+	SlotNum byte `struct:"byte"`
+	Name    Name5
+	Shape   ProtoAvatarShapeInfo
 }
 
-func (nc * NcAvatarCreateReq) String() string {
+func (nc *NcAvatarCreateReq) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -25,7 +25,7 @@ func (nc * NcAvatarCreateReq) String() string {
 	return string(sd)
 }
 
-func (nc * NcAvatarCreateReq) PdbAnalog() string {
+func (nc *NcAvatarCreateReq) PdbType() string {
 	return `
 		struct PROTO_NC_AVATAR_CREATE_REQ
 		{
@@ -36,14 +36,6 @@ func (nc * NcAvatarCreateReq) PdbAnalog() string {
 `
 }
 
-func (nc * NcAvatarCreateReq) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcAvatarCreateReq) Unpack(data []byte) error {
-	return Unpack(data, nc)
-}
-
 // struct PROTO_NC_AVATAR_CREATESUCC_ACK
 //{
 //  char numofavatar;
@@ -51,10 +43,10 @@ func (nc * NcAvatarCreateReq) Unpack(data []byte) error {
 //};
 type NcAvatarCreateSuccAck struct {
 	NumOfAvatar byte `struct:"byte"`
-	Avatar AvatarInformation
+	Avatar      AvatarInformation
 }
 
-func (nc * NcAvatarCreateSuccAck) String() string {
+func (nc *NcAvatarCreateSuccAck) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -62,7 +54,7 @@ func (nc * NcAvatarCreateSuccAck) String() string {
 	return string(sd)
 }
 
-func (nc * NcAvatarCreateSuccAck) PdbAnalog() string {
+func (nc *NcAvatarCreateSuccAck) PdbType() string {
 	return `
 		struct PROTO_NC_AVATAR_CREATESUCC_ACK
 		{
@@ -70,14 +62,6 @@ func (nc * NcAvatarCreateSuccAck) PdbAnalog() string {
 		  PROTO_AVATARINFORMATION avatar;
 		};
 `
-}
-
-func (nc * NcAvatarCreateSuccAck) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcAvatarCreateSuccAck) Unpack(data []byte) error {
-	return Unpack(data, nc)
 }
 
 //struct PROTO_NC_AVATAR_CREATEFAIL_ACK
@@ -88,7 +72,7 @@ type NcAvatarCreateFailAck struct {
 	Err uint16 `struct:"uint16"`
 }
 
-func (nc *NcAvatarCreateFailAck) PdbAnalog() string {
+func (nc *NcAvatarCreateFailAck) PdbType() string {
 	return `
 	struct PROTO_NC_AVATAR_CREATEFAIL_ACK
 	{
@@ -97,21 +81,13 @@ func (nc *NcAvatarCreateFailAck) PdbAnalog() string {
 `
 }
 
-func (nc * NcAvatarCreateFailAck) String() string {
+func (nc *NcAvatarCreateFailAck) String() string {
 	// todo: refactor to common func
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
 	}
 	return string(sd)
-}
-
-func (nc *NcAvatarCreateFailAck) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcAvatarCreateFailAck) Unpack(data []byte) error {
-	return Unpack(data, nc)
 }
 
 //struct PROTO_NC_AVATAR_ERASE_REQ
@@ -122,21 +98,13 @@ type NcAvatarEraseReq struct {
 	Slot byte `struct:"byte"`
 }
 
-func (nc * NcAvatarEraseReq) PdbAnalog() string {
+func (nc *NcAvatarEraseReq) PdbType() string {
 	return `
 	struct PROTO_NC_AVATAR_ERASE_REQ
 	{
 	  char slot;
 	};
 `
-}
-
-func (nc * NcAvatarEraseReq) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcAvatarEraseReq) Unpack(data []byte) error {
-	return Unpack(data, nc)
 }
 
 //struct PROTO_NC_AVATAR_ERASESUCC_ACK
@@ -147,7 +115,7 @@ type NcAvatarEraseSuccAck struct {
 	Slot byte `struct:"byte"`
 }
 
-func (nc * NcAvatarEraseSuccAck) PdbAnalog() string {
+func (nc *NcAvatarEraseSuccAck) PdbType() string {
 	return `
 	struct PROTO_NC_AVATAR_ERASESUCC_ACK
 	{
@@ -156,19 +124,11 @@ func (nc * NcAvatarEraseSuccAck) PdbAnalog() string {
 `
 }
 
-func (nc * NcAvatarEraseSuccAck) String() string {
+func (nc *NcAvatarEraseSuccAck) String() string {
 	// todo: refactor to common func
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
 	}
 	return string(sd)
-}
-
-func (nc * NcAvatarEraseSuccAck) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcAvatarEraseSuccAck) Unpack(data []byte) error {
-	return Unpack(data, nc)
 }

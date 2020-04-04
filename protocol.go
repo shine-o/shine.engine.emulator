@@ -48,19 +48,20 @@ type Department struct {
 
 // Command type used to unmarshal data from the protocol commands file
 type Command struct {
-	Base     CommandBase // common data in every command, like operation code and length
+	Base CommandBase // common data in every command, like operation code and length
 	//NcStruct interface{} // any kind of structure that is the representation in bytes of the network packet
 	NcStruct structs.NC // any kind of structure that is the representation in bytes of the network packet
 }
 
 // CommandBase type used to store decoded data from a packet
 type CommandBase struct {
-	PacketType    string
-	Length        int
-	Department    uint16
-	Command       uint16
-	OperationCode uint16
-	Data          []byte
+	PacketType       string
+	Length           int
+	Department       uint16
+	Command          uint16
+	OperationCode    uint16
+	ClientStructName string
+	Data             []byte
 }
 
 // RawData of a packet that contains the length, operation code and packet data
@@ -116,21 +117,12 @@ func (pcb *CommandBase) String() string {
 		OperationCode: pcb.OperationCode,
 		Data:          hex.EncodeToString(pcb.Data),
 		RawData:       hex.EncodeToString(pcb.RawData()),
+		FriendlyName:  pcb.ClientStructName,
 	}
 	if pcb.PacketLength() > 255 {
 		ePcb.PacketType = "big"
 	} else {
 		ePcb.PacketType = "small"
-	}
-
-	if (&PCList{}) != commandList {
-		commandList.mu.Lock()
-		if dpt, ok := commandList.Departments[uint8(ePcb.Department)]; ok {
-			ePcb.FriendlyName = dpt.ProcessedCommands[ePcb.Command]
-		} else {
-			log.Warningf("Missing friendly name for command with: operationCode %v,  department %v, command %v, ", ePcb.OperationCode, ePcb.Department, ePcb.Command)
-		}
-		commandList.mu.Unlock()
 	}
 
 	rawJSON, err := json.Marshal(&ePcb)

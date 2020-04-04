@@ -14,7 +14,7 @@ type NcUserClientVersionCheckReq struct {
 	VersionKey [64]byte `struct:"[64]byte"`
 }
 
-func (nc * NcUserClientVersionCheckReq) String() string {
+func (nc *NcUserClientVersionCheckReq) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -22,7 +22,7 @@ func (nc * NcUserClientVersionCheckReq) String() string {
 	return string(sd)
 }
 
-func (nc * NcUserClientVersionCheckReq) PdbAnalog() string {
+func (nc *NcUserClientVersionCheckReq) PdbType() string {
 	return `
 	struct PROTO_NC_USER_CLIENT_VERSION_CHECK_REQ
 	{
@@ -31,21 +31,13 @@ func (nc * NcUserClientVersionCheckReq) PdbAnalog() string {
 `
 }
 
-func (nc * NcUserClientVersionCheckReq) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcUserClientVersionCheckReq) Unpack(data []byte) error {
-	return Unpack(data, nc)
-}
-
 // struct PROTO_NC_USER_CLIENT_WRONGVERSION_CHECK_ACK
 //{
 //  char dummy[1];
 //};
 type NcUserClientWrongVersionCheckAck struct{}
 
-func (nc * NcUserClientWrongVersionCheckAck) String() string {
+func (nc *NcUserClientWrongVersionCheckAck) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -53,21 +45,13 @@ func (nc * NcUserClientWrongVersionCheckAck) String() string {
 	return string(sd)
 }
 
-func (nc * NcUserClientWrongVersionCheckAck) PdbAnalog() string {
+func (nc *NcUserClientWrongVersionCheckAck) PdbType() string {
 	return `
 	struct PROTO_NC_USER_CLIENT_WRONGVERSION_CHECK_ACK
 	{
 	  char dummy[1];
 	};
 `
-}
-
-func (nc * NcUserClientWrongVersionCheckAck) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcUserClientWrongVersionCheckAck) Unpack(data []byte) error {
-	return Unpack(data, nc)
 }
 
 // RE client struct:
@@ -83,7 +67,7 @@ type NcUserUsLoginReq struct {
 	SpawnApps Name5
 }
 
-func (nc * NcUserUsLoginReq) String() string {
+func (nc *NcUserUsLoginReq) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -91,7 +75,7 @@ func (nc * NcUserUsLoginReq) String() string {
 	return string(sd)
 }
 
-func (nc * NcUserUsLoginReq) PdbAnalog() string {
+func (nc *NcUserUsLoginReq) PdbType() string {
 	return `
 	struct PROTO_NC_USER_US_LOGIN_REQ
 	{
@@ -102,25 +86,17 @@ func (nc * NcUserUsLoginReq) PdbAnalog() string {
 `
 }
 
-func (nc * NcUserUsLoginReq) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcUserUsLoginReq) Unpack(data []byte) error {
-	return Unpack(data, nc)
-}
-
 //struct PROTO_NC_USER_LOGIN_ACK
 //{
 //  char numofworld;
 //  PROTO_NC_USER_LOGIN_ACK::WorldInfo worldinfo[];
 //};
 type NcUserLoginAck struct {
-	NumOfWorld byte `struct:"byte"`
-	Worlds     []WorldInfo
+	NumOfWorld byte        `struct:"byte"`
+	Worlds     []WorldInfo `struct:"sizefrom=NumOfWorld"`
 }
 
-func (nc * NcUserLoginAck) String() string {
+func (nc *NcUserLoginAck) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -128,7 +104,7 @@ func (nc * NcUserLoginAck) String() string {
 	return string(sd)
 }
 
-func (nc * NcUserLoginAck) PdbAnalog() string {
+func (nc *NcUserLoginAck) PdbType() string {
 	return `
 	struct PROTO_NC_USER_LOGIN_ACK
 	{
@@ -136,14 +112,6 @@ func (nc * NcUserLoginAck) PdbAnalog() string {
 	  PROTO_NC_USER_LOGIN_ACK::WorldInfo worldinfo[];
 	};
 `
-}
-
-func (nc * NcUserLoginAck) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcUserLoginAck) Unpack(data []byte) error {
-	return Unpack(data, nc)
 }
 
 // RE client struct:
@@ -155,7 +123,7 @@ type NcUserLoginFailAck struct {
 	Err uint16 `struct:"uint16"`
 }
 
-func (nc * NcUserLoginFailAck) String() string {
+func (nc *NcUserLoginFailAck) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -163,21 +131,13 @@ func (nc * NcUserLoginFailAck) String() string {
 	return string(sd)
 }
 
-func (nc * NcUserLoginFailAck) PdbAnalog() string {
+func (nc *NcUserLoginFailAck) PdbType() string {
 	return `
 	struct PROTO_NC_USER_LOGINFAIL_ACK
 	{
 	  unsigned __int16 error;
 	};
 `
-}
-
-func (nc * NcUserLoginFailAck) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcUserLoginFailAck) Unpack(data []byte) error {
-	return Unpack(data, nc)
 }
 
 // RE client struct:
@@ -189,7 +149,7 @@ type NcUserWorldSelectReq struct {
 	WorldNo byte `struct:"byte"`
 }
 
-func (nc * NcUserWorldSelectReq) String() string {
+func (nc *NcUserWorldSelectReq) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -197,21 +157,13 @@ func (nc * NcUserWorldSelectReq) String() string {
 	return string(sd)
 }
 
-func (nc * NcUserWorldSelectReq) PdbAnalog() string {
+func (nc *NcUserWorldSelectReq) PdbType() string {
 	return `
 	struct PROTO_NC_USER_WORLDSELECT_REQ
 	{
 	  char worldno;
 	};
 `
-}
-
-func (nc * NcUserWorldSelectReq) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcUserWorldSelectReq) Unpack(data []byte) error {
-	return Unpack(data, nc)
 }
 
 //struct PROTO_NC_USER_WORLDSELECT_ACK
@@ -229,11 +181,11 @@ type NcUserWorldSelectAck struct {
 	// 5: behaviour -> cannot enter, message -> The server is full.
 	WorldStatus byte `struct:"byte"`
 	Ip          Name4
-	Port        uint16 `struct:"uint16"`
+	Port        uint16     `struct:"uint16"`
 	ValidateNew [32]uint16 `struct:"[32]uint16"`
 }
 
-func (nc * NcUserWorldSelectAck) String() string {
+func (nc *NcUserWorldSelectAck) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -241,7 +193,7 @@ func (nc * NcUserWorldSelectAck) String() string {
 	return string(sd)
 }
 
-func (nc * NcUserWorldSelectAck) PdbAnalog() string {
+func (nc *NcUserWorldSelectAck) PdbType() string {
 	return `
 	struct PROTO_NC_USER_WORLDSELECT_ACK
 	{
@@ -253,14 +205,6 @@ func (nc * NcUserWorldSelectAck) PdbAnalog() string {
 `
 }
 
-func (nc * NcUserWorldSelectAck) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcUserWorldSelectAck) Unpack(data []byte) error {
-	return Unpack(data, nc)
-}
-
 // struct PROTO_NC_USER_LOGINWORLD_REQ
 // {
 //  Name256Byte user;
@@ -268,10 +212,10 @@ func (nc * NcUserWorldSelectAck) Unpack(data []byte) error {
 // };
 type NcUserLoginWorldReq struct {
 	User        Name256Byte
-	ValidateNew [32]uint16 `struct:"[32]uint16"`
+	ValidateNew [28]uint16 `struct:"[28]uint16"`
 }
 
-func (nc * NcUserLoginWorldReq) String() string {
+func (nc *NcUserLoginWorldReq) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -279,7 +223,7 @@ func (nc * NcUserLoginWorldReq) String() string {
 	return string(sd)
 }
 
-func (nc * NcUserLoginWorldReq) PdbAnalog() string {
+func (nc *NcUserLoginWorldReq) PdbType() string {
 	return `
 	struct PROTO_NC_USER_LOGINWORLD_REQ
 	{
@@ -289,14 +233,6 @@ func (nc * NcUserLoginWorldReq) PdbAnalog() string {
 `
 }
 
-func (nc * NcUserLoginWorldReq) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcUserLoginWorldReq) Unpack(data []byte) error {
-	return Unpack(data, nc)
-}
-
 //struct PROTO_NC_USER_LOGINWORLD_ACK
 //{
 //  unsigned __int16 worldmanager;
@@ -304,12 +240,12 @@ func (nc * NcUserLoginWorldReq) Unpack(data []byte) error {
 //  PROTO_AVATARINFORMATION avatar[];
 //};
 type NcUserLoginWorldAck struct {
-	WorldManager uint16 `struct:"uint16"`
-	NumOfAvatar  byte   `struct:"byte"`
-	Avatars      []AvatarInformation
+	WorldManager uint16              `struct:"uint16"`
+	NumOfAvatar  byte                `struct:"byte"`
+	Avatars      []AvatarInformation `struct:"sizefrom=NumOfAvatar"`
 }
 
-func (nc * NcUserLoginWorldAck) String() string {
+func (nc *NcUserLoginWorldAck) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -317,7 +253,7 @@ func (nc * NcUserLoginWorldAck) String() string {
 	return string(sd)
 }
 
-func (nc * NcUserLoginWorldAck) PdbAnalog() string {
+func (nc *NcUserLoginWorldAck) PdbType() string {
 	return `
 	struct PROTO_NC_USER_LOGINWORLD_ACK
 	{
@@ -326,14 +262,6 @@ func (nc * NcUserLoginWorldAck) PdbAnalog() string {
 	  PROTO_AVATARINFORMATION avatar[];
 	};
 `
-}
-
-func (nc * NcUserLoginWorldAck) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcUserLoginWorldAck) Unpack(data []byte) error {
-	return Unpack(data, nc)
 }
 
 // struct PROTO_NC_USER_WILL_WORLD_SELECT_ACK
@@ -346,7 +274,7 @@ type NcUserWillWorldSelectAck struct {
 	Otp   Name8
 }
 
-func (nc * NcUserWillWorldSelectAck) String() string {
+func (nc *NcUserWillWorldSelectAck) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -354,7 +282,7 @@ func (nc * NcUserWillWorldSelectAck) String() string {
 	return string(sd)
 }
 
-func (nc * NcUserWillWorldSelectAck) PdbAnalog() string {
+func (nc *NcUserWillWorldSelectAck) PdbType() string {
 	return `
 	struct PROTO_NC_USER_WILL_WORLD_SELECT_ACK
 	{
@@ -362,14 +290,6 @@ func (nc * NcUserWillWorldSelectAck) PdbAnalog() string {
 	  Name8 sOTP;
 	};
 `
-}
-
-func (nc * NcUserWillWorldSelectAck) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcUserWillWorldSelectAck) Unpack(data []byte) error {
-	return Unpack(data, nc)
 }
 
 // struct PROTO_NC_USER_LOGIN_WITH_OTP_REQ
@@ -380,7 +300,7 @@ type NcUserLoginWithOtpReq struct {
 	Otp Name8
 }
 
-func (nc * NcUserLoginWithOtpReq) String() string {
+func (nc *NcUserLoginWithOtpReq) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -388,19 +308,11 @@ func (nc * NcUserLoginWithOtpReq) String() string {
 	return string(sd)
 }
 
-func (nc * NcUserLoginWithOtpReq) PdbAnalog() string {
+func (nc *NcUserLoginWithOtpReq) PdbType() string {
 	return `
 	struct PROTO_NC_USER_LOGIN_WITH_OTP_REQ
 	{
 	  Name8 sOTP;
 	};	
 `
-}
-
-func (nc * NcUserLoginWithOtpReq) Pack() ([]byte, error) {
-	return Pack(nc)
-}
-
-func (nc * NcUserLoginWithOtpReq) Unpack(data []byte) error {
-	return Unpack(data, nc)
 }
