@@ -539,8 +539,10 @@ func capturePackets(ctx context.Context, a *tcpassembly.Assembler) {
 		case <- ctx.Done():
 			return
 		case packet := <- packetSource.Packets():
-			tcp := packet.TransportLayer().(*layers.TCP)
-			a.AssembleWithTimestamp(packet.NetworkLayer().NetworkFlow(), tcp, packet.Metadata().Timestamp)
+
+			if tcp, ok := packet.TransportLayer().(*layers.TCP); ok {
+				a.AssembleWithTimestamp(packet.NetworkLayer().NetworkFlow(), tcp, packet.Metadata().Timestamp)
+			}
 		}
 	}
 }
