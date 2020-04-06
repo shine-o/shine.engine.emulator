@@ -92,3 +92,53 @@ func (nc *MapLogoutCmd) PdbType() string {
 	};
 `
 }
+
+//struct PROTO_NC_MAP_FIELD_ATTRIBUTE_CMD
+//{
+//  FIELD_MAP_TYPE eFieldMapType;
+//};
+type NcMapFieldAttributeCmd struct {
+	FieldMapType uint32
+}
+
+func (nc *NcMapFieldAttributeCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcMapFieldAttributeCmd) PdbType() string {
+	return `
+	struct PROTO_NC_MAP_FIELD_ATTRIBUTE_CMD
+	{
+	  FIELD_MAP_TYPE eFieldMapType;
+	};
+`
+}
+
+//struct PROTO_NC_MAP_CAN_USE_REVIVEITEM_CMD
+//{
+//  char bCanUseReviveItem;
+//};
+type NcMapCanUseReviveItemCmd struct {
+	CanUse byte
+}
+
+func (nc *NcMapCanUseReviveItemCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcMapCanUseReviveItemCmd) PdbType() string {
+	return `
+	struct PROTO_NC_MAP_CAN_USE_REVIVEITEM_CMD
+	{
+	  char bCanUseReviveItem;
+	};
+`
+}
