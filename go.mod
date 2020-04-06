@@ -10,6 +10,7 @@ require (
 	github.com/gorilla/websocket v1.4.2
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/pelletier/go-toml v1.6.0 // indirect
+	github.com/segmentio/ksuid v1.0.2
 	github.com/shine-o/shine.engine.networking v0.0.0-20200401184904-1c8aadb06909
 	github.com/shine-o/shine.engine.structs v0.0.0-20200317164417-264763e42420 // indirect
 	github.com/spf13/afero v1.2.2 // indirect

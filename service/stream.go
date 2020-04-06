@@ -13,6 +13,7 @@ import (
 	"github.com/google/gopacket/tcpassembly"
 	"github.com/google/logger"
 	"github.com/google/uuid"
+	"github.com/segmentio/ksuid"
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -44,7 +45,6 @@ type shineStream struct {
 	serverIP       string
 	segments       chan<- shineSegment
 	xorKey         chan<- uint16 // only used by decodeClientPackets()
-	packetID       uint64
 	cancel         context.CancelFunc
 }
 
@@ -198,7 +198,6 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 		net:       net,
 		transport: transport,
 		segments:  segments,
-		packetID:  0,
 		xorKey:    xorKey,
 		cancel:    cancel,
 	}
@@ -213,11 +212,11 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 
 		service, ok := shine.knownServices[srcPort]
 		if !ok {
-			//log.Fatal("something went horribly wrong")
 			s.flowName = fmt.Sprintf("%v-client", "unknown")
 		} else {
 			s.flowName = fmt.Sprintf("%v-client", strings.ToLower(service.name))
 		}
+
 		log.Infof("new server stream from => [ %v - %v] [%v]", srcIP, srcPort, s.flowName)
 		ss, ok := ssf.shineContext.Value(activeShineStreams).(*shineStreams)
 		ss.mu.Lock()
@@ -238,7 +237,7 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Str
 
 		service, ok := shine.knownServices[dstPort]
 		if !ok {
-			s.flowName = fmt.Sprintf("clien-%v", "unknown")
+			s.flowName = fmt.Sprintf("client-%v", "unknown")
 		} else {
 			s.flowName = fmt.Sprintf("client-%v", strings.ToLower(service.name))
 		}
@@ -334,7 +333,6 @@ func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan 
 				if err != nil {
 					log.Error(err)
 				}
-				ss.packetID++
 
 				if logActivated {
 					go ss.handlePacket(ctx, segment.seen, pc)
@@ -427,7 +425,6 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 						log.Warningf("xorOffset: %v found for client  %v", xorOffset, key)
 					}
 				}
-				ss.packetID++
 
 				if logActivated {
 					go ss.handlePacket(ctx, segment.seen, pc)
@@ -447,7 +444,7 @@ func (ss *shineStream) handlePacket(ctx context.Context, seen time.Time, pc netw
 		pv := PacketView{
 			FlowID:     ss.flowID,
 			FlowName:   ss.flowName,
-			PacketID:   ss.packetID,
+			PacketID:   ksuid.New().String(),
 			ClientIP:   ss.clientIP,
 			ServerIP:   ss.serverIP,
 			TimeStamp:  seen.String(),
@@ -461,25 +458,25 @@ func (ss *shineStream) handlePacket(ctx context.Context, seen time.Time, pc netw
 			log.Info(string(b))
 		}
 
-		data, err := json.Marshal(&pv)
+		//data, err := json.Marshal(&pv)
+		//
+		//if err != nil {
+		//	log.Error(err)
+		//	return
+		//}
+		//
+		//if viper.GetBool("protocol.log.verbose") {
+		//	log.Infof("[%v] [%v] [%v] %v", ss.packetID, ss.flowName, seen, string(data))
+		//} else {
+		//	log.Infof("[%v] [%v] [%v] %v", ss.packetID, ss.flowName, seen, pc.Base.String())
+		//}
 
-		if err != nil {
-			log.Error(err)
-			return
-		}
-
-		if viper.GetBool("protocol.log.verbose") {
-			log.Infof("[%v] [%v] [%v] %v", ss.packetID, ss.flowName, seen, string(data))
-		} else {
-			log.Infof("[%v] [%v] [%v] %v", ss.packetID, ss.flowName, seen, pc.Base.String())
-		}
 		ocs.mu.Lock()
 		ocs.structs[pc.Base.OperationCode] = pc.Base.ClientStructName
-		//fmt.Println(ocs.structs)
 		ocs.mu.Unlock()
+
 		go sendPacketToUI(pv)
 		//generateStructCode(pc)
-
 	}
 }
 

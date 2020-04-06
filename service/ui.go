@@ -17,7 +17,7 @@ type PacketView struct {
 	FlowID   string `json:"flow_id"`
 	FlowName string `json:"flow_name"`
 	// numerary for the packets processed in this flow, informational only
-	PacketID uint64 `json:"packet_id"`
+	PacketID string `json:"packet_id"`
 	// IP that is not the server
 	// to be used in the frontend as an abstraction for the many flows between the client and the server
 	// a clientIP with 0 active flows is considered inactive

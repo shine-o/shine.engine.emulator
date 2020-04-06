@@ -604,24 +604,24 @@ func ncStructRepresentation(opCode uint16, data []byte) (NcRepresentation, error
 		break
 	case 8202:
 		// NC_ACT_NPCCLICK_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcActNpcClickCmd{}
+		return ncStructData(&nc, data)
 	case 7173:
 		// NC_BRIEFINFO_CHANGEWEAPON_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcBriefInfoChangeWeaponCmd{}
+		return ncStructData(&nc, data)
 	case 52228:
 		// NC_MOVER_SOMEONE_RIDE_ON_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcMoverSomeoneRideOnCmd{}
+		return ncStructData(&nc, data)
 	case 9276:
 		// NC_BAT_DOTDAMAGE_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcBatDotDamageCmd{}
+		return ncStructData(&nc, data)
 	case 8200:
 		// NC_ACT_CHANGEMODE_REQ
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcActChangeModeReq{}
+		return ncStructData(&nc, data)
 	case 26648:
 		//
 		// return ncStructData(&nc, data)
@@ -632,8 +632,8 @@ func ncStructRepresentation(opCode uint16, data []byte) (NcRepresentation, error
 		break
 	case 9218:
 		// NC_BAT_TARGETINFO_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcBatTargetInfoCmd{}
+		return ncStructData(&nc, data)
 	case 9266:
 		// NC_BAT_BASHSTOP_CMD
 		// return ncStructData(&nc, data)
@@ -644,36 +644,36 @@ func ncStructRepresentation(opCode uint16, data []byte) (NcRepresentation, error
 		break
 	case 4286:
 		// NC_CHAR_CLIENT_AUTO_PICK_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcCharClientAutoPickCmd{}
+		return ncStructData(&nc, data)
 	case 8248:
 		// NC_ACT_SOMEONEPRODUCE_CAST_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcActSomeoneProduceCastCmd{}
+		return ncStructData(&nc, data)
 	case 20492:
 		// NC_SOULSTONE_SP_SOMEONEUSE_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcSoulStoneSpSomeoneUseCmd{}
+		return ncStructData(&nc, data)
 	case 26632:
 		// NC_BOOTH_ENTRY_SELL_ACK
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcBoothEntrySellAck{}
+		return ncStructData(&nc, data)
 	case 9298:
 		// NC_BAT_SKILLBASH_HIT_DAMAGE_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcBatSkillBashHitDamageCmd{}
+		return ncStructData(&nc, data)
 	case 8236:
 		// NC_ACT_SOMEONEFOLDTENT_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcActSomeoneFoldTentCmd{}
+		return ncStructData(&nc, data)
 	case 9295:
 		// NC_BAT_SOMEONESKILLBASH_HIT_OBJ_START_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcBatSomeoneSkillBashHitObjStartCmd{}
+		return ncStructData(&nc, data)
 	case 52232:
 		// NC_MOVER_SOMEONE_RIDE_OFF_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcMoverSomeoneRideOffCmd{}
+		return ncStructData(&nc, data)
 	case 26635:
 		// NC_BOOTH_REFRESH_SELL_ACK
 		// return ncStructData(&nc, data)
@@ -684,32 +684,32 @@ func ncStructRepresentation(opCode uint16, data []byte) (NcRepresentation, error
 		break
 	case 26647:
 		// NC_BOOTH_SEARCH_BOOTH_CLOSED_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcBoothSearchBoothClosedCmd{}
+		return ncStructData(&nc, data)
 	case 4396:
 		// NC_CHAR_USEITEM_MINIMON_USE_BROAD_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcCharUseItemMinimonUseBroadCmd{}
+		return ncStructData(&nc, data)
 	case 9303:
 		// NC_BAT_SKILLBASH_HIT_BLAST_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcBatSkillBashHitBlastCmd{}
+		return ncStructData(&nc, data)
 	case 20491:
 		// NC_SOULSTONE_HP_SOMEONEUSE_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcSoulStoneHpSomeoneUseCmd{}
+		return ncStructData(&nc, data)
 	case 7169:
 		// NC_BRIEFINFO_INFORM_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcBriefInfoInformCmd{}
+		return ncStructData(&nc, data)
 	case 8201:
 		// NC_ACT_SOMEONECHANGEMODE_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcActSomeoneChangeModeCmd{}
+		return ncStructData(&nc, data)
 	case 8252:
 		// NC_ACT_SOMEONEPRODUCE_MAKE_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcActSomeoneProduceMakeCmd{}
+		return ncStructData(&nc, data)
 	default:
 		return NcRepresentation{}, errors.New(fmt.Sprintf("no struct assigned to this operation code %v", opCode))
 	}
