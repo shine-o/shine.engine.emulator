@@ -728,11 +728,11 @@ func ncStructData(nc structs.NC, data []byte) (NcRepresentation, error) {
 		log.Errorf("struct: %v, size: %v", reflect.TypeOf(nc).String(), n)
 		return NcRepresentation{}, err
 	}
-	n, err := restruct.SizeOf(nc)
-	if err != nil {
-		log.Error(err)
-	}
-	log.Warningf("struct: %v, size: %v", reflect.TypeOf(nc).String(), n)
+	//n, err := restruct.SizeOf(nc)
+	//if err != nil {
+	//	log.Error(err)
+	//}
+	//log.Warningf("struct: %v, size: %v", reflect.TypeOf(nc).String(), n)
 	nr := NcRepresentation{
 		Pdb:          nc.PdbType(),
 		UnpackedData: nc.String(),

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
+	networking "github.com/shine-o/shine.engine.networking"
 	"github.com/spf13/viper"
 	"net/http"
 	"sync"
@@ -12,25 +13,18 @@ import (
 
 // PacketView is used to represent data to the frontend UI
 type PacketView struct {
-	// unique uuid
-	// when a stream finished its reassembly, notify the frontend that the flow with uuid is closed
-	FlowID   string `json:"flow_id"`
-	FlowName string `json:"flow_name"`
-	// numerary for the packets processed in this flow, informational only
-	PacketID string `json:"packet_id"`
-	// IP that is not the server
-	// to be used in the frontend as an abstraction for the many flows between the client and the server
-	// a clientIP with 0 active flows is considered inactive
-	ClientIP string `json:"client_ip"`
-	ServerIP string `json:"server_ip"`
 	// time of capture
+	PacketID     string               `json:"packetID"`
+	ConnectionKey     string          `json:"connectionKey"`
 	TimeStamp        string           `json:"timestamp"`
-	PacketData       string           `json:"packet_data"`
-	NcRepresentation NcRepresentation `json:"nc_representation"`
+	IpEndpoints      string           `json:"ipEndpoints"`
+	PortEndpoints    string           `json:"portEndpoints"`
+	Direction        string           `json:"direction"`
+	PacketData       networking.ExportedPcb          `json:"packetData"`
+	NcRepresentation NcRepresentation `json:"ncRepresentation"`
 }
 
 type webSockets struct {
-	//cons [] * websocket.Conn
 	cons map[*websocket.Conn]bool
 	mu   sync.Mutex
 }
