@@ -91,3 +91,62 @@ func (nc *NcMoverRideOnCmd) PdbType() string {
 	};
 `
 }
+
+//struct PROTO_NC_MOVER_SOMEONE_RIDE_ON_CMD
+//{
+//  unsigned __int16 nHandle;
+//  unsigned __int16 nMoverHandle;
+//  char nSlot;
+//  char nGrade;
+//};
+type NcMoverSomeoneRideOnCmd struct {
+	Handle uint16
+	MoverHandle uint16
+	Slot byte
+	Grade byte
+}
+
+func (nc *NcMoverSomeoneRideOnCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcMoverSomeoneRideOnCmd) PdbType() string {
+	return `
+	struct PROTO_NC_MOVER_SOMEONE_RIDE_ON_CMD
+	{
+	  unsigned __int16 nHandle;
+	  unsigned __int16 nMoverHandle;
+	  char nSlot;
+	  char nGrade;
+	};
+`
+}
+
+//struct PROTO_NC_MOVER_SOMEONE_RIDE_OFF_CMD
+//{
+//  unsigned __int16 nHandle;
+//};
+type NcMoverSomeoneRideOffCmd struct {
+	Handle uint16
+}
+
+func (nc *NcMoverSomeoneRideOffCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcMoverSomeoneRideOffCmd) PdbType() string {
+	return `
+	struct PROTO_NC_MOVER_SOMEONE_RIDE_OFF_CMD
+	{
+	  unsigned __int16 nHandle;
+	};
+`
+}

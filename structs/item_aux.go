@@ -49,6 +49,6 @@ type ItemPacketInfo struct {
 	//};
 	Info struct {
 		ItemID   uint16
-		ItemAttr []byte `struct-size:"Parent.DataSize - 4"`
+		ItemAttr []byte `struct-size:"Parent.DataSize - 2"`
 	}
 }
