@@ -465,3 +465,66 @@ func (nc *NcBriefInfoLoginCharacterCmd) PdbType() string {
 	};
 `
 }
+
+//struct PROTO_NC_BRIEFINFO_CHANGEWEAPON_CMD
+//{
+//  PROTO_NC_BRIEFINFO_CHANGEUPGRADE_CMD upgradeinfo;
+//  unsigned __int16 currentmobid;
+//  char currentkilllevel;
+//};
+type NcBriefInfoChangeWeaponCmd struct {
+	UpgradeInfo NcBriefInfoChangeUpgradeCmd
+	CurrentMobID uint16
+	CurrentKillLevel byte
+}
+
+func (nc *NcBriefInfoChangeWeaponCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcBriefInfoChangeWeaponCmd) PdbType() string {
+	return `
+	struct PROTO_NC_BRIEFINFO_CHANGEWEAPON_CMD
+	{
+	  PROTO_NC_BRIEFINFO_CHANGEUPGRADE_CMD upgradeinfo;
+	  unsigned __int16 currentmobid;
+	  char currentkilllevel;
+	};
+`
+}
+
+//struct PROTO_NC_BRIEFINFO_INFORM_CMD
+//{
+//  unsigned __int16 nMyHnd;
+//  NETCOMMAND ReceiveNetCommand;
+//  unsigned __int16 hnd;
+//};
+type NcBriefInfoInformCmd struct {
+	MyHandle uint16
+	ReceiveNetCommand NetCommand
+	Handle uint16
+}
+
+func (nc *NcBriefInfoInformCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcBriefInfoInformCmd) PdbType() string {
+	return `
+	struct PROTO_NC_BRIEFINFO_INFORM_CMD
+	{
+	  unsigned __int16 nMyHnd;
+	  NETCOMMAND ReceiveNetCommand;
+	  unsigned __int16 hnd;
+	};
+`
+}
+

@@ -30,6 +30,9 @@ type clientWriter struct {
 	mu sync.Mutex
 }
 
+// CommandHandlers is a map of known operation codes linked to a caller
+type CommandHandlers map[uint16]func(ctx context.Context, pc *Command)
+
 // ShineService to be used by the calling shine service to:
 // 	1. configure the settings for TCP socket
 // 	2. assign the handlers for the operation codes handled by the shine service
@@ -50,18 +53,21 @@ func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
 
 // Listen on TPC socket for connection on given port
 func (ss *ShineService) Listen(ctx context.Context, port string) {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
 	ss.s.Set()
 	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", port)); err == nil {
 		log.Infof("Listening for TCP connections on: %v", l.Addr())
 		defer l.Close()
 		rand.Seed(time.Now().Unix())
 		for {
-			if c, err := l.Accept(); err == nil {
-				go ss.handleConnection(ctx, c)
-			} else {
-				log.Error(err)
+			select {
+			case <- ctx.Done():
+				return
+			default:
+				if c, err := l.Accept(); err == nil {
+					go ss.handleConnection(ctx, c)
+				} else {
+					log.Error(err)
+				}
 			}
 		}
 	} else {

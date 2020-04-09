@@ -25,12 +25,12 @@ type HandleWarden struct {
 }
 
 // NewHandlerWarden handlers are callbacks to be called when an operationCode is detected in a packet.
-func NewHandlerWarden(customHandlers map[uint16]func(ctx context.Context, command *Command)) *HandleWarden {
+func NewHandlerWarden(ch *CommandHandlers) *HandleWarden {
 	hw := &HandleWarden{
 		handlers: make(map[uint16]func(ctx context.Context, command *Command)),
 	}
 	hw.handlers[2055] = miscSeedAck
-	for k, v := range customHandlers {
+	for k, v := range *ch {
 		hw.handlers[k] = v
 	}
 	return hw

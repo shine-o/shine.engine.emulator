@@ -25,3 +25,11 @@ type NcActSomeoneShoutCmdSpeaker struct {
 type NcActSomeoneShoutCmdFlag struct {
 	BF0 byte
 }
+
+//struct CHARBRIEFINFO_NOTCAMP
+//{
+//  PROTO_EQUIPMENT equip;
+//};
+type CharBriefInfoNotCamped struct {
+	Equip ProtoEquipment
+}
