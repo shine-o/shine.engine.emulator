@@ -1,4 +1,4 @@
-package manager
+package service
 
 import (
 	"context"
@@ -20,7 +20,7 @@ func TestValidateCharacterRequest(t *testing.T) {
 
 	s := &session{
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
-		WorldID:  "1",
+		WorldID:  1,
 		UserName: "admin",
 		UserID:   1,
 	}
@@ -31,7 +31,7 @@ func TestValidateCharacterRequest(t *testing.T) {
 		t.Error(err)
 	} else {
 		nc := structs.NcAvatarCreateReq{}
-		err := nc.Unpack(data)
+		err := structs.Unpack(data, &nc)
 		if err != nil {
 			t.Error(err)
 		}
@@ -52,7 +52,7 @@ func TestCreateCharacter(t *testing.T) {
 
 	s := &session{
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
-		WorldID:  "1",
+		WorldID:  1,
 		UserName: "admin",
 		UserID:   1,
 	}
@@ -63,7 +63,7 @@ func TestCreateCharacter(t *testing.T) {
 		t.Error(err)
 	} else {
 		nc := structs.NcAvatarCreateReq{}
-		err := nc.Unpack(data)
+		err := structs.Unpack(data, &nc)
 		if err != nil {
 			t.Error(err)
 		}
@@ -83,7 +83,7 @@ func TestDeleteCharacter(t *testing.T) {
 
 	s := &session{
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
-		WorldID:  "1",
+		WorldID:  1,
 		UserName: "admin",
 		UserID:   1,
 	}
@@ -125,7 +125,7 @@ func TestCharacterNameInUseError(t *testing.T) {
 
 	s := &session{
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
-		WorldID:  "1",
+		WorldID:  1,
 		UserName: "admin2",
 		UserID:   2,
 	}
@@ -196,7 +196,7 @@ func TestNoSlotAvailableError(t *testing.T) {
 	defer cancel()
 	s := &session{
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
-		WorldID:  "1",
+		WorldID:  1,
 		UserName: "admin",
 		UserID:   1,
 	}
@@ -209,7 +209,7 @@ func TestNoSlotAvailableError(t *testing.T) {
 		t.Error(err)
 	} else {
 		nc := structs.NcAvatarCreateReq{}
-		err := nc.Unpack(data)
+		err := structs.Unpack(data, &nc)
 		if err != nil {
 			t.Error(err)
 		}
@@ -233,7 +233,7 @@ func TestInvalidSlotError(t *testing.T) {
 
 	s := &session{
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
-		WorldID:  "1",
+		WorldID:  1,
 		UserName: "admin",
 		UserID:   1,
 	}
@@ -244,7 +244,7 @@ func TestInvalidSlotError(t *testing.T) {
 		t.Error(err)
 	} else {
 		nc := structs.NcAvatarCreateReq{}
-		err := nc.Unpack(data)
+		err := structs.Unpack(data, &nc)
 		if err != nil {
 			t.Error(err)
 		}
@@ -269,7 +269,7 @@ func TestInvalidNameError(t *testing.T) {
 	defer cancel()
 	s := &session{
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
-		WorldID:  "1",
+		WorldID:  1,
 		UserName: "admin",
 		UserID:   1,
 	}
@@ -280,7 +280,7 @@ func TestInvalidNameError(t *testing.T) {
 		t.Error(err)
 	} else {
 		nc := structs.NcAvatarCreateReq{}
-		err := nc.Unpack(data)
+		err := structs.Unpack(data, &nc)
 		if err != nil {
 			t.Error(err)
 		}
@@ -306,7 +306,7 @@ func TestInvalidGenderClassBinaryOperation(t *testing.T) {
 	defer cancel()
 	s := &session{
 		ID:       "bcd1fde6-f9d0-451d-a4b6-4992bd6207e1",
-		WorldID:  "1",
+		WorldID:  1,
 		UserName: "admin",
 		UserID:   1,
 	}
@@ -317,7 +317,7 @@ func TestInvalidGenderClassBinaryOperation(t *testing.T) {
 		t.Error(err)
 	} else {
 		nc := structs.NcAvatarCreateReq{}
-		err := nc.Unpack(data)
+		err := structs.Unpack(data, &nc)
 		if err != nil {
 			t.Error(err)
 		}

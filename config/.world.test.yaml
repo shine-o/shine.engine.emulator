@@ -2,6 +2,11 @@ serve:
   worlds:
     - id: 1
       name: isya
+#      zones:
+#        - 1
+#        - 2
+#        - 3
+#        - 4
       connection_info:
         external_ip: 192.168.1.131
         port: 9110
@@ -15,23 +20,25 @@ crypt:
   xorLimit: 499
 
 #protocol:
-#  nc-data: "defaults/protocol-commands.yml"
+#  nc-data: "config/.commands.yml"
 
 gRPC:
   services:
     self:
-      - name: world
+      - name: service
         port: "50020"
     external:
       - name: login
-        host: 192.168.1.133
+        host: 192.168.1.131
         port: "50010"
 
 #protocol:
 ### POSTGRES, alternatives can be added if required
 database:
+  #  in_memory: false
   postgres:
-    host: postgres
+    #  host: 192.168.111.129
+    host: 192.168.1.238
     port: 5432
     db_name: shine
     db_user: user
@@ -39,6 +46,7 @@ database:
 
 session:
   redis:
-    host: redis
+#    host: 192.168.111.129
+    host: 192.168.1.238
     port: 6379
     db: 0

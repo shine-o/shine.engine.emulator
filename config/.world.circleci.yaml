@@ -15,25 +15,23 @@ crypt:
   xorLimit: 499
 
 #protocol:
-#  nc-data: "defaults/protocol-commands.yml"
+#  nc-data: "config/.commands.yml"
 
 gRPC:
   services:
     self:
-      - name: world
+      - name: service
         port: "50020"
     external:
       - name: login
-        host: 192.168.1.131
+        host: 192.168.1.133
         port: "50010"
 
 #protocol:
 ### POSTGRES, alternatives can be added if required
 database:
-  #  in_memory: false
   postgres:
-    #  host: 192.168.111.129
-    host: 192.168.1.238
+    host: postgres
     port: 5432
     db_name: shine
     db_user: user
@@ -41,7 +39,6 @@ database:
 
 session:
   redis:
-#    host: 192.168.111.129
-    host: 192.168.1.238
+    host: redis
     port: 6379
     db: 0

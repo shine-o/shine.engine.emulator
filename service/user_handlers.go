@@ -1,4 +1,4 @@
-package manager
+package service
 
 import (
 	"context"
@@ -28,8 +28,8 @@ func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
 	}
 }
 
-// acknowledge request of login to the world
-// send to the client world and character data
+// acknowledge request of login to the service
+// send to the client service and character data
 func userLoginWorldAck(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
