@@ -7,17 +7,18 @@ import (
 	"github.com/shine-o/shine.engine.networking/structs"
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
 	"github.com/spf13/viper"
+	"strconv"
 	"strings"
 )
 
 // ErrWTO world service timed out
 var ErrWTO = errors.New("world timed out")
 
-// ErrUNF user does not exist in the database
-var ErrUNF = errors.New("user not found")
-
 // ErrCC ctx.Done() signal was received
 var ErrCC = errors.New("context was canceled")
+
+// ErrNoWorld no world is available
+var ErrNoWorld = errors.New("no world is available")
 
 // ErrBC user sent bad userName and password combination
 var ErrBC = errors.New("bad credentials")
@@ -76,75 +77,143 @@ func checkWorldStatus(ctx context.Context) error {
 	case <-ctx.Done():
 		return ErrCC
 	default:
-		grpcc.mu.Lock()
-		conn := grpcc.services["world"]
-		state := conn.GetState().String()
-		grpcc.mu.Unlock()
-
-		if state == "READY" || state == "IDLE" {
-			return nil
+		if !viper.IsSet("worlds") {
+			return ErrNoWorld
 		}
-		return ErrWTO
+
+		worlds := viper.GetStringSlice("worlds")
+
+		for _, w := range worlds {
+			clientKey := fmt.Sprintf("gRPC.clients.%v", w)
+			_, err := newRpcConn(clientKey)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
+}
+
+type World struct {
+	ID uint8
+	Name string
+}
+
+type AvailableWorlds []World
+
+func avalWorlds() (AvailableWorlds, error)  {
+	aw := AvailableWorlds{}
+	if !viper.IsSet("worlds") {
+		return aw, ErrNoWorld
+	}
+	
+	worlds := make([]map[string]string, 0)
+	var m map[string]string
+	worldsI := viper.Get("worlds")
+	worldsS := worldsI.([]interface{})
+	for _, s := range worldsS {
+		serviceMap := s.(map[interface{}]interface{})
+		m = make(map[string]string)
+		for k, v := range serviceMap {
+			m[k.(string)] = v.(string)
+		}
+		worlds = append(worlds, m)
+	}
+	
+	for _, v := range worlds {
+		id, err := strconv.Atoi(v["id"])
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+		w := World{
+			ID:   uint8(id),
+			Name: v["name"],
+		}
+		aw = append(aw, w)
+	}
+	return aw, nil
 }
 
 func serverSelectScreen(ctx context.Context) (structs.NcUserLoginAck, error) {
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return structs.NcUserLoginAck{}, nil
 	default:
-		grpcc.mu.Lock()
-		conn := grpcc.services["world"]
-		wc := lw.NewWorldClient(conn)
-		grpcc.mu.Unlock()
+		nc := structs.NcUserLoginAck{}
 
-		rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
-		wi, err := wc.AvailableWorlds(rpcCtx, &lw.ClientMetadata{
-			Ip: "127.0.0.01",
-		})
-
+		aw, err := avalWorlds()
 		if err != nil {
 			return structs.NcUserLoginAck{}, err
 		}
 
-		nc := structs.NcUserLoginAck{}
-		for _, w := range wi.Worlds {
-			ws := structs.WorldInfo{
-				WorldNumber: byte(w.WorldNumber),
+		for _, w := range aw {
+			conn, err := newRpcConn(w.Name)
+			if err != nil {
+				return nc, err
+			}
+			c := lw.NewWorldClient(conn)
+
+			wd, err := c.GetWorldData(ctx, &lw.WorldQuery{
+				Name: w.Name,
+			})
+
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			wi := structs.WorldInfo{
+				WorldNumber: byte(wd.WorldNumber),
 				// 1: behaviour -> cannot enter, message -> The server is under maintenance.
 				// 2: behaviour -> cannot enter, message -> You cannot connect to an empty server.
 				// 3: behaviour -> cannot enter, message -> The server has been reserved for a special use.
 				// 4: behaviour -> cannot enter, message -> Login failed due to an unknown error.
 				// 5: behaviour -> cannot enter, message -> The server is full.
 				// 6: behaviour -> ok
-				WorldStatus: byte(w.WorldStatus),
+				WorldStatus: byte(wd.WorldStatus),
 			}
-			copy(ws.WorldName.Name[:], w.WorldName)
-			nc.Worlds = append(nc.Worlds, ws)
+			nc.Worlds = append(nc.Worlds, wi)
 		}
-		nc.NumOfWorld = byte(len(nc.Worlds))
 		return nc, nil
 	}
 }
 
 // request info about selected world
-func userSelectedServer(ctx context.Context) (*lw.WorldConnectionInfo, error) {
+func userSelectedServer(ctx context.Context, req structs.NcUserWorldSelectReq) (*lw.WorldData, error) {
 	select {
 	case <-ctx.Done():
-		return &lw.WorldConnectionInfo{}, ErrCC
+		return &lw.WorldData{}, ErrCC
 	default:
-		grpcc.mu.Lock()
-		conn := grpcc.services["world"]
-		c := lw.NewWorldClient(conn)
-		grpcc.mu.Unlock()
 
-		rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
+		aw, err := avalWorlds()
 
-		wci, err := c.ConnectionInfo(rpcCtx, &lw.SelectedWorld{Num: 1})
 		if err != nil {
-			return &lw.WorldConnectionInfo{}, err
+			return &lw.WorldData{}, err
+
 		}
-		return wci, nil
+		for _, w := range aw {
+			if w.ID == req.WorldNo {
+				conn, err := newRpcConn(w.Name)
+
+				if err != nil {
+					return &lw.WorldData{}, err
+				}
+
+				c := lw.NewWorldClient(conn)
+
+				wd, err := c.GetWorldData(ctx, &lw.WorldQuery{
+					Id: int32(req.WorldNo),
+				})
+
+				if err != nil {
+					return &lw.WorldData{}, err
+				}
+
+				return wd, nil
+			}
+		}
+		return &lw.WorldData{}, ErrNoWorld
 	}
 }
 

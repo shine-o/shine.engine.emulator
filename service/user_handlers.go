@@ -164,12 +164,11 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 			})
 		}
 		nc := structs.NcUserWorldSelectReq{}
-		//if err := nc.Unpack(pc.Base.Data); err != nil {
 		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 			go unexpectedFailure()
 			return
 		}
-		wci, err := userSelectedServer(ctx)
+		wci, err := userSelectedServer(ctx, nc)
 		if err != nil {
 			go unexpectedFailure()
 			return
@@ -178,7 +177,7 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 	}
 }
 
-func userWorldSelectAck(ctx context.Context, wci *lw.WorldConnectionInfo) {
+func userWorldSelectAck(ctx context.Context, wd *lw.WorldData) {
 	select {
 	case <-ctx.Done():
 		return
@@ -186,9 +185,9 @@ func userWorldSelectAck(ctx context.Context, wci *lw.WorldConnectionInfo) {
 		nc := structs.NcUserWorldSelectAck{
 			WorldStatus: 6,
 			Ip:          structs.Name4{},
-			Port:        uint16(wci.Port),
+			Port:        uint16(wd.Port),
 		}
-		copy(nc.Ip.Name[:], wci.IP)
+		copy(nc.Ip.Name[:], wd.IP)
 
 		pc := &networking.Command{
 			Base: networking.CommandBase{

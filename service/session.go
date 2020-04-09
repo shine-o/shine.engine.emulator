@@ -28,8 +28,6 @@ func (s *session) Identifier() string {
 }
 
 func initRedis() {
-	//log = logger.Init("LoginLogger", true, false, ioutil.Discard)
-	//log.Info("LoginLogger init()")
 	host := viper.GetString("session.redis.host")
 	port := viper.GetString("session.redis.port")
 	db := viper.GetInt("session.redis.db")
@@ -38,8 +36,8 @@ func initRedis() {
 	log.Infof("initializing redis instance: %v", addr)
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
-		Password: "", // no password set
-		DB:       db, // use default DB
+		Password: "",
+		DB:       db,
 	})
 	redisClient = client
 }

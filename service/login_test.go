@@ -21,15 +21,15 @@ func TestMain(m *testing.M) {
 	defer cancel()
 	log = logger.Init("test logger", true, false, ioutil.Discard)
 	log.Info("test logger")
-	if path, err := filepath.Abs("../defaults"); err != nil {
+	if path, err := filepath.Abs("../config"); err != nil {
 		log.Fatal(err)
 	} else {
 		viper.AddConfigPath(path)
 		viper.SetConfigType("yaml")
 
-		viper.SetConfigName(".login.circleci")
+		//viper.SetConfigName(".login.circleci")
 		// for running tests locally, use this:
-		//viper.SetConfigName(".login.test")
+		viper.SetConfigName(".login.test")
 
 		// If a config file is found, read it in.
 		if err := viper.ReadInConfig(); err == nil {
@@ -40,8 +40,7 @@ func TestMain(m *testing.M) {
 		viper.SetDefault("crypt.xorKey", "0759694a941194858c8805cba09ecd583a365b1a6a16febddf9402f82196c8e99ef7bfbdcfcdb27a009f4022fc11f90c2e12fba7740a7d78401e2ca02d06cba8b97eefde49ea4e13161680f43dc29ad486d7942417f4d665bd3fdbe4e10f50f6ec7a9a0c273d2466d322689c9a520be0f9a50b25da80490dfd3e77d156a8b7f40f9be80f5247f56f832022db0f0bb14385c1cba40b0219dff08becdb6c6d66ad45be89147e2f8910b89360d860def6fe6e9bca06c1759533cfc0b2e0cca5ce12f6e5b5b426c5b2184f2a5d261b654df545c98414dc7c124b189cc724e73c64ffd63a2cee8c8149396cb7dcbd94e232f7dd0afc020164ec4c940ab156f5c9a934de0f3827bc81300f7b3825fee83e29ba5543bf6b9f1f8a4952187f8af888245c4fe1a830878e501f2fd10cb4fd0abcdc1285e252ee4a5838abffc63db960640ab450d54089179ad585cfec0d7e817fe3c3040122ec27ccfa3e21a654c8de00b6df279ff625340785bfa7a5a5e0830c3d5d2040af60a36456f305c41c7d3798c3e85a6e5885a49a6b6af4a37b619b09401e604b32d951a4fef95d4e4afb4ad47c330233d59dce5baa5a7cd8f805fa1f2b8c725750ae6c1989ca01fcfc299b61126863654626c45b50aa2bbeef9a790223752c2013fdd95a7623f10bb5b859f99f7ae606e9a53ab450bf165898b39a6e36ee8deb")
 		viper.SetDefault("crypt.xorLimit", 350)
 		viper.SetDefault("crypt.client_version.ignore", true)
-		//viper.SetDefault("crypt.client_version.key", "ebe951290be5b45f1fb075f5505a90b6")
-		viper.SetDefault("protocol.nc-data", "defaults/protocol-commands.yml")
+		viper.SetDefault("protocol.commands", "../config/.commands.yml")
 
 		requiredParams := []string{
 			"database.postgres.host",
@@ -55,9 +54,27 @@ func TestMain(m *testing.M) {
 			}
 		}
 	}
+
+	s := &networking.Settings{}
+
+	if xk, err := hex.DecodeString(viper.GetString("crypt.xorKey")); err != nil {
+		log.Error(err)
+		os.Exit(1)
+	} else {
+		s.XorKey = xk
+	}
+
+	s.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
+
+	if path, err := filepath.Abs(viper.GetString("protocol.commands")); err != nil {
+		log.Error(err)
+	} else {
+		s.CommandsFilePath = path
+	}
+	s.Set()
+
 	db = dbConn(ctx, "accounts")
 	initRedis()
-	//gRPCClients(ctx)
 	os.Exit(m.Run())
 }
 
@@ -80,10 +97,7 @@ func TestCheckClientVersion(t *testing.T) {
 				t.Error(err)
 			} else {
 				pc.NcStruct = &nc
-				lc := LoginCommand{
-					pc: &pc,
-				}
-				if _, err := lc.checkClientVersion(ctx); err != nil {
+				if _, err := checkClientVersion(ctx, nc); err != nil {
 					t.Error(err)
 				}
 			}
@@ -117,58 +131,6 @@ func TestCheckCredentials(t *testing.T) {
 	}
 }
 
-// depends on external service and manages no data
-// for completeness sake, run this test when developing
-//func TestCheckWorldStatus(t *testing.T) {
-//	// timeout
-//	ctx := context.Background()
-//	ctx, cancel := context.WithCancel(ctx)
-//	defer cancel()
-//	lc := LoginCommand{}
-//	if err := lc.checkWorldStatus(ctx); err != nil {
-//		t.Error(err)
-//	}
-//}
-
-// depends on external service and data is handled on the server side
-// for completeness sake, run this test when developing
-//func TestUserSelectedServer(t *testing.T) {
-//	ctx := context.Background()
-//	ctx, cancel := context.WithCancel(ctx)
-//	defer cancel()
-//	// sniffer output -> {"packetType":"small","length":3,"department":3,"command":"B","opCode":3083,"data":"00","rawData":"030b0c00","friendlyName":"NC_USER_WORLDSELECT_REQ"}
-//	if data, err := hex.DecodeString("030b0c00"); err != nil {
-//		t.Error(err)
-//	} else {
-//		if pc, err := networking.DecodePacket("small", 3, data[1:]); err != nil { // from index 1, as previous bytes are length info for this packet
-//			t.Error(err)
-//		} else {
-//			nc := structs.NcUserUsLoginReq{}
-//			if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
-//				t.Error(err)
-//			} else {
-//				pc.NcStruct = nc
-//				lc := LoginCommand{
-//					pc: &pc,
-//				}
-//				if data, err := lc.userSelectedServer(ctx); err != nil {
-//					t.Error(err)
-//				} else {
-//					rnc := structs.NcUserWorldSelectAck{}
-//					if err := networking.ReadBinary(data, &rnc); err != nil {
-//						t.Error(err)
-//					} else {
-//						if rnc.WorldStatus != byte(6) {
-//							t.Errorf("unexpected world status %v", rnc.WorldStatus)
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//}
-
-//
 func TestLoginByCode(t *testing.T) {
 	// setup dummy otp token in redis store
 	otp := "tEGMohMSNboCclYHGIXUOGHKZTKcjLfr"
@@ -190,10 +152,7 @@ func TestLoginByCode(t *testing.T) {
 					t.Error(err)
 				} else {
 					pc.NcStruct = &nc
-					lc := LoginCommand{
-						pc: &pc,
-					}
-					if err := lc.loginByCode(ctx); err != nil {
+					if err := loginByCode(ctx, nc); err != nil {
 						t.Error(err)
 					}
 				}

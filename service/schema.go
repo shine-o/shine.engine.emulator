@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
@@ -25,25 +26,36 @@ type User struct {
 	DeletedAt time.Time `pg:"soft_delete"`
 }
 
-// Migrate schemas and models
 func Migrate(cmd *cobra.Command, args []string) {
-
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
 	log = logger.Init("Database Logger", true, false, ioutil.Discard)
 	log.Info("Database Logger Migrate()")
-	db := dbConn(ctx, "accounts")
+	db := dbConn(ctx, "service")
 	defer db.Close()
 	if yes, err := cmd.Flags().GetBool("fixtures"); err != nil {
 		log.Error(err)
 	} else {
 		if yes {
-			purge(db)
-			createSchema(db)
-			fixtures(db)
+			err := purge(db)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = createSchema(db)
+			if err != nil {
+				log.Fatal(err)
+			}
+			err = fixtures(db)
+			if err != nil {
+				log.Fatal(err)
+			}
 		} else {
-			createSchema(db)
+			err = createSchema(db)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 }
@@ -62,47 +74,62 @@ func dbConn(ctx context.Context, schema string) *pg.DB {
 		User:            dbUser,
 		Password:        dbPassword,
 		Database:        dbName,
-		ApplicationName: "login",
+		ApplicationName: "accounts",
 		TLSConfig:       nil,
-		//DialTimeout:     15,
-		//ReadTimeout:     5,
-		//WriteTimeout:    5,
 		PoolSize:    5,
 		PoolTimeout: 5,
 	})
+
 	log.Info(db)
 	db = db.WithParam(schema, pg.Safe(schema))
 	return db.WithContext(ctx)
 }
 
-func createSchema(db *pg.DB) {
-	db.Exec("CREATE SCHEMA IF NOT EXISTS accounts;")
+func createSchema(db *pg.DB) error {
+	schemaTx,err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer schemaTx.Close()
 
+	_, err = schemaTx.Exec("CREATE SCHEMA IF NOT EXISTS accounts;")
+
+	if err != nil {
+		log.Fatal(err)
+	}
 	for _, model := range []interface{}{
 		(*User)(nil),
 	} {
-		err := db.CreateTable(model, &orm.CreateTableOptions{
+		err := schemaTx.CreateTable(model, &orm.CreateTableOptions{
 			IfNotExists:   true,
 			FKConstraints: true,
 		})
 		if err != nil {
-			log.Fatal(err)
+			return errors.New(fmt.Sprintf("%v, %v", err, schemaTx.Rollback()))
 		}
 	}
+	return schemaTx.Commit()
 }
 
-func purge(db *pg.DB) {
+func purge(db *pg.DB) error {
+	purgeTx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer purgeTx.Close()
+
 	for _, model := range []interface{}{
 		(*User)(nil),
 	} {
-		err := db.DropTable(model, &orm.DropTableOptions{
+		err := purgeTx.DropTable(model, &orm.DropTableOptions{
 			IfExists: true,
 			Cascade:  true,
 		})
 		if err != nil {
-			log.Fatal(err)
+			return errors.New(fmt.Sprintf("%v, %v", err, purgeTx.Rollback()))
 		}
 	}
+	return purgeTx.Commit()
 }
 
 func md5Hash(text string) string {
@@ -111,14 +138,14 @@ func md5Hash(text string) string {
 	return hex.EncodeToString(hasher.Sum(nil))
 }
 
-func fixtures(db *pg.DB) {
+func fixtures(db *pg.DB) error {
 	password := md5Hash("admin")
 	err := db.Insert(&User{
 		UserName: "admin",
 		Password: password,
 	})
-
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
+	return nil
 }
