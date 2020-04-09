@@ -1,4 +1,4 @@
-package manager
+package service
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/shine-o/shine.engine.networking"
 	"github.com/shine-o/shine.engine.networking/structs"
 	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
-	"strconv"
+	"github.com/spf13/viper"
 	"strings"
 	"time"
 )
@@ -38,8 +38,8 @@ func worldTime(ctx context.Context) (structs.NcMiscGameTimeAck, error) {
 	}
 }
 
-// user wants to log to given world
-// check if world is okay
+// user wants to log to given service
+// check if service is okay
 // take user name, persist to redis
 func loginToWorld(ctx context.Context, req structs.NcUserLoginWorldReq) error {
 	select {
@@ -51,11 +51,13 @@ func loginToWorld(ctx context.Context, req structs.NcUserLoginWorldReq) error {
 		userName := strings.TrimRight(string(req.User.Name[:]), "\x00")
 		ws.UserName = userName
 
-		// fetch user id using user name, login serve will check if it has a session for that user
-		grpcc.mu.Lock()
-		conn := grpcc.services["login"]
+		conn, err := newRpcConn("login")
+		if err != nil {
+			return err
+		}
+		defer conn.Close()
+
 		c := lw.NewLoginClient(conn)
-		grpcc.mu.Unlock()
 
 		rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
 
@@ -73,7 +75,6 @@ func loginToWorld(ctx context.Context, req structs.NcUserLoginWorldReq) error {
 			return err
 		}
 		return nil
-
 	}
 }
 
@@ -84,16 +85,12 @@ func userWorldInfo(ctx context.Context) (structs.NcUserLoginWorldAck, error) {
 	default:
 		wsi := ctx.Value(networking.ShineSession)
 		ws := wsi.(*session)
-		worldID, err := strconv.Atoi(ws.WorldID)
-
-		if err != nil {
-			return structs.NcUserLoginWorldAck{}, err
-		}
+		worldID := viper.GetInt("service.id")
 
 		var avatars []structs.AvatarInformation
 		var chars []Character
 
-		err = worldDB.Model(&chars).
+		err := worldDB.Model(&chars).
 			Relation("Appearance").
 			//Where("user_id = ?", ws.UserID).
 			Relation("Attributes").
@@ -125,14 +122,14 @@ func userWorldInfo(ctx context.Context) (structs.NcUserLoginWorldAck, error) {
 
 // user clicked previous
 // generate a otp token and store it in redis
-// login manager will use the token to authenticate the user and send him to server select
+// login service will use the token to authenticate the user and send him to server select
 func returnToServerSelect(ctx context.Context) (structs.NcUserWillWorldSelectAck, error) {
 	select {
 	case <-ctx.Done():
 		return structs.NcUserWillWorldSelectAck{}, errCC
 	default:
 		otp := randStringBytesMaskImprSrcUnsafe(32)
-		err := redisClient.Set(otp, otp, 20*time.Second).Err()
+		err := redisClient.Set(otp, otp, 20 * time.Second).Err()
 		if err != nil {
 			return structs.NcUserWillWorldSelectAck{}, err
 		}

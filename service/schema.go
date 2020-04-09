@@ -1,7 +1,8 @@
-package manager
+package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
@@ -13,14 +14,13 @@ import (
 
 // Migrate schemas and models
 func Migrate(cmd *cobra.Command, args []string) {
-
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	log = logger.Init("Database Logger", true, false, ioutil.Discard)
 	log.Info("Database Logger Migrate()")
-	db := dbConn(ctx, "world")
+	db := dbConn(ctx, "service")
 	defer db.Close()
 	if yes, err := cmd.Flags().GetBool("fixtures"); err != nil {
 		log.Error(err)
@@ -34,7 +34,6 @@ func Migrate(cmd *cobra.Command, args []string) {
 			if err != nil {
 				log.Fatal(err)
 			}
-			fixtures()
 		} else {
 			err = createSchema(db)
 			if err != nil {
@@ -58,7 +57,7 @@ func dbConn(ctx context.Context, schema string) *pg.DB {
 		User:            dbUser,
 		Password:        dbPassword,
 		Database:        dbName,
-		ApplicationName: "world",
+		ApplicationName: "service",
 		TLSConfig:       nil,
 		//DialTimeout:     15,
 		//ReadTimeout:     5,
@@ -72,8 +71,17 @@ func dbConn(ctx context.Context, schema string) *pg.DB {
 }
 
 func createSchema(db *pg.DB) error {
-	db.Exec("CREATE SCHEMA IF NOT EXISTS world;")
+	schemaTx,err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer schemaTx.Close()
 
+	_, err = schemaTx.Exec("CREATE SCHEMA IF NOT EXISTS service;")
+
+	if err != nil {
+		log.Fatal(err)
+	}
 	for _, model := range []interface{}{
 		(*Character)(nil),
 		(*CharacterAppearance)(nil),
@@ -82,18 +90,24 @@ func createSchema(db *pg.DB) error {
 		(*CharacterInventory)(nil),
 		(*CharacterEquippedItems)(nil),
 	} {
-		err := db.CreateTable(model, &orm.CreateTableOptions{
+		err := schemaTx.CreateTable(model, &orm.CreateTableOptions{
 			IfNotExists:   true,
 			FKConstraints: true,
 		})
 		if err != nil {
-			return err
+			return errors.New(fmt.Sprintf("%v, %v", err, schemaTx.Rollback()))
 		}
 	}
-	return nil
+	return schemaTx.Commit()
 }
 
 func purge(db *pg.DB) error {
+	purgeTx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer purgeTx.Close()
+
 	for _, model := range []interface{}{
 		(*Character)(nil),
 		(*CharacterAppearance)(nil),
@@ -102,18 +116,13 @@ func purge(db *pg.DB) error {
 		(*CharacterInventory)(nil),
 		(*CharacterEquippedItems)(nil),
 	} {
-		err := db.DropTable(model, &orm.DropTableOptions{
+		err := purgeTx.DropTable(model, &orm.DropTableOptions{
 			IfExists: true,
 			Cascade:  true,
 		})
 		if err != nil {
-			return err
+			return errors.New(fmt.Sprintf("%v, %v", err, purgeTx.Rollback()))
 		}
 	}
-
-	return nil
-}
-
-func fixtures() {
-
+	return purgeTx.Commit()
 }

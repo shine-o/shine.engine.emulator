@@ -1,4 +1,4 @@
-package manager
+package service
 
 import (
 	"context"
@@ -14,7 +14,7 @@ import (
 
 // Character model for the database layer
 type Character struct {
-	tableName     struct{} `pg:"world.characters"`
+	tableName     struct{} `pg:"service.characters"`
 	ID            uint64
 	UserID        uint64 `pg:",notnull"`
 	Name          string `pg:",notnull,unique"`
@@ -31,7 +31,7 @@ type Character struct {
 
 // CharacterAppearance model for the database layer
 type CharacterAppearance struct {
-	tableName   struct{} `pg:"world.character_appearance"`
+	tableName   struct{} `pg:"service.character_appearance"`
 	ID          uint64
 	CharacterID uint64 //
 	Character   *Character
@@ -45,7 +45,7 @@ type CharacterAppearance struct {
 
 // CharacterAttributes model for the database layer
 type CharacterAttributes struct {
-	tableName    struct{} `pg:"world.character_attributes"`
+	tableName    struct{} `pg:"service.character_attributes"`
 	ID           uint64
 	CharacterID  uint64
 	Character    *Character
@@ -68,7 +68,7 @@ type CharacterAttributes struct {
 
 // CharacterLocation model for the database layer
 type CharacterLocation struct {
-	tableName   struct{} `pg:"world.character_location"`
+	tableName   struct{} `pg:"service.character_location"`
 	ID          uint64
 	CharacterID uint64 //
 	Character   *Character
@@ -82,7 +82,7 @@ type CharacterLocation struct {
 
 // CharacterInventory model for the database layer
 type CharacterInventory struct {
-	tableName   struct{} `pg:"world.character_inventory"`
+	tableName   struct{} `pg:"service.character_inventory"`
 	ID          uint64
 	CharacterID uint64 //
 	Character   *Character
@@ -97,7 +97,7 @@ type CharacterInventory struct {
 
 // CharacterEquippedItems model for the database layer
 type CharacterEquippedItems struct {
-	tableName        struct{} `pg:"world.character_equipped_items"`
+	tableName        struct{} `pg:"service.character_equipped_items"`
 	ID               uint64
 	CharacterID      uint64 //
 	Character        *Character

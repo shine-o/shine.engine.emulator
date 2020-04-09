@@ -11,7 +11,7 @@ require (
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.2.2 // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
-	github.com/shine-o/shine.engine.networking v0.0.0-20200401184904-1c8aadb06909
+	github.com/shine-o/shine.engine.networking v0.0.0-00010101000000-000000000000
 	github.com/shine-o/shine.engine.protocol-buffers/login-world v0.0.0-20200329210513-1b648aeb6624
 	github.com/spf13/afero v1.2.2 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
@@ -26,3 +26,5 @@ require (
 )
 
 replace github.com/shine-o/shine.engine.networking => C:\Users\marbo\go\src\github.com\shine-o\shine.engine.networking
+
+replace github.com/shine-o/shine.engine.protocol-buffers/login-world => C:\Users\marbo\go\src\github.com\shine-o\shine.engine.protocol-buffers/login-world

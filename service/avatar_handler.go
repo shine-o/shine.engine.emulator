@@ -1,4 +1,4 @@
-package manager
+package service
 
 import (
 	"context"
@@ -18,7 +18,7 @@ func avatarCreateReq(ctx context.Context, pc *networking.Command) {
 
 		nc = structs.NcAvatarCreateReq{}
 
-		err := nc.Unpack(pc.Base.Data)
+		err := structs.Unpack(pc.Base.Data, &nc)
 		if err != nil {
 			log.Error(err)
 			return
