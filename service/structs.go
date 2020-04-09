@@ -90,7 +90,7 @@ func ncStructRepresentation(opCode uint16, data []byte) (NcRepresentation, error
 		nc := structs.NcUserWorldSelectAck{}
 		return ncStructData(&nc, data)
 	case 3162:
-		nc := structs.NcUserLoginWorldReq{}
+		nc := structs.NcUserUsLoginReq{}
 		return ncStructData(&nc, data)
 	case 4153:
 		// NC_CHAR_CLIENT_SHAPE_CMD

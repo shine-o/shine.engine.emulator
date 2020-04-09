@@ -279,11 +279,11 @@ func (ss *shineStream) Reassembled(reassemblies []tcpassembly.Reassembly) {
 func (ss *shineStream) ReassemblyComplete() {
 	log.Warningf("reassembly complete for stream [ %v - %v]", ss.net.String(), ss.transport.String()) // ip of the stream, port of the stream
 	ss.cancel()
-	cf := CompletedFlow{
-		FlowCompleted: true,
-		FlowID:        ss.flowID,
-	}
-	go uiCompletedFlow(cf)
+	//cf := CompletedFlow{
+	//	FlowCompleted: true,
+	//	FlowID:        ss.flowID,
+	//}
+	//go uiCompletedFlow(cf)
 }
 
 // handle stream data flowing from the client
