@@ -1,4 +1,4 @@
-package networking
+package net
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/shine-o/shine.engine.networking/structs"
+	"github.com/shine-o/shine.engine.core/structs"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"strconv"

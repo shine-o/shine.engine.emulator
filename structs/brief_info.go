@@ -306,13 +306,13 @@ func (nc *NcBriefInfoCharacterCmd) PdbType() string {
 //  unsigned __int16 nSlotHandle[10];
 //};
 type NcBriefInfoRegenMoverCmd struct {
-	Handle uint16
-	ID uint32
-	HP uint32
+	Handle      uint16
+	ID          uint32
+	HP          uint32
 	Coordinates ShineCoordType
-	AbstateBit AbstateBit
-	Grade byte
-	SlotHandle [9]uint16
+	AbstateBit  AbstateBit
+	Grade       byte
+	SlotHandle  [9]uint16
 }
 
 func (nc *NcBriefInfoRegenMoverCmd) String() string {
@@ -425,27 +425,27 @@ func (nc *NcBriefInfoMoverCmd) PdbType() string {
 //  char IsUseItemMinimon;
 //};
 type NcBriefInfoLoginCharacterCmd struct {
-	Handle      uint16
-	CharID      Name5
-	Coordinates ShineCoordType
-	Mode        byte
-	Class       byte
-	Shape       ProtoAvatarShapeInfo
-	ShapeData   NcBriefInfoLoginCharacterCmdShapeData
-	Polymorph uint16
-	Emoticon StopEmoticonDescript
-	CharTitle CharTitleBriefInfo
-	AbstateBit AbstateBit
-	MyGuild uint32
-	Type byte
+	Handle          uint16
+	CharID          Name5
+	Coordinates     ShineCoordType
+	Mode            byte
+	Class           byte
+	Shape           ProtoAvatarShapeInfo
+	ShapeData       NcBriefInfoLoginCharacterCmdShapeData
+	Polymorph       uint16
+	Emoticon        StopEmoticonDescript
+	CharTitle       CharTitleBriefInfo
+	AbstateBit      AbstateBit
+	MyGuild         uint32
+	Type            byte
 	IsAcademyMember byte
-	IsAutoPick byte
-	Level byte
-	Animation [32]byte
-	MoverHandle uint16
-	MoverSlot byte
-	KQTeamType byte
-	UsingMinipet byte
+	IsAutoPick      byte
+	Level           byte
+	Animation       [32]byte
+	MoverHandle     uint16
+	MoverSlot       byte
+	KQTeamType      byte
+	UsingMinipet    byte
 }
 
 func (nc *NcBriefInfoLoginCharacterCmd) String() string {
@@ -504,9 +504,9 @@ func (nc *NcBriefInfoChangeWeaponCmd) PdbType() string {
 //  unsigned __int16 hnd;
 //};
 type NcBriefInfoInformCmd struct {
-	MyHandle uint16
+	MyHandle          uint16
 	ReceiveNetCommand NetCommand
-	Handle uint16
+	Handle            uint16
 }
 
 func (nc *NcBriefInfoInformCmd) String() string {

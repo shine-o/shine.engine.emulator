@@ -200,7 +200,7 @@ func (nc *NcCharOptionGetShortcutSizeAck) PdbType() string {
 //};
 type NcCharGuildCmd struct {
 	GuildNumber uint32
-	Guilds    GuildClient
+	Guilds      GuildClient
 }
 
 func (nc *NcCharGuildCmd) String() string {
