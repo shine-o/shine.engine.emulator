@@ -2,8 +2,8 @@ package service
 
 import (
 	"context"
-	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.networking/structs"
+	"github.com/shine-o/shine.engine.core/networking"
+	"github.com/shine-o/shine.engine.core/structs"
 )
 
 // handle user, given his account

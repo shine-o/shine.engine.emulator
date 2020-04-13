@@ -2,8 +2,7 @@ package service
 
 import (
 	"context"
-	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.networking/structs"
+	"github.com/shine-o/shine.engine.core/structs"
 	"reflect"
 	"testing"
 )
@@ -26,11 +25,8 @@ func TestReturnToServerSelect(t *testing.T) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	wc := WorldCommand{
-		pc: &networking.Command{},
-	}
 
-	if rnc, err := wc.returnToServerSelect(ctx); err != nil {
+	if rnc, err := returnToServerSelect(ctx); err != nil {
 		t.Error(err)
 	} else {
 		if reflect.TypeOf(rnc) != reflect.TypeOf(structs.NcUserWillWorldSelectAck{}) {

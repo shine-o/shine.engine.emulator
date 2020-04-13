@@ -5,7 +5,8 @@ import (
 	"encoding/hex"
 	"github.com/go-pg/pg/v9"
 	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.networking"
+	"github.com/shine-o/shine.engine.core/database"
+	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -16,7 +17,7 @@ import (
 
 var (
 	log     *logger.Logger
-	worldDB *pg.DB
+	db *pg.DB
 )
 
 func init() {
@@ -32,12 +33,19 @@ func Start(cmd *cobra.Command, args []string) {
 
 	initRedis()
 
-	go newRpcServer("world")
+	go newRPCServer("world")
 
-	worldDB = dbConn(ctx, "service")
+	db = database.Connection(ctx, database.ConnectionParams{
+		User:     viper.GetString("database.postgres.db_user"),
+		Password: viper.GetString("database.postgres.db_password"),
+		Host:     viper.GetString("database.postgres.host"),
+		Port:     viper.GetString("database.postgres.port"),
+		Database: viper.GetString("database.postgres.db_name"),
+		Schema:   viper.GetString("database.postgres.schema"),
+	})
 
 	defer cancel()
-	defer worldDB.Close()
+	defer db.Close()
 
 	go startWorld(ctx)
 

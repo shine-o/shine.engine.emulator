@@ -43,6 +43,7 @@ database:
     db_name: shine
     db_user: user
     db_password: password
+    schema: world
 
 session:
   redis:
