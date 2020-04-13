@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package world;
+
+service World {
+    rpc GetWorldData(WorldQuery) returns (WorldData) {};
+    rpc Character(CharacterQuery) returns (CharacterData) {};
+    rpc Database(Empty) returns (DatabaseInfo) {};
+}
+
+message WorldQuery {
+    string Name = 1;
+    int32 ID = 2;
+}
+
+message WorldData {
+    int32 WorldNumber = 1;
+    string WorldName = 2;
+    int32 WorldStatus = 3;
+    string IP = 4;
+    int32  Port = 5;
+}
+
+message CharacterQuery {
+    string Name = 1;
+}
+
+message CharacterData {
+    repeated bytes Data = 1;
+}
+
+message Empty{}
+message DatabaseInfo{}
