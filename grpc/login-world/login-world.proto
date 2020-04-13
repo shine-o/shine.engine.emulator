@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package lw;
+
+service World {
+    rpc GetWorldData(WorldQuery) returns (WorldData) {};
+}
+
+service Login {
+    rpc AccountInfo(User) returns (UserInfo) {};
+}
+
+message WorldQuery {
+    string name = 1;
+    int32 id = 2;
+}
+
+message WorldData {
+    int32 WorldNumber = 1;
+    string WorldName = 2;
+    int32 WorldStatus = 3;
+    string IP = 4;
+    int32  Port = 5;
+}
+
+message User {
+    string userName = 1;
+}
+
+message UserInfo {
+    uint64 userID = 1;
+}
