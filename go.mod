@@ -13,3 +13,5 @@ require (
 	github.com/spf13/viper v1.6.3
 	google.golang.org/grpc v1.28.1
 )
+
+replace github.com/shine-o/shine.engine.core => C:\Users\marbo\go\src\github.com\shine-o\shine.engine.core
