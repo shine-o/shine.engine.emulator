@@ -1,11 +1,11 @@
-package networking
+package net
 
 import (
 	"bufio"
 	"context"
 	"fmt"
 	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.networking/structs"
+	"github.com/shine-o/shine.engine.core/structs"
 	"io"
 	"io/ioutil"
 	"math/rand"

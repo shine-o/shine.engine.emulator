@@ -1,4 +1,4 @@
-package networking
+package net
 
 // SessionFactory type for the shine service to implement if it needs session data
 type SessionFactory interface {

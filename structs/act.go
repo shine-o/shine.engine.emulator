@@ -162,10 +162,10 @@ func (nc *NcActGatherStartReq) PdbType() string {
 //  char content[];
 //};
 type NcActSomeoneShoutCmd struct {
-	Count byte
+	Count   byte
 	Speaker NcActSomeoneShoutCmdSpeaker
-	Flag NcActSomeoneShoutCmdFlag
-	Len byte
+	Flag    NcActSomeoneShoutCmdFlag
+	Len     byte
 	Content []byte `struct:"sizefrom=Len"`
 }
 
@@ -196,7 +196,7 @@ func (nc *NcActSomeoneShoutCmd) PdbType() string {
 //  SHINE_XY_TYPE loc;
 //};
 type NcActSomeoneStopCmd struct {
-	Handle uint16
+	Handle   uint16
 	Location ShineXYType
 }
 
@@ -303,7 +303,7 @@ func (nc *NcActSomeoneProduceCastCmd) PdbType() string {
 //};
 type NcActSomeoneFoldTentCmd struct {
 	Handle uint16
-	Shape CharBriefInfoNotCamped
+	Shape  CharBriefInfoNotCamped
 }
 
 func (nc *NcActSomeoneFoldTentCmd) String() string {
