@@ -22,11 +22,9 @@ gRPC:
         port: "50020"
     external:
       - name: login
-        host: 192.168.1.133
+        host: 127.0.0.1
         port: "50010"
 
-#protocol:
-### POSTGRES, alternatives can be added if required
 database:
   postgres:
     host: postgres
