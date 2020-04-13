@@ -3,46 +3,28 @@ package service
 import (
 	"context"
 	"encoding/hex"
-	"fmt"
 	"github.com/go-pg/pg/v9"
 	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.networking"
-	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
+	"github.com/shine-o/shine.engine.core/database"
+	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"google.golang.org/grpc"
 	"io/ioutil"
-	"net"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"sync"
 )
-
-type world struct {
-	id    string
-	name  string
-	port  string
-	extIP string
-}
-
-type activeWorlds struct {
-	activeWorlds map[string]*world
-	mu           sync.Mutex
-}
 
 var (
 	log     *logger.Logger
-	aw      *activeWorlds
-	grpcc   *RPCClients
-	worldDB *pg.DB
+	db *pg.DB
 )
 
 func init() {
-	log = logger.Init("world service default logger", true, false, ioutil.Discard)
+	log = logger.Init("service service default logger", true, false, ioutil.Discard)
 }
 
-// Start the world service
+// Start the service service
 // that is, use networking library to handle TCP connection
 // configure networking library to use handlers implemented in this package for packets
 func Start(cmd *cobra.Command, args []string) {
@@ -50,18 +32,22 @@ func Start(cmd *cobra.Command, args []string) {
 	ctx, cancel := context.WithCancel(ctx)
 
 	initRedis()
-	gRPCClients(ctx)
-	selfRPC(ctx)
-	worldDB = dbConn(ctx, "world")
+
+	go newRPCServer("world")
+
+	db = database.Connection(ctx, database.ConnectionParams{
+		User:     viper.GetString("database.postgres.db_user"),
+		Password: viper.GetString("database.postgres.db_password"),
+		Host:     viper.GetString("database.postgres.host"),
+		Port:     viper.GetString("database.postgres.port"),
+		Database: viper.GetString("database.postgres.db_name"),
+		Schema:   viper.GetString("database.postgres.schema"),
+	})
 
 	defer cancel()
-	defer cleanupRPC()
-	defer worldDB.Close()
-	// for each world in serve.worlds
-	aw = &activeWorlds{
-		activeWorlds: make(map[string]*world),
-	}
-	startWorlds(ctx)
+	defer db.Close()
+
+	go startWorld(ctx)
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -73,42 +59,17 @@ func Start(cmd *cobra.Command, args []string) {
 	<-c
 }
 
-// reminder: remove this as the service will be responsible only for one server
-func startWorlds(ctx context.Context) {
-	if viper.IsSet("serve.worlds") {
-		// snippet for loading yaml array
-		services := make([]map[string]string, 0)
-		var m map[string]string
-		servicesI := viper.Get("serve.worlds")
-		servicesS := servicesI.([]interface{})
-		for _, s := range servicesS {
-			serviceMap := s.(map[interface{}]interface{})
-			m = make(map[string]string)
-			for k, v := range serviceMap {
-				m[k.(string)] = v.(string)
-			}
-			services = append(services, m)
-		}
-
-		for _, s := range services {
-			w := world{
-				id:    s["id"],
-				name:  s["name"],
-				port:  s["port"],
-				extIP: s["external_ip"],
-			}
-			go startWorld(ctx, w)
-		}
-	}
-}
-
-func startWorld(ctx context.Context, w world) {
+func startWorld(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		log = logger.Init(fmt.Sprintf("%v logger", w.name), true, false, ioutil.Discard)
-		log.Infof(" [%v] starting the world on port: %v", w.name, w.port)
+		log = logger.Init("world logger", true, false, ioutil.Discard)
+
+		worldName := viper.GetString("world.name")
+		worldPort := viper.GetString("world.port")
+
+		log.Infof(" [%v] starting the service on port: %v", worldName, worldPort)
 
 		s := &networking.Settings{}
 
@@ -121,82 +82,29 @@ func startWorld(ctx context.Context, w world) {
 
 		s.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
 
-		if path, err := filepath.Abs(viper.GetString("protocol.nc-data")); err != nil {
+		if path, err := filepath.Abs(viper.GetString("protocol.commands")); err != nil {
 			log.Error(err)
 		} else {
 			s.CommandsFilePath = path
 		}
 
-		ch := make(map[uint16]func(ctx context.Context, pc *networking.Command))
-		ch[3087] = userLoginWorldReq
-		ch[2061] = miscGameTimeReq
-		ch[3123] = userWillWorldSelectReq
-		ch[5121] = avatarCreateReq
-		ch[5127] = avatarEraseReq
+		ch := &networking.CommandHandlers{
+			3087: userLoginWorldReq,
+			2061: miscGameTimeReq,
+			3123: userWillWorldSelectReq,
+			5121: avatarCreateReq,
+			5127:  avatarEraseReq,
+		}
 
 		hw := networking.NewHandlerWarden(ch)
 
 		ss := networking.NewShineService(s, hw)
 
 		wsf := &sessionFactory{
-			worldID: w.id,
+			worldID: viper.GetInt("world.id"),
 		}
+
 		ss.UseSessionFactory(wsf)
-
-		aw.mu.Lock()
-		aw.activeWorlds[w.id] = &w
-		aw.mu.Unlock()
-
-		ss.Listen(ctx, w.port)
-	}
-}
-
-// listen on gRPC TCP connections related to this project
-// not needed for now, as login is not expecting to act as server
-func selfRPC(ctx context.Context) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		if viper.IsSet("gRPC.services.self") {
-			// snippet for loading yaml array
-			services := make([]map[string]string, 0)
-			var m map[string]string
-			servicesI := viper.Get("gRPC.services.self")
-			servicesS := servicesI.([]interface{})
-			for _, s := range servicesS {
-				serviceMap := s.(map[interface{}]interface{})
-				m = make(map[string]string)
-				for k, v := range serviceMap {
-					m[k.(string)] = v.(string)
-				}
-				services = append(services, m)
-			}
-			for _, v := range services {
-				go gRPCServers(ctx, v)
-			}
-		}
-	}
-}
-
-func gRPCServers(ctx context.Context, service map[string]string) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		address := fmt.Sprintf(":%v", service["port"])
-		lis, err := net.Listen("tcp", address)
-		if err != nil {
-			log.Errorf("could listen on port %v for service %v : %v", service["port"], service["name"], err)
-		}
-		s := grpc.NewServer()
-
-		lw.RegisterWorldServer(s, &server{})
-
-		log.Infof("Loading gRPC server connections %v@::%v", service["name"], service["port"])
-
-		if err := s.Serve(lis); err != nil {
-			log.Fatalf("failed to serve: %v", err)
-		}
+		ss.Listen(ctx, worldPort)
 	}
 }

@@ -2,11 +2,38 @@ package service
 
 import (
 	"context"
-	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.networking/structs"
+	"fmt"
+	"github.com/google/logger"
+	"github.com/shine-o/shine.engine.core/structs"
+	"github.com/spf13/viper"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
+
+func TestMain(m *testing.M) {
+	log = logger.Init("test logger", true, false, ioutil.Discard)
+	log.Info("test logger")
+	if path, err := filepath.Abs("../config"); err != nil {
+		log.Fatal(err)
+	} else {
+		viper.AddConfigPath(path)
+		viper.SetConfigType("yaml")
+
+		viper.SetConfigName(".world.circleci")
+		// for running tests locally, use this:
+		//viper.SetConfigName(".world.test")
+
+		// If a config file is found, read it in.
+		if err := viper.ReadInConfig(); err == nil {
+			fmt.Println("Using config file:", viper.ConfigFileUsed())
+		}
+	}
+	initRedis()
+	os.Exit(m.Run())
+}
 
 func TestWorldTime(t *testing.T) {
 	ctx := context.Background()
@@ -26,11 +53,8 @@ func TestReturnToServerSelect(t *testing.T) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-	wc := WorldCommand{
-		pc: &networking.Command{},
-	}
 
-	if rnc, err := wc.returnToServerSelect(ctx); err != nil {
+	if rnc, err := returnToServerSelect(ctx); err != nil {
 		t.Error(err)
 	} else {
 		if reflect.TypeOf(rnc) != reflect.TypeOf(structs.NcUserWillWorldSelectAck{}) {

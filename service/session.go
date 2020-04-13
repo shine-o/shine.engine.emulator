@@ -5,17 +5,17 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v7"
 	"github.com/google/uuid"
-	networking "github.com/shine-o/shine.engine.networking"
+   "github.com/shine-o/shine.engine.core/networking"
 	"github.com/spf13/viper"
 )
 
 type sessionFactory struct {
-	worldID string
+	worldID int
 }
 
 type session struct {
 	ID       string `json:"id"`
-	WorldID  string
+	WorldID  int
 	UserID   uint64 `json:"user_id"`
 	UserName string `json:"user_name"`
 }
@@ -53,7 +53,7 @@ func persistSession(ws *session) error {
 		log.Error(err)
 		return err
 	}
-	key := fmt.Sprintf("%v-world", ws.UserName)
+	key := fmt.Sprintf("%v-service", ws.UserName)
 	err = redisClient.Set(key, sd, 0).Err()
 	if err != nil {
 		log.Error(err)
