@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package zz;
+
+service Zone {
+    rpc TransferCharacter(CharacterData) returns (TransferStatus) {};
+}
+
+message CharacterData {}
+
+message TransferStatus{}
