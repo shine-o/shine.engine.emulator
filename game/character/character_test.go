@@ -23,8 +23,8 @@ func TestMain(m *testing.M) {
 	db = database.Connection(ctx, database.ConnectionParams{
 		User:     "user",
 		Password: "password",
-		//Host:     "postgres",
-		Host:     "192.168.1.238",
+		Host:     "postgres",
+		//Host:     "192.168.1.238",
 		Port:     "5432",
 		Database: "shine",
 		Schema:   "world",
