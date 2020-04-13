@@ -31,7 +31,7 @@ jobs:
           command: GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o service
       - run:
           name: migrate test database
-          command: ./service migrate --config "config/.service.circleci.yaml" --fixtures "true"
+          command: ./service migrate --config "config/.world.circleci.yaml" --fixtures "true"
       - run:
           name: run tests
           command: go test github.com/shine-o/shine.engine.service/service
