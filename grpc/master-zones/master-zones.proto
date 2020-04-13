@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package mz;
+
+service Master {
+    rpc WhereIsMap(MapQuery) returns (ConnectionInfo) {};
+    rpc RegisterZone(ZoneDetails) returns (ZoneRegistered) {};
+}
+
+message MapQuery {
+
+};
+
+message ConnectionInfo {
+    string IP = 1;
+    int32  Port = 2;
+};
+
+message ZoneDetails {
+   repeated string maps = 1;
+   ConnectionInfo conn = 2;
+}
+
+message ZoneRegistered {
+    bool Success = 1;
+    string ZoneID = 2;
+    World World = 3;
+}
+
+message World {
+    string IP = 1;
+    int32 Port = 2;
+}

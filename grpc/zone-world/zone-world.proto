@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package zw;
+
+service World {
+    rpc Character(CharacterQuery) returns (CharacterData)
+}
+
+message CharacterQuery {
+    string Name = 1;
+}
+
+message CharacterData {
+    repeated bytes Data = 1;
+}
