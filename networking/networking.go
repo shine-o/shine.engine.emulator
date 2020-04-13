@@ -55,7 +55,7 @@ func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
 func (ss *ShineService) Listen(ctx context.Context, port string) {
 	ss.s.Set()
 	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", port)); err == nil {
-		log.Infof("Listening for TCP connections on: %v", l.Addr())
+		log.Infof("listening for TCP connections on: %v", l.Addr())
 		defer l.Close()
 		rand.Seed(time.Now().Unix())
 		for {
