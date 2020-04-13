@@ -29,6 +29,10 @@ func TestMain(m *testing.M) {
 		Database: "shine",
 		Schema:   "world",
 	})
+	err := database.CreateSchema(db, "world")
+	if err != nil {
+		log.Fatal(err)
+	}
 	cleanDB()
 	os.Exit(m.Run())
 }
