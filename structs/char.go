@@ -200,7 +200,7 @@ func (nc *NcCharOptionGetShortcutSizeAck) PdbType() string {
 //};
 type NcCharGuildCmd struct {
 	GuildNumber uint32
-	Guilds      []GuildClient `struct:"sizefrom=GuildNumber"`
+	Guilds      GuildClient
 }
 
 func (nc *NcCharGuildCmd) String() string {
@@ -327,7 +327,7 @@ func (nc *NcCharUiStateSaveReq) PdbType() string {
 //  unsigned __int16 zoneport;
 //};
 type NcCharLoginAck struct {
-	ZoneIP Name4
+	ZoneIP   Name4
 	ZonePort uint16
 }
 
@@ -385,8 +385,10 @@ func (nc *NcCharOptionImproveGetGameOptionCmd) PdbType() string {
 //};
 type NcCharGuildAcademyCmd struct {
 	GuildAcademyNo uint32
+	//GuildAcademyNo uint16
 	IsGuildAcademyMember byte
-	GuildAcademyClients []GuildAcademyClient `struct:"sizefrom=GuildAcademyNo"`
+	//GuildAcademyClients []GuildAcademyClient `struct:"sizefrom=GuildAcademyNo"`
+	GuildAcademyClient GuildAcademyClient
 }
 
 func (nc *NcCharGuildAcademyCmd) String() string {
@@ -404,6 +406,197 @@ func (nc *NcCharGuildAcademyCmd) PdbType() string {
 	  unsigned int nGuildAcademyNo;
 	  char isGuildAcademyMember;
 	  GUILD_ACADEMY_CLIENT GuildAcademy[];
+	};
+`
+}
+
+//struct PROTO_NC_CHAR_OPTION_IMPROVE_GET_SHORTCUTDATA_CMD
+//{
+//unsigned __int16 nShortCutDataCnt;
+//SHORT_CUT_DATA ShortCutData[];
+//};
+type NcCharGetShortcutDataCmd struct {
+	Count     uint16
+	Shortcuts []ShortCutData `struct:"sizefrom=Count"`
+}
+
+func (nc *NcCharGetShortcutDataCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcCharGetShortcutDataCmd) PdbType() string {
+	return `
+	struct PROTO_NC_CHAR_OPTION_IMPROVE_GET_SHORTCUTDATA_CMD
+	{
+	  unsigned __int16 nShortCutDataCnt;
+	  SHORT_CUT_DATA ShortCutData[];
+	};
+`
+}
+
+//struct PROTO_NC_CHAR_OPTION_IMPROVE_GET_KEYMAP_CMD
+//{
+//  unsigned __int16 nKeyMapDataCnt;
+//  KEY_MAP_DATA KeyMapData[];
+//};
+type NcCharGetKeyMapCmd struct {
+	Count uint16
+	Keys  []KeyMapData `struct:"sizefrom=Count"`
+}
+
+func (nc *NcCharGetKeyMapCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcCharGetKeyMapCmd) PdbType() string {
+	return `
+	struct PROTO_NC_CHAR_OPTION_IMPROVE_GET_KEYMAP_CMD
+	{
+	  unsigned __int16 nKeyMapDataCnt;
+	  KEY_MAP_DATA KeyMapData[];
+	};
+`
+}
+
+//struct PROTO_NC_CHAR_STAT_REMAINPOINT_CMD
+//{
+//  char remain;
+//};
+type NcCharStatRemainPointCmd struct {
+	Remain byte
+}
+
+func (nc *NcCharStatRemainPointCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcCharStatRemainPointCmd) PdbType() string {
+	return `
+	struct PROTO_NC_CHAR_STAT_REMAINPOINT_CMD
+	{
+	  char remain;
+	};
+`
+}
+
+//struct PROTO_NC_CHAR_OPTION_GET_WINDOWPOS_ACK
+//{
+//  char bSuccess;
+//  PROTO_NC_CHAR_OPTION_WINDOWPOS Data;
+//};
+type NcCharOptionGetWindowPosAck struct {
+	Success byte
+	Data    NcCharOptionWindowPos
+}
+
+func (nc *NcCharOptionGetWindowPosAck) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcCharOptionGetWindowPosAck) PdbType() string {
+	return `
+	struct PROTO_NC_CHAR_OPTION_GET_WINDOWPOS_ACK
+	{
+	  char bSuccess;
+	  PROTO_NC_CHAR_OPTION_WINDOWPOS Data;
+	};
+`
+}
+
+//struct PROTO_NC_CHAR_NEWBIE_GUIDE_VIEW_SET_CMD
+//{
+//  char nGuideView;
+//};
+type NcCharNewbieGuideViewSetCmd struct {
+	GuideView byte
+}
+
+func (nc *NcCharNewbieGuideViewSetCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcCharNewbieGuideViewSetCmd) PdbType() string {
+	return `
+	struct PROTO_NC_CHAR_OPTION_GET_WINDOWPOS_ACK
+	{
+	  char bSuccess;
+	  PROTO_NC_CHAR_OPTION_WINDOWPOS Data;
+	};
+`
+}
+
+//struct PROTO_NC_CHAR_CLIENT_AUTO_PICK_CMD
+//{
+//  unsigned __int16 player;
+//  char bEnable;
+//};
+type NcCharClientAutoPickCmd struct {
+	Player uint16
+	Enable byte
+}
+
+func (nc *NcCharClientAutoPickCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcCharClientAutoPickCmd) PdbType() string {
+	return `
+	struct PROTO_NC_CHAR_CLIENT_AUTO_PICK_CMD
+	{
+	  unsigned __int16 player;
+	  char bEnable;
+	};
+`
+}
+
+//struct PROTO_NC_CHAR_USEITEM_MINIMON_USE_BROAD_CMD
+//{
+//  unsigned __int16 nCharHandle;
+//  char bUse;
+//};
+type NcCharUseItemMinimonUseBroadCmd struct {
+	CharHandle uint16
+	Use byte
+}
+
+func (nc *NcCharUseItemMinimonUseBroadCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcCharUseItemMinimonUseBroadCmd) PdbType() string {
+	return `
+	struct PROTO_NC_CHAR_USEITEM_MINIMON_USE_BROAD_CMD
+	{
+	  unsigned __int16 nCharHandle;
+	  char bUse;
 	};
 `
 }

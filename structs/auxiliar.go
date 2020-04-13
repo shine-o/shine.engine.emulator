@@ -30,3 +30,11 @@ type ShineXYType struct {
 type ShineDateTime struct {
 	BF0 int32
 }
+
+//union NETCOMMAND
+//{
+//  unsigned __int16 protocol;
+//};
+type NetCommand struct {
+	Protocol uint16
+}

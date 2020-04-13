@@ -201,7 +201,7 @@ type UseItemMiniMonsterInfo struct {
 //};
 type GameOptionData struct {
 	OptionNo uint16
-	Value byte
+	Value    byte
 }
 
 //struct GUILD_ACADEMY_CLIENT
@@ -222,12 +222,44 @@ type GuildAcademyClient struct {
 	AcademyMasterName Name5
 	NumAcademyMembers uint16
 	MaxAcademyMembers uint16
-	AcademyPoint uint32
-	AcademyRank uint32
-	AcademyBuffTime int32
-	Intro [128]byte
-	NotifyDate int32
-	TmNotifyDate TM
-	NotifyCharID Name5
-	Notify [512]byte
+	AcademyPoint      uint32
+	AcademyRank       uint32
+	AcademyBuffTime   int32
+	Intro             [128]byte
+	NotifyDate        int32
+	TmNotifyDate      TM
+	NotifyCharID      Name5
+	Notify            [512]byte
+}
+
+//struct SHORT_CUT_DATA
+//{
+//  char nSlotNo;
+//  unsigned __int16 nCodeNo;
+//  int nValue;
+//};
+type ShortCutData struct {
+	SlotNo byte
+	CodeNo uint16
+	Value  int32
+}
+
+//struct KEY_MAP_DATA
+//{
+//  unsigned __int16 nFunctionNo;
+//  char nExtendKey;
+//  char nASCIICode;
+//};
+type KeyMapData struct {
+	FunctionNo uint16
+	ExtendKey  byte
+	AsciiCode  byte
+}
+
+//struct PROTO_NC_CHAR_OPTION_WINDOWPOS
+//{
+//  char Data[392];
+//};
+type NcCharOptionWindowPos struct {
+	Data [392]byte
 }

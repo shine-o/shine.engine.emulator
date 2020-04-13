@@ -21,3 +21,34 @@ type ChargedItemInfo struct {
 	ItemAmount       uint32
 	ItemRegisterDate ShineDateTime
 }
+
+//struct SHINE_ITEM_VAR_STRUCT
+//{
+//  unsigned __int16 itemid;
+//  char itemattr[];
+//};
+type ShineItemVar struct {
+	ItemID   uint16
+	ItemAttr []byte
+}
+
+//struct PROTO_ITEMPACKET_INFORM
+//{
+//  char datasize;
+//  ITEM_INVEN location;
+//  SHINE_ITEM_STRUCT info;
+//};
+type ItemPacketInfo struct {
+	DataSize byte
+	Location ItemInventory
+	//Info ShineItem
+	//struct SHINE_ITEM_STRUCT
+	//{
+	//  unsigned __int16 itemid;
+	//  SHINE_ITEM_ATTRIBUTE itemattr;
+	//};
+	Info struct {
+		ItemID   uint16
+		ItemAttr []byte `struct-size:"Parent.DataSize - 2"`
+	}
+}
