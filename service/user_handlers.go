@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.networking/structs"
-	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
+	lw "github.com/shine-o/shine.engine.core/grpc/login-world"
+	"github.com/shine-o/shine.engine.core/networking"
+	"github.com/shine-o/shine.engine.core/structs"
 )
 
 func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
@@ -13,15 +13,13 @@ func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		nc := structs.NcUserClientVersionCheckReq{}
-		if err := nc.Unpack(pc.Base.Data); err != nil {
+		//if err := nc.Unpack(pc.Base.Data); err != nil {
+		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 			log.Error(err)
 			go userClientWrongVersionAck(ctx, &networking.Command{})
 		} else {
 
-			pc.NcStruct = &nc
-			lc := &LoginCommand{pc: pc}
-
-			if _, err := lc.checkClientVersion(ctx); err != nil { // data is irrelevant in this call
+			if _, err := checkClientVersion(ctx, nc); err != nil { // data is irrelevant in this call
 				log.Error(err)
 				go userClientWrongVersionAck(ctx, &networking.Command{})
 			} else {
@@ -61,7 +59,8 @@ func userUsLoginReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		nc := structs.NcUserUsLoginReq{}
-		if err := nc.Unpack(pc.Base.Data); err != nil {
+		//if err := nc.Unpack(pc.Base.Data); err != nil {
+		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 			go userLoginFailAck(ctx, &networking.Command{})
 			return
 		}
@@ -111,9 +110,8 @@ func userLoginAck(ctx context.Context) {
 				OperationCode: 3082,
 			},
 		}
-		lc := &LoginCommand{pc: pc}
 
-		nc, err := lc.serverSelectScreen(ctx)
+		nc, err := serverSelectScreen(ctx)
 
 		if err != nil {
 			go unexpectedFailure()
@@ -133,8 +131,7 @@ func userWorldStatusReq(ctx context.Context, pc *networking.Command) {
 	case <-ctx.Done():
 		return
 	default:
-		lc := &LoginCommand{pc: pc}
-		if err := lc.checkWorldStatus(ctx); err != nil {
+		if err := checkWorldStatus(ctx); err != nil {
 			return
 		}
 		go userWorldStatusAck(ctx, &networking.Command{})
@@ -166,12 +163,12 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 				},
 			})
 		}
-		nc := &structs.NcUserWorldSelectReq{}
-		if err := nc.Unpack(pc.Base.Data); err != nil {
+		nc := structs.NcUserWorldSelectReq{}
+		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 			go unexpectedFailure()
 			return
 		}
-		wci, err := userSelectedServer(ctx)
+		wci, err := userSelectedServer(ctx, nc)
 		if err != nil {
 			go unexpectedFailure()
 			return
@@ -180,7 +177,7 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 	}
 }
 
-func userWorldSelectAck(ctx context.Context, wci *lw.WorldConnectionInfo) {
+func userWorldSelectAck(ctx context.Context, wd *lw.WorldData) {
 	select {
 	case <-ctx.Done():
 		return
@@ -188,9 +185,9 @@ func userWorldSelectAck(ctx context.Context, wci *lw.WorldConnectionInfo) {
 		nc := structs.NcUserWorldSelectAck{
 			WorldStatus: 6,
 			Ip:          structs.Name4{},
-			Port:        uint16(wci.Port),
+			Port:        uint16(wd.Port),
 		}
-		copy(nc.Ip.Name[:], wci.IP)
+		copy(nc.Ip.Name[:], wd.IP)
 
 		pc := &networking.Command{
 			Base: networking.CommandBase{
@@ -216,16 +213,13 @@ func userLoginWithOtpReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		nc := structs.NcUserLoginWithOtpReq{}
-		//if err := restruct.Unpack(pc.Base.Data, binary.LittleEndian, &nc); err != nil {
-		if err := nc.Unpack(pc.Base.Data); err != nil {
+		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 			log.Info(err)
 			go userLoginFailAck(ctx, &networking.Command{})
 		} else {
 
 			pc.NcStruct = &nc
-			lc := &LoginCommand{pc: pc}
-
-			if err := lc.loginByCode(ctx); err != nil {
+			if err := loginByCode(ctx, nc); err != nil {
 				log.Info(err)
 				go userLoginFailAck(ctx, &networking.Command{})
 			} else {
