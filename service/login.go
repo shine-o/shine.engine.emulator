@@ -4,22 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	networking "github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.networking/structs"
-	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
+	"github.com/shine-o/shine.engine.core/grpc/login-world"
+	"github.com/shine-o/shine.engine.core/structs"
 	"github.com/spf13/viper"
-	"reflect"
+	"strconv"
 	"strings"
 )
 
 // ErrWTO world service timed out
 var ErrWTO = errors.New("world timed out")
 
-// ErrUNF user does not exist in the database
-var ErrUNF = errors.New("user not found")
-
 // ErrCC ctx.Done() signal was received
 var ErrCC = errors.New("context was canceled")
+
+// ErrNoWorld no world is available
+var ErrNoWorld = errors.New("no world is available")
 
 // ErrBC user sent bad userName and password combination
 var ErrBC = errors.New("bad credentials")
@@ -27,14 +26,8 @@ var ErrBC = errors.New("bad credentials")
 // ErrDBE database exception
 var ErrDBE = errors.New("database exception")
 
-// LoginCommand wrapper for networking command
-// any information scoped to this service and its handlers can be added here
-type LoginCommand struct {
-	pc *networking.Command
-}
-
 // check that the client version is correct
-func (lc *LoginCommand) checkClientVersion(ctx context.Context) ([]byte, error) {
+func checkClientVersion(ctx context.Context, req structs.NcUserClientVersionCheckReq) ([]byte, error) {
 	var data []byte
 	select {
 	case <-ctx.Done():
@@ -43,15 +36,12 @@ func (lc *LoginCommand) checkClientVersion(ctx context.Context) ([]byte, error) 
 		if viper.GetBool("crypt.client_version.ignore") {
 			return data, nil
 		}
-		if ncs, ok := lc.pc.NcStruct.(*structs.NcUserClientVersionCheckReq); ok {
-			vk := strings.TrimRight(string(ncs.VersionKey[:33]), "\x00") // will replace with direct binary comparison
-			if vk == viper.GetString("crypt.client_version.key") {
-				// xtrap info goes here, but we dont use xtrap so we don't have to send anything.
-				return data, nil
-			}
-			return data, fmt.Errorf("client sent incorrect client version key:%v", vk)
+		vk := strings.TrimRight(string(req.VersionKey[:33]), "\x00") // will replace with direct binary comparison
+		if vk == viper.GetString("crypt.client_version.key") {
+			// xtrap info goes here, but we dont use xtrap so we don't have to send anything.
+			return data, nil
 		}
-		return data, fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
+		return data, fmt.Errorf("client sent incorrect client version key:%v", vk)
 	}
 }
 
@@ -82,92 +72,162 @@ func checkCredentials(ctx context.Context, req structs.NcUserUsLoginReq) error {
 }
 
 // check the world service is up and running
-func (lc *LoginCommand) checkWorldStatus(ctx context.Context) error {
+func checkWorldStatus(ctx context.Context) error {
 	select {
 	case <-ctx.Done():
 		return ErrCC
 	default:
-		grpcc.mu.Lock()
-		conn := grpcc.services["world"]
-		state := conn.GetState().String()
-		grpcc.mu.Unlock()
-
-		if state == "READY" || state == "IDLE" {
-			return nil
+		if !viper.IsSet("worlds") {
+			return ErrNoWorld
 		}
-		return ErrWTO
+
+		worlds := viper.GetStringSlice("worlds")
+
+		for _, w := range worlds {
+			clientKey := fmt.Sprintf("gRPC.clients.%v", w)
+			_, err := newRPCClient(clientKey)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	}
 }
 
-func (lc *LoginCommand) serverSelectScreen(ctx context.Context) (structs.NcUserLoginAck, error) {
-	grpcc.mu.Lock()
-	conn := grpcc.services["world"]
-	wc := lw.NewWorldClient(conn)
-	grpcc.mu.Unlock()
+type world struct {
+	ID   uint8
+	Name string
+}
 
-	rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
-	wi, err := wc.AvailableWorlds(rpcCtx, &lw.ClientMetadata{
-		Ip: "127.0.0.01",
-	})
+type availableWorlds []world
 
-	if err != nil {
-		return structs.NcUserLoginAck{}, err
+func worlds() (availableWorlds, error) {
+	aw := availableWorlds{}
+	if !viper.IsSet("worlds") {
+		return aw, ErrNoWorld
 	}
 
-	nc := structs.NcUserLoginAck{}
-	for _, w := range wi.Worlds {
-		ws := structs.WorldInfo{
-			WorldNumber: byte(w.WorldNumber),
-			// 1: behaviour -> cannot enter, message -> The server is under maintenance.
-			// 2: behaviour -> cannot enter, message -> You cannot connect to an empty server.
-			// 3: behaviour -> cannot enter, message -> The server has been reserved for a special use.
-			// 4: behaviour -> cannot enter, message -> Login failed due to an unknown error.
-			// 5: behaviour -> cannot enter, message -> The server is full.
-			// 6: behaviour -> ok
-			WorldStatus: byte(w.WorldStatus),
+	worlds := make([]map[string]string, 0)
+	var m map[string]string
+	worldsI := viper.Get("worlds")
+	worldsS := worldsI.([]interface{})
+	for _, s := range worldsS {
+		serviceMap := s.(map[interface{}]interface{})
+		m = make(map[string]string)
+		for k, v := range serviceMap {
+			m[k.(string)] = v.(string)
 		}
-		copy(ws.WorldName.Name[:], w.WorldName)
-		nc.Worlds = append(nc.Worlds, ws)
+		worlds = append(worlds, m)
 	}
-	nc.NumOfWorld = byte(len(nc.Worlds))
-	return nc, nil
+
+	for _, v := range worlds {
+		id, err := strconv.Atoi(v["id"])
+		if err != nil {
+			log.Error(err)
+			continue
+		}
+		w := world{
+			ID:   uint8(id),
+			Name: v["name"],
+		}
+		aw = append(aw, w)
+	}
+	return aw, nil
+}
+
+func serverSelectScreen(ctx context.Context) (structs.NcUserLoginAck, error) {
+	select {
+	case <-ctx.Done():
+		return structs.NcUserLoginAck{}, nil
+	default:
+		nc := structs.NcUserLoginAck{}
+
+		aw, err := worlds()
+		if err != nil {
+			return structs.NcUserLoginAck{}, err
+		}
+
+		for _, w := range aw {
+			conn, err := newRPCClient(w.Name)
+			if err != nil {
+				return nc, err
+			}
+			c := lw.NewWorldClient(conn)
+
+			wd, err := c.GetWorldData(ctx, &lw.WorldQuery{
+				Name: w.Name,
+			})
+
+			if err != nil {
+				log.Error(err)
+				continue
+			}
+			wi := structs.WorldInfo{
+				WorldNumber: byte(wd.WorldNumber),
+				// 1: behaviour -> cannot enter, message -> The server is under maintenance.
+				// 2: behaviour -> cannot enter, message -> You cannot connect to an empty server.
+				// 3: behaviour -> cannot enter, message -> The server has been reserved for a special use.
+				// 4: behaviour -> cannot enter, message -> Login failed due to an unknown error.
+				// 5: behaviour -> cannot enter, message -> The server is full.
+				// 6: behaviour -> ok
+				WorldStatus: byte(wd.WorldStatus),
+			}
+			nc.Worlds = append(nc.Worlds, wi)
+		}
+		return nc, nil
+	}
 }
 
 // request info about selected world
-func userSelectedServer(ctx context.Context) (*lw.WorldConnectionInfo, error) {
+func userSelectedServer(ctx context.Context, req structs.NcUserWorldSelectReq) (*lw.WorldData, error) {
 	select {
 	case <-ctx.Done():
-		return &lw.WorldConnectionInfo{}, ErrCC
+		return &lw.WorldData{}, ErrCC
 	default:
-		grpcc.mu.Lock()
-		conn := grpcc.services["world"]
-		c := lw.NewWorldClient(conn)
-		grpcc.mu.Unlock()
 
-		rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
+		aw, err := worlds()
 
-		wci, err := c.ConnectionInfo(rpcCtx, &lw.SelectedWorld{Num: 1})
 		if err != nil {
-			return &lw.WorldConnectionInfo{}, err
+			return &lw.WorldData{}, err
+
 		}
-		return wci, nil
+		for _, w := range aw {
+			if w.ID == req.WorldNo {
+				conn, err := newRPCClient(w.Name)
+
+				if err != nil {
+					return &lw.WorldData{}, err
+				}
+
+				c := lw.NewWorldClient(conn)
+
+				wd, err := c.GetWorldData(ctx, &lw.WorldQuery{
+					Id: int32(req.WorldNo),
+				})
+
+				if err != nil {
+					return &lw.WorldData{}, err
+				}
+
+				return wd, nil
+			}
+		}
+		return &lw.WorldData{}, ErrNoWorld
 	}
 }
 
 // verify the token matches the one stored [on redis] by the world service
-func (lc *LoginCommand) loginByCode(ctx context.Context) error {
+func loginByCode(ctx context.Context, req structs.NcUserLoginWithOtpReq) error {
 	select {
 	case <-ctx.Done():
 		return ErrCC
 	default:
-		if ncs, ok := lc.pc.NcStruct.(*structs.NcUserLoginWithOtpReq); ok {
-			b := make([]byte, len(ncs.Otp.Name))
-			copy(b, ncs.Otp.Name[:])
-			if _, err := redisClient.Get(string(b)).Result(); err != nil {
-				return err
-			}
-			return nil
+		b := make([]byte, len(req.Otp.Name))
+		copy(b, req.Otp.Name[:])
+		if _, err := redisClient.Get(string(b)).Result(); err != nil {
+			return err
 		}
-		return fmt.Errorf("unexpected struct type: %v", reflect.TypeOf(lc.pc.NcStruct).String())
+		return nil
 	}
 }

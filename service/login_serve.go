@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.networking"
+	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -13,8 +13,7 @@ import (
 )
 
 var (
-	log   *logger.Logger
-	grpcc *RPCClients
+	log *logger.Logger
 )
 
 // Start the login service
@@ -28,9 +27,9 @@ func Start(cmd *cobra.Command, args []string) {
 
 	db = dbConn(ctx, "accounts")
 	initRedis()
-	selfRPC(ctx)
 
-	defer cleanupRPC()
+	go newRPCServer("login")
+
 	defer db.Close()
 	defer cancel()
 
@@ -45,27 +44,27 @@ func Start(cmd *cobra.Command, args []string) {
 
 	s.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
 
-	if path, err := filepath.Abs(viper.GetString("protocol.nc-data")); err != nil {
+	if path, err := filepath.Abs(viper.GetString("protocol.commands")); err != nil {
 		log.Error(err)
 	} else {
 		s.CommandsFilePath = path
 	}
 
 	// note: use factory
-	ch := make(map[uint16]func(ctx context.Context, pc *networking.Command))
-	ch[3173] = userClientVersionCheckReq
-	ch[3162] = userUsLoginReq
-	ch[3076] = userXtrapReq
-	ch[3099] = userWorldStatusReq
-	ch[3083] = userWorldSelectReq
-	ch[3096] = userNormalLogoutCmd
-	ch[3127] = userLoginWithOtpReq
+	ch := &networking.CommandHandlers{
+		3173: userClientVersionCheckReq,
+		3162: userUsLoginReq,
+		3076: userXtrapReq,
+		3099: userWorldStatusReq,
+		3083: userWorldSelectReq,
+		3096: userNormalLogoutCmd,
+		3127: userLoginWithOtpReq,
+	}
 
 	hw := networking.NewHandlerWarden(ch)
 
 	ss := networking.NewShineService(s, hw)
 	wsf := &sessionFactory{}
 	ss.UseSessionFactory(wsf)
-	gRPCClients(ctx)
 	ss.Listen(ctx, viper.GetString("serve.port"))
 }

@@ -31,7 +31,7 @@ jobs:
           command: GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o login
       - run:
           name: migrate test database
-          command: ./login migrate --config "defaults/.login.circleci.yaml" --fixtures "true"
+          command: ./login migrate --config "config/.login.circleci.yaml" --fixtures "true"
       - run:
           name: run tests
           command: go test github.com/shine-o/shine.engine.login/service
