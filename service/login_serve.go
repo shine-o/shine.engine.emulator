@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.networking"
+	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	log   *logger.Logger
+	log *logger.Logger
 )
 
 // Start the login service
@@ -28,7 +28,7 @@ func Start(cmd *cobra.Command, args []string) {
 	db = dbConn(ctx, "accounts")
 	initRedis()
 
-	go newRpcServer("login")
+	go newRPCServer("login")
 
 	defer db.Close()
 	defer cancel()

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/go-redis/redis/v7"
 	"github.com/google/uuid"
-	"github.com/shine-o/shine.engine.networking"
+	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/spf13/viper"
 )
 
