@@ -47,3 +47,28 @@ func (nc *NcServerMenuReq) PdbType() string {
 	};
 `
 }
+
+//struct PROTO_NC_MENU_SERVERMENU_ACK
+//{
+//  char reply;
+//};
+type NcServerMenuAck struct {
+	Reply byte
+}
+
+func (nc *NcServerMenuAck) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcServerMenuAck) PdbType() string {
+	return `
+	struct PROTO_NC_MENU_SERVERMENU_ACK
+	{
+	  char reply;
+	};
+`
+}

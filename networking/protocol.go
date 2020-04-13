@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/shine-o/shine.engine.networking/structs"
+	"github.com/shine-o/shine.engine.core/structs"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"strconv"
@@ -80,7 +80,6 @@ func (pcb *CommandBase) RawData() []byte {
 	if len(data) > 255 { // means big packet
 		header = append(header, byte(0))
 		lenBuf := new(bytes.Buffer)
-		//if err := binary.Write(lenBuf, binary.LittleEndian, uint16(buf.Len())); err != nil {
 		if err := binary.Write(lenBuf, binary.LittleEndian, uint16(len(data))); err != nil {
 			log.Fatalf("failed writing length for big packet to buffer %v", err)
 		}
@@ -133,7 +132,36 @@ func (pcb *CommandBase) String() string {
 	}
 	return string(rawJSON)
 }
+type ExportedPcb struct {
+	PacketType    string `json:"packetType"`
+	Length        int    `json:"length"`
+	Department    uint16 `json:"department"`
+	Command       string `json:"command"`
+	OperationCode uint16 `json:"opCode"`
+	Data          string `json:"data"`
+	RawData       string `json:"rawData"`
+	FriendlyName  string `json:"friendlyName"`
+}
+func (pcb *CommandBase) JSON() ExportedPcb {
 
+	//department = opCode >> 10
+	//command = opCode & 1023
+	ePcb := ExportedPcb{
+		Length:        pcb.PacketLength(),
+		Department:    pcb.OperationCode >> 10,
+		Command:       fmt.Sprintf("%X", pcb.OperationCode&1023),
+		OperationCode: pcb.OperationCode,
+		Data:          hex.EncodeToString(pcb.Data),
+		RawData:       hex.EncodeToString(pcb.RawData()),
+		FriendlyName:  pcb.ClientStructName,
+	}
+	if pcb.PacketLength() > 255 {
+		ePcb.PacketType = "big"
+	} else {
+		ePcb.PacketType = "small"
+	}
+	return ePcb
+}
 // Set Settings specified by the shine service
 func (s *Settings) Set() {
 	if cl, err := InitCommandList(s.CommandsFilePath); err != nil {

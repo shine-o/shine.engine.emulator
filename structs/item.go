@@ -186,3 +186,205 @@ func (nc *NcItemRewardInventoryOpenReq) PdbType() string {
 	};
 `
 }
+
+//struct PROTO_NC_ITEM_CELLCHANGE_CMD
+//{
+//  ITEM_INVEN exchange;
+//  ITEM_INVEN location;
+//  SHINE_ITEM_VAR_STRUCT item;
+//};
+type NcItemCellChangeCmd struct {
+	Exchange ItemInventory
+	Location ItemInventory
+	Item     ShineItemVar
+}
+
+func (nc *NcItemCellChangeCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcItemCellChangeCmd) PdbType() string {
+	return `
+	struct PROTO_NC_ITEM_CELLCHANGE_CMD
+	{
+	  ITEM_INVEN exchange;
+	  ITEM_INVEN location;
+	  SHINE_ITEM_VAR_STRUCT item;
+	};
+`
+}
+
+//struct PROTO_NC_ITEM_REWARDINVENOPEN_ACK
+//{
+//  char itemcounter;
+//  PROTO_ITEMPACKET_INFORM itemarray[];
+//};
+type NcItemRewardInventoryOpenAck struct {
+	Count byte
+	Items []ItemPacketInfo `struct:"sizefrom=Count"`
+}
+
+func (nc *NcItemRewardInventoryOpenAck) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcItemRewardInventoryOpenAck) PdbType() string {
+	return `
+	struct PROTO_NC_ITEM_REWARDINVENOPEN_ACK
+	{
+	  char itemcounter;
+	  PROTO_ITEMPACKET_INFORM itemarray[];
+	};
+`
+}
+
+//struct PROTO_NC_ITEM_CHARGEDINVENOPEN_REQ
+//{
+//  unsigned __int16 page;
+//};
+type NcITemChargedInventoryOpenReq struct {
+	Page uint16
+}
+
+func (nc *NcITemChargedInventoryOpenReq) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcITemChargedInventoryOpenReq) PdbType() string {
+	return `
+	struct PROTO_NC_ITEM_CHARGEDINVENOPEN_REQ
+	{
+	  unsigned __int16 page;
+	};
+`
+}
+
+//struct PROTO_NC_ITEM_USE_REQ
+//{
+//  char invenslot;
+//  char invenType;
+//};
+type NcItemUseReq struct {
+	Slot byte
+	Type byte
+}
+
+func (nc *NcItemUseReq) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcItemUseReq) PdbType() string {
+	return `
+	struct PROTO_NC_ITEM_USE_REQ
+	{
+	  char invenslot;
+	  char invenType;
+	};
+`
+}
+
+//struct PROTO_NC_ITEM_PICK_ACK
+//{
+//  unsigned __int16 itemid;
+//  unsigned int lot;
+//  unsigned __int16 error;
+//  unsigned __int16 itemhandle;
+//};
+type NcItemPickAck struct {
+	ItemID     uint16
+	Lot        uint32
+	Error      uint16
+	ItemHandle uint16
+}
+
+func (nc *NcItemPickAck) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcItemPickAck) PdbType() string {
+	return `
+	struct PROTO_NC_ITEM_PICK_ACK
+	{
+	  unsigned __int16 itemid;
+	  unsigned int lot;
+	  unsigned __int16 error;
+	  unsigned __int16 itemhandle;
+	};
+`
+}
+
+//struct PROTO_NC_ITEM_UNEQUIP_REQ
+//{
+//  char slotequip;
+//  char slotinven;
+//};
+type NcItemUnequipReq struct {
+	SlotEquip byte
+	SlotInven byte
+}
+
+func (nc *NcItemUnequipReq) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcItemUnequipReq) PdbType() string {
+	return `
+	struct PROTO_NC_ITEM_UNEQUIP_REQ
+	{
+	  char slotequip;
+	  char slotinven;
+	};
+`
+}
+
+//struct PROTO_NC_ITEM_RELOC_REQ
+//{
+//  ITEM_INVEN from;
+//  ITEM_INVEN to;
+//};
+type NcitemRelocateReq struct {
+	From ItemInventory
+	To   ItemInventory
+}
+
+func (nc *NcitemRelocateReq) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcitemRelocateReq) PdbType() string {
+	return `
+	struct PROTO_NC_ITEM_RELOC_REQ
+	{
+	  ITEM_INVEN from;
+	  ITEM_INVEN to;
+	};
+`
+}

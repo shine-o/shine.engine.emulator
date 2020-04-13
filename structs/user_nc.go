@@ -92,7 +92,7 @@ func (nc *NcUserUsLoginReq) PdbType() string {
 //  PROTO_NC_USER_LOGIN_ACK::WorldInfo worldinfo[];
 //};
 type NcUserLoginAck struct {
-	NumOfWorld byte        `struct:"byte"`
+	NumOfWorld byte        `struct:"byte,sizeof=Worlds"`
 	Worlds     []WorldInfo `struct:"sizefrom=NumOfWorld"`
 }
 
