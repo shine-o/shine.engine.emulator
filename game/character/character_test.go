@@ -13,7 +13,9 @@ import (
 	"testing"
 	"time"
 )
+
 var db *pg.DB
+
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -47,7 +49,6 @@ func cleanDB() {
 		log.Error(err)
 	}
 }
-
 
 func createDummyCharacters() {
 	for i := 0; i <= 5; i++ {
@@ -154,7 +155,7 @@ func TestCharacterNameInUseError(t *testing.T) {
 		},
 	}
 	copy(c.Name.Name[:], name)
-	 err := Validate(db,1, c)
+	err := Validate(db, 1, c)
 	if err == nil {
 		log.Error(err)
 	}
@@ -172,7 +173,6 @@ func TestCharacterNameInUseError(t *testing.T) {
 		t.Errorf("expected errorCharacter with code %v, instead got %v", 1, errChar.Code)
 	}
 }
-
 
 func TestNoSlotAvailableError(t *testing.T) {
 	defer cleanDB()

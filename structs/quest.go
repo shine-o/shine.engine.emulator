@@ -38,8 +38,8 @@ func (nc *NcQuestStartReq) PdbType() string {
 //};
 type NcQuestScriptCmdAck struct {
 	QuestID uint16
-	QSC byte
-	Result uint32
+	QSC     byte
+	Result  uint32
 }
 
 func (nc *NcQuestScriptCmdAck) String() string {

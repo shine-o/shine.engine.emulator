@@ -97,10 +97,10 @@ struct PROTO_NC_BOOTH_REFRESH_REQ
 //  PROTO_NC_BOOTH_ENTRY_SELL_ACK::BoothItemList items[];
 //};
 type NcBoothEntrySellAck struct {
-	Err uint16
+	Err         uint16
 	BoothHandle uint16
-	NumOfItems byte
-	Items []NcBoothEntrySellAckItemList `struct:"sizefrom=NumOfItems"`
+	NumOfItems  byte
+	Items       []NcBoothEntrySellAckItemList `struct:"sizefrom=NumOfItems"`
 }
 
 func (nc *NcBoothEntrySellAck) String() string {

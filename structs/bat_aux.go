@@ -9,10 +9,10 @@ package structs
 //  unsigned __int16 hpchangeorder;
 //};
 type NcBatSkillBashHitDamageCmdSkillDamage struct {
-	Handle uint16
-	Flag NcBatSkillBashHitDamageCmdSkillDamageFlag
-	HpChange uint32
-	RestHP uint32
+	Handle        uint16
+	Flag          NcBatSkillBashHitDamageCmdSkillDamageFlag
+	HpChange      uint32
+	RestHP        uint32
 	HpChangeOrder uint16
 }
 

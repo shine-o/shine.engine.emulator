@@ -21,12 +21,7 @@ func miscSeedAck(ctx context.Context, pc *Command) {
 		nc := structs.NcMiscSeedAck{
 			Seed: xorOffset,
 		}
-
-		if data, err := structs.Pack(&nc); err != nil {
-
-		} else {
-			pc.Base.Data = data
-			go WriteToClient(ctx, pc)
-		}
+		pc.NcStruct = &nc
+		go pc.Send(ctx)
 	}
 }

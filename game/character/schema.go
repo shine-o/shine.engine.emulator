@@ -1,18 +1,18 @@
 package character
 
 import (
-	"errors"
 	"fmt"
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
 )
 
+// CreateTables if not yet created
 func CreateTables(db *pg.DB) error {
-	schemaTx,err := db.Begin()
+	createTx, err := db.Begin()
 	if err != nil {
 		return err
 	}
-	defer schemaTx.Close()
+	defer createTx.Close()
 	for _, model := range []interface{}{
 		(*Character)(nil),
 		(*Appearance)(nil),
@@ -21,23 +21,24 @@ func CreateTables(db *pg.DB) error {
 		(*Inventory)(nil),
 		(*EquippedItems)(nil),
 	} {
-		err := schemaTx.CreateTable(model, &orm.CreateTableOptions{
+		err := createTx.CreateTable(model, &orm.CreateTableOptions{
 			IfNotExists:   true,
 			FKConstraints: true,
 		})
 		if err != nil {
-			return errors.New(fmt.Sprintf("%v, %v", err, schemaTx.Rollback()))
+			return fmt.Errorf("%v, %v", err, createTx.Rollback())
 		}
 	}
-	return schemaTx.Commit()
+	return createTx.Commit()
 }
 
+// DeleteTables if they exist
 func DeleteTables(db *pg.DB) error {
-	purgeTx, err := db.Begin()
+	deleteTx, err := db.Begin()
 	if err != nil {
 		return err
 	}
-	defer purgeTx.Close()
+	defer deleteTx.Close()
 
 	for _, model := range []interface{}{
 		(*Character)(nil),
@@ -47,13 +48,13 @@ func DeleteTables(db *pg.DB) error {
 		(*Inventory)(nil),
 		(*EquippedItems)(nil),
 	} {
-		err := purgeTx.DropTable(model, &orm.DropTableOptions{
+		err := deleteTx.DropTable(model, &orm.DropTableOptions{
 			IfExists: true,
 			Cascade:  true,
 		})
 		if err != nil {
-			return errors.New(fmt.Sprintf("%v, %v", err, purgeTx.Rollback()))
+			return fmt.Errorf("%v, %v", err, deleteTx.Rollback())
 		}
 	}
-	return purgeTx.Commit()
+	return deleteTx.Commit()
 }
