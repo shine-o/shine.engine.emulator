@@ -132,6 +132,8 @@ func (pcb *CommandBase) String() string {
 	}
 	return string(rawJSON)
 }
+
+// ExportedPcb is a utility struct for logging network packets
 type ExportedPcb struct {
 	PacketType    string `json:"packetType"`
 	Length        int    `json:"length"`
@@ -142,8 +144,9 @@ type ExportedPcb struct {
 	RawData       string `json:"rawData"`
 	FriendlyName  string `json:"friendlyName"`
 }
-func (pcb *CommandBase) JSON() ExportedPcb {
 
+// JSON representation of a processed network command
+func (pcb *CommandBase) JSON() ExportedPcb {
 	//department = opCode >> 10
 	//command = opCode & 1023
 	ePcb := ExportedPcb{
@@ -162,6 +165,7 @@ func (pcb *CommandBase) JSON() ExportedPcb {
 	}
 	return ePcb
 }
+
 // Set Settings specified by the shine service
 func (s *Settings) Set() {
 	if cl, err := InitCommandList(s.CommandsFilePath); err != nil {

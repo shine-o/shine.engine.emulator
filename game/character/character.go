@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var log     *logger.Logger
+var log *logger.Logger
 
 func init() {
 	log = logger.Init("NetworkingLogger", true, false, ioutil.Discard)
@@ -132,27 +132,37 @@ type EquippedItems struct {
 	DeletedAt        time.Time `pg:",soft_delete"`
 }
 
+// ErrInvalidSlot happens if the client tries to bypass client side verification
 var ErrInvalidSlot = &ErrCharacter{
 	Code:    0,
 	Message: "invalid slot",
 }
+
+// ErrNameTaken name is reserved or in use
 var ErrNameTaken = &ErrCharacter{
 	Code:    1,
 	Message: "name taken",
 }
+
+// ErrNoSlot happens if the client tries to bypass client side verification
 var ErrNoSlot = &ErrCharacter{
 	Code:    2,
 	Message: "no slot available",
 }
+
+// ErrInvalidName happens if the client tries to bypass client side verification
 var ErrInvalidName = &ErrCharacter{
 	Code:    3,
 	Message: "invalid name",
 }
+
+// ErrInvalidClassGender happens if the client tries to bypass client side verification
 var ErrInvalidClassGender = &ErrCharacter{
 	Code:    4,
 	Message: "invalid class gender data",
 }
 
+// ErrCharacter is used to handle known errors
 type ErrCharacter struct {
 	Code    int
 	Message string
@@ -167,6 +177,7 @@ const (
 	startMap   = "Rou"
 )
 
+// Validate checks data sent by the client is valid
 func Validate(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) error {
 
 	if req.SlotNum > 5 {
@@ -208,25 +219,8 @@ func Validate(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) error {
 	return nil
 }
 
+// New creates character for the User with userID and returns data the client can understand
 func New(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) (structs.AvatarInformation, error) {
-	//err := Validate(db, userID, req)
-	//if err != nil {
-	//	switch err.Error() {
-	//	case ErrInvalidName.Error():
-	//		// name taken error
-	//		break
-	//	case ErrNameTaken.Error():
-	//		// errcode 385
-	//		break
-	//	case ErrInvalidSlot.Error():
-	//		break
-	//	case ErrInvalidClassGender.Error():
-	//		break
-	//	case ErrNoSlot.Error():
-	//		break
-	//	}
-	//	return structs.AvatarInformation{}, err
-	//}
 	newTx, err := db.Begin()
 
 	if err != nil {
@@ -246,8 +240,10 @@ func New(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) (structs.Avata
 	_, err = newTx.Model(&char).Returning("*").Insert()
 
 	if err != nil {
-		newTx.Rollback()
-		return structs.AvatarInformation{}, err
+		return structs.AvatarInformation{}, &ErrCharacter{
+			Code:    7,
+			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
+		}
 	}
 
 	char.
@@ -291,9 +287,11 @@ func New(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) (structs.Avata
 			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
 		}
 	}
-	return char.ncRepresentation(), newTx.Commit()
+	return char.NcRepresentation(), newTx.Commit()
 }
 
+// Delete character for User with userID
+// soft deletion is performed
 func Delete(db *pg.DB, userID uint64, req structs.NcAvatarEraseReq) error {
 	deleteTx, err := db.Begin()
 	defer deleteTx.Close()
@@ -368,7 +366,6 @@ func Delete(db *pg.DB, userID uint64, req structs.NcAvatarEraseReq) error {
 
 	return deleteTx.Commit()
 }
-
 
 func (c *Character) initialAppearance(shape structs.ProtoAvatarShapeInfo) *Character {
 	isMale := (shape.BF >> 7) & 1
@@ -459,7 +456,8 @@ func (c *Character) initialEquippedItems() *Character {
 	return c
 }
 
-func (c *Character) ncRepresentation() structs.AvatarInformation {
+// NcRepresentation returns a struct that can be serialized into bytes and can be sent to the client
+func (c *Character) NcRepresentation() structs.AvatarInformation {
 	var name [20]byte
 	var mapName [12]byte
 	copy(name[:], c.Name)
@@ -476,8 +474,8 @@ func (c *Character) ncRepresentation() structs.AvatarInformation {
 			Name: mapName,
 		},
 		DelInfo: structs.ProtoAvatarDeleteInfo{},
-		Shape:   c.Appearance.ncRepresentation(),
-		Equip:   c.EquippedItems.ncRepresentation(),
+		Shape:   c.Appearance.NcRepresentation(),
+		Equip:   c.EquippedItems.NcRepresentation(),
 		TutorialInfo: structs.ProtoTutorialInfo{ // x(
 			TutorialState: 2,
 			TutorialStep:  byte(0),
@@ -486,7 +484,8 @@ func (c *Character) ncRepresentation() structs.AvatarInformation {
 	return nc
 }
 
-func (cei *EquippedItems) ncRepresentation() structs.ProtoEquipment {
+// NcRepresentation returns a struct that can be serialized into bytes and can be sent to the client
+func (cei *EquippedItems) NcRepresentation() structs.ProtoEquipment {
 	return structs.ProtoEquipment{
 		EquHead:         cei.Head,
 		EquMouth:        cei.ApparelFace,
@@ -512,7 +511,8 @@ func (cei *EquippedItems) ncRepresentation() structs.ProtoEquipment {
 	}
 }
 
-func (ca *Appearance) ncRepresentation() structs.ProtoAvatarShapeInfo {
+// NcRepresentation returns a struct that can be serialized into bytes and can be sent to the client
+func (ca *Appearance) NcRepresentation() structs.ProtoAvatarShapeInfo {
 	return structs.ProtoAvatarShapeInfo{
 		BF:        1 | ca.Class<<2 | ca.Gender<<7,
 		HairType:  ca.HairType,

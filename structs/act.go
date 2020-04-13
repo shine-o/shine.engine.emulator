@@ -152,7 +152,6 @@ func (nc *NcActGatherStartReq) PdbType() string {
 `
 }
 
-
 //struct PROTO_NC_ACT_SOMEONESHOUT_CMD
 //{
 //  char itemLinkDataCount;
@@ -275,7 +274,7 @@ func (nc *NcActChangeModeReq) PdbType() string {
 //};
 type NcActSomeoneProduceCastCmd struct {
 	Caster uint16
-	Item uint16
+	Item   uint16
 }
 
 func (nc *NcActSomeoneProduceCastCmd) String() string {
@@ -331,7 +330,7 @@ func (nc *NcActSomeoneFoldTentCmd) PdbType() string {
 //};
 type NcActSomeoneChangeModeCmd struct {
 	Handle uint16
-	Mode byte
+	Mode   byte
 }
 
 func (nc *NcActSomeoneChangeModeCmd) String() string {
@@ -359,7 +358,7 @@ func (nc *NcActSomeoneChangeModeCmd) PdbType() string {
 //};
 type NcActSomeoneProduceMakeCmd struct {
 	Caster uint16
-	Item uint16
+	Item   uint16
 }
 
 func (nc *NcActSomeoneProduceMakeCmd) String() string {
