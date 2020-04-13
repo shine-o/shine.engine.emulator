@@ -226,11 +226,11 @@ func (nc *NcBatSkillBashObjCastReq) PdbType() string {
 //  ABSTATEINDEX abstate;
 //};
 type NcBatAbstateSetCmd struct {
-	Handle uint16
+	Handle  uint16
 	Abstate uint32
 }
 
-func (nc * NcBatAbstateSetCmd) String() string {
+func (nc *NcBatAbstateSetCmd) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -238,7 +238,7 @@ func (nc * NcBatAbstateSetCmd) String() string {
 	return string(sd)
 }
 
-func (nc * NcBatAbstateSetCmd) PdbType() string {
+func (nc *NcBatAbstateSetCmd) PdbType() string {
 	return `
 	struct PROTO_NC_BAT_ABSTATESET_CMD
 	{
@@ -258,15 +258,15 @@ func (nc * NcBatAbstateSetCmd) PdbType() string {
 //  char IsMissDamage;
 //};
 type NcBatDotDamageCmd struct {
-	Object uint16
-	RestHP uint32
-	Damage uint16
-	Abstate uint16
+	Object        uint16
+	RestHP        uint32
+	Damage        uint16
+	Abstate       uint16
 	HPChangeOrder uint16
-	IsMissDamage byte
+	IsMissDamage  byte
 }
 
-func (nc * NcBatDotDamageCmd) String() string {
+func (nc *NcBatDotDamageCmd) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -274,7 +274,7 @@ func (nc * NcBatDotDamageCmd) String() string {
 	return string(sd)
 }
 
-func (nc * NcBatDotDamageCmd) PdbType() string {
+func (nc *NcBatDotDamageCmd) PdbType() string {
 	return `
 	struct PROTO_NC_BAT_DOTDAMAGE_CMD
 	{
@@ -302,18 +302,18 @@ func (nc * NcBatDotDamageCmd) PdbType() string {
 //  unsigned __int16 hpchangeorder;
 //};
 type NcBatTargetInfoCmd struct {
-	Order byte
-	Handle uint16
-	TargetHP uint32
-	TargetSP uint32
-	TargetMaxSP uint32
-	TargetLP uint16
-	TargetMaxLP uint32
-	TargetLevel byte
+	Order         byte
+	Handle        uint16
+	TargetHP      uint32
+	TargetSP      uint32
+	TargetMaxSP   uint32
+	TargetLP      uint16
+	TargetMaxLP   uint32
+	TargetLevel   byte
 	HpChangeOrder uint16
 }
 
-func (nc * NcBatTargetInfoCmd) String() string {
+func (nc *NcBatTargetInfoCmd) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -321,7 +321,7 @@ func (nc * NcBatTargetInfoCmd) String() string {
 	return string(sd)
 }
 
-func (nc * NcBatTargetInfoCmd) PdbType() string {
+func (nc *NcBatTargetInfoCmd) PdbType() string {
 	return `
 	struct PROTO_NC_BAT_TARGETINFO_CMD
 	{
@@ -349,15 +349,15 @@ func (nc * NcBatTargetInfoCmd) PdbType() string {
 //  PROTO_NC_BAT_SKILLBASH_HIT_DAMAGE_CMD::SkillDamage target[];
 //};
 type NcBatSkillBashHitDamageCmd struct {
-	Index uint16
-	Caster uint16
+	Index     uint16
+	Caster    uint16
 	TargetNum byte
-	SkillID uint16
-	Target uint16
-	Targets []NcBatSkillBashHitDamageCmdSkillDamage `struct:"sizefrom=TargetNum"`
+	SkillID   uint16
+	Target    uint16
+	Targets   []NcBatSkillBashHitDamageCmdSkillDamage `struct:"sizefrom=TargetNum"`
 }
 
-func (nc * NcBatSkillBashHitDamageCmd) String() string {
+func (nc *NcBatSkillBashHitDamageCmd) String() string {
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
@@ -365,7 +365,7 @@ func (nc * NcBatSkillBashHitDamageCmd) String() string {
 	return string(sd)
 }
 
-func (nc * NcBatSkillBashHitDamageCmd) PdbType() string {
+func (nc *NcBatSkillBashHitDamageCmd) PdbType() string {
 	return `
 	struct PROTO_NC_BAT_SKILLBASH_HIT_DAMAGE_CMD
 	{
@@ -385,7 +385,7 @@ func (nc * NcBatSkillBashHitDamageCmd) PdbType() string {
 //  PROTO_NC_BAT_SKILLBASH_HIT_OBJ_START_CMD castinfo;
 //};
 type NcBatSomeoneSkillBashHitObjStartCmd struct {
-	Caster uint16
+	Caster   uint16
 	CastInfo NcBatSkillBashHitObjStartCmd
 }
 
@@ -414,9 +414,9 @@ func (nc *NcBatSomeoneSkillBashHitObjStartCmd) PdbType() string {
 //  unsigned __int16 index;
 //};
 type NcBatSkillBashHitObjStartCmd struct {
-	Skill uint16
+	Skill     uint16
 	TargetObj uint16
-	Index uint16
+	Index     uint16
 }
 
 //struct PROTO_NC_BAT_SKILLBASH_HIT_BLAST_CMD
@@ -426,8 +426,8 @@ type NcBatSkillBashHitObjStartCmd struct {
 //  unsigned __int16 nSkillID;
 //};
 type NcBatSkillBashHitBlastCmd struct {
-	Index uint16
-	Caster uint16
+	Index   uint16
+	Caster  uint16
 	SkillID uint16
 }
 

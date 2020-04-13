@@ -272,7 +272,7 @@ func (nc *NcBriefInfoAbstateChangeListCmd) PdbType() string {
 //  PROTO_NC_BRIEFINFO_LOGINCHARACTER_CMD chars[];
 //};
 type NcBriefInfoCharacterCmd struct {
-	Number byte
+	Number     byte
 	Characters []NcBriefInfoLoginCharacterCmd `struct:"sizefrom=Number"`
 }
 
@@ -346,8 +346,8 @@ func (nc *NcBriefInfoRegenMoverCmd) PdbType() string {
 //  char nSlotNum;
 //};
 type NcBriefInfoChangeUpgradeCmd struct {
-	Handle uint16
-	Item uint16
+	Handle  uint16
+	Item    uint16
 	Upgrade byte
 	SlotNum byte
 }
@@ -378,7 +378,7 @@ func (nc *NcBriefInfoChangeUpgradeCmd) PdbType() string {
 //  PROTO_NC_BRIEFINFO_REGENMOVER_CMD Movers[];
 //};
 type NcBriefInfoMoverCmd struct {
-	Count byte
+	Count  byte
 	Movers []NcBriefInfoRegenMoverCmd `struct:"sizefrom=Count"`
 }
 
@@ -473,8 +473,8 @@ func (nc *NcBriefInfoLoginCharacterCmd) PdbType() string {
 //  char currentkilllevel;
 //};
 type NcBriefInfoChangeWeaponCmd struct {
-	UpgradeInfo NcBriefInfoChangeUpgradeCmd
-	CurrentMobID uint16
+	UpgradeInfo      NcBriefInfoChangeUpgradeCmd
+	CurrentMobID     uint16
 	CurrentKillLevel byte
 }
 
@@ -527,4 +527,3 @@ func (nc *NcBriefInfoInformCmd) PdbType() string {
 	};
 `
 }
-

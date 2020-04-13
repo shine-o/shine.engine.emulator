@@ -69,8 +69,8 @@ func (nc *NcMoverHungryCmd) PdbType() string {
 //};
 type NcMoverRideOnCmd struct {
 	MoverHandle uint16
-	Slot byte
-	Grade byte
+	Slot        byte
+	Grade       byte
 }
 
 func (nc *NcMoverRideOnCmd) String() string {
@@ -100,10 +100,10 @@ func (nc *NcMoverRideOnCmd) PdbType() string {
 //  char nGrade;
 //};
 type NcMoverSomeoneRideOnCmd struct {
-	Handle uint16
+	Handle      uint16
 	MoverHandle uint16
-	Slot byte
-	Grade byte
+	Slot        byte
+	Grade       byte
 }
 
 func (nc *NcMoverSomeoneRideOnCmd) String() string {

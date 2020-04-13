@@ -26,9 +26,9 @@ type StreetBoothSignBoard struct {
 //  SHINE_ITEM_STRUCT item;
 //};
 type NcBoothEntrySellAckItemList struct {
-	DataSize byte
+	DataSize  byte
 	BoothSlot byte
-	UnitCost uint64
+	UnitCost  uint64
 	//struct SHINE_ITEM_STRUCT
 	//{
 	//  unsigned __int16 itemid;
