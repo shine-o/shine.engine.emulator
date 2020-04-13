@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/shine-o/shine.engine.core/game/character"
-	"github.com/shine-o/shine.engine.core/grpc/login-world"
+	"github.com/shine-o/shine.engine.core/grpc/login"
 	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/shine-o/shine.engine.core/structs"
 	"github.com/spf13/viper"
@@ -58,11 +58,11 @@ func loginToWorld(ctx context.Context, req structs.NcUserLoginWorldReq) error {
 		}
 		defer conn.Close()
 
-		c := lw.NewLoginClient(conn)
+		c := login.NewLoginClient(conn)
 
 		rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
 
-		ui, err := c.AccountInfo(rpcCtx, &lw.User{
+		ui, err := c.AccountInfo(rpcCtx, &login.User{
 			UserName: userName,
 		})
 
