@@ -209,24 +209,24 @@ func Validate(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) error {
 }
 
 func New(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) (structs.AvatarInformation, error) {
-		//err := Validate(req)
-		//if err != nil {
-		//	switch err.Error() {
-		//	case errInvalidName.Error():
-		//		// name taken error
-		//		break
-		//	case errNameTaken.Error():
-		//		// errcode 385
-		//		break
-		//	case errInvalidSlot.Error():
-		//		break
-		//	case errInvalidClassGender.Error():
-		//		break
-		//	case errNoSlot.Error():
-		//		break
-		//	}
-		//	return structs.AvatarInformation{}, err
-		//}
+	//err := Validate(db, userID, req)
+	//if err != nil {
+	//	switch err.Error() {
+	//	case ErrInvalidName.Error():
+	//		// name taken error
+	//		break
+	//	case ErrNameTaken.Error():
+	//		// errcode 385
+	//		break
+	//	case ErrInvalidSlot.Error():
+	//		break
+	//	case ErrInvalidClassGender.Error():
+	//		break
+	//	case ErrNoSlot.Error():
+	//		break
+	//	}
+	//	return structs.AvatarInformation{}, err
+	//}
 	newTx, err := db.Begin()
 
 	if err != nil {
