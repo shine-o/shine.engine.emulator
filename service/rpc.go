@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/shine-o/shine.engine.core/grpc/login-world"
+	"github.com/shine-o/shine.engine.core/grpc/world"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"net"
@@ -13,18 +13,18 @@ import (
 
 // server is used to implement helloworld.GreeterServer.
 type server struct {
-	lw.UnimplementedWorldServer
+	world.UnimplementedWorldServer
 }
 
 const gRPCTimeout = time.Second * 2
 var errBadRPCClient = errors.New("gRPC client is not present in the config file")
 
-func (s *server) GetWorldData(ctx context.Context, req *lw.WorldQuery) (*lw.WorldData, error) {
+func (s *server) GetWorldData(ctx context.Context, req *world.WorldQuery) (*world.WorldData, error) {
 	worldID := viper.GetInt("world.id")
 	worldName := viper.GetString("world.name")
 	worldIP := viper.GetString("world.external_ip")
 	worldPort := int32(viper.GetInt("world.port"))
-	return &lw.WorldData{
+	return &world.WorldData{
 		WorldNumber:          int32( worldID),
 		WorldName:            worldName,
 		WorldStatus:          6,
@@ -62,7 +62,7 @@ func newRPCServer(name string) {
 			log.Errorf("failed to listen on port %v for service %v : %v", name, port, err)
 		}
 		s := grpc.NewServer()
-		lw.RegisterWorldServer(s, &server{})
+		world.RegisterWorldServer(s, &server{})
 
 		log.Infof("Starting gRPC server %v@::%v", name, port)
 		if err := s.Serve(lis); err != nil {
