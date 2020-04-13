@@ -1,24 +1,32 @@
+# Golang CircleCI 2.0 configuration file
+version: 2
 jobs:
   build:
-    executor:
-      name: go/default
-      tag: '1.13.6'
+    docker:
+      # primary image, where commands are run
+      - image: shineo/golang:1.13.6-alpine3.10
+      # secondary images, needed for running tests
+      - image: redis:alpine3.11
+        name: redis
+        command: ["redis-server"]
+      - image: postgres:12.2-alpine
+        name: postgres
+        environment:
+          - POSTGRES_DB=shine
+          - POSTGRES_USER=user
+          - POSTGRES_PASSWORD=password
+        command: ["postgres"]
+
+    working_directory: /go/src/github.com/shine-o/shine.engine.core
     steps:
       - checkout
-      - go/install:
-          version: '1.13.6'
-      - go/load-cache
-      - go/mod-download
-      - go/save-cache
-      - go/test:
-          covermode: atomic
-          failfast: true
-          race: true
-
-orbs:
-  go: circleci/go@1.1.0
-version: 2.1
-workflows:
-  main:
-    jobs:
-      - build
+      # specify any bash command here prefixed with `run: `
+      - run:
+          name: download module dependencies
+          command: go mod download
+      - run:
+          name: run network tests
+          command: go test github.com/shine-o/shine.engine.core/net
+#      - run:
+#          name: build docker image and push upstream
+#          command: /root/docker-image.sh
