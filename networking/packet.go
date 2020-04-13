@@ -51,7 +51,7 @@ func DecodePacket(pType string, pLen int, data []byte) (Command, error) {
 	)
 
 	br := bytes.NewReader(data)
-	
+
 	if err := binary.Read(br, binary.LittleEndian, &opCode); err != nil {
 		log.Error(err)
 		return pc, err

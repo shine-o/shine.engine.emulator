@@ -580,7 +580,7 @@ func (nc *NcCharClientAutoPickCmd) PdbType() string {
 //};
 type NcCharUseItemMinimonUseBroadCmd struct {
 	CharHandle uint16
-	Use byte
+	Use        byte
 }
 
 func (nc *NcCharUseItemMinimonUseBroadCmd) String() string {

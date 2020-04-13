@@ -48,7 +48,6 @@ type ShineCoordType struct {
 	Direction byte
 }
 
-
 //union PROTO_NC_BRIEFINFO_LOGINCHARACTER_CMD::<unnamed-type-shapedata>
 //{
 //  CHARBRIEFINFO_NOTCAMP notcamp;

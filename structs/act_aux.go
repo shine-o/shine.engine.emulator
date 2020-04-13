@@ -8,7 +8,6 @@ type NcActSomeoneMoveWalkCmdAttr struct {
 	BF0 int16
 }
 
-
 //union PROTO_NC_ACT_SOMEONESHOUT_CMD::<unnamed-type-speaker>
 //{
 //  char charID[20];
