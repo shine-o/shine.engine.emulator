@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	lw "github.com/shine-o/shine.engine.core/grpc/login-world"
+	w "github.com/shine-o/shine.engine.core/grpc/world"
 	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/shine-o/shine.engine.core/structs"
 )
@@ -177,7 +177,7 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 	}
 }
 
-func userWorldSelectAck(ctx context.Context, wd *lw.WorldData) {
+func userWorldSelectAck(ctx context.Context, wd *w.WorldData) {
 	select {
 	case <-ctx.Done():
 		return
