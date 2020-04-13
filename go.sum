@@ -143,6 +143,8 @@ github.com/segmentio/encoding v0.1.10 h1:0b8dva47cSuNQR5ZcU3d0pfi9EnPpSK6q7y5ZGE
 github.com/segmentio/encoding v0.1.10/go.mod h1:RWhr02uzMB9gQC1x+MfYxedtmBibb9cZ6Vv9VxRSSbw=
 github.com/shine-o/shine.engine.core v0.0.2-0.20200413132758-6d5cd7aed160 h1:k+wXAvT4kjmVYn1h3IFy8/iROnDIVBT0xKruyBpdKLE=
 github.com/shine-o/shine.engine.core v0.0.2-0.20200413132758-6d5cd7aed160/go.mod h1:Rk5cPnMlTraeV2PnuZnVQStJUoUNNTP9pr5QVJiiHo4=
+github.com/shine-o/shine.engine.core v0.0.2 h1:qlGc46P3XkDTKfDto/LtRkCz3xRMbolGf0OEsQUkhEQ=
+github.com/shine-o/shine.engine.core v0.0.2/go.mod h1:Rk5cPnMlTraeV2PnuZnVQStJUoUNNTP9pr5QVJiiHo4=
 github.com/shurcooL/sanitized_anchor_name v1.0.0 h1:PdmoCO6wvbs+7yrJyMORt4/BmY5IYyJwS/kOiWx8mHo=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
