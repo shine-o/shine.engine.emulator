@@ -4,26 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
+	"github.com/shine-o/shine.engine.core/grpc/login-world"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"net"
-	"time"
 )
 
 type server struct {
 	lw.UnimplementedLoginServer
 }
 
-const gRPCTimeout = time.Second * 2
-
-var errBadRpcClient = errors.New("gRPC client is not present in the config file")
+var errBadRPCClient = errors.New("gRPC client is not present in the config file")
 
 func (s *server) AccountInfo(ctx context.Context, req *lw.User) (*lw.UserInfo, error) {
-
-	// query user by user_name
 	var userID uint64
 	err := db.Model((*User)(nil)).Column("id").Where("user_name = ?", req.UserName).Limit(1).Select(&userID)
 	if err != nil {
@@ -34,7 +29,7 @@ func (s *server) AccountInfo(ctx context.Context, req *lw.User) (*lw.UserInfo, e
 	}, nil
 }
 
-func newRpcConn(name string) (*grpc.ClientConn, error){
+func newRPCClient(name string) (*grpc.ClientConn, error) {
 	clientKey := fmt.Sprintf("gRPC.clients.%v", name)
 	if viper.IsSet(clientKey) {
 		host := viper.GetString(fmt.Sprintf("%v.%v", clientKey, "host"))
@@ -50,14 +45,14 @@ func newRpcConn(name string) (*grpc.ClientConn, error){
 		return conn, nil
 	}
 
-	return &grpc.ClientConn{}, errBadRpcClient
+	return &grpc.ClientConn{}, errBadRPCClient
 }
 
-func newRpcServer(name string) {
+func newRPCServer(name string) {
 	clientKey := fmt.Sprintf("gRPC.servers.%v", name)
 	if viper.IsSet(clientKey) {
 		port := viper.GetString(fmt.Sprintf("%v.%v", clientKey, "port"))
-		address := fmt.Sprintf(":%v",  port)
+		address := fmt.Sprintf(":%v", port)
 		lis, err := net.Listen("tcp", address)
 		if err != nil {
 			log.Errorf("could listen on port %v for service %v : %v", name, port, err)

@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/shine-o/shine.engine.networking/structs"
-	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
+	"github.com/shine-o/shine.engine.core/grpc/login-world"
+	"github.com/shine-o/shine.engine.core/structs"
 	"github.com/spf13/viper"
 	"strconv"
 	"strings"
@@ -85,7 +85,7 @@ func checkWorldStatus(ctx context.Context) error {
 
 		for _, w := range worlds {
 			clientKey := fmt.Sprintf("gRPC.clients.%v", w)
-			_, err := newRpcConn(clientKey)
+			_, err := newRPCClient(clientKey)
 			if err != nil {
 				return err
 			}
@@ -95,19 +95,19 @@ func checkWorldStatus(ctx context.Context) error {
 	}
 }
 
-type World struct {
-	ID uint8
+type world struct {
+	ID   uint8
 	Name string
 }
 
-type AvailableWorlds []World
+type availableWorlds []world
 
-func avalWorlds() (AvailableWorlds, error)  {
-	aw := AvailableWorlds{}
+func worlds() (availableWorlds, error) {
+	aw := availableWorlds{}
 	if !viper.IsSet("worlds") {
 		return aw, ErrNoWorld
 	}
-	
+
 	worlds := make([]map[string]string, 0)
 	var m map[string]string
 	worldsI := viper.Get("worlds")
@@ -120,14 +120,14 @@ func avalWorlds() (AvailableWorlds, error)  {
 		}
 		worlds = append(worlds, m)
 	}
-	
+
 	for _, v := range worlds {
 		id, err := strconv.Atoi(v["id"])
 		if err != nil {
 			log.Error(err)
 			continue
 		}
-		w := World{
+		w := world{
 			ID:   uint8(id),
 			Name: v["name"],
 		}
@@ -143,13 +143,13 @@ func serverSelectScreen(ctx context.Context) (structs.NcUserLoginAck, error) {
 	default:
 		nc := structs.NcUserLoginAck{}
 
-		aw, err := avalWorlds()
+		aw, err := worlds()
 		if err != nil {
 			return structs.NcUserLoginAck{}, err
 		}
 
 		for _, w := range aw {
-			conn, err := newRpcConn(w.Name)
+			conn, err := newRPCClient(w.Name)
 			if err != nil {
 				return nc, err
 			}
@@ -186,7 +186,7 @@ func userSelectedServer(ctx context.Context, req structs.NcUserWorldSelectReq) (
 		return &lw.WorldData{}, ErrCC
 	default:
 
-		aw, err := avalWorlds()
+		aw, err := worlds()
 
 		if err != nil {
 			return &lw.WorldData{}, err
@@ -194,7 +194,7 @@ func userSelectedServer(ctx context.Context, req structs.NcUserWorldSelectReq) (
 		}
 		for _, w := range aw {
 			if w.ID == req.WorldNo {
-				conn, err := newRpcConn(w.Name)
+				conn, err := newRPCClient(w.Name)
 
 				if err != nil {
 					return &lw.WorldData{}, err

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
@@ -26,6 +25,7 @@ type User struct {
 	DeletedAt time.Time `pg:"soft_delete"`
 }
 
+// Migrate database
 func Migrate(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
@@ -76,8 +76,8 @@ func dbConn(ctx context.Context, schema string) *pg.DB {
 		Database:        dbName,
 		ApplicationName: "accounts",
 		TLSConfig:       nil,
-		PoolSize:    5,
-		PoolTimeout: 5,
+		PoolSize:        5,
+		PoolTimeout:     5,
 	})
 
 	log.Info(db)
@@ -86,7 +86,7 @@ func dbConn(ctx context.Context, schema string) *pg.DB {
 }
 
 func createSchema(db *pg.DB) error {
-	schemaTx,err := db.Begin()
+	schemaTx, err := db.Begin()
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,7 @@ func createSchema(db *pg.DB) error {
 			FKConstraints: true,
 		})
 		if err != nil {
-			return errors.New(fmt.Sprintf("%v, %v", err, schemaTx.Rollback()))
+			return fmt.Errorf("%v, %v", err, schemaTx.Rollback())
 		}
 	}
 	return schemaTx.Commit()
@@ -126,7 +126,7 @@ func purge(db *pg.DB) error {
 			Cascade:  true,
 		})
 		if err != nil {
-			return errors.New(fmt.Sprintf("%v, %v", err, purgeTx.Rollback()))
+			return fmt.Errorf("%v, %v", err, purgeTx.Rollback())
 		}
 	}
 	return purgeTx.Commit()

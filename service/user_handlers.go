@@ -2,9 +2,9 @@ package service
 
 import (
 	"context"
-	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.networking/structs"
-	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
+	lw "github.com/shine-o/shine.engine.core/grpc/login-world"
+	"github.com/shine-o/shine.engine.core/networking"
+	"github.com/shine-o/shine.engine.core/structs"
 )
 
 func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
@@ -213,7 +213,6 @@ func userLoginWithOtpReq(ctx context.Context, pc *networking.Command) {
 		return
 	default:
 		nc := structs.NcUserLoginWithOtpReq{}
-		//if err := restruct.Unpack(pc.Base.Data, binary.LittleEndian, &nc); err != nil {
 		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 			log.Info(err)
 			go userLoginFailAck(ctx, &networking.Command{})

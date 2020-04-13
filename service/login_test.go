@@ -5,8 +5,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.networking/structs"
+	"github.com/shine-o/shine.engine.core/networking"
+	"github.com/shine-o/shine.engine.core/structs"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
@@ -27,9 +27,9 @@ func TestMain(m *testing.M) {
 		viper.AddConfigPath(path)
 		viper.SetConfigType("yaml")
 
-		//viper.SetConfigName(".login.circleci")
+		viper.SetConfigName(".login.circleci")
 		// for running tests locally, use this:
-		viper.SetConfigName(".login.test")
+		//viper.SetConfigName(".login.test")
 
 		// If a config file is found, read it in.
 		if err := viper.ReadInConfig(); err == nil {
