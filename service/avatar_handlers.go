@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
-	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.networking/structs"
+	"github.com/shine-o/shine.engine.core/game/character"
+	"github.com/shine-o/shine.engine.core/networking"
+	"github.com/shine-o/shine.engine.core/structs"
 )
 
 func avatarCreateReq(ctx context.Context, pc *networking.Command) {
@@ -23,14 +24,16 @@ func avatarCreateReq(ctx context.Context, pc *networking.Command) {
 			log.Error(err)
 			return
 		}
+		wsi := ctx.Value(networking.ShineSession)
+		ws := wsi.(*session)
 
-		err = validateCharacter(ctx, nc)
+		err = character.Validate(db, ws.UserID, nc)
 		if err != nil {
 			go createCharErr(ctx, err)
 			return
 		}
 
-		ai, err := newCharacter(ctx, nc)
+		ai, err := character.New(db, ws.UserID, nc)
 		if err != nil {
 			log.Error(err)
 			return
@@ -39,16 +42,20 @@ func avatarCreateReq(ctx context.Context, pc *networking.Command) {
 	}
 }
 
-func createCharErr(ctx context.Context, err error) {
-	log.Error(err)
-	errChar, ok := err.(*errCharacter)
-	if !ok {
+func ncAvatarCreateFailAck(ctx context.Context, errCode uint16) {
+	select {
+	case <-ctx.Done():
 		return
-	}
-	switch errChar.Code {
-	case 1:
-		go ncAvatarCreateFailAck(ctx, 385)
-		return
+	default:
+		pc := networking.Command{
+			Base: networking.CommandBase{
+				OperationCode: 5124,
+			},
+		}
+		pc.NcStruct = &structs.NcAvatarCreateFailAck{
+			Err: errCode,
+		}
+		go pc.Send(ctx)
 	}
 }
 
@@ -81,7 +88,10 @@ func avatarEraseReq(ctx context.Context, pc *networking.Command) {
 			log.Error(err)
 			return
 		}
-		err := deleteCharacter(ctx, nc)
+		wsi := ctx.Value(networking.ShineSession)
+		ws := wsi.(*session)
+
+		err := character.Delete(db, ws.UserID, nc)
 		if err != nil {
 			log.Error(err)
 			// todo: error nc if possible
@@ -105,5 +115,18 @@ func avatarEraseSuccAck(ctx context.Context, ack structs.NcAvatarEraseSuccAck) {
 		}
 		pc.NcStruct = &ack
 		go pc.Send(ctx)
+	}
+}
+
+func createCharErr(ctx context.Context, err error) {
+	log.Error(err)
+	errChar, ok := err.(*character.ErrCharacter)
+	if !ok {
+		return
+	}
+	switch errChar.Code {
+	case 1:
+		go ncAvatarCreateFailAck(ctx, 385)
+		return
 	}
 }

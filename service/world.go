@@ -3,9 +3,10 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/shine-o/shine.engine.networking"
-	"github.com/shine-o/shine.engine.networking/structs"
-	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
+	"github.com/shine-o/shine.engine.core/game/character"
+	"github.com/shine-o/shine.engine.core/grpc/login-world"
+	"github.com/shine-o/shine.engine.core/networking"
+	"github.com/shine-o/shine.engine.core/structs"
 	"github.com/spf13/viper"
 	"strings"
 	"time"
@@ -51,7 +52,7 @@ func loginToWorld(ctx context.Context, req structs.NcUserLoginWorldReq) error {
 		userName := strings.TrimRight(string(req.User.Name[:]), "\x00")
 		ws.UserName = userName
 
-		conn, err := newRpcConn("login")
+		conn, err := newRPCClient("login")
 		if err != nil {
 			return err
 		}
@@ -88,9 +89,9 @@ func userWorldInfo(ctx context.Context) (structs.NcUserLoginWorldAck, error) {
 		worldID := viper.GetInt("service.id")
 
 		var avatars []structs.AvatarInformation
-		var chars []Character
+		var chars []character.Character
 
-		err := worldDB.Model(&chars).
+		err := db.Model(&chars).
 			Relation("Appearance").
 			//Where("user_id = ?", ws.UserID).
 			Relation("Attributes").
@@ -106,7 +107,7 @@ func userWorldInfo(ctx context.Context) (structs.NcUserLoginWorldAck, error) {
 
 		if len(chars) > 0 {
 			for _, c := range chars {
-				avatars = append(avatars, c.ncRepresentation())
+				avatars = append(avatars, c.NcRepresentation())
 			}
 		}
 

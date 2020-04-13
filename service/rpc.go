@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	lw "github.com/shine-o/shine.engine.protocol-buffers/login-world"
+	"github.com/shine-o/shine.engine.core/grpc/login-world"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"net"
@@ -17,7 +17,7 @@ type server struct {
 }
 
 const gRPCTimeout = time.Second * 2
-var errBadRpcClient = errors.New("gRPC client is not present in the config file")
+var errBadRPCClient = errors.New("gRPC client is not present in the config file")
 
 func (s *server) GetWorldData(ctx context.Context, req *lw.WorldQuery) (*lw.WorldData, error) {
 	worldID := viper.GetInt("world.id")
@@ -33,7 +33,7 @@ func (s *server) GetWorldData(ctx context.Context, req *lw.WorldQuery) (*lw.Worl
 	}, nil
 }
 
-func newRpcConn(name string) (*grpc.ClientConn, error){
+func newRPCClient(name string) (*grpc.ClientConn, error){
 	clientKey := fmt.Sprintf("gRPC.clients.%v", name)
 	if viper.IsSet(clientKey) {
 		host := viper.GetString(fmt.Sprintf("%v.%v", clientKey, "host"))
@@ -49,22 +49,22 @@ func newRpcConn(name string) (*grpc.ClientConn, error){
 		return conn, nil
 	}
 
-	return &grpc.ClientConn{}, errBadRpcClient
+	return &grpc.ClientConn{}, errBadRPCClient
 }
 
-func newRpcServer(name string) {
+func newRPCServer(name string) {
 	clientKey := fmt.Sprintf("gRPC.servers.%v", name)
 	if viper.IsSet(clientKey) {
 		port := viper.GetString(fmt.Sprintf("%v.%v", clientKey, "port"))
 		address := fmt.Sprintf(":%v",  port)
 		lis, err := net.Listen("tcp", address)
 		if err != nil {
-			log.Errorf("could listen on port %v for service %v : %v", name, port, err)
+			log.Errorf("failed to listen on port %v for service %v : %v", name, port, err)
 		}
 		s := grpc.NewServer()
 		lw.RegisterWorldServer(s, &server{})
 
-		log.Infof("Loading gRPC server connections %v@::%v", name, port)
+		log.Infof("Starting gRPC server %v@::%v", name, port)
 		if err := s.Serve(lis); err != nil {
 			log.Errorf("failed to serve: %v", err)
 		}
