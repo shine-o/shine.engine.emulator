@@ -1,4 +1,4 @@
-// Package cmd various CLI commands related to the world service
+// Package cmd various CLI commands related to the service service
 package cmd
 
 import (

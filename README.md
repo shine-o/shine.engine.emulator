@@ -6,19 +6,12 @@
 [![CircleCI](https://circleci.com/gh/shine-o/shine.engine.world/tree/master.svg?style=shield)](https://circleci.com/gh/shine-o/shine.engine.world/tree/master.svg?style=shield)
 [![Go Report Card](https://goreportcard.com/badge/github.com/shine-o/shine.engine.world)](https://goreportcard.com/report/github.com/shine-o/shine.engine.world)
 
-This project has dependencies on the modules: 
+This project has dependencies on the module: 
 
-- [Networking](https://github.com/shine-o/shine.engine.networking)
-- [Structs](https://github.com/shine-o/shine.engine.networking/structs)
-- [Protocol Buffers](https://github.com/shine-o/shine.engine.protocol-buffers)
+- [Core](https://github.com/shine-o/shine.engine.core)
 
-If changes are needed on these modules, append to the file go.mod:
+
+If quick changes for testing are needed on these modules, append to the file go.mod:
        
-    replace github.com/shine-o/shine.engine.networking => C:\Users\marbo\go\src\github.com\shine-o\shine.engine.networking
-    replace github.com/shine-o/shine.engine.networking/structs => C:\Users\marbo\go\src\github.com\shine-o\shine.engine.structs
-    replace github.com/shine-o/shine.engine.protocol-buffers => C:\Users\marbo\go\src\github.com\shine-o\shine.engine.protocol-buffers
+    replace github.com/shine-o/shine.engine.core => C:\Users\marbo\go\src\github.com\shine-o\shine.engine.core
 
-Obvious git practices like committing, not leaving garbage files, etc... are required to avoid problems. 
-
-
-With any other module, you can use [gohack](https://github.com/rogpeppe/gohack)
