@@ -45,6 +45,27 @@ func cleanDB() {
 }
 
 
+func createDummyCharacters() {
+	for i := 0; i <= 5; i++ {
+		name := fmt.Sprintf("mob%v", i+1)
+		c := structs.NcAvatarCreateReq{
+			SlotNum: byte(i),
+			Name:    structs.Name5{},
+			Shape: structs.ProtoAvatarShapeInfo{
+				BF:        133,
+				HairType:  6,
+				HairColor: 0,
+				FaceShape: 0,
+			},
+		}
+		copy(c.Name.Name[:], name)
+		_, err := New(db, 1, c)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
 // test character data is valid
 func TestValidateCharacterRequest(t *testing.T) {
 	// {"packetType":"small","length":27,"department":5,"command":"1","opCode":5121,"data":"0046696768747265726f6f0000000000000000000085060000","rawData":"1b01140046696768747265726f6f0000000000000000000085060000","friendlyName":"NC_AVATAR_CREATE_REQ"}
@@ -129,7 +150,7 @@ func TestCharacterNameInUseError(t *testing.T) {
 		},
 	}
 	copy(c.Name.Name[:], name)
-	_, err := New(db,1, c)
+	 err := Validate(db,1, c)
 	if err == nil {
 		log.Error(err)
 	}
@@ -137,35 +158,17 @@ func TestCharacterNameInUseError(t *testing.T) {
 	errChar, ok := err.(*ErrCharacter)
 
 	if !ok {
+		log.Error(err)
 		t.Error("expected error of type ErrCharacter")
+		return
 	}
 
 	if errChar.Code != 1 {
+		log.Error(err)
 		t.Errorf("expected errorCharacter with code %v, instead got %v", 1, errChar.Code)
 	}
-
 }
 
-func createDummyCharacters() {
-	for i := 0; i <= 5; i++ {
-		name := fmt.Sprintf("mob%v", i+1)
-		c := structs.NcAvatarCreateReq{
-			SlotNum: byte(i),
-			Name:    structs.Name5{},
-			Shape: structs.ProtoAvatarShapeInfo{
-				BF:        133,
-				HairType:  6,
-				HairColor: 0,
-				FaceShape: 0,
-			},
-		}
-		copy(c.Name.Name[:], name)
-		_, err := New(db, 1, c)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-}
 
 func TestNoSlotAvailableError(t *testing.T) {
 	defer cleanDB()
