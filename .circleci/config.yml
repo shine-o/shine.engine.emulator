@@ -19,7 +19,7 @@ jobs:
           - POSTGRES_PASSWORD=password
         command: ["postgres"]
 
-    working_directory: /go/src/github.com/shine-o/shine.engine.service
+    working_directory: /go/src/github.com/shine-o/shine.engine.world
     steps:
       - checkout
       # specify any bash command here prefixed with `run: `
@@ -28,13 +28,13 @@ jobs:
           command: go mod download
       - run:
           name: build binary
-          command: GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o service
+          command: GO111MODULE=on GOOS=linux GOARCH=amd64 go build -o world
       - run:
           name: migrate test database
-          command: ./service migrate --config "config/.world.circleci.yaml" --fixtures "true"
+          command: ./world migrate --config "config/.world.circleci.yaml" --fixtures "true"
       - run:
           name: run tests
-          command: go test github.com/shine-o/shine.engine.service/service
+          command: go test github.com/shine-o/shine.engine.world/service
       - setup_remote_docker:
         # only available if you pay
         # docker_layer_caching: true
