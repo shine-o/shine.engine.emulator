@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/shine-o/shine.engine.networking/structs"
+	"github.com/shine-o/shine.engine.core/structs"
 	"gopkg.in/restruct.v1"
 	"io/ioutil"
 	"os"
@@ -46,7 +46,6 @@ func generateOpCodeSwitch() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Error(ps)
 	start := `
 	package generated
 	func ncStructRepresentation(opCode uint16, data []byte) {

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
-	networking "github.com/shine-o/shine.engine.networking"
+	networking "github.com/shine-o/shine.engine.core/networking"
 	"github.com/spf13/viper"
 	"net/http"
 	"sync"

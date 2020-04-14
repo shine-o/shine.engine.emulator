@@ -3,3 +3,5 @@ output
 .idea
 **/*.pcapng
 !tcp/*.pcapng
+capture_no_race.exe
+*.pprof

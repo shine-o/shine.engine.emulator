@@ -10,20 +10,20 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
-	"github.com/google/gopacket/tcpassembly"
+	"github.com/google/gopacket/reassembly"
 	"github.com/google/logger"
 	"github.com/google/uuid"
 	"github.com/segmentio/ksuid"
-	"github.com/shine-o/shine.engine.networking"
+	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"reflect"
+	"runtime"
 	"strconv"
-	"sync"
+	"syscall"
 	"time"
 )
 
@@ -46,28 +46,18 @@ type shineStream struct {
 	flowID         string
 	net, transport gopacket.Flow
 	direction      string
-	segments       chan<- shineSegment
+	client         chan<- shineSegment
+	server         chan<- shineSegment
 	packets        chan<- decodedPacket
 	xorKey         chan<- uint16 // only used by decodeClientPackets()
 	cancel         context.CancelFunc
+	isServer bool
 }
 
 type shineSegment struct {
 	data []byte
 	seen time.Time
 }
-
-type shineStreams struct {
-	toClient   map[string]*shineStream
-	fromClient map[string]*shineStream
-	mu         sync.Mutex
-}
-
-type contextKey int
-
-const (
-	activeShineStreams contextKey = iota
-)
 
 var (
 	iface   string
@@ -97,12 +87,9 @@ func config() {
 	iface = viper.GetString("network.interface")
 	snaplen = viper.GetInt("network.snaplen")
 
-	//serverIP := viper.GetString("network.serverIP")
 	startPort := viper.GetString("network.portRange.start")
 	endPort := viper.GetString("network.portRange.end")
 	portRange := fmt.Sprintf("%v-%v", startPort, endPort)
-
-	//filter = fmt.Sprintf("(dst net %v or src net %v) and (dst portrange %v or src portrange %v)", serverIP, serverIP, portRange, portRange)
 	filter = fmt.Sprintf("dst portrange %v or src portrange %v", portRange, portRange)
 
 	s := &networking.Settings{}
@@ -135,54 +122,58 @@ func (ss *shineStream) handleDecodedPackets(ctx context.Context, decodedPackets 
 		case <-ctx.Done():
 			return
 		case dp := <-decodedPackets:
-			packetID, err := ksuid.NewRandomWithTime(dp.seen)
-			if err != nil {
-				log.Error(err)
-				break
-			}
-			pv := PacketView{
-				PacketID :	 	packetID.String(),
-				TimeStamp:     dp.seen.String(),
-				IpEndpoints:   ss.net.String(),
-				PortEndpoints: ss.transport.String(),
-				Direction:     ss.direction,
-				PacketData:    dp.packet.Base.JSON(),
-			}
-
-			nr, err := ncStructRepresentation(dp.packet.Base.OperationCode, dp.packet.Base.Data)
-			if err == nil {
-				pv.NcRepresentation = nr
-				//b, _ := json.Marshal(pv.NcRepresentation)
-				//log.Info(string(b))
-			}
-
-			data, err := json.Marshal(&pv)
-
-			if err != nil {
-				log.Error(err)
-				return
-			}
-
-			var connectionKey string
-			if ss.direction == "inbound" {
-				connectionKey = fmt.Sprintf("%v %v", ss.net.String(), ss.transport.String())
-			} else {
-				connectionKey = fmt.Sprintf("%v %v", ss.net.Reverse(), ss.transport.Reverse())
-			}
-
-			if viper.GetBool("protocol.log.verbose") {
-				log.Infof("%v %v %v %v", ss.direction, ss.transport, dp.seen, string(data))
-			} else {
-				log.Infof("[ %v ] %v %v %v", connectionKey, ss.direction, dp.seen, dp.packet.Base.String())
-			}
-			pv.ConnectionKey = connectionKey
-			ocs.mu.Lock()
-			ocs.structs[dp.packet.Base.OperationCode] = dp.packet.Base.ClientStructName
-			ocs.mu.Unlock()
-
-			go sendPacketToUI(pv)
+			ss.logPacket(dp)
 		}
 	}
+}
+
+func (ss *shineStream) logPacket(dp decodedPacket) {
+	packetID, err := ksuid.NewRandomWithTime(dp.seen)
+	if err != nil {
+		log.Error(err)
+	}
+
+	pv := PacketView{
+		PacketID:      packetID.String(),
+		TimeStamp:     dp.seen.String(),
+		IpEndpoints:   ss.net.String(),
+		PortEndpoints: ss.transport.String(),
+		Direction:     ss.direction,
+		PacketData:    dp.packet.Base.JSON(),
+	}
+
+	nr, err := ncStructRepresentation(dp.packet.Base.OperationCode, dp.packet.Base.Data)
+	if err == nil {
+		pv.NcRepresentation = nr
+		//b, _ := json.Marshal(pv.NcRepresentation)
+		//log.Info(string(b))
+	} else {
+		//log.Error(err)
+	}
+
+	data, err := json.Marshal(&pv)
+
+	if err != nil {
+		log.Error(err)
+	}
+
+	var connectionKey string
+	if ss.direction == "inbound" {
+		connectionKey = fmt.Sprintf("%v %v", ss.net.String(), ss.transport.String())
+	} else {
+		connectionKey = fmt.Sprintf("%v %v", ss.net.Reverse(), ss.transport.Reverse())
+	}
+
+	if viper.GetBool("protocol.log.verbose") {
+		log.Infof("%v %v %v %v", ss.direction, ss.transport, dp.seen, string(data))
+	} else {
+		log.Infof("[ %v ] %v %v %v", ss.transport.String(), ss.direction, dp.seen, dp.packet.Base.String())
+	}
+	pv.ConnectionKey = connectionKey
+	//ocs.mu.Lock()
+	//ocs.structs[dp.packet.Base.OperationCode] = dp.packet.Base.ClientStructName
+	//ocs.mu.Unlock()
+	go sendPacketToUI(pv)
 }
 
 func isLocalAddress(ip string, addresses []pcap.InterfaceAddress) bool {
@@ -194,129 +185,114 @@ func isLocalAddress(ip string, addresses []pcap.InterfaceAddress) bool {
 	return false
 }
 
-func (ssf *shineStreamFactory) New(net, transport gopacket.Flow) tcpassembly.Stream {
-
+func (ssf *shineStreamFactory) New(net, transport gopacket.Flow, tcp *layers.TCP, ac reassembly.AssemblerContext) reassembly.Stream {
 	var direction string
 
 	ctx, cancel := context.WithCancel(ssf.shineContext)
 
-	srcIP := net.Src().String()
-	//dstIP := net.Dst().String()
-
-	if isLocalAddress(srcIP, ssf.localAddresses) {
-		direction = "outbound"
-	} else {
-		direction = "inbound"
-	}
-
-	srcPort, _ := strconv.Atoi(transport.Src().String())
-
-	segments := make(chan shineSegment, 512)
-	packets := make(chan decodedPacket, 100)
 
 	xorKey := make(chan uint16)
+	xorKeyFound := make(chan bool)
 
 	s := &shineStream{
 		flowID:    uuid.New().String(),
 		net:       net,
 		transport: transport,
 		direction: direction,
-		segments:  segments,
-		packets:   packets,
 		xorKey:    xorKey,
 		cancel:    cancel,
+		isServer: false,
 	}
-	go s.handleDecodedPackets(ctx, packets)
-	key := fmt.Sprintf("%v:%v", srcIP, srcPort)
 
-	// 9000-9900 is known to be the server
+	srcPort, _ := strconv.Atoi(transport.Src().String())
 	if srcPort >= 9000 && srcPort <= 9600 {
 		// server - client
-
-		if isLocalAddress(srcIP, ssf.localAddresses) {
-			direction = ""
-		}
-
-		log.Infof("new stream from => [ %v ] [ %v ]", net, transport)
-		log.Infof("reversed new stream from => [ %v ] [ %v ]", net.Reverse().String(), transport.Reverse())
-
-		ss, ok := ssf.shineContext.Value(activeShineStreams).(*shineStreams)
-		ss.mu.Lock()
-		if !ok {
-			log.Fatalf("unexpected struct type: %v", reflect.TypeOf(ss).String())
-		}
-		key := fmt.Sprintf("%v:%v", srcIP, srcPort)
-		ss.toClient[key] = s
-		ss.mu.Unlock()
-		go s.decodeServerPackets(ctx, segments)
-	} else {
-		// client-server
-		log.Infof("new stream from => [ %v ] [ %v ]", net, transport)
-		log.Infof("reversed new stream from => [ %v ] [ %v ]", net.Reverse().String(), transport.Reverse())
-
-		ss, ok := ssf.shineContext.Value(activeShineStreams).(*shineStreams)
-		ss.mu.Lock()
-		if !ok {
-			log.Fatalf("unexpected struct type: %v", reflect.TypeOf(ss).String())
-		}
-		ss.fromClient[key] = s
-		ss.mu.Unlock()
-		go s.decodeClientPackets(ctx, segments, xorKey)
+		s.isServer = true
 	}
+	client := make(chan shineSegment, 512)
+	server := make(chan shineSegment, 512)
+	packets := make(chan decodedPacket, 512)
+	//client := make(chan shineSegment)
+	//server := make(chan shineSegment)
+	//packets := make(chan decodedPacket)
+
+	s.client = client
+	s.server = server
+	s.packets = packets
+
+	go s.decodeServerPackets(ctx, server, xorKeyFound, xorKey)
+	go s.decodeClientPackets(ctx, client, xorKeyFound, xorKey)
+	go s.handleDecodedPackets(ctx, packets)
+
+	log.Infof("new stream from => [ %v ] [ %v ]", net, transport)
 	return s
 }
 
-func (ss *shineStream) Reassembled(reassemblies []tcpassembly.Reassembly) {
-	for _, reassembly := range reassemblies {
-		if len(reassembly.Bytes) == 0 {
-			continue
-		}
-		seg := shineSegment{data: reassembly.Bytes, seen: reassembly.Seen}
-		ss.segments <- seg
+func (ss *shineStream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reassembly.TCPFlowDirection, nextSeq reassembly.Sequence, start *bool, ac reassembly.AssemblerContext) bool {
+	return true
+}
+
+func (ss *shineStream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.AssemblerContext) {
+	dir, _, _, _ := sg.Info()
+	length, _ := sg.Lengths()
+	seg := shineSegment{data: sg.Fetch(length), seen: ac.GetCaptureInfo().Timestamp}
+	//log.Info(dir, ss.net.String())
+	if dir == reassembly.TCPDirClientToServer && !ss.isServer {
+		ss.client <- seg
+		ss.direction = "outbound"
+	} else {
+		ss.server <- seg
+		ss.direction = "inbound"
 	}
 }
 
-func (ss *shineStream) ReassemblyComplete() {
+func (ss *shineStream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 	log.Warningf("reassembly complete for stream [ %v - %v]", ss.net.String(), ss.transport.String()) // ip of the stream, port of the stream
 	ss.cancel()
-	//cf := CompletedFlow{
-	//	FlowCompleted: true,
-	//	FlowID:        ss.flowID,
-	//}
-	//go uiCompletedFlow(cf)
+	return false
 }
 
 // handle stream data flowing from the client
-func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan shineSegment, xorKey <-chan uint16) {
+func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan shineSegment, xorKeyFound <-chan bool, xorKey <-chan uint16) {
 	var (
 		d         []byte
 		offset    int
 		xorOffset uint16
+		hasXorKey bool
+		shouldQuit bool
 	)
 	offset = 0
-	xorOffset = 1500 // impossible value
 	logActivated := viper.GetBool("protocol.log.client")
 
-	// block until xorKey is found
+loop:
 	for {
 		select {
 		case <-ctx.Done():
 			log.Warningf("[%v %v] decodeClientPackets(): context was canceled", ss.net, ss.transport)
+			shouldQuit = true
 			return
-		case xorOffset = <-xorKey:
-			break
+		case <- xorKeyFound:
+			log.Info("xor key found, waiting for it in a select")
+			for {
+				select {
+				// retrial mechanism so it doesn't end up in infinite loop
+				case xorOffset = <- xorKey:
+					hasXorKey = true
+					continue loop
+				}
+			}
 		case segment := <-segments:
 			d = append(d, segment.data...)
-			if offset > len(d) {
+
+			if offset >= len(d) {
 				log.Warningf("not enough data, next offset is %v ", offset)
 				break
 			}
 
-			if xorOffset == 1500 { // impossible value
-				break
-			}
-
-			if offset != len(d) {
+			for offset < len(d) {
+				if !hasXorKey {
+					break
+				}
 				var skipBytes int
 				var pLen int
 				var pType string
@@ -337,6 +313,7 @@ func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan 
 				}
 
 				rs = append(rs, d[offset+skipBytes:nextOffset]...)
+
 				networking.XorCipher(rs, &xorOffset)
 				pc, err := networking.DecodePacket(pType, pLen, rs)
 				if err != nil {
@@ -351,35 +328,38 @@ func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan 
 				}
 				offset += skipBytes + pLen
 			}
+			if shouldQuit {
+				return
+			}
 		}
 	}
 }
 
 // handle stream data flowing from the server
-func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan shineSegment) {
+func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan shineSegment, xorKeyFound chan <- bool,  xorKey chan <- uint16) {
 	var (
 		d              []byte
 		offset         int
 		xorOffsetFound bool
+		shouldQuit bool
 	)
 	xorOffsetFound = false
 	offset = 0
 
 	logActivated := viper.GetBool("protocol.log.server")
-
 	for {
 		select {
 		case <-ctx.Done():
 			log.Warningf("[%v %v] decodeServerPackets(): context was canceled", ss.net, ss.transport)
+			shouldQuit = true
 			return
 		case segment := <-segments:
 			d = append(d, segment.data...)
-			if offset > len(d) {
+			if offset >= len(d) {
 				log.Warningf("not enough data, next offset is %v ", offset)
 				break
 			}
-
-			if offset != len(d) {
+			for offset < len(d) {
 				var skipBytes int
 				var pLen int
 				var pType string
@@ -407,6 +387,7 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 				}
 
 				if !xorOffsetFound {
+					log.Info("xor offset not found")
 					if pc.Base.OperationCode == 2055 {
 						var xorOffset uint16
 						buf := bytes.NewBuffer(pc.Base.Data)
@@ -415,26 +396,8 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 							return
 						}
 						xorOffsetFound = true
-						// LOL
-						ass, ok := ctx.Value(activeShineStreams).(*shineStreams)
-						if !ok {
-							log.Errorf("unexpected struct type: %v", reflect.TypeOf(ss).String())
-							return
-						}
-						ass.mu.Lock()
-
-						dstIP := ss.net.Dst().String()
-						dstPort, _ := strconv.Atoi(ss.transport.Dst().String())
-
-						key := fmt.Sprintf("%v:%v", dstIP, dstPort)
-
-						if ss, ok := ass.fromClient[key]; ok {
-							ss.xorKey <- xorOffset
-						} else {
-							log.Errorf("unexpected struct type: %v", reflect.TypeOf(ss).String())
-						}
-						ass.mu.Unlock()
-						log.Warningf("xorOffset: %v found for client  %v", xorOffset, key)
+						xorKeyFound <- true
+						xorKey <- xorOffset
 					}
 				}
 
@@ -443,9 +406,11 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 						seen:   segment.seen,
 						packet: pc,
 					}
-					//go ss.handlePacket(ctx, segment.seen, pc)
 				}
 				offset += skipBytes + pLen
+			}
+			if shouldQuit {
+				return
 			}
 		}
 	}
@@ -453,32 +418,27 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 
 // Capture packets and decode them
 func Capture(cmd *cobra.Command, args []string) {
+	//p := profile.Start(profile.CPUProfile, profile.ProfilePath("."),profile.NoShutdownHook)
+	//p := profile.Start(profile.MemProfi	le, profile.ProfilePath("."),profile.NoShutdownHook)
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
-
 	config()
 
 	ocs = &OpCodeStructs{
 		structs: make(map[uint16]string),
 	}
-	ss := &shineStreams{
-		toClient:   make(map[string]*shineStream),
-		fromClient: make(map[string]*shineStream),
-	}
-
-	ctx = context.WithValue(ctx, activeShineStreams, ss)
 
 	sf := &shineStreamFactory{
 		shineContext: ctx,
 	}
-	sp := tcpassembly.NewStreamPool(sf)
-	a := tcpassembly.NewAssembler(sp)
+	sp := reassembly.NewStreamPool(sf)
+	a := reassembly.NewAssembler(sp)
 
 	var currentInterface pcap.Interface
 	interfaces, _ := pcap.FindAllDevs()
 	for _, i := range interfaces {
-		log.Info(iface)
 		if i.Name == iface {
 			currentInterface = i
 			break
@@ -490,36 +450,81 @@ func Capture(cmd *cobra.Command, args []string) {
 	go capturePackets(ctx, a)
 	go startUI(ctx)
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-
+	c := make(chan os.Signal, 2)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM) // subscribe to system signals
 	select {
 	case <-c:
+		//p.Stop()
 		cancel()
 		generateOpCodeSwitch()
 	}
 	<-c
 }
 
-func capturePackets(ctx context.Context, a *tcpassembly.Assembler) {
+func capturePackets(ctx context.Context,  a *reassembly.Assembler) {
+	defer a.FlushAll()
+
 	handle, err := pcap.OpenLive(iface, int32(snaplen), true, pcap.BlockForever)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("error opening pcap handle: ", err)
 	}
-	err = handle.SetBPFFilter(filter)
-	if err != nil {
-		log.Fatal(err)
+	if err := handle.SetBPFFilter(filter); err != nil {
+		log.Fatal("error setting BPF filter: ", err)
 	}
-
-	packetSource := gopacket.NewPacketSource(handle, handle.LinkType())
+	// We use a DecodingLayerParser here instead of a simpler PacketSource.
+	// This approach should be measurably faster, but is also more rigid.
+	// PacketSource will handle any known type of packet safely and easily,
+	// but DecodingLayerParser will only handle those packet types we
+	// specifically pass in.  This trade-off can be quite useful, though, in
+	// high-throughput situations.
+	var eth layers.Ethernet
+	var ip4 layers.IPv4
+	var tcp layers.TCP
+	var payload gopacket.Payload
+	parser := gopacket.NewDecodingLayerParser(layers.LayerTypeEthernet, &eth, &ip4, &tcp, &payload)
+	decoded := make([]gopacket.LayerType, 0, 4)
 	for {
 		select {
-		case <-ctx.Done():
+		case <- ctx.Done():
 			return
-		case packet := <-packetSource.Packets():
-			if tcp, ok := packet.TransportLayer().(*layers.TCP); ok {
+		default:
+			// To speed things up, we're also using the ZeroCopy method for
+			// reading packet data.  This method is faster than the normal
+			// ReadPacketData, but the returned bytes in 'data' are
+			// invalidated by any subsequent ZeroCopyReadPacketData call.
+			// Note that tcpassembly is entirely compatible with this packet
+			// reading method.  This is another trade-off which might be
+			// appropriate for high-throughput sniffing:  it avoids a packet
+			// copy, but its cost is much more careful handling of the
+			// resulting byte slice.
+			data, _, err := handle.ZeroCopyReadPacketData()
 
-				a.AssembleWithTimestamp(packet.NetworkLayer().NetworkFlow(), tcp, packet.Metadata().Timestamp)
+			if err != nil {
+				log.Errorf("error getting packet: %v", err)
+				break
+			}
+			err = parser.DecodeLayers(data, &decoded)
+			if err != nil {
+				log.Errorf("error decoding packet: %v", err)
+				break
+			}
+			// Find either the IPv4 or IPv6 address to use as our network
+			// layer.
+			foundNetLayer := false
+			var netFlow gopacket.Flow
+			for _, typ := range decoded {
+				switch typ {
+				case layers.LayerTypeIPv4:
+					netFlow = ip4.NetworkFlow()
+					foundNetLayer = true
+				case layers.LayerTypeTCP:
+					if foundNetLayer {
+						a.Assemble(netFlow, &tcp)
+					} else {
+						log.Error("could not find IPv4 or IPv6 layer, inoring")
+					}
+					break
+				}
 			}
 		}
 	}
