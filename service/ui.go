@@ -15,14 +15,14 @@ import (
 // PacketView is used to represent data to the frontend UI
 type PacketView struct {
 	// time of capture
-	PacketID     string               `json:"packetID"`
-	ConnectionKey     string          `json:"connectionKey"`
-	TimeStamp        string           `json:"timestamp"`
-	IpEndpoints      string           `json:"ipEndpoints"`
-	PortEndpoints    string           `json:"portEndpoints"`
-	Direction        string           `json:"direction"`
-	PacketData       networking.ExportedPcb          `json:"packetData"`
-	NcRepresentation NcRepresentation `json:"ncRepresentation"`
+	PacketID         string                 `json:"packetID"`
+	ConnectionKey    string                 `json:"connectionKey"`
+	TimeStamp        string                 `json:"timestamp"`
+	IPEndpoints      string                 `json:"ipEndpoints"`
+	PortEndpoints    string                 `json:"portEndpoints"`
+	Direction        string                 `json:"direction"`
+	PacketData       networking.ExportedPcb `json:"packetData"`
+	ncRepresentation ncRepresentation       `json:"ncRepresentation"`
 }
 
 type webSockets struct {
@@ -82,13 +82,12 @@ func sendPacketToUI(pv PacketView) {
 	ws.mu.Unlock()
 }
 
-type CompletedFlow struct {
+type completedFlow struct {
 	FlowCompleted bool   `json:"flow_completed"`
-	ClientIP      string `json:"client_ip"`
 	FlowID        string `json:"flow_id"`
 }
 
-func (cf *CompletedFlow) String() string {
+func (cf *completedFlow) String() string {
 	sd, err := json.Marshal(&cf)
 	if err != nil {
 		log.Error(err)
@@ -96,7 +95,7 @@ func (cf *CompletedFlow) String() string {
 	return string(sd)
 }
 
-func uiCompletedFlow(cf CompletedFlow) {
+func uiCompletedFlow(cf completedFlow) {
 	ws.mu.Lock()
 	// check if it can be done with goroutine
 	for c, active := range ws.cons {

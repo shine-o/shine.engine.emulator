@@ -49,9 +49,9 @@ type shineStream struct {
 	client         chan<- shineSegment
 	server         chan<- shineSegment
 	packets        chan<- decodedPacket
-	xorKey         chan<- uint16 // only used by decodeClientPackets()
+	xorKey         chan<- uint16
 	cancel         context.CancelFunc
-	isServer bool
+	isServer       bool
 }
 
 type shineSegment struct {
@@ -67,7 +67,6 @@ var (
 )
 
 func config() {
-	// remove output folder if exists, create it again
 	dir, err := filepath.Abs("output/")
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 
@@ -136,7 +135,7 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 	pv := PacketView{
 		PacketID:      packetID.String(),
 		TimeStamp:     dp.seen.String(),
-		IpEndpoints:   ss.net.String(),
+		IPEndpoints:   ss.net.String(),
 		PortEndpoints: ss.transport.String(),
 		Direction:     ss.direction,
 		PacketData:    dp.packet.Base.JSON(),
@@ -144,8 +143,8 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 
 	nr, err := ncStructRepresentation(dp.packet.Base.OperationCode, dp.packet.Base.Data)
 	if err == nil {
-		pv.NcRepresentation = nr
-		//b, _ := json.Marshal(pv.NcRepresentation)
+		pv.ncRepresentation = nr
+		//b, _ := json.Marshal(pv.ncRepresentation)
 		//log.Info(string(b))
 	} else {
 		//log.Error(err)
@@ -169,20 +168,10 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 	go sendPacketToUI(pv)
 }
 
-func isLocalAddress(ip string, addresses []pcap.InterfaceAddress) bool {
-	for _, a := range addresses {
-		if a.IP.String() == ip {
-			return true
-		}
-	}
-	return false
-}
-
 func (ssf *shineStreamFactory) New(net, transport gopacket.Flow, tcp *layers.TCP, ac reassembly.AssemblerContext) reassembly.Stream {
 	var direction string
 
 	ctx, cancel := context.WithCancel(ssf.shineContext)
-
 
 	xorKey := make(chan uint16)
 	xorKeyFound := make(chan bool)
@@ -194,7 +183,7 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow, tcp *layers.TCP
 		direction: direction,
 		xorKey:    xorKey,
 		cancel:    cancel,
-		isServer: false,
+		isServer:  false,
 	}
 
 	srcPort, _ := strconv.Atoi(transport.Src().String())
@@ -238,16 +227,22 @@ func (ss *shineStream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.
 func (ss *shineStream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 	log.Warningf("reassembly complete for stream [ %v - %v]", ss.net.String(), ss.transport.String()) // ip of the stream, port of the stream
 	ss.cancel()
+	//
+	//go uiCompletedFlow(completedFlow{
+	//	FlowCompleted: true,
+	//	FlowID:        ss.flowID,
+	//})
+
 	return false
 }
 
 // handle stream data flowing from the client
 func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan shineSegment, xorKeyFound <-chan bool, xorKey <-chan uint16) {
 	var (
-		d         []byte
-		offset    int
-		xorOffset uint16
-		hasXorKey bool
+		d          []byte
+		offset     int
+		xorOffset  uint16
+		hasXorKey  bool
 		shouldQuit bool
 	)
 	offset = 0
@@ -260,12 +255,12 @@ loop:
 			log.Warningf("[%v %v] decodeClientPackets(): context was canceled", ss.net, ss.transport)
 			shouldQuit = true
 			return
-		case <- xorKeyFound:
+		case <-xorKeyFound:
 			log.Info("xor key found, waiting for it in a select")
 			for {
 				select {
 				// retrial mechanism so it doesn't end up in infinite loop
-				case xorOffset = <- xorKey:
+				case xorOffset = <-xorKey:
 					hasXorKey = true
 					continue loop
 				}
@@ -325,12 +320,12 @@ loop:
 }
 
 // handle stream data flowing from the server
-func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan shineSegment, xorKeyFound chan <- bool,  xorKey chan <- uint16) {
+func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan shineSegment, xorKeyFound chan<- bool, xorKey chan<- uint16) {
 	var (
 		d              []byte
 		offset         int
 		xorOffsetFound bool
-		shouldQuit bool
+		shouldQuit     bool
 	)
 	xorOffsetFound = false
 	offset = 0
@@ -415,7 +410,7 @@ func Capture(cmd *cobra.Command, args []string) {
 	defer cancel()
 	config()
 
-	ocs = &OpCodeStructs{
+	ocs = &opCodeStructs{
 		structs: make(map[uint16]string),
 	}
 
@@ -450,7 +445,7 @@ func Capture(cmd *cobra.Command, args []string) {
 	<-c
 }
 
-func capturePackets(ctx context.Context,  a *reassembly.Assembler) {
+func capturePackets(ctx context.Context, a *reassembly.Assembler) {
 	defer a.FlushAll()
 
 	handle, err := pcap.OpenLive(iface, int32(snaplen), true, pcap.BlockForever)
@@ -460,12 +455,6 @@ func capturePackets(ctx context.Context,  a *reassembly.Assembler) {
 	if err := handle.SetBPFFilter(filter); err != nil {
 		log.Fatal("error setting BPF filter: ", err)
 	}
-	// We use a DecodingLayerParser here instead of a simpler PacketSource.
-	// This approach should be measurably faster, but is also more rigid.
-	// PacketSource will handle any known type of packet safely and easily,
-	// but DecodingLayerParser will only handle those packet types we
-	// specifically pass in.  This trade-off can be quite useful, though, in
-	// high-throughput situations.
 	var eth layers.Ethernet
 	var ip4 layers.IPv4
 	var tcp layers.TCP
@@ -474,18 +463,9 @@ func capturePackets(ctx context.Context,  a *reassembly.Assembler) {
 	decoded := make([]gopacket.LayerType, 0, 4)
 	for {
 		select {
-		case <- ctx.Done():
+		case <-ctx.Done():
 			return
 		default:
-			// To speed things up, we're also using the ZeroCopy method for
-			// reading packet data.  This method is faster than the normal
-			// ReadPacketData, but the returned bytes in 'data' are
-			// invalidated by any subsequent ZeroCopyReadPacketData call.
-			// Note that tcpassembly is entirely compatible with this packet
-			// reading method.  This is another trade-off which might be
-			// appropriate for high-throughput sniffing:  it avoids a packet
-			// copy, but its cost is much more careful handling of the
-			// resulting byte slice.
 			data, _, err := handle.ZeroCopyReadPacketData()
 
 			if err != nil {
@@ -497,7 +477,6 @@ func capturePackets(ctx context.Context,  a *reassembly.Assembler) {
 				log.Errorf("error decoding packet: %v", err)
 				break
 			}
-			// Find either the IPv4 or IPv6 address to use as our network
 			foundNetLayer := false
 			var netFlow gopacket.Flow
 			for _, typ := range decoded {

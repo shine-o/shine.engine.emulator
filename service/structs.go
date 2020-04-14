@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/shine-o/shine.engine.core/structs"
 	"gopkg.in/restruct.v1"
@@ -14,14 +13,14 @@ import (
 	"sync"
 )
 
-var ocs *OpCodeStructs
+var ocs *opCodeStructs
 
-type OpCodeStructs struct {
+type opCodeStructs struct {
 	structs map[uint16]string
 	mu      sync.Mutex
 }
 
-type NcRepresentation struct {
+type ncRepresentation struct {
 	Pdb          string `json:"pdb_analog"`
 	UnpackedData string `json:"unpacked_data"`
 }
@@ -80,7 +79,7 @@ func generateOpCodeSwitch() {
 	}
 }
 
-func ncStructRepresentation(opCode uint16, data []byte) (NcRepresentation, error) {
+func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error) {
 	switch opCode {
 	case 3173:
 		nc := structs.NcUserClientVersionCheckReq{}
@@ -710,12 +709,12 @@ func ncStructRepresentation(opCode uint16, data []byte) (NcRepresentation, error
 		nc := structs.NcActSomeoneProduceMakeCmd{}
 		return ncStructData(&nc, data)
 	default:
-		return NcRepresentation{}, errors.New(fmt.Sprintf("no struct assigned to this operation code %v", opCode))
+		return ncRepresentation{}, fmt.Errorf("no struct assigned to this operation code %v", opCode)
 	}
-	return NcRepresentation{}, errors.New(fmt.Sprintf("no struct assigned to this operation code %v", opCode))
+	return ncRepresentation{}, fmt.Errorf("no struct assigned to this operation code %v", opCode)
 }
 
-func ncStructData(nc structs.NC, data []byte) (NcRepresentation, error) {
+func ncStructData(nc structs.NC, data []byte) (ncRepresentation, error) {
 	err := structs.Unpack(data, nc)
 	if err != nil {
 		n, err := restruct.SizeOf(nc)
@@ -725,14 +724,14 @@ func ncStructData(nc structs.NC, data []byte) (NcRepresentation, error) {
 		hexString := hex.EncodeToString(data)
 		log.Error(hexString)
 		log.Errorf("struct: %v, size: %v", reflect.TypeOf(nc).String(), n)
-		return NcRepresentation{}, err
+		return ncRepresentation{}, err
 	}
 	//n, err := restruct.SizeOf(nc)
 	//if err != nil {
 	//	log.Error(err)
 	//}
 	//log.Warningf("struct: %v, size: %v", reflect.TypeOf(nc).String(), n)
-	nr := NcRepresentation{
+	nr := ncRepresentation{
 		Pdb:          nc.PdbType(),
 		UnpackedData: nc.String(),
 	}
