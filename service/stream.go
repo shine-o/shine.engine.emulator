@@ -157,19 +157,12 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 		log.Error(err)
 	}
 
-	var connectionKey string
-	if ss.direction == "inbound" {
-		connectionKey = fmt.Sprintf("%v %v", ss.net.String(), ss.transport.String())
-	} else {
-		connectionKey = fmt.Sprintf("%v %v", ss.net.Reverse(), ss.transport.Reverse())
-	}
-
 	if viper.GetBool("protocol.log.verbose") {
 		log.Infof("%v %v %v %v", ss.direction, ss.transport, dp.seen, string(data))
 	} else {
 		log.Infof("[ %v ] %v %v %v", ss.transport.String(), ss.direction, dp.seen, dp.packet.Base.String())
 	}
-	pv.ConnectionKey = connectionKey
+	pv.ConnectionKey = fmt.Sprintf("%v %v", ss.net.String(), ss.transport.String())
 	//ocs.mu.Lock()
 	//ocs.structs[dp.packet.Base.OperationCode] = dp.packet.Base.ClientStructName
 	//ocs.mu.Unlock()
@@ -212,10 +205,6 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow, tcp *layers.TCP
 	client := make(chan shineSegment, 512)
 	server := make(chan shineSegment, 512)
 	packets := make(chan decodedPacket, 512)
-	//client := make(chan shineSegment)
-	//server := make(chan shineSegment)
-	//packets := make(chan decodedPacket)
-
 	s.client = client
 	s.server = server
 	s.packets = packets
@@ -509,7 +498,6 @@ func capturePackets(ctx context.Context,  a *reassembly.Assembler) {
 				break
 			}
 			// Find either the IPv4 or IPv6 address to use as our network
-			// layer.
 			foundNetLayer := false
 			var netFlow gopacket.Flow
 			for _, typ := range decoded {

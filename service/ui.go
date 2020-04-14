@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 	"net/http"
 	"sync"
+	"time"
 )
 
 // PacketView is used to represent data to the frontend UI
@@ -76,7 +77,7 @@ func sendPacketToUI(pv PacketView) {
 				continue
 			}
 		}
-		//time.Sleep(time.Millisecond * 150)
+		time.Sleep(time.Millisecond * 100)
 	}
 	ws.mu.Unlock()
 }
