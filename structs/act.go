@@ -378,3 +378,28 @@ func (nc *NcActSomeoneProduceMakeCmd) PdbType() string {
 	};
 `
 }
+
+//struct PROTO_NC_ACT_SOMEEONEJUMP_CMD
+//{
+//  unsigned __int16 handle;
+//};
+type NcActSomeoneJumpCmd struct {
+	Handle uint16
+}
+
+func (nc *NcActSomeoneJumpCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcActSomeoneJumpCmd) PdbType() string {
+	return `
+	struct PROTO_NC_ACT_SOMEEONEJUMP_CMD
+	{
+	  unsigned __int16 handle;
+	};
+`
+}

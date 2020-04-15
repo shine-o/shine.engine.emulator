@@ -263,3 +263,45 @@ type KeyMapData struct {
 type NcCharOptionWindowPos struct {
 	Data [392]byte
 }
+
+//struct PROTO_NC_CHAR_BASE_CMD::LoginLocation
+//{
+//  Name3 currentmap;
+//  SHINE_COORD_TYPE currentcoord;
+//};
+type NcCharBaseCmdLoginLocation struct {
+	CurrentMap Name3
+	CurrentCoord ShineCoordType
+}
+
+//struct CHARSTATDISTSTR
+//{
+//  char Strength;
+//  char Constitute;
+//  char Dexterity;
+//  char Intelligence;
+//  char MentalPower;
+//  char RedistributePoint;
+//};
+type CharStats struct {
+	Strength byte
+	Constitute byte
+	Dexterity byte
+	Intelligence byte
+	MentalPower byte
+	RedistributePoint byte
+}
+
+//struct PROTO_NC_CHAR_BASE_CMD::<unnamed-type-flags>::<unnamed-type-str>
+//{
+//  int _bf0;
+//};
+//
+//union PROTO_NC_CHAR_BASE_CMD::<unnamed-type-flags>
+//{
+//  unsigned int bin;
+//  PROTO_NC_CHAR_BASE_CMD::<unnamed-type-flags>::<unnamed-type-str> str;
+//};
+type NcCharBaseCmdFlag struct{
+	Val int32
+}
