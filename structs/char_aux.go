@@ -270,7 +270,7 @@ type NcCharOptionWindowPos struct {
 //  SHINE_COORD_TYPE currentcoord;
 //};
 type NcCharBaseCmdLoginLocation struct {
-	CurrentMap Name3
+	CurrentMap   Name3
 	CurrentCoord ShineCoordType
 }
 
@@ -284,11 +284,11 @@ type NcCharBaseCmdLoginLocation struct {
 //  char RedistributePoint;
 //};
 type CharStats struct {
-	Strength byte
-	Constitute byte
-	Dexterity byte
-	Intelligence byte
-	MentalPower byte
+	Strength          byte
+	Constitute        byte
+	Dexterity         byte
+	Intelligence      byte
+	MentalPower       byte
 	RedistributePoint byte
 }
 
@@ -302,6 +302,97 @@ type CharStats struct {
 //  unsigned int bin;
 //  PROTO_NC_CHAR_BASE_CMD::<unnamed-type-flags>::<unnamed-type-str> str;
 //};
-type NcCharBaseCmdFlag struct{
+type NcCharBaseCmdFlag struct {
 	Val int32
+}
+
+//struct CHAR_PARAMETER_DATA
+//{
+//  unsigned __int64 PrevExp;
+//  unsigned __int64 NextExp;
+//  SHINE_CHAR_STATVAR Strength;
+//  SHINE_CHAR_STATVAR Constitute;
+//  SHINE_CHAR_STATVAR Dexterity;
+//  SHINE_CHAR_STATVAR Intelligence;
+//  SHINE_CHAR_STATVAR Wizdom;
+//  SHINE_CHAR_STATVAR MentalPower;
+//  SHINE_CHAR_STATVAR WClow;
+//  SHINE_CHAR_STATVAR WChigh;
+//  SHINE_CHAR_STATVAR AC;
+//  SHINE_CHAR_STATVAR TH;
+//  SHINE_CHAR_STATVAR TB;
+//  SHINE_CHAR_STATVAR MAlow;
+//  SHINE_CHAR_STATVAR MAhigh;
+//  SHINE_CHAR_STATVAR MR;
+//  SHINE_CHAR_STATVAR MH;
+//  SHINE_CHAR_STATVAR MB;
+//  unsigned int MaxHp;
+//  unsigned int MaxSp;
+//  unsigned int MaxLp;
+//  unsigned int MaxAp;
+//  unsigned int MaxHPStone;
+//  unsigned int MaxSPStone;
+//  CHAR_PARAMETER_DATA::<unnamed-type-PwrStone> PwrStone;
+//  CHAR_PARAMETER_DATA::<unnamed-type-PwrStone> GrdStone;
+//  SHINE_CHAR_STATVAR PainRes;
+//  SHINE_CHAR_STATVAR RestraintRes;
+//  SHINE_CHAR_STATVAR CurseRes;
+//  SHINE_CHAR_STATVAR ShockRes;
+//};
+type CharParameterData struct {
+	// i'll have to rename these fields later when I can identify exactly what each field is for x.x
+	PrevExp      uint64
+	NextExp      uint64
+	Strength     ShineCharStatVar
+	Constitute   ShineCharStatVar
+	Dexterity    ShineCharStatVar
+	Intelligence ShineCharStatVar
+	Wisdom       ShineCharStatVar
+	MentalPower  ShineCharStatVar
+	WCLow        ShineCharStatVar
+	WCHigh       ShineCharStatVar
+	AC           ShineCharStatVar
+	TH           ShineCharStatVar
+	TB           ShineCharStatVar
+	MALow        ShineCharStatVar
+	MAHigh       ShineCharStatVar
+	MR           ShineCharStatVar
+	MH           ShineCharStatVar
+	MB           ShineCharStatVar
+	MaxHP        uint32
+	MaxSP        uint32
+	MaxLP        uint32
+	MaxAP        uint32
+	MaxHPStone   uint32
+	MaxSPStone   uint32
+	PwrStone     CharParameterDataPwrStone
+	GrdStone     CharParameterDataPwrStone
+	PainRes      ShineCharStatVar
+	RestraintRes ShineCharStatVar
+	CurseRes     ShineCharStatVar
+	ShoRes       ShineCharStatVar
+}
+
+//struct CHAR_PARAMETER_DATA::<unnamed-type-PwrStone>
+//{
+//  unsigned int flag;
+//  unsigned int EPPysic;
+//  unsigned int EPMagic;
+//  unsigned int MaxStone;
+//};
+type CharParameterDataPwrStone struct {
+	Flag      uint32
+	EPPPhysic uint32
+	EPMagic   uint32
+	MaxStone  uint32
+}
+
+//struct SHINE_CHAR_STATVAR
+//{
+//  unsigned int base;
+//  unsigned int change;
+//};
+type ShineCharStatVar struct {
+	Base   uint32
+	Change uint32
 }
