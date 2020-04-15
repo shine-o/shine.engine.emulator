@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 )
@@ -40,23 +41,25 @@ type shineStreamFactory struct {
 type decodedPacket struct {
 	seen   time.Time
 	packet networking.Command
+	direction string
 }
 
 type shineStream struct {
 	flowID         string
 	net, transport gopacket.Flow
-	direction      string
 	client         chan<- shineSegment
 	server         chan<- shineSegment
 	packets        chan<- decodedPacket
 	xorKey         chan<- uint16
 	cancel         context.CancelFunc
 	isServer       bool
+	mu 	sync.Mutex
 }
 
 type shineSegment struct {
 	data []byte
 	seen time.Time
+	direction string
 }
 
 var (
@@ -121,7 +124,7 @@ func (ss *shineStream) handleDecodedPackets(ctx context.Context, decodedPackets 
 		case <-ctx.Done():
 			return
 		case dp := <-decodedPackets:
-			ss.logPacket(dp)
+			go ss.logPacket(dp)
 		}
 	}
 }
@@ -137,7 +140,7 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 		TimeStamp:     dp.seen.String(),
 		IPEndpoints:   ss.net.String(),
 		PortEndpoints: ss.transport.String(),
-		Direction:     ss.direction,
+		Direction:     dp.direction,
 		PacketData:    dp.packet.Base.JSON(),
 	}
 
@@ -156,10 +159,16 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 		log.Error(err)
 	}
 
-	if viper.GetBool("protocol.log.verbose") {
-		log.Infof("%v %v %v %v", ss.direction, ss.transport, dp.seen, string(data))
+	var tPorts string
+	if dp.direction == "inbound" {
+		tPorts = ss.transport.Reverse().String()
 	} else {
-		log.Infof("[ %v ] %v %v %v", ss.transport.String(), ss.direction, dp.seen, dp.packet.Base.String())
+		tPorts = ss.transport.String()
+	}
+	if viper.GetBool("protocol.log.verbose") {
+		log.Infof("%v %v %v %v", tPorts, ss.transport, dp.seen, string(data))
+	} else {
+		log.Infof("[ %v ] %v %v %v", tPorts, dp.direction, dp.seen, dp.packet.Base.String())
 	}
 	pv.ConnectionKey = fmt.Sprintf("%v %v", ss.net.String(), ss.transport.String())
 	//ocs.mu.Lock()
@@ -169,8 +178,6 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 }
 
 func (ssf *shineStreamFactory) New(net, transport gopacket.Flow, tcp *layers.TCP, ac reassembly.AssemblerContext) reassembly.Stream {
-	var direction string
-
 	ctx, cancel := context.WithCancel(ssf.shineContext)
 
 	xorKey := make(chan uint16)
@@ -180,7 +187,6 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow, tcp *layers.TCP
 		flowID:    uuid.New().String(),
 		net:       net,
 		transport: transport,
-		direction: direction,
 		xorKey:    xorKey,
 		cancel:    cancel,
 		isServer:  false,
@@ -213,15 +219,20 @@ func (ss *shineStream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reas
 func (ss *shineStream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.AssemblerContext) {
 	dir, _, _, _ := sg.Info()
 	length, _ := sg.Lengths()
-	seg := shineSegment{data: sg.Fetch(length), seen: ac.GetCaptureInfo().Timestamp}
-	//log.Info(dir, ss.net.String())
-	if dir == reassembly.TCPDirClientToServer && !ss.isServer {
-		ss.client <- seg
-		ss.direction = "outbound"
-	} else {
-		ss.server <- seg
-		ss.direction = "inbound"
+	seg := shineSegment{
+		data: sg.Fetch(length),
+		seen: ac.GetCaptureInfo().Timestamp,
 	}
+	//log.Info(dir, ss.net.String())
+	ss.mu.Lock()
+	if dir == reassembly.TCPDirClientToServer && !ss.isServer {
+		seg.direction = "outbound"
+		ss.client <- seg
+	} else {
+		seg.direction = "inbound"
+		ss.server <- seg
+	}
+	ss.mu.Unlock()
 }
 
 func (ss *shineStream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
@@ -232,7 +243,6 @@ func (ss *shineStream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 	//	FlowCompleted: true,
 	//	FlowID:        ss.flowID,
 	//})
-
 	return false
 }
 
@@ -308,6 +318,7 @@ loop:
 					ss.packets <- decodedPacket{
 						seen:   segment.seen,
 						packet: pc,
+						direction: segment.direction,
 					}
 				}
 				offset += skipBytes + pLen
@@ -389,6 +400,7 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 					ss.packets <- decodedPacket{
 						seen:   segment.seen,
 						packet: pc,
+						direction: segment.direction,
 					}
 				}
 				offset += skipBytes + pLen
@@ -419,17 +431,6 @@ func Capture(cmd *cobra.Command, args []string) {
 	}
 	sp := reassembly.NewStreamPool(sf)
 	a := reassembly.NewAssembler(sp)
-
-	var currentInterface pcap.Interface
-	interfaces, _ := pcap.FindAllDevs()
-	for _, i := range interfaces {
-		if i.Name == iface {
-			currentInterface = i
-			break
-		}
-	}
-
-	sf.localAddresses = currentInterface.Addresses
 
 	go capturePackets(ctx, a)
 	go startUI(ctx)
