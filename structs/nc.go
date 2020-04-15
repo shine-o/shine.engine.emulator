@@ -8,8 +8,8 @@ import (
 )
 
 type NC interface {
-	String() string
-	PdbType() string
+	//String() string
+	//PdbType() string
 }
 
 var log *logger.Logger
