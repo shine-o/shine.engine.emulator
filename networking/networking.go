@@ -3,6 +3,7 @@ package networking
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.core/structs"
@@ -143,7 +144,12 @@ func (pc *Command) Send(ctx context.Context) {
 				return
 			}
 			pc.Base.Data = data
-			log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), pc.NcStruct.String())
+			//log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), pc.NcStruct.String())
+			sd, err := json.Marshal(pc.NcStruct)
+			if err != nil {
+				log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(pc.NcStruct).String(), err)
+			}
+			log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), string(sd))
 		}
 		log.Infof("[outbound] metadata: %v", pc.Base.String())
 

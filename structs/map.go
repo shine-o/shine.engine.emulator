@@ -142,3 +142,53 @@ func (nc *NcMapCanUseReviveItemCmd) PdbType() string {
 	};
 `
 }
+
+//struct PROTO_NC_MAP_TOWNPORTAL_REQ
+//{
+//  char portalindex;
+//};
+type NcMapTownPortalReq struct {
+	PortalIndex byte
+}
+
+func (nc *NcMapTownPortalReq) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcMapTownPortalReq) PdbType() string {
+	return `
+	struct PROTO_NC_MAP_TOWNPORTAL_REQ
+	{
+	  char portalindex;
+	};
+`
+}
+
+//struct PROTO_NC_MAP_TOWNPORTAL_ACK
+//{
+//  unsigned __int16 err;
+//};
+type NcMapTownPortalAck struct {
+	Err uint16
+}
+
+func (nc *NcMapTownPortalAck) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcMapTownPortalAck) PdbType() string {
+	return `
+	struct PROTO_NC_MAP_TOWNPORTAL_ACK
+	{
+	  unsigned __int16 err;
+	};
+`
+}

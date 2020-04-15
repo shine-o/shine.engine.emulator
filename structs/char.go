@@ -600,3 +600,95 @@ func (nc *NcCharUseItemMinimonUseBroadCmd) PdbType() string {
 	};
 `
 }
+
+//NC_CHAR_CLIENT_BASE_CMD
+// idk why name is changed
+//struct PROTO_NC_CHAR_BASE_CMD
+//{
+//  unsigned int chrregnum;
+//  Name5 charid;
+//  char slotno;
+//  char Level;
+//  unsigned __int64 Experience;
+//  unsigned __int16 CurPwrStone;
+//  unsigned __int16 CurGrdStone;
+//  unsigned __int16 CurHPStone;
+//  unsigned __int16 CurSPStone;
+//  unsigned int CurHP;
+//  unsigned int CurSP;
+//  unsigned int CurLP;
+//  unsigned int fame;
+//  unsigned __int64 Cen;
+//  PROTO_NC_CHAR_BASE_CMD::LoginLocation logininfo;
+//  CHARSTATDISTSTR statdistribute;
+//  char pkyellowtime;
+//  unsigned int pkcount;
+//  unsigned __int16 prisonmin;
+//  char adminlevel;
+//  PROTO_NC_CHAR_BASE_CMD::<unnamed-type-flags> flags;
+//};
+type NcCharClientBaseCmd struct {
+	ChrRegNum uint32
+	CharName Name5
+	Slot byte
+	Level byte
+	Experience uint64
+	PwrStone uint16
+	GrdStone uint16
+	HPStone uint16
+	SPStone uint16
+	CurHP uint32
+	CurSP uint32
+	CurLP uint32
+	Unk  byte
+	Fame uint32
+	Cen uint64
+	LoginInfo NcCharBaseCmdLoginLocation
+	Stats CharStats
+	IdleTime byte
+	PkCount uint32
+	PrisonMin uint16
+	AdminLevel byte
+	Flag NcCharBaseCmdFlag
+	//MapName  Name3
+}
+
+func (nc *NcCharClientBaseCmd) String() string {
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
+	return string(sd)
+}
+
+func (nc *NcCharClientBaseCmd) PdbType() string {
+	return `
+	struct PROTO_NC_CHAR_BASE_CMD
+	{
+	  unsigned int chrregnum;
+	  Name5 charid;
+	  char slotno;
+	  char Level;
+	  unsigned __int64 Experience;
+	  unsigned __int16 CurPwrStone;
+	  unsigned __int16 CurGrdStone;
+	  unsigned __int16 CurHPStone;
+	  unsigned __int16 CurSPStone;
+	  unsigned int CurHP;
+	  unsigned int CurSP;
+	  unsigned int CurLP;
+	  unsigned int fame;
+	  unsigned __int64 Cen;
+	  PROTO_NC_CHAR_BASE_CMD::LoginLocation logininfo;
+	  CHARSTATDISTSTR statdistribute;
+	  char pkyellowtime;
+	  unsigned int pkcount;
+	  unsigned __int16 prisonmin;
+	  char adminlevel;
+	  PROTO_NC_CHAR_BASE_CMD::<unnamed-type-flags> flags;
+	};
+`
+}
+
+//NC_CHAR_CLIENT_SHAPE_CMD
+type NcCharClientShapeCmd ProtoAvatarShapeInfo
