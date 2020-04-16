@@ -278,5 +278,31 @@ type NcCharClientShapeCmd ProtoAvatarShapeInfo
 //};
 type NcCharMapLoginAck struct {
 	Handle uint16
-	Param
+	Params CharParameterData
+	LoginCoord ShineXYType
 }
+
+//struct PROTO_NC_CHAR_REVIVEOTHER_CMD
+//{
+//  PROTO_NC_CHAR_REVIVESAME_CMD link;
+//  PROTO_NC_CHAR_LOGIN_ACK sock;
+//  unsigned __int16 wldmanhandle;
+//};
+type NcCharReviveOtherCmd struct {
+	Link NcCharReviveSameCmd
+	Socket NcCharLoginAck
+	WorldID uint16
+}
+
+//struct PROTO_NC_CHAR_REVIVESAME_CMD
+//{
+//  unsigned __int16 mapid;
+//  SHINE_XY_TYPE location;
+//};
+type NcCharReviveSameCmd struct {
+	MapID uint16
+	Location ShineXYType
+}
+
+//NC_MAP_LINKOTHER_CMD
+type NcMapLinkOtherCmd NcCharReviveOtherCmd

@@ -67,3 +67,6 @@ type NcMapTownPortalReq struct {
 type NcMapTownPortalAck struct {
 	Err uint16
 }
+
+//NC_MAP_LOGIN_ACK
+type NcMapLoginAck NcCharMapLoginAck
