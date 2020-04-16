@@ -1,0 +1,13 @@
+serve:
+  port: 9500
+
+world:
+  ip: 127.0.0.1
+  port: 9110
+
+session:
+  redis:
+#    host: 192.168.1.238
+    host: 192.168.1.139
+    port: 6379
+    db: 3
