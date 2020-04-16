@@ -349,14 +349,14 @@ type CharParameterData struct {
 	Intelligence ShineCharStatVar
 	Wisdom       ShineCharStatVar
 	MentalPower  ShineCharStatVar
-	WCLow        ShineCharStatVar
-	WCHigh       ShineCharStatVar
-	AC           ShineCharStatVar
-	TH           ShineCharStatVar
-	TB           ShineCharStatVar
-	MALow        ShineCharStatVar
-	MAHigh       ShineCharStatVar
-	MR           ShineCharStatVar
+	WCLow        ShineCharStatVar // min physical dmg
+	WCHigh       ShineCharStatVar // max physical dmg
+	AC           ShineCharStatVar // physical defense
+	TH           ShineCharStatVar //aim
+	TB           ShineCharStatVar //evasion
+	MALow        ShineCharStatVar // min magical dmg
+	MAHigh       ShineCharStatVar // max magical dmg
+	MR           ShineCharStatVar // magical defense
 	MH           ShineCharStatVar
 	MB           ShineCharStatVar
 	MaxHP        uint32
@@ -370,7 +370,7 @@ type CharParameterData struct {
 	PainRes      ShineCharStatVar
 	RestraintRes ShineCharStatVar
 	CurseRes     ShineCharStatVar
-	ShoRes       ShineCharStatVar
+	ShockRes     ShineCharStatVar
 }
 
 //struct CHAR_PARAMETER_DATA::<unnamed-type-PwrStone>
