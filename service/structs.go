@@ -21,7 +21,6 @@ type opCodeStructs struct {
 }
 
 type ncRepresentation struct {
-	Pdb          string `json:"pdb_analog"`
 	UnpackedData string `json:"unpacked_data"`
 }
 
@@ -92,8 +91,9 @@ func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error
 		return ncStructData(&nc, data)
 	case 4153:
 		// NC_CHAR_CLIENT_SHAPE_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcCharClientShapeCmd{}
+		return ncStructData(&nc, data)
+		//break
 	case 4157:
 		// NC_CHAR_CLIENT_SKILL_CMD
 		nc := structs.NcCharClientSkillCmd{}
@@ -160,12 +160,13 @@ func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error
 		break
 	case 6146:
 		// NC_MAP_LOGIN_ACK
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcMapLoginAck{}
+		return ncStructData(&nc, data)
 	case 4152:
 		// NC_CHAR_CLIENT_BASE_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcCharClientBaseCmd{}
+		return ncStructData(&nc, data)
+		//break
 	case 4169:
 		// NC_CHAR_CLIENT_CHARTITLE_CMD
 		nc := structs.NcClientCharTitleCmd{}
@@ -312,8 +313,8 @@ func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error
 		return ncStructData(&nc, data)
 	case 8217:
 		// NC_ACT_MOVERUN_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcActMoveRunCmd{}
+		return ncStructData(&nc, data)
 	case 7177:
 		// NC_BRIEFINFO_MOB_CMD
 		// struct values vary between clients
@@ -333,8 +334,8 @@ func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error
 		break
 	case 8218:
 		// NC_ACT_SOMEONEMOVERUN_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcActSomeoneMoveRunCmd{}
+		return ncStructData(&nc, data)
 	case 12289:
 		// NC_ITEM_CELLCHANGE_CMD
 		nc := structs.NcItemCellChangeCmd{}
@@ -708,13 +709,418 @@ func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error
 		// NC_ACT_SOMEONEPRODUCE_MAKE_CMD
 		nc := structs.NcActSomeoneProduceMakeCmd{}
 		return ncStructData(&nc, data)
+	case 8264:
+		// NC_ACT_CANCELCASTBAR
+		// return ncStructData(&nc, data)
+		break
+	case 8229:
+		// NC_ACT_SOMEEONEJUMP_CMD
+		nc := structs.NcActSomeoneJumpCmd{}
+		return ncStructData(&nc, data)
+	case 52230:
+		// NC_MOVER_RIDE_OFF_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 6170:
+		// NC_MAP_TOWNPORTAL_REQ
+		nc := structs.NcMapTownPortalReq{}
+		return ncStructData(&nc, data)
+	case 6171:
+		// NC_MAP_TOWNPORTAL_ACK
+		nc := structs.NcMapTownPortalAck{}
+		return ncStructData(&nc, data)
+	case 6154:
+		// NC_MAP_LINKOTHER_CMD
+		nc := structs.NcMapLinkOtherCmd{}
+		return ncStructData(&nc, data)
+		//break
+	case 11554:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 9288:
+		// NC_BAT_SWING_DAMAGE_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 12300:
+		// NC_ITEM_RELOC_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 20488:
+		// NC_SOULSTONE_HP_USESUC_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 26633:
+		// NC_BOOTH_ENTRY_BUY_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 26644:
+		// NC_BOOTH_SEARCH_ITEM_LIST_CATEGORIZED_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 14408:
+		// NC_PARTY_MEMBERINFOREQ_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 9272:
+		// NC_BAT_SOMEONESKILLBASH_CASTCUT_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 7460:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 9229:
+		// NC_BAT_SUMEONELEVELUP_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 18472:
+		// NC_SKILL_WARP_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 12311:
+		// NC_ITEM_UPGRADE_REQ
+		// return ncStructData(&nc, data)
+		break
+	case 27660:
+		// NC_SCENARIO_CHATWIN_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 12310:
+		// NC_ITEM_USE_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 9290:
+		// NC_BAT_REALLYKILL_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 9227:
+		// NC_BAT_EXPGAIN_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 22546:
+		// NC_KQ_COMPLETE_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 9281:
+		// NC_BAT_SKILLBASH_FLD_CAST_REQ
+		// return ncStructData(&nc, data)
+		break
+	case 9268:
+		// NC_BAT_SKILLBASH_CAST_FAIL_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 0:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 8250:
+		// NC_ACT_SOMEONEPRODUCE_CASTCUT_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 22:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 9296:
+		// NC_BAT_SKILLBASH_HIT_FLD_START_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 7198:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 12323:
+		// NC_ITEM_CHARGED_WITHDRAW_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 14387:
+		// NC_PARTY_MEMBERCLASS_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 20772:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 6173:
+		// NC_MAP_LINK_FAIL_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 26636:
+		// NC_BOOTH_REFRESH_BUY_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 20607:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 7179:
+		// NC_BRIEFINFO_ITEMONFIELD_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 26630:
+		// NC_BOOTH_SOMEONECLOSE_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 14409:
+		// NC_PARTY_MEMBERLOCATION_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 13092:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 9269:
+		// NC_BAT_SKILLBASH_CAST_SUC_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 22562:
+		// NC_KQ_MOBKILLNUMBER_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 26642:
+		// NC_BOOTH_SOMEONEINTERIORSTART_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 57856:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 9285:
+		// NC_BAT_SKILLBASH_CASTABORT_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 8225:
+		// NC_ACT_SOMEONEEMOTICON_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 5632:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 6945:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 11556:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 2064:
+		// NC_MISC_RESTMINUTE_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 24215:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 8263:
+		// NC_ACT_CREATECASTBAR
+		// return ncStructData(&nc, data)
+		break
+	case 9289:
+		// NC_BAT_SOMEONESWING_DAMAGE_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 2844:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 49:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 8220:
+		// NC_ACT_NPCMENUOPEN_REQ
+		// return ncStructData(&nc, data)
+		break
+	case 17409:
+		// NC_QUEST_SCRIPT_CMD_REQ
+		// return ncStructData(&nc, data)
+		break
+	case 9297:
+		// NC_BAT_SOMEONESKILLBASH_HIT_FLD_START_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 12290:
+		// NC_ITEM_EQUIPCHANGE_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 9284:
+		// NC_BAT_SKILLBASH_CASTABORT_REQ
+		// return ncStructData(&nc, data)
+		break
+	case 12308:
+		// NC_ITEM_SOMEONEPICK_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 8233:
+		// NC_ACT_SOMEONEPITCHTENT_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 541:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 47477:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 26645:
+		// NC_BOOTH_SEARCH_BOOTH_POSITION_REQ
+		// return ncStructData(&nc, data)
+		break
+	case 4207:
+		// NC_CHAR_FAMECHANGE_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 8266:
+		// NC_ACT_REINFORCE_STOP_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 2114:
+		// NC_MISC_MISCERROR_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 20490:
+		// NC_SOULSTONE_SP_USESUC_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 8308:
+		// NC_ACT_ANIMATION_START_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 3559:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 26637:
+		// NC_BOOTH_ITEMTRADE_REQ
+		// return ncStructData(&nc, data)
+		break
+	case 8309:
+		// NC_ACT_ANIMATION_STOP_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 16418:
+		// NC_CHARSAVE_SET_CHAT_BLOCK_SPAMER_DB_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 22552:
+		// NC_KQ_RESTDEADNUM_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 9294:
+		// NC_BAT_SKILLBASH_HIT_OBJ_START_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 20486:
+		// NC_SOULSTONE_USEFAIL_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 12322:
+		// NC_ITEM_CHARGED_WITHDRAW_REQ
+		// return ncStructData(&nc, data)
+		break
+	case 35364:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 8222:
+		// NC_ACT_SHOUT_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 18463:
+		// NC_SKILL_SOMEONEREVIVE_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 9300:
+		// NC_BAT_ABSTATE_ERASE_REQ
+		// return ncStructData(&nc, data)
+		break
+	case 12312:
+		// NC_ITEM_UPGRADE_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 12314:
+		// NC_ITEM_USECOMPLETE_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 26741:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 4147:
+		// NC_CHAR_CENCHANGE_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 14386:
+		// NC_PARTY_MEMBERINFORM_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 8194:
+		// NC_ACT_SOMEONECHAT_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 12305:
+		// NC_ITEM_EQUIP_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 26643:
+		// NC_BOOTH_SEARCH_ITEM_LIST_CATEGORIZED_REQ
+		// return ncStructData(&nc, data)
+		break
+	case 33564:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 18465:
+		// NC_SKILL_COOLTIME_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 8219:
+		// NC_ACT_MOVEFAIL_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 4206:
+		// NC_CHAR_SOMEONEGUILDCHANGE_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 23:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 9287:
+		// NC_BAT_SWING_START_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 52514:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 65535:
+		//
+		// return ncStructData(&nc, data)
+		break
+	case 26646:
+		// NC_BOOTH_SEARCH_BOOTH_POSITION_ACK
+		// return ncStructData(&nc, data)
+		break
+	case 7180:
+		// NC_BRIEFINFO_MAGICFIELDSPREAD_CMD
+		// return ncStructData(&nc, data)
+		break
+	case 25895:
+		//
+		// return ncStructData(&nc, data)
+		break
 	default:
 		return ncRepresentation{}, fmt.Errorf("no struct assigned to this operation code %v", opCode)
 	}
 	return ncRepresentation{}, fmt.Errorf("no struct assigned to this operation code %v", opCode)
 }
 
-func ncStructData(nc structs.NC, data []byte) (ncRepresentation, error) {
+func ncStructData(nc interface{}, data []byte) (ncRepresentation, error) {
 	err := structs.Unpack(data, nc)
 	if err != nil {
 		n, err := restruct.SizeOf(nc)
@@ -731,9 +1137,12 @@ func ncStructData(nc structs.NC, data []byte) (ncRepresentation, error) {
 	//	log.Error(err)
 	//}
 	//log.Warningf("struct: %v, size: %v", reflect.TypeOf(nc).String(), n)
+	sd, err := json.Marshal(nc)
+	if err != nil {
+		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
+	}
 	nr := ncRepresentation{
-		Pdb:          nc.PdbType(),
-		UnpackedData: nc.String(),
+		UnpackedData: string(sd),
 	}
 
 	return nr, nil

@@ -92,7 +92,7 @@ func config() {
 	startPort := viper.GetString("network.portRange.start")
 	endPort := viper.GetString("network.portRange.end")
 	portRange := fmt.Sprintf("%v-%v", startPort, endPort)
-	filter = fmt.Sprintf("dst portrange %v or src portrange %v", portRange, portRange)
+	filter = fmt.Sprintf("tcp and (dst portrange %v or src portrange %v)", portRange, portRange)
 
 	s := &networking.Settings{}
 
@@ -146,7 +146,7 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 
 	nr, err := ncStructRepresentation(dp.packet.Base.OperationCode, dp.packet.Base.Data)
 	if err == nil {
-		pv.ncRepresentation = nr
+		pv.NcRepresentation = nr
 		//b, _ := json.Marshal(pv.ncRepresentation)
 		//log.Info(string(b))
 	} else {
@@ -166,15 +166,20 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 		tPorts = ss.transport.String()
 	}
 	if viper.GetBool("protocol.log.verbose") {
-		log.Infof("%v %v %v %v", tPorts, ss.transport, dp.seen, string(data))
+		log.Infof("%v %v %v %v",dp.seen, tPorts, dp.direction,  string(data))
 	} else {
-		log.Infof("[ %v ] %v %v %v", tPorts, dp.direction, dp.seen, dp.packet.Base.String())
+		log.Infof("[ %v ] %v %v %v", dp.seen, tPorts, dp.direction, dp.packet.Base.String())
 	}
 	pv.ConnectionKey = fmt.Sprintf("%v %v", ss.net.String(), ss.transport.String())
-	//ocs.mu.Lock()
-	//ocs.structs[dp.packet.Base.OperationCode] = dp.packet.Base.ClientStructName
-	//ocs.mu.Unlock()
+	ocs.mu.Lock()
+	ocs.structs[dp.packet.Base.OperationCode] = dp.packet.Base.ClientStructName
+	ocs.mu.Unlock()
 	go sendPacketToUI(pv)
+}
+
+func (ss *shineStream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reassembly.TCPFlowDirection, nextSeq reassembly.Sequence, start *bool, ac reassembly.AssemblerContext) bool {
+	// todo: save it to pcap file
+	return true
 }
 
 func (ssf *shineStreamFactory) New(net, transport gopacket.Flow, tcp *layers.TCP, ac reassembly.AssemblerContext) reassembly.Stream {
@@ -210,10 +215,6 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow, tcp *layers.TCP
 
 	log.Infof("new stream from => [ %v ] [ %v ]", net, transport)
 	return s
-}
-
-func (ss *shineStream) Accept(tcp *layers.TCP, ci gopacket.CaptureInfo, dir reassembly.TCPFlowDirection, nextSeq reassembly.Sequence, start *bool, ac reassembly.AssemblerContext) bool {
-	return true
 }
 
 func (ss *shineStream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.AssemblerContext) {
@@ -446,6 +447,14 @@ func Capture(cmd *cobra.Command, args []string) {
 	<-c
 }
 
+type Context struct {
+	ci  gopacket.CaptureInfo
+}
+
+func (c Context) GetCaptureInfo() gopacket.CaptureInfo {
+	return c.ci
+}
+
 func capturePackets(ctx context.Context, a *reassembly.Assembler) {
 	defer a.FlushAll()
 
@@ -467,7 +476,7 @@ func capturePackets(ctx context.Context, a *reassembly.Assembler) {
 		case <-ctx.Done():
 			return
 		default:
-			data, _, err := handle.ZeroCopyReadPacketData()
+			data, ci, err := handle.ZeroCopyReadPacketData()
 
 			if err != nil {
 				log.Errorf("error getting packet: %v", err)
@@ -475,7 +484,6 @@ func capturePackets(ctx context.Context, a *reassembly.Assembler) {
 			}
 			err = parser.DecodeLayers(data, &decoded)
 			if err != nil {
-				log.Errorf("error decoding packet: %v", err)
 				break
 			}
 			foundNetLayer := false
@@ -487,9 +495,12 @@ func capturePackets(ctx context.Context, a *reassembly.Assembler) {
 					foundNetLayer = true
 				case layers.LayerTypeTCP:
 					if foundNetLayer {
-						a.Assemble(netFlow, &tcp)
+						c := Context{
+							ci: ci,
+						}
+						a.AssembleWithContext(netFlow, &tcp, c)
 					} else {
-						log.Error("could not find IPv4 or IPv6 layer, inoring")
+						log.Error("could not find IPv4 or IPv6 layer, ignoring")
 					}
 					break
 				}

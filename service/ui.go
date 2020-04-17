@@ -22,7 +22,7 @@ type PacketView struct {
 	PortEndpoints    string                 `json:"portEndpoints"`
 	Direction        string                 `json:"direction"`
 	PacketData       networking.ExportedPcb `json:"packetData"`
-	ncRepresentation ncRepresentation       `json:"ncRepresentation"`
+	NcRepresentation ncRepresentation       `json:"ncRepresentation"`
 }
 
 type webSockets struct {
@@ -30,18 +30,15 @@ type webSockets struct {
 	mu   sync.Mutex
 }
 
-type ss map[*websocket.Conn]bool
-
 var upgrader = websocket.Upgrader{} // use default options
 
-var ws *webSockets
+var ws *webSockets // grrr, find other way to send packets to
 
 func startUI(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-
 		ws = &webSockets{
 			cons: make(map[*websocket.Conn]bool),
 		}
@@ -52,7 +49,6 @@ func startUI(ctx context.Context) {
 
 		log.Error(http.ListenAndServe(addr, nil))
 	}
-
 }
 
 func (pv *PacketView) String() string {
