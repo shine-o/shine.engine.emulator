@@ -94,6 +94,7 @@ func startWorld(ctx context.Context) {
 			3123: userWillWorldSelectReq,
 			5121: avatarCreateReq,
 			5127: avatarEraseReq,
+			4097: loginReq,
 		}
 
 		hw := networking.NewHandlerWarden(ch)
