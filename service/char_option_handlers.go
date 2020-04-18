@@ -48,7 +48,7 @@ func keymapCmd(ctx context.Context, options * character.ClientOptions) {
 func shortcutDataCmd(ctx context.Context, options * character.ClientOptions) {
 	// fighter: 040000040000000000010400010000000a0100ac0d00000b0100b10d0000
 	nc := structs.NcCharGetShortcutDataCmd{}
-	err := structs.Unpack(options.Shortcuts, &nc)
+	err := structs.Unpack(options.GameOptions, &nc)
 	if err != nil {
 		return
 	}

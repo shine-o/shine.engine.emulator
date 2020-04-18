@@ -17,7 +17,9 @@ func loginReq(ctx context.Context, pc *networking.Command) {
 
 	// get character where user_id and slot match
 	var char character.Character
-	err := db.Model(&char).Relation("Location").Relation("Options").Where("slot = ?", nc.Slot).Select()
+	err := db.Model(&char).
+		Relation("Location").
+		Relation("Options").Where("slot = ?", nc.Slot).Select()
 
 	if err != nil {
 		return
@@ -35,9 +37,10 @@ func loginReq(ctx context.Context, pc *networking.Command) {
 		return
 	}
 
-	ack := structs.NcCharLoginAck{}
-	copy(ack.ZoneIP.Name[:], ci.IP)
-	ack.ZonePort = uint16(ci.Port)
+	ack := structs.NcCharLoginAck{
+		ZoneIP:   structs.NewName4(ci.IP),
+		ZonePort: uint16(ci.Port),
+	}
 
 	// not sure if these should be ordered
 	go gameOptionCmd(ctx, char.Options)

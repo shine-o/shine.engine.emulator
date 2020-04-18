@@ -39,6 +39,7 @@ func userLoginWorldAck(ctx context.Context, pc *networking.Command) {
 
 		nc, err := userWorldInfo(ctx)
 		if err != nil {
+			log.Error(err)
 			return
 		}
 		pc.NcStruct = &nc

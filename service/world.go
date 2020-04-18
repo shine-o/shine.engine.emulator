@@ -95,7 +95,6 @@ func userWorldInfo(ctx context.Context) (structs.NcUserLoginWorldAck, error) {
 			Relation("Appearance").
 			Relation("Attributes").
 			Relation("Location").
-			Relation("Inventory").
 			Relation("EquippedItems").
 			Where("user_id = ?", ws.UserID).
 			Select()
