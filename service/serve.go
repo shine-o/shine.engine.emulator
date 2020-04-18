@@ -4,7 +4,9 @@ import (
 	"context"
 	"encoding/hex"
 	"errors"
+	"github.com/go-pg/pg/v9"
 	"github.com/google/logger"
+	"github.com/shine-o/shine.engine.core/database"
 	zm "github.com/shine-o/shine.engine.core/grpc/zone-master"
 	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/spf13/cobra"
@@ -16,6 +18,7 @@ import (
 
 var (
 	log *logger.Logger
+	db *pg.DB
 )
 
 func init() {
@@ -32,10 +35,19 @@ func Start(cmd *cobra.Command, args []string) {
 	log.Infof("starting the service on port: %v", zonePort)
 
 	// register against the zone master
-	err := registerToZone()
+	err := registerZone()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	db = database.Connection(ctx, database.ConnectionParams{
+		User:     viper.GetString("database.postgres.db_user"),
+		Password: viper.GetString("database.postgres.db_password"),
+		Host:     viper.GetString("database.postgres.host"),
+		Port:     viper.GetString("database.postgres.port"),
+		Database: viper.GetString("database.postgres.db_name"),
+		Schema:   viper.GetString("database.postgres.schema"),
+	})
 
 	s := &networking.Settings{}
 
@@ -54,15 +66,18 @@ func Start(cmd *cobra.Command, args []string) {
 		s.CommandsFilePath = path
 	}
 
-	ch := &networking.CommandHandlers{}
+	ch := &networking.CommandHandlers{
+		6145: mapLoginReq,
+	}
+
 	hw := networking.NewHandlerWarden(ch)
 	ss := networking.NewShineService(s, hw)
 
 	ss.Listen(ctx, zonePort)
 }
 
-func registerToZone() error {
-	conn, err := newRPCClient("master")
+func registerZone() error {
+	conn, err := newRPCClient("zone_master")
 
 	if err != nil {
 		return err
