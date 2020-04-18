@@ -20,18 +20,18 @@ func init() {
 }
 
 func Start(cmd *cobra.Command, args []string) {
-		initRedis()
-		port := viper.GetString("serve.port")
-		address := fmt.Sprintf(":%v", port)
-		lis, err := net.Listen("tcp", address)
-		if err != nil {
-			log.Errorf("could listen on port %v: %v", port, err)
-		}
-		s := grpc.NewServer()
-		zm.RegisterMasterServer(s, &server{})
+	initRedis()
+	port := viper.GetString("serve.port")
+	address := fmt.Sprintf(":%v", port)
+	lis, err := net.Listen("tcp", address)
+	if err != nil {
+		log.Errorf("could listen on port %v: %v", port, err)
+	}
+	s := grpc.NewServer()
+	zm.RegisterMasterServer(s, &server{})
 
-		log.Infof("Loading gRPC server connection master@::%v", port)
-		if err := s.Serve(lis); err != nil {
-			log.Errorf("failed to serve: %v", err)
-		}
+	log.Infof("Loading gRPC server connection master@::%v", port)
+	if err := s.Serve(lis); err != nil {
+		log.Errorf("failed to serve: %v", err)
+	}
 }
