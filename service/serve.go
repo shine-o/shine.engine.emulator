@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	log     *logger.Logger
-	db *pg.DB
+	log *logger.Logger
+	db  *pg.DB
 )
 
 func init() {
@@ -93,7 +93,7 @@ func startWorld(ctx context.Context) {
 			2061: miscGameTimeReq,
 			3123: userWillWorldSelectReq,
 			5121: avatarCreateReq,
-			5127:  avatarEraseReq,
+			5127: avatarEraseReq,
 		}
 
 		hw := networking.NewHandlerWarden(ch)

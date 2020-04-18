@@ -93,7 +93,6 @@ func userWorldInfo(ctx context.Context) (structs.NcUserLoginWorldAck, error) {
 
 		err := db.Model(&chars).
 			Relation("Appearance").
-			//Where("user_id = ?", ws.UserID).
 			Relation("Attributes").
 			Relation("Location").
 			Relation("Inventory").
@@ -130,7 +129,7 @@ func returnToServerSelect(ctx context.Context) (structs.NcUserWillWorldSelectAck
 		return structs.NcUserWillWorldSelectAck{}, errCC
 	default:
 		otp := randStringBytesMaskImprSrcUnsafe(32)
-		err := redisClient.Set(otp, otp, 20 * time.Second).Err()
+		err := redisClient.Set(otp, otp, 20*time.Second).Err()
 		if err != nil {
 			return structs.NcUserWillWorldSelectAck{}, err
 		}
