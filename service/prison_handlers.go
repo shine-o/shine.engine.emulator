@@ -8,7 +8,7 @@ import (
 
 // NcPrisonGetReq client asks for how much time in prison ô_o
 // NC_PRISON_GET_REQ
-func NcPrisonGetReq(ctx context.Context, pc * networking.Command) {
+func NcPrisonGetReq(ctx context.Context, pc *networking.Command) {
 	go NcPrisonGetAck(ctx)
 }
 
@@ -16,7 +16,7 @@ func NcPrisonGetReq(ctx context.Context, pc * networking.Command) {
 // NC_PRISON_GET_ACK
 func NcPrisonGetAck(ctx context.Context) {
 	pc := networking.Command{
-		Base:     networking.CommandBase{
+		Base: networking.CommandBase{
 			OperationCode: 31751,
 		},
 		NcStruct: &structs.NcPrisonGetAck{

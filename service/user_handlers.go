@@ -6,7 +6,6 @@ import (
 	"github.com/shine-o/shine.engine.core/structs"
 )
 
-
 // NcUserLoginWorldReq handles the player's attempt to login to the server
 // handle user, given his account
 // verify account and character data
