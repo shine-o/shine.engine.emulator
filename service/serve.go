@@ -52,13 +52,13 @@ func Start(cmd *cobra.Command, args []string) {
 
 	// note: use factory
 	ch := &networking.CommandHandlers{
-		3173: userClientVersionCheckReq,
-		3162: userUsLoginReq,
-		3076: userXtrapReq,
-		3099: userWorldStatusReq,
-		3083: userWorldSelectReq,
-		3096: userNormalLogoutCmd,
-		3127: userLoginWithOtpReq,
+		3173: NcUserClientVersionCheckReq,
+		3162: NcUserUsLoginReq,
+		3076: NcUserXtrapReq,
+		3099: NcUserWorldStatusReq,
+		3083: NcUserWorldSelectReq,
+		3096: NcUserNormalLogoutCmd,
+		3127: NcUserLoginWithOtpReq,
 	}
 
 	hw := networking.NewHandlerWarden(ch)
