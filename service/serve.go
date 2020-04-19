@@ -95,6 +95,9 @@ func startWorld(ctx context.Context) {
 			5121: avatarCreateReq,
 			5127: avatarEraseReq,
 			4097: loginReq,
+			28684: windowPosReq,
+			28676: shortcutSizeReq,
+			31750: prisonGetReq,
 		}
 
 		hw := networking.NewHandlerWarden(ch)
