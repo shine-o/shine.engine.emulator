@@ -2,12 +2,14 @@ package service
 
 import (
 	"context"
-	lw "github.com/shine-o/shine.engine.core/grpc/login-world"
+	w "github.com/shine-o/shine.engine.core/grpc/world"
 	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/shine-o/shine.engine.core/structs"
 )
 
-func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
+// NcUserClientVersionCheckReq handles the client hash verification
+// NC_USER_CLIENT_VERSION_CHECK_REQ
+func NcUserClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
@@ -16,44 +18,53 @@ func userClientVersionCheckReq(ctx context.Context, pc *networking.Command) {
 		//if err := nc.Unpack(pc.Base.Data); err != nil {
 		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 			log.Error(err)
-			go userClientWrongVersionAck(ctx, &networking.Command{})
+			go NcUserClientWrongVersionCheckAck(ctx)
 		} else {
-
 			if _, err := checkClientVersion(ctx, nc); err != nil { // data is irrelevant in this call
 				log.Error(err)
-				go userClientWrongVersionAck(ctx, &networking.Command{})
+				go NcUserClientWrongVersionCheckAck(ctx)
 			} else {
-				go userClientVersionCheckAck(ctx, &networking.Command{}) // will be triggered by method
+				go NcUserClientRightVersionCheckAck(ctx) // will be triggered by method
 			}
 		}
 	}
 }
 
-func userClientVersionCheckAck(ctx context.Context, pc *networking.Command) {
+// NcUserClientRightVersionCheckAck acknowledges the client is correct
+// NC_USER_CLIENT_RIGHTVERSION_CHECK_ACK
+func NcUserClientRightVersionCheckAck(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		pc.Base = networking.CommandBase{
-			OperationCode: 3175,
+		pc := &networking.Command{
+			Base: networking.CommandBase{
+				OperationCode: 3175,
+			},
 		}
 		go pc.Send(ctx)
 	}
 }
 
-func userClientWrongVersionAck(ctx context.Context, pc *networking.Command) {
+// NcUserClientWrongVersionCheckAck acknowledges the client is incorrect
+// NC_USER_CLIENT_WRONGVERSION_CHECK_ACK
+func NcUserClientWrongVersionCheckAck(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		pc.Base = networking.CommandBase{
-			OperationCode: 3176,
+		pc := &networking.Command{
+			Base: networking.CommandBase{
+				OperationCode: 3176,
+			},
 		}
 		go pc.Send(ctx)
 	}
 }
 
-func userUsLoginReq(ctx context.Context, pc *networking.Command) {
+// NcUserUsLoginReq handles account login
+// NC_USER_US_LOGIN_REQ
+func NcUserUsLoginReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
@@ -61,48 +72,48 @@ func userUsLoginReq(ctx context.Context, pc *networking.Command) {
 		nc := structs.NcUserUsLoginReq{}
 		//if err := nc.Unpack(pc.Base.Data); err != nil {
 		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
-			go userLoginFailAck(ctx, &networking.Command{})
+			go NcUserLoginFailAck(ctx, 69)
 			return
 		}
 		pc.NcStruct = &nc
 		if err := checkCredentials(ctx, nc); err != nil {
 			log.Error(err)
-			go userLoginFailAck(ctx, &networking.Command{})
+			go NcUserLoginFailAck(ctx, 69)
 			return
 		}
-		go userLoginAck(ctx)
+		go NcUserLoginAck(ctx)
 	}
 }
 
-func userLoginFailAck(ctx context.Context, pc *networking.Command) {
+// NcUserLoginFailAck notifies the user about an error while attempting to log in
+// NC_USER_LOGINFAIL_ACK
+func NcUserLoginFailAck(ctx context.Context, errCode uint16) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		pc.Base = networking.CommandBase{
-			OperationCode: 3081,
+		pc := networking.Command{
+			Base: networking.CommandBase{
+				OperationCode: 3081,
+			},
+			NcStruct: &structs.NcUserLoginFailAck{
+				Err: errCode,
+			},
 		}
-		// 090c 4500
-		nc := structs.NcUserLoginFailAck{
-			Err: uint16(69),
-		}
-		pc.NcStruct = &nc
 		go pc.Send(ctx)
 	}
 }
 
-func userLoginAck(ctx context.Context) {
+// NcUserLoginAck acknowledges the login attempt and sends the server list to the client
+// NC_USER_LOGIN_ACK
+func NcUserLoginAck(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
 		log.Info("Requesting data to the World service")
 		unexpectedFailure := func() {
-			userLoginFailAck(ctx, &networking.Command{
-				NcStruct: &structs.NcUserLoginFailAck{
-					Err: 70,
-				},
-			})
+			NcUserLoginFailAck(ctx, 70)
 		}
 
 		pc := &networking.Command{
@@ -124,21 +135,29 @@ func userLoginAck(ctx context.Context) {
 	}
 }
 
-func userXtrapReq(ctx context.Context, pc *networking.Command) {}
+// NcUserXtrapReq has no use, but client still sends it
+// NC_USER_XTRAP_REQ
+func NcUserXtrapReq(ctx context.Context, pc *networking.Command) {}
 
-func userWorldStatusReq(ctx context.Context, pc *networking.Command) {
+// NcUserWorldStatusReq pings the world server
+// NC_USER_WORLD_STATUS_REQ
+func NcUserWorldStatusReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
 		if err := checkWorldStatus(ctx); err != nil {
+			log.Error(err)
 			return
 		}
-		go userWorldStatusAck(ctx, &networking.Command{})
+		go NcUserWorldStatusAck(ctx, &networking.Command{})
 	}
 }
 
-func userWorldStatusAck(ctx context.Context, pc *networking.Command) {
+// NcUserWorldStatusAck notifies the world is alive
+// TODO: different world statuses...
+// NC_USER_WORLD_STATUS_ACK
+func NcUserWorldStatusAck(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
@@ -150,18 +169,16 @@ func userWorldStatusAck(ctx context.Context, pc *networking.Command) {
 	}
 }
 
-func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
+// NcUserWorldSelectReq handles a server selected petition
+// NC_USER_WORLDSELECT_REQ
+func NcUserWorldSelectReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
 		log.Info("Requesting data to the World service")
 		unexpectedFailure := func() {
-			userLoginFailAck(ctx, &networking.Command{
-				NcStruct: &structs.NcUserLoginFailAck{
-					Err: 70,
-				},
-			})
+			NcUserLoginFailAck(ctx, 70)
 		}
 		nc := structs.NcUserWorldSelectReq{}
 		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
@@ -173,11 +190,13 @@ func userWorldSelectReq(ctx context.Context, pc *networking.Command) {
 			go unexpectedFailure()
 			return
 		}
-		go userWorldSelectAck(ctx, wci)
+		go NcUserWorldSelectAck(ctx, wci)
 	}
 }
 
-func userWorldSelectAck(ctx context.Context, wd *lw.WorldData) {
+// NcUserWorldSelectAck queries the world server for connection info and sends it to the clietn
+// NC_USER_WORLDSELECT_ACK
+func NcUserWorldSelectAck(ctx context.Context, wd *w.WorldData) {
 	select {
 	case <-ctx.Done():
 		return
@@ -199,7 +218,9 @@ func userWorldSelectAck(ctx context.Context, wd *lw.WorldData) {
 	}
 }
 
-func userNormalLogoutCmd(ctx context.Context, pc *networking.Command) {
+// NcUserNormalLogoutCmd not implemented yet ~~
+// NC_USER_NORMALLOGOUT_CMD
+func NcUserNormalLogoutCmd(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
@@ -207,7 +228,9 @@ func userNormalLogoutCmd(ctx context.Context, pc *networking.Command) {
 	}
 }
 
-func userLoginWithOtpReq(ctx context.Context, pc *networking.Command) {
+// NcUserLoginWithOtpReq handles a petition where the client tries a false login
+// NC_USER_LOGIN_WITH_OTP_REQ
+func NcUserLoginWithOtpReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
@@ -215,15 +238,15 @@ func userLoginWithOtpReq(ctx context.Context, pc *networking.Command) {
 		nc := structs.NcUserLoginWithOtpReq{}
 		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 			log.Info(err)
-			go userLoginFailAck(ctx, &networking.Command{})
+			go NcUserLoginFailAck(ctx, 70)
 		} else {
 
 			pc.NcStruct = &nc
 			if err := loginByCode(ctx, nc); err != nil {
 				log.Info(err)
-				go userLoginFailAck(ctx, &networking.Command{})
+				go NcUserLoginFailAck(ctx, 69)
 			} else {
-				go userLoginAck(ctx)
+				go NcUserLoginAck(ctx)
 			}
 		}
 	}

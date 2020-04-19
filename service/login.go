@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/shine-o/shine.engine.core/grpc/login-world"
+	w "github.com/shine-o/shine.engine.core/grpc/world"
 	"github.com/shine-o/shine.engine.core/structs"
 	"github.com/spf13/viper"
 	"strconv"
@@ -148,15 +148,15 @@ func serverSelectScreen(ctx context.Context) (structs.NcUserLoginAck, error) {
 			return structs.NcUserLoginAck{}, err
 		}
 
-		for _, w := range aw {
-			conn, err := newRPCClient(w.Name)
+		for _, v := range aw {
+			conn, err := newRPCClient(v.Name)
 			if err != nil {
 				return nc, err
 			}
-			c := lw.NewWorldClient(conn)
+			c := w.NewWorldClient(conn)
 
-			wd, err := c.GetWorldData(ctx, &lw.WorldQuery{
-				Name: w.Name,
+			wd, err := c.GetWorldData(ctx, &w.WorldQuery{
+				Name: v.Name,
 			})
 
 			if err != nil {
@@ -180,40 +180,40 @@ func serverSelectScreen(ctx context.Context) (structs.NcUserLoginAck, error) {
 }
 
 // request info about selected world
-func userSelectedServer(ctx context.Context, req structs.NcUserWorldSelectReq) (*lw.WorldData, error) {
+func userSelectedServer(ctx context.Context, req structs.NcUserWorldSelectReq) (*w.WorldData, error) {
 	select {
 	case <-ctx.Done():
-		return &lw.WorldData{}, ErrCC
+		return &w.WorldData{}, ErrCC
 	default:
 
 		aw, err := worlds()
 
 		if err != nil {
-			return &lw.WorldData{}, err
+			return &w.WorldData{}, err
 
 		}
-		for _, w := range aw {
-			if w.ID == req.WorldNo {
-				conn, err := newRPCClient(w.Name)
+		for _, v := range aw {
+			if v.ID == req.WorldNo {
+				conn, err := newRPCClient(v.Name)
 
 				if err != nil {
-					return &lw.WorldData{}, err
+					return &w.WorldData{}, err
 				}
 
-				c := lw.NewWorldClient(conn)
+				c := w.NewWorldClient(conn)
 
-				wd, err := c.GetWorldData(ctx, &lw.WorldQuery{
-					Id: int32(req.WorldNo),
+				wd, err := c.GetWorldData(ctx, &w.WorldQuery{
+					ID: int32(req.WorldNo),
 				})
 
 				if err != nil {
-					return &lw.WorldData{}, err
+					return &w.WorldData{}, err
 				}
 
 				return wd, nil
 			}
 		}
-		return &lw.WorldData{}, ErrNoWorld
+		return &w.WorldData{}, ErrNoWorld
 	}
 }
 
