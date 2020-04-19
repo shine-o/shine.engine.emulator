@@ -7,9 +7,9 @@ package structs
 //  unsigned int nRowNo;
 //};
 type CharIdChangeData struct {
-	NeedChangeId byte   `struct:"byte"`
-	Init         byte   `struct:"byte"`
-	RowNo        uint32 `struct:"uint32"`
+	NeedChangeId byte
+	Init         byte
+	RowNo        uint32
 }
 
 //struct PROTO_TUTORIAL_INFO
@@ -18,8 +18,8 @@ type CharIdChangeData struct {
 //  char nTutorialStep;
 //};
 type ProtoTutorialInfo struct {
-	TutorialState int32 `struct:"int32"`
-	TutorialStep  byte  `struct:"byte"`
+	TutorialState int32
+	TutorialStep  byte
 }
 
 ///* 1387 */
@@ -57,15 +57,15 @@ const (
 //  PROTO_TUTORIAL_INFO TutorialInfo;
 //};
 type AvatarInformation struct {
-	ChrRegNum        uint32 `struct:"uint32"`
+	ChrRegNum        uint32
 	Name             Name5
-	Level            uint16 `struct:"uint16"`
-	Slot             byte   `struct:"byte"`
+	Level            uint16
+	Slot             byte
 	LoginMap         Name3
 	DelInfo          ProtoAvatarDeleteInfo
 	Shape            ProtoAvatarShapeInfo
 	Equip            ProtoEquipment
-	KqHandle         uint32 `struct:"uint32"`
+	KqHandle         uint32
 	KqMapName        Name3
 	KqCoord          ShineXYType
 	KqDate           ShineDateTime
@@ -83,11 +83,11 @@ type AvatarInformation struct {
 //  char min;
 // };
 type ProtoAvatarDeleteInfo struct {
-	Year  byte `struct:"byte"`
-	Month byte `struct:"byte"`
-	Day   byte `struct:"byte"`
-	Hour  byte `struct:"byte"`
-	Min   byte `struct:"byte"`
+	Year  byte
+	Month byte
+	Day   byte
+	Hour  byte
+	Min   byte
 }
 
 // struct PROTO_AVATAR_SHAPE_INFO
@@ -98,10 +98,10 @@ type ProtoAvatarDeleteInfo struct {
 //char faceshape;
 //};
 type ProtoAvatarShapeInfo struct {
-	BF        byte `struct:"byte"`
-	HairType  byte `struct:"byte"`
-	HairColor byte `struct:"byte"`
-	FaceShape byte `struct:"byte"`
+	BF        byte
+	HairType  byte 
+	HairColor byte 
+	FaceShape byte 
 }
 
 //struct PROTO_EQUIPMENT::<unnamed-type-upgrade>
@@ -111,7 +111,7 @@ type ProtoAvatarShapeInfo struct {
 //};
 type EquipmentUpgrade struct {
 	Gap [2]uint8 `struct:"[2]uint8"`
-	BF2 byte     `struct:"byte"`
+	BF2 byte     
 }
 
 //struct PROTO_EQUIPMENT
@@ -139,25 +139,25 @@ type EquipmentUpgrade struct {
 //  PROTO_EQUIPMENT::<unnamed-type-upgrade> upgrade;
 //};
 type ProtoEquipment struct {
-	EquHead         uint16 `struct:"uint16"`
-	EquMouth        uint16 `struct:"uint16"`
-	EquRightHand    uint16 `struct:"uint16"`
-	EquBody         uint16 `struct:"uint16"`
-	EquLeftHand     uint16 `struct:"uint16"`
-	EquPant         uint16 `struct:"uint16"`
-	EquBoot         uint16 `struct:"uint16"`
-	EquAccBoot      uint16 `struct:"uint16"`
-	EquAccPant      uint16 `struct:"uint16"`
-	EquAccBody      uint16 `struct:"uint16"`
-	EquAccHeadA     uint16 `struct:"uint16"`
-	EquMinimonR     uint16 `struct:"uint16"`
-	EquEye          uint16 `struct:"uint16"`
-	EquAccLeftHand  uint16 `struct:"uint16"`
-	EquAccRightHand uint16 `struct:"uint16"`
-	EquAccBack      uint16 `struct:"uint16"`
-	EquCosEff       uint16 `struct:"uint16"`
-	EquAccHip       uint16 `struct:"uint16"`
-	EquMinimon      uint16 `struct:"uint16"`
-	EquAccShield    uint16 `struct:"uint16"`
+	EquHead         uint16 
+	EquMouth        uint16 
+	EquRightHand    uint16 
+	EquBody         uint16 
+	EquLeftHand     uint16 
+	EquPant         uint16 
+	EquBoot         uint16 
+	EquAccBoot      uint16 
+	EquAccPant      uint16 
+	EquAccBody      uint16 
+	EquAccHeadA     uint16 
+	EquMinimonR     uint16 
+	EquEye          uint16 
+	EquAccLeftHand  uint16 
+	EquAccRightHand uint16 
+	EquAccBack      uint16 
+	EquCosEff       uint16 
+	EquAccHip       uint16 
+	EquMinimon      uint16 
+	EquAccShield    uint16 
 	Upgrade         EquipmentUpgrade
 }

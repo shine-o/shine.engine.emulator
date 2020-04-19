@@ -151,6 +151,7 @@ func (pc *Command) Send(ctx context.Context) {
 			}
 			log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), string(sd))
 		}
+
 		log.Infof("[outbound] metadata: %v", pc.Base.String())
 
 		cw.mu.Lock()

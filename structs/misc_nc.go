@@ -18,9 +18,9 @@ type NcMiscSeedAck struct {
 //	char second;
 // };
 type NcMiscGameTimeAck struct {
-	Hour   byte `struct:"byte"`
-	Minute byte `struct:"byte"`
-	Second byte `struct:"byte"`
+	Hour   byte
+	Minute byte
+	Second byte
 }
 
 // struct PROTO_NC_MISC_HEARTBEAT_ACK

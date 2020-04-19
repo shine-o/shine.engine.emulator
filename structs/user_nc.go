@@ -44,7 +44,7 @@ type NcUserLoginAck struct {
 //	unsigned __int16 error;
 // };
 type NcUserLoginFailAck struct {
-	Err uint16 `struct:"uint16"`
+	Err uint16
 }
 
 // RE client struct:
@@ -53,7 +53,7 @@ type NcUserLoginFailAck struct {
 //char worldno;
 //};
 type NcUserWorldSelectReq struct {
-	WorldNo byte `struct:"byte"`
+	WorldNo byte
 }
 
 //struct PROTO_NC_USER_WORLDSELECT_ACK
@@ -69,9 +69,9 @@ type NcUserWorldSelectAck struct {
 	// 3: behaviour -> cannot enter, message -> The server has been reserved for a special use.
 	// 4: behaviour -> cannot enter, message -> Login failed due to an unknown error.
 	// 5: behaviour -> cannot enter, message -> The server is full.
-	WorldStatus byte `struct:"byte"`
+	WorldStatus byte
 	Ip          Name4
-	Port        uint16     `struct:"uint16"`
+	Port        uint16
 	ValidateNew [32]uint16 `struct:"[32]uint16"`
 }
 
@@ -82,7 +82,7 @@ type NcUserWorldSelectAck struct {
 // };
 type NcUserLoginWorldReq struct {
 	User        Name256Byte
-	ValidateNew [28]uint16 `struct:"[28]uint16"`
+	ValidateNew [32]uint16 `struct:"[32]uint16"`
 }
 
 //struct PROTO_NC_USER_LOGINWORLD_ACK
@@ -92,8 +92,8 @@ type NcUserLoginWorldReq struct {
 //  PROTO_AVATARINFORMATION avatar[];
 //};
 type NcUserLoginWorldAck struct {
-	WorldManager uint16              `struct:"uint16"`
-	NumOfAvatar  byte                `struct:"byte"`
+	WorldManager uint16
+	NumOfAvatar  byte
 	Avatars      []AvatarInformation `struct:"sizefrom=NumOfAvatar"`
 }
 
@@ -103,7 +103,7 @@ type NcUserLoginWorldAck struct {
 //	Name8 sOTP;
 // };
 type NcUserWillWorldSelectAck struct {
-	Error uint16 `struct:"uint16"`
+	Error uint16
 	Otp   Name8
 }
 

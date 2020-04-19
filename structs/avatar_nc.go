@@ -7,7 +7,7 @@ package structs
 //	PROTO_AVATAR_SHAPE_INFO char_shape;
 // };
 type NcAvatarCreateReq struct {
-	SlotNum byte `struct:"byte"`
+	SlotNum byte
 	Name    Name5
 	Shape   ProtoAvatarShapeInfo
 }
@@ -18,7 +18,7 @@ type NcAvatarCreateReq struct {
 //  PROTO_AVATARINFORMATION avatar;
 //};
 type NcAvatarCreateSuccAck struct {
-	NumOfAvatar byte `struct:"byte"`
+	NumOfAvatar byte
 	Avatar      AvatarInformation
 }
 
@@ -27,7 +27,7 @@ type NcAvatarCreateSuccAck struct {
 //  unsigned __int16 err;
 //};
 type NcAvatarCreateFailAck struct {
-	Err uint16 `struct:"uint16"`
+	Err uint16
 }
 
 //struct PROTO_NC_AVATAR_ERASE_REQ
@@ -35,7 +35,7 @@ type NcAvatarCreateFailAck struct {
 //char slot;
 //};
 type NcAvatarEraseReq struct {
-	Slot byte `struct:"byte"`
+	Slot byte
 }
 
 //struct PROTO_NC_AVATAR_ERASESUCC_ACK
@@ -43,5 +43,5 @@ type NcAvatarEraseReq struct {
 //char slot;
 //};
 type NcAvatarEraseSuccAck struct {
-	Slot byte `struct:"byte"`
+	Slot byte
 }
