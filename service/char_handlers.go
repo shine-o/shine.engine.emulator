@@ -8,7 +8,7 @@ import (
 )
 
 //NC_MAP_LOGIN_REQ
-func mapLoginReq(ctx context.Context, pc *networking.Command) {
+func NcMapLoginReq(ctx context.Context, pc *networking.Command) {
 	// todo: shn files checksum
 	nc := structs.NcMapLoginReq{}
 
@@ -32,28 +32,28 @@ func mapLoginReq(ctx context.Context, pc *networking.Command) {
 	}
 
 	// todo: check if these packets should be sent sequentially
-	charClientBaseCmd(ctx, &char) // todo: check if race condition
-	charClientShapeCmd(ctx, char.Appearance)
-	charClientQuestDoingCmd(ctx, &char)
-	charClientQuestDoneCmd(ctx, &char)
-	charClientQuestReadCmd(ctx, &char)
-	charClientQuestRepeatCmd(ctx, &char)
-	charClientPassiveCmd(ctx, &char)
-	charClientSkillCmd(ctx, &char)
-	clientItemCmd(ctx, char.AllEquippedItems(db))
-	clientItemCmd(ctx, char.InventoryItems(db))
-	clientItemCmd(ctx, char.MiniHouseItems(db))
-	clientItemCmd(ctx, char.PremiumActionItems(db))
-	charClientCharTitleCmd(ctx, &char)
-	charClientGameCmd(ctx)
-	charClientChargedBuffCmd(ctx, &char)
-	charClientCoinInfoCmd(ctx, &char)
-	questResetTimeClientCmd(ctx, &char)
-	mapLoginAck(ctx, &char)
+	NcCharClientBaseCmd(ctx, &char) // todo: check if race condition
+	NcCharClientShapeCmd(ctx, char.Appearance)
+	NcCharClientQuestDoingCmd(ctx, &char)
+	NcCharClientQuestDoneCmd(ctx, &char)
+	NcCharClientQuestReadCmd(ctx, &char)
+	NcCharClientQuestRepeatCmd(ctx, &char)
+	NcCharClientPassiveCmd(ctx, &char)
+	NcCharClientSkillCmd(ctx, &char)
+	NcCharClientItemCmd(ctx, char.AllEquippedItems(db))
+	NcCharClientItemCmd(ctx, char.InventoryItems(db))
+	NcCharClientItemCmd(ctx, char.MiniHouseItems(db))
+	NcCharClientItemCmd(ctx, char.PremiumActionItems(db))
+	NcCharClientCharTitleCmd(ctx, &char)
+	NcCharClientGameCmd(ctx)
+	NcCharClientChargedBuffCmd(ctx, &char)
+	NcCharClientCoinInfoCmd(ctx, &char)
+	NcQuestResetTimeClientCmd(ctx, &char)
+	NcMapLoginAck(ctx, &char)
 }
 
 //NC_CHAR_CLIENT_BASE_CMD
-func charClientBaseCmd(ctx context.Context, char *character.Character) {
+func NcCharClientBaseCmd(ctx context.Context, char *character.Character) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4152,
@@ -105,7 +105,7 @@ func charClientBaseCmd(ctx context.Context, char *character.Character) {
 }
 
 //NC_CHAR_CLIENT_SHAPE_CMD
-func charClientShapeCmd(ctx context.Context, ca *character.Appearance) {
+func NcCharClientShapeCmd(ctx context.Context, ca *character.Appearance) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4153,
@@ -116,7 +116,7 @@ func charClientShapeCmd(ctx context.Context, ca *character.Appearance) {
 }
 
 //NC_CHAR_CLIENT_ITEM_CMD
-func clientItemCmd(ctx context.Context, cmd *structs.NcCharClientItemCmd) {
+func NcCharClientItemCmd(ctx context.Context, cmd *structs.NcCharClientItemCmd) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4167,
@@ -127,7 +127,7 @@ func clientItemCmd(ctx context.Context, cmd *structs.NcCharClientItemCmd) {
 }
 
 //NC_MAP_LOGIN_ACK
-func mapLoginAck(ctx context.Context, char *character.Character) {
+func NcMapLoginAck(ctx context.Context, char *character.Character) {
 	// handle ID
 
 	// character complete Parameters (resultant stats from base + items )
@@ -252,11 +252,11 @@ func mapLoginAck(ctx context.Context, char *character.Character) {
 
 //NC_MAP_LOGINCOMPLETE_CMD
 //6147
-func loginCompleteCmd(ctx context.Context, pc *networking.Command) {}
+func NcMapLoginCompleteCmd(ctx context.Context, pc *networking.Command) {}
 
 //NC_CHAR_CLIENT_QUEST_READ_CMD
 //4302
-func charClientQuestReadCmd(ctx context.Context, char *character.Character) {
+func NcCharClientQuestReadCmd(ctx context.Context, char *character.Character) {
 	// todo: quest logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -272,7 +272,7 @@ func charClientQuestReadCmd(ctx context.Context, char *character.Character) {
 
 //NC_CHAR_CLIENT_QUEST_DOING_CMD
 //4154
-func charClientQuestDoingCmd(ctx context.Context, char *character.Character) {
+func NcCharClientQuestDoingCmd(ctx context.Context, char *character.Character) {
 	// todo: quest logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -289,7 +289,7 @@ func charClientQuestDoingCmd(ctx context.Context, char *character.Character) {
 
 //NC_CHAR_CLIENT_QUEST_DONE_CMD
 //4155
-func charClientQuestDoneCmd(ctx context.Context, char *character.Character) {
+func NcCharClientQuestDoneCmd(ctx context.Context, char *character.Character) {
 	// todo: quest logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -308,7 +308,7 @@ func charClientQuestDoneCmd(ctx context.Context, char *character.Character) {
 
 //NC_CHAR_CLIENT_QUEST_REPEAT_CMD
 //4311
-func charClientQuestRepeatCmd(ctx context.Context, char *character.Character) {
+func NcCharClientQuestRepeatCmd(ctx context.Context, char *character.Character) {
 	// todo: quest logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -324,7 +324,7 @@ func charClientQuestRepeatCmd(ctx context.Context, char *character.Character) {
 
 //NC_CHAR_CLIENT_PASSIVE_CMD
 //4158
-func charClientPassiveCmd(ctx context.Context, char *character.Character) {
+func NcCharClientPassiveCmd(ctx context.Context, char *character.Character) {
 	// todo: skill logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -339,7 +339,7 @@ func charClientPassiveCmd(ctx context.Context, char *character.Character) {
 
 //NC_CHAR_CLIENT_SKILL_CMD
 //4157
-func charClientSkillCmd(ctx context.Context, char *character.Character) {
+func NcCharClientSkillCmd(ctx context.Context, char *character.Character) {
 	// todo: skill logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -362,7 +362,7 @@ func charClientSkillCmd(ctx context.Context, char *character.Character) {
 
 //NC_CHAR_CLIENT_CHARTITLE_CMD
 //4169
-func charClientCharTitleCmd(ctx context.Context, char *character.Character) {
+func NcCharClientCharTitleCmd(ctx context.Context, char *character.Character) {
 	// todo: character title logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -380,7 +380,7 @@ func charClientCharTitleCmd(ctx context.Context, char *character.Character) {
 
 //NC_CHAR_CLIENT_GAME_CMD
 //4168
-func charClientGameCmd(ctx context.Context) {
+func NcCharClientGameCmd(ctx context.Context) {
 	// no idea what this is for
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -396,7 +396,7 @@ func charClientGameCmd(ctx context.Context) {
 
 //NC_CHAR_CLIENT_CHARGEDBUFF_CMD
 //4170
-func charClientChargedBuffCmd(ctx context.Context, char *character.Character) {
+func NcCharClientChargedBuffCmd(ctx context.Context, char *character.Character) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4170,
@@ -410,7 +410,7 @@ func charClientChargedBuffCmd(ctx context.Context, char *character.Character) {
 
 //NC_CHAR_CLIENT_COININFO_CMD
 //4318
-func charClientCoinInfoCmd(ctx context.Context, char *character.Character) {
+func NcCharClientCoinInfoCmd(ctx context.Context, char *character.Character) {
 	// todo: money && fame logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -426,7 +426,7 @@ func charClientCoinInfoCmd(ctx context.Context, char *character.Character) {
 
 //NC_QUEST_RESET_TIME_CLIENT_CMD
 //17438
-func questResetTimeClientCmd(ctx context.Context, char *character.Character) {
+func NcQuestResetTimeClientCmd(ctx context.Context, char *character.Character) {
 	// todo: quest logic
 	pc := networking.Command{
 		Base: networking.CommandBase{

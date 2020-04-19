@@ -67,7 +67,7 @@ func Start(cmd *cobra.Command, args []string) {
 	}
 
 	ch := &networking.CommandHandlers{
-		6145: mapLoginReq,
+		6145: NcMapLoginReq,
 	}
 
 	hw := networking.NewHandlerWarden(ch)
