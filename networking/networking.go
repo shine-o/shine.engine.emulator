@@ -93,43 +93,97 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 	defer log.Infof("Closing connection %v", c.RemoteAddr().String())
 
 	var (
-		buffer  = make([]byte, 1024)
-		segment = make(chan []byte)
-		cr      = &clientReader{
-			r: bufio.NewReader(c),
-		}
-		cw = &clientWriter{
-			w: bufio.NewWriter(c),
-		}
+		buffer           = make([]byte, 1024)
+		inboundSegments  = make(chan []byte, 4096)
+		outboundSegments = make(chan []byte, 4096)
+		r                *bufio.Reader
+		w                *bufio.Writer
+		//cw = &clientWriter{
+		//	w: bufio.NewWriter(c),
+		//}
 	)
+	r = bufio.NewReader(c)
+	w = bufio.NewWriter(c)
 
 	ctx = context.WithValue(ctx, ShineSession, ss.sf.New())
-	ctx = context.WithValue(ctx, ConnectionWriter, cw)
+	ctx = context.WithValue(ctx, ConnectionWriter, outboundSegments)
 
-	go ss.hw.handleSegments(ctx, segment)
+	go ss.hw.handleInboundSegments(ctx, inboundSegments)
+
+	go handleOutboundSegments(ctx, w, outboundSegments)
 
 	for {
-		cr.mu.Lock()
-		if n, err := cr.r.Read(buffer); err == nil {
+		if n, err := r.Read(buffer); err == nil {
 			var data []byte
 			data = append(data, buffer[:n]...)
-			segment <- data
+			inboundSegments <- data
 		} else {
 			if err == io.EOF {
-				cr.mu.Unlock()
 				break
 			} else {
 				log.Error(err)
-				cr.mu.Unlock()
 				return
 			}
 		}
-		cr.mu.Unlock()
+	}
+}
+
+func handleOutboundSegments(ctx context.Context, w *bufio.Writer, segment <-chan []byte) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Warning("handleOutboundSegments context canceled")
+			return
+		case data := <-segment:
+			if _, err := w.Write(data); err != nil {
+				log.Error(err)
+			} else {
+				if err = w.Flush(); err != nil {
+					log.Error(err)
+				}
+			}
+		}
 	}
 }
 
 // Send bytes to the client
 func (pc *Command) Send(ctx context.Context) {
+	select {
+	case <-ctx.Done():
+		return
+	default:
+		cwv := ctx.Value(ConnectionWriter)
+		cw := cwv.(chan []byte)
+
+		if pc.NcStruct != nil {
+			data, err := structs.Pack(pc.NcStruct)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			pc.Base.Data = data
+			sd, err := json.Marshal(pc.NcStruct)
+			if err != nil {
+				log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(pc.NcStruct).String(), err)
+			}
+			log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), string(sd))
+		}
+
+		log.Infof("[outbound] metadata: %v", pc.Base.String())
+		cw <- pc.Base.RawData()
+		//cw.mu.Lock()
+		//if _, err := cw.w.Write(pc.Base.RawData()); err != nil {
+		//	log.Error(err)
+		//} else {
+		//	if err = cw.w.Flush(); err != nil {
+		//		log.Error(err)
+		//	}
+		//}
+		//cw.mu.Unlock()
+	}
+}
+
+func (pc *Command) SyncSend(ctx context.Context, err chan<- error) {
 	select {
 	case <-ctx.Done():
 		return
@@ -144,7 +198,6 @@ func (pc *Command) Send(ctx context.Context) {
 				return
 			}
 			pc.Base.Data = data
-			//log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), pc.NcStruct.String())
 			sd, err := json.Marshal(pc.NcStruct)
 			if err != nil {
 				log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(pc.NcStruct).String(), err)

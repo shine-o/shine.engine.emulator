@@ -412,3 +412,9 @@ type NcCharCoinInfoCmd struct {
 
 //NC_CHAR_CLIENT_COININFO_CMD
 type NcCharClientCoinInfoCmd NcCharCoinInfoCmd
+
+//NC_CHAR_CLIENT_GAME_CMD
+type NcCharClientGameCmd struct {
+	Filler0 uint16
+	Filler1 uint16
+}
