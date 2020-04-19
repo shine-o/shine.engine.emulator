@@ -8,8 +8,9 @@ import (
 	"github.com/shine-o/shine.engine.core/structs"
 )
 
+// NcCharLoginReq handles a petition to login to the zone where the character's location map is running
 // NC_CHAR_LOGIN_REQ
-func loginReq(ctx context.Context, pc *networking.Command) {
+func NcCharLoginReq(ctx context.Context, pc *networking.Command) {
 	nc := structs.NcCharLoginReq{}
 	if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 		return
@@ -43,15 +44,16 @@ func loginReq(ctx context.Context, pc *networking.Command) {
 	}
 
 	// not sure if these should be ordered
-	gameOptionCmd(ctx, char.Options)
-	keymapCmd(ctx, char.Options)
-	shortcutDataCmd(ctx, char.Options)
+	NcCharOptionImproveGetGameOptionCmd(ctx, char.Options)
+	NcCharOptionImproveGetKeymapCmd(ctx, char.Options)
+	NcCharOptionImproveGetShortcutDataCmd(ctx, char.Options)
 
-	go loginAck(ctx, &ack)
+	go NcCharLoginAck(ctx, &ack)
 }
 
+// NcCharLoginAck sends zone connection info to the client
 // NC_CHAR_LOGIN_ACK
-func loginAck(ctx context.Context, ack * structs.NcCharLoginAck) {
+func NcCharLoginAck(ctx context.Context, ack * structs.NcCharLoginAck) {
 	// query the zone master for connection info for the map
 	// send it to the client
 	pc := networking.Command{
@@ -62,3 +64,4 @@ func loginAck(ctx context.Context, ack * structs.NcCharLoginAck) {
 	}
 	go pc.Send(ctx)
 }
+
