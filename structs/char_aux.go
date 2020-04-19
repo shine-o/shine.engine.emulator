@@ -53,6 +53,16 @@ type ProtoItemPacketInformation struct {
 	ItemData []byte `struct:"sizefrom=DataSize"`
 }
 
+//struct SHINE_ITEM_STRUCT
+//{
+//  unsigned __int16 itemid;
+//  SHINE_ITEM_ATTRIBUTE itemattr;
+//};
+type ShineItem struct {
+	ItemID uint16
+	//Attr [101]byte
+}
+
 //struct CT_INFO
 //{
 //  char Type;
@@ -109,7 +119,7 @@ type NcCharOptionShortcutSize struct {
 //  Name5 sNotifyCharID;
 //  char sNotify[512];
 //};
-type GuildClient struct {
+type GuildClient struct {// WRONG, 2020 uses different struct
 	Number           uint32
 	Name             Name4
 	Money            uint64

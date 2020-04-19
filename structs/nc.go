@@ -5,6 +5,7 @@ import (
 	"github.com/google/logger"
 	"gopkg.in/restruct.v1"
 	"io/ioutil"
+	"reflect"
 )
 
 type NC interface {
@@ -25,6 +26,8 @@ func Unpack(data []byte, nc interface{}) error {
 	err := restruct.Unpack(data, binary.LittleEndian, nc)
 
 	if err != nil {
+		size, _ := restruct.SizeOf(nc)
+		log.Errorf("size of %v: %v, size of data %v", reflect.TypeOf(nc).String(), size, len(data))
 		log.Error(err)
 		return err
 	}

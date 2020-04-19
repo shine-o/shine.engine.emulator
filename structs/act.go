@@ -7,8 +7,8 @@ package structs
 //	char content[];
 //};
 type NcActChatReq struct {
-	ItemLinkDataCount byte   `struct:"byte"`
-	Length            byte   `struct:"byte"`
+	ItemLinkDataCount byte
+	Length            byte
 	Content           []byte `struct:"sizefrom=Length"`
 }
 

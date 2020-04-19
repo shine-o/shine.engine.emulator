@@ -34,8 +34,8 @@ type NcCharSkillClientCmd struct {
 //	PROTO_ITEMPACKET_INFORM ItemArray[];
 //};
 type NcCharClientItemCmd struct {
-	NumOfItem byte `struct:"byte"`
-	Box       byte `struct:"byte"`
+	NumOfItem byte
+	Box       byte
 	Flag      ProtoNcCharClientItemCmdFlag
 	Items     []ProtoItemPacketInformation `struct:"sizefrom=NumOfItem"`
 }
@@ -264,7 +264,6 @@ type NcCharClientBaseCmd struct {
 	PrisonMin  uint16
 	AdminLevel byte
 	Flag       NcCharBaseCmdFlag
-	//MapName  Name3
 }
 
 //NC_CHAR_CLIENT_SHAPE_CMD
@@ -306,3 +305,16 @@ type NcCharReviveSameCmd struct {
 
 //NC_MAP_LINKOTHER_CMD
 type NcMapLinkOtherCmd NcCharReviveOtherCmd
+
+//struct PROTO_NC_CHAR_SKILL_PASSIVE_CMD
+//{
+//  unsigned __int16 number;
+//  unsigned __int16 passive[];
+//};
+type NcCharSkillPassiveCmd struct {
+	Number uint16
+	Passives []uint16 `struct:"sizefrom=Number"`
+}
+
+//NC_CHAR_CLIENT_PASSIVE_CMD
+type NcCharClientPassiveCmd NcCharSkillPassiveCmd
