@@ -43,15 +43,15 @@ func loginReq(ctx context.Context, pc *networking.Command) {
 	}
 
 	// not sure if these should be ordered
-	go gameOptionCmd(ctx, char.Options)
-	go keymapCmd(ctx, char.Options)
-	go shortcutDataCmd(ctx, char.Options)
+	gameOptionCmd(ctx, char.Options)
+	keymapCmd(ctx, char.Options)
+	shortcutDataCmd(ctx, char.Options)
 
-	go loginAck(ctx, ack)
+	go loginAck(ctx, &ack)
 }
 
 // NC_CHAR_LOGIN_ACK
-func loginAck(ctx context.Context, ack structs.NcCharLoginAck) {
+func loginAck(ctx context.Context, ack * structs.NcCharLoginAck) {
 	// query the zone master for connection info for the map
 	// send it to the client
 	pc := networking.Command{

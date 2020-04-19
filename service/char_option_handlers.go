@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/hex"
 	"github.com/shine-o/shine.engine.core/game/character"
 	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/shine-o/shine.engine.core/structs"
@@ -20,9 +21,9 @@ func gameOptionCmd(ctx context.Context, options * character.ClientOptions) {
 		Base:     networking.CommandBase{
 			OperationCode:    28724,
 		},
-		NcStruct: nc,
+		NcStruct: &nc,
 	}
-	go pc.Send(ctx)
+	pc.Send(ctx)
 }
 
 //NC_CHAR_OPTION_IMPROVE_GET_KEYMAP_CMD
@@ -38,17 +39,16 @@ func keymapCmd(ctx context.Context, options * character.ClientOptions) {
 		Base:     networking.CommandBase{
 			OperationCode:    28723,
 		},
-		NcStruct: nc,
+		NcStruct: &nc,
 	}
-	go pc.Send(ctx)
+	pc.Send(ctx)
 }
 
 //NC_CHAR_OPTION_IMPROVE_GET_SHORTCUTDATA_CMD
 //28722
 func shortcutDataCmd(ctx context.Context, options * character.ClientOptions) {
-	// fighter: 040000040000000000010400010000000a0100ac0d00000b0100b10d0000
 	nc := structs.NcCharGetShortcutDataCmd{}
-	err := structs.Unpack(options.GameOptions, &nc)
+	err := structs.Unpack(options.Shortcuts, &nc)
 	if err != nil {
 		return
 	}
@@ -56,19 +56,63 @@ func shortcutDataCmd(ctx context.Context, options * character.ClientOptions) {
 		Base:     networking.CommandBase{
 			OperationCode:    28722,
 		},
-		NcStruct: nc,
+		NcStruct: &nc,
+	}
+	pc.Send(ctx)
+}
+
+//NC_CHAR_OPTION_GET_SHORTCUTSIZE_REQ
+//28676
+func shortcutSizeReq(ctx context.Context, pc * networking.Command) {
+	// gotta handle this
+	go shortcutSizeAck(ctx)
+}
+
+//NC_CHAR_OPTION_GET_SHORTCUTSIZE_ACK
+func shortcutSizeAck(ctx context.Context) {
+	// not sure what this data is
+	hd, err := hex.DecodeString("0105000318000005041000000c01000c02000c03000c040000")
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	nc := structs.NcCharOptionGetShortcutSizeAck{}
+	err = structs.Unpack(hd, &nc)
+	if err != nil {
+		return
+	}
+	pc := networking.Command{
+		Base:     networking.CommandBase{
+			OperationCode:    28677,
+		},
+		NcStruct: &nc,
 	}
 	go pc.Send(ctx)
 }
 
-//NC_CHAR_OPTION_GET_SHORTCUTSIZE_REQ
-func getShortcutSizeReq(ctx context.Context, pc * networking.Command) {}
-
-//NC_CHAR_OPTION_GET_SHORTCUTSIZE_ACK
-func getShortcutSizeAck(ctx context.Context) {}
-
 //NC_CHAR_OPTION_GET_WINDOWPOS_REQ
-func getWindowPosReq(ctx context.Context, pc * networking.Command) {}
+//28684
+func windowPosReq(ctx context.Context, pc * networking.Command) {
+	go windowPosAck(ctx)
+}
 
 //NC_CHAR_OPTION_GET_WINDOWPOS_ACK
-func getWindowPosAck(ctx context.Context) {}
+func windowPosAck(ctx context.Context) {
+	hd, err := hex.DecodeString("01d707011800001c000000cdcc443d00000000cdccf03e00000000000000008ee3783f9a997b3f398ee33d000000001cc7713f00000000abaa6a3f00000000398e633f00000000c7715c3f9a99773f398ee33d9a99733f398ee33d9a996f3f398ee33d9a996b3f398ee33d0000903d2222023ecdcc663e4a9f943e0000983d4444843e9a99233e2222623ecd4c333f4444b43e00000000176c213e9a99993a8ee3b83e00000000610ba63e66e62e3f2ed8823e66662f3f610ba63ecd4c633f000000000000303ef549373fcd4c733ff549573f00000000832d203fcd4c143f4444243e3333803ededdbd3eb0010000730100008200000072000000000a0000a00500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	nc := structs.NcCharOptionGetWindowPosAck{}
+	err = structs.Unpack(hd, &nc)
+	if err != nil {
+		return
+	}
+	pc := networking.Command{
+		Base:     networking.CommandBase{
+			OperationCode:    28685,
+		},
+		NcStruct: &nc,
+	}
+	go pc.Send(ctx)
+}
