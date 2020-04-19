@@ -69,7 +69,6 @@ func initConfig() {
 
 	required := []string{
 		"network.interface",
-		"network.serverIP",
 	}
 
 	for _, v := range required {

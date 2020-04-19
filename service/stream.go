@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/binary"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -17,7 +16,6 @@ import (
 	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -29,7 +27,11 @@ import (
 )
 
 func init() {
-	log = logger.Init("SnifferLogger", true, false, ioutil.Discard)
+	lf, err := os.OpenFile("streams.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660)
+	if err != nil {
+		logger.Fatalf("Failed to open log file: %v", err)
+	}
+	log = logger.Init("SnifferLogger", true, false ,lf)
 	log.Info("sniffer logger init()")
 }
 
@@ -92,7 +94,8 @@ func config() {
 	startPort := viper.GetString("network.portRange.start")
 	endPort := viper.GetString("network.portRange.end")
 	portRange := fmt.Sprintf("%v-%v", startPort, endPort)
-	filter = fmt.Sprintf("tcp and (dst portrange %v or src portrange %v)", portRange, portRange)
+	//filter = fmt.Sprintf("tcp and (dst portrange %v or src portrange %v)", portRange, portRange)
+	filter = fmt.Sprintf("tcp portrange %v", portRange)
 
 	s := &networking.Settings{}
 
@@ -153,12 +156,6 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 		//log.Error(err)
 	}
 
-	data, err := json.Marshal(&pv)
-
-	if err != nil {
-		log.Error(err)
-	}
-
 	var tPorts string
 	if dp.direction == "inbound" {
 		tPorts = ss.transport.Reverse().String()
@@ -166,9 +163,9 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 		tPorts = ss.transport.String()
 	}
 	if viper.GetBool("protocol.log.verbose") {
-		log.Infof("%v %v %v %v",dp.seen, tPorts, dp.direction,  string(data))
+		log.Infof("\n%v\n%v\n%v\n%v\n%v\nunpacked data: %v \n%v",dp.packet.Base.ClientStructName, dp.seen, tPorts, dp.direction, dp.packet.Base.String(),  pv.NcRepresentation.UnpackedData, hex.Dump(dp.packet.Base.Data))
 	} else {
-		log.Infof("[ %v ] %v %v %v", dp.seen, tPorts, dp.direction, dp.packet.Base.String())
+		log.Infof("%v %v %v %v", dp.seen, tPorts, dp.direction,  dp.packet.Base.String())
 	}
 	pv.ConnectionKey = fmt.Sprintf("%v %v", ss.net.String(), ss.transport.String())
 	ocs.mu.Lock()
@@ -465,11 +462,20 @@ func capturePackets(ctx context.Context, a *reassembly.Assembler) {
 	if err := handle.SetBPFFilter(filter); err != nil {
 		log.Fatal("error setting BPF filter: ", err)
 	}
+	var parser * gopacket.DecodingLayerParser
 	var eth layers.Ethernet
 	var ip4 layers.IPv4
 	var tcp layers.TCP
+	var lb layers.Loopback
 	var payload gopacket.Payload
-	parser := gopacket.NewDecodingLayerParser(layers.LayerTypeEthernet, &eth, &ip4, &tcp, &payload)
+
+	if viper.GetBool("network.loopback") {
+		parser = gopacket.NewDecodingLayerParser(layers.LayerTypeLoopback, &lb, &ip4, &tcp, &payload)
+
+	} else {
+		parser = gopacket.NewDecodingLayerParser(layers.LayerTypeEthernet, &eth, &ip4, &tcp, &payload)
+	}
+
 	decoded := make([]gopacket.LayerType, 0, 4)
 	for {
 		select {
