@@ -18,7 +18,7 @@ import (
 
 var (
 	log *logger.Logger
-	db *pg.DB
+	db  *pg.DB
 )
 
 func init() {
@@ -41,12 +41,12 @@ func Start(cmd *cobra.Command, args []string) {
 	}
 
 	db = database.Connection(ctx, database.ConnectionParams{
-		User:     viper.GetString("database.postgres.db_user"),
-		Password: viper.GetString("database.postgres.db_password"),
-		Host:     viper.GetString("database.postgres.host"),
-		Port:     viper.GetString("database.postgres.port"),
-		Database: viper.GetString("database.postgres.db_name"),
-		Schema:   viper.GetString("database.postgres.schema"),
+		User:     viper.GetString("world_database.db_user"),
+		Password: viper.GetString("world_database.db_password"),
+		Host:     viper.GetString("world_database.host"),
+		Port:     viper.GetString("world_database.port"),
+		Database: viper.GetString("world_database.db_name"),
+		Schema:   viper.GetString("world_database.schema"),
 	})
 
 	s := &networking.Settings{}
@@ -72,6 +72,9 @@ func Start(cmd *cobra.Command, args []string) {
 
 	hw := networking.NewHandlerWarden(ch)
 	ss := networking.NewShineService(s, hw)
+
+	zsf := &sessionFactory{}
+	ss.UseSessionFactory(zsf)
 
 	ss.Listen(ctx, zonePort)
 }

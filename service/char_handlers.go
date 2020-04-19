@@ -14,6 +14,7 @@ func mapLoginReq(ctx context.Context, pc *networking.Command) {
 
 	err := structs.Unpack(pc.Base.Data, &nc)
 	if err != nil {
+		log.Error(err)
 		return
 	}
 	charName := nc.CharData.CharID.String()
@@ -26,21 +27,29 @@ func mapLoginReq(ctx context.Context, pc *networking.Command) {
 		Select() // query the world for a character with name
 
 	if err != nil {
+		log.Error(err)
 		return
 	}
 
 	// todo: check if these packets should be sent sequentially
-	go charClientBaseCmd(ctx, &char) // todo: check if race condition
-	go charClientShapeCmd(ctx, char.Appearance)
-
-	go clientItemCmd(ctx, char.AllEquippedItems(db))
-	go clientItemCmd(ctx, char.InventoryItems(db))
-	go clientItemCmd(ctx, char.MiniHouseItems(db))
-	go clientItemCmd(ctx, char.PremiumActionItems(db))
-
-	go mapLoginAck(ctx, &char)
-	go loginCompleteCmd(ctx)
-
+	charClientBaseCmd(ctx, &char) // todo: check if race condition
+	charClientShapeCmd(ctx, char.Appearance)
+	charClientQuestDoingCmd(ctx, &char)
+	charClientQuestDoneCmd(ctx, &char)
+	charClientQuestReadCmd(ctx, &char)
+	charClientQuestRepeatCmd(ctx, &char)
+	charClientPassiveCmd(ctx, &char)
+	charClientSkillCmd(ctx, &char)
+	clientItemCmd(ctx, char.AllEquippedItems(db))
+	clientItemCmd(ctx, char.InventoryItems(db))
+	clientItemCmd(ctx, char.MiniHouseItems(db))
+	clientItemCmd(ctx, char.PremiumActionItems(db))
+	charClientCharTitleCmd(ctx, &char)
+	charClientGameCmd(ctx)
+	charClientChargedBuffCmd(ctx, &char)
+	charClientCoinInfoCmd(ctx, &char)
+	questResetTimeClientCmd(ctx, &char)
+	mapLoginAck(ctx, &char)
 }
 
 //NC_CHAR_CLIENT_BASE_CMD
@@ -49,7 +58,7 @@ func charClientBaseCmd(ctx context.Context, char *character.Character) {
 		Base: networking.CommandBase{
 			OperationCode: 4152,
 		},
-		NcStruct: structs.NcCharClientBaseCmd{
+		NcStruct: &structs.NcCharClientBaseCmd{
 			ChrRegNum:  uint32(char.ID),
 			CharName:   structs.NewName5(char.Name),
 			Slot:       char.Slot,
@@ -62,11 +71,11 @@ func charClientBaseCmd(ctx context.Context, char *character.Character) {
 			CurHP:      char.Attributes.Hp,
 			CurSP:      char.Attributes.Sp,
 			CurLP:      0,
-			Unk:        0,
+			Unk:        1,
 			Fame:       char.Attributes.Fame,
-			Cen:        0,
+			Cen:        54983635,
 			LoginInfo: structs.NcCharBaseCmdLoginLocation{
-				CurrentMap: structs.NewName3(char.Name),
+				CurrentMap: structs.NewName3(char.Location.MapName),
 				CurrentCoord: structs.ShineCoordType{
 					XY: structs.ShineXYType{
 						X: char.Location.X,
@@ -92,29 +101,29 @@ func charClientBaseCmd(ctx context.Context, char *character.Character) {
 			},
 		},
 	}
-	go pc.Send(ctx)
+	pc.Send(ctx)
 }
 
 //NC_CHAR_CLIENT_SHAPE_CMD
 func charClientShapeCmd(ctx context.Context, ca *character.Appearance) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
-			OperationCode: 4152,
+			OperationCode: 4153,
 		},
 		NcStruct: ca.NcRepresentation(),
 	}
-	go pc.Send(ctx)
+	pc.Send(ctx)
 }
 
 //NC_CHAR_CLIENT_ITEM_CMD
-func clientItemCmd(ctx context.Context, cmd structs.NcCharClientItemCmd) {
+func clientItemCmd(ctx context.Context, cmd *structs.NcCharClientItemCmd) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4167,
 		},
 		NcStruct: cmd,
 	}
-	go pc.Send(ctx)
+	pc.Send(ctx)
 }
 
 //NC_MAP_LOGIN_ACK
@@ -127,74 +136,74 @@ func mapLoginAck(ctx context.Context, char *character.Character) {
 		Base: networking.CommandBase{
 			OperationCode: 6146,
 		},
-		NcStruct: structs.NcMapLoginAck{
-			Handle: 0, // id of the entity inside this map
+		NcStruct: &structs.NcMapLoginAck{
+			Handle: 7000, // id of the entity inside this map
 			Params: structs.CharParameterData{
-				PrevExp: 0,
-				NextExp: 0,
+				PrevExp: 91582354,
+				NextExp: 103941051,
 				Strength: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				Constitute: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				Dexterity: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				Intelligence: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				Wisdom: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				MentalPower: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				WCLow: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				WCHigh: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				AC: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				TH: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				TB: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				MALow: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				MAHigh: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				MR: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				MH: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				MB: structs.ShineCharStatVar{
-					Base:   0,
-					Change: 0,
+					Base:   213,
+					Change: 291,
 				},
 				MaxHP:      1000,
 				MaxSP:      1000,
@@ -237,17 +246,198 @@ func mapLoginAck(ctx context.Context, char *character.Character) {
 			},
 		},
 	}
-	go pc.Send(ctx)
+	pc.Send(ctx)
 	// Login coordinates
 }
 
 //NC_MAP_LOGINCOMPLETE_CMD
 //6147
-func loginCompleteCmd(ctx context.Context) {
+func loginCompleteCmd(ctx context.Context, pc *networking.Command) {}
+
+//NC_CHAR_CLIENT_QUEST_READ_CMD
+//4302
+func charClientQuestReadCmd(ctx context.Context, char *character.Character) {
+	// todo: quest logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
-			OperationCode: 6147,
+			OperationCode: 4302,
+		},
+		NcStruct: &structs.NcCharClientQuestReadCmd{
+			CharID:          uint32(char.ID),
+			NumOfReadQuests: 0,
 		},
 	}
-	go pc.Send(ctx)
+	pc.Send(ctx)
+}
+
+//NC_CHAR_CLIENT_QUEST_DOING_CMD
+//4154
+func charClientQuestDoingCmd(ctx context.Context, char *character.Character) {
+	// todo: quest logic
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 4154,
+		},
+		NcStruct: &structs.NcCharClientQuestDoingCmd{
+			CharID:          uint32(char.ID),
+			NeedClear:       0,
+			NumOfDoingQuest: 0,
+		},
+	}
+	pc.Send(ctx)
+}
+
+//NC_CHAR_CLIENT_QUEST_DONE_CMD
+//4155
+func charClientQuestDoneCmd(ctx context.Context, char *character.Character) {
+	// todo: quest logic
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 4155,
+		},
+		NcStruct: &structs.NcCharClientQuestDoneCmd{
+			CharID:             uint32(char.ID),
+			TotalDoneQuest:     0,
+			TotalDoneQuestSize: 0,
+			Count:              0,
+			Index:              0,
+		},
+	}
+	pc.Send(ctx)
+}
+
+//NC_CHAR_CLIENT_QUEST_REPEAT_CMD
+//4311
+func charClientQuestRepeatCmd(ctx context.Context, char *character.Character) {
+	// todo: quest logic
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 4311,
+		},
+		NcStruct: &structs.NcCharClientQuestRepeatCmd{
+			CharID: uint32(char.ID),
+			Count:  0,
+		},
+	}
+	pc.Send(ctx)
+}
+
+//NC_CHAR_CLIENT_PASSIVE_CMD
+//4158
+func charClientPassiveCmd(ctx context.Context, char *character.Character) {
+	// todo: skill logic
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 4158,
+		},
+		NcStruct: &structs.NcCharClientPassiveCmd{
+			Number: 0,
+		},
+	}
+	pc.Send(ctx)
+}
+
+//NC_CHAR_CLIENT_SKILL_CMD
+//4157
+func charClientSkillCmd(ctx context.Context, char *character.Character) {
+	// todo: skill logic
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 4157,
+		},
+		NcStruct: &structs.NcCharClientSkillCmd{
+			RestEmpower: 0,
+			PartMark: structs.PartMark{
+				BF0: 3,
+			},
+			MaxNum: 0,
+			Skills: structs.NcCharSkillClientCmd{
+				ChrRegNum: uint32(char.ID),
+				Number:    0,
+			},
+		},
+	}
+	pc.Send(ctx)
+}
+
+//NC_CHAR_CLIENT_CHARTITLE_CMD
+//4169
+func charClientCharTitleCmd(ctx context.Context, char *character.Character) {
+	// todo: character title logic
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 4169,
+		},
+		NcStruct: &structs.NcClientCharTitleCmd{
+			CurrentTitle:        0,
+			CurrentTitleElement: 0,
+			CurrentTitleMobID:   0,
+			NumOfTitle:          0,
+		},
+	}
+	pc.Send(ctx)
+}
+
+//NC_CHAR_CLIENT_GAME_CMD
+//4168
+func charClientGameCmd(ctx context.Context) {
+	// no idea what this is for
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 4168,
+		},
+		NcStruct: &structs.NcCharClientGameCmd{
+			Filler0: 65535,
+			Filler1: 65535,
+		},
+	}
+	pc.Send(ctx)
+}
+
+//NC_CHAR_CLIENT_CHARGEDBUFF_CMD
+//4170
+func charClientChargedBuffCmd(ctx context.Context, char *character.Character) {
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 4170,
+		},
+		NcStruct: &structs.NcCharClientChargedBuffCmd{
+			Count: 0,
+		},
+	}
+	pc.Send(ctx)
+}
+
+//NC_CHAR_CLIENT_COININFO_CMD
+//4318
+func charClientCoinInfoCmd(ctx context.Context, char *character.Character) {
+	// todo: money && fame logic
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 4318,
+		},
+		NcStruct: &structs.NcCharClientCoinInfoCmd{
+			Coin:          73560,
+			ExchangedCoin: 100000,
+		},
+	}
+	pc.Send(ctx)
+}
+
+//NC_QUEST_RESET_TIME_CLIENT_CMD
+//17438
+func questResetTimeClientCmd(ctx context.Context, char *character.Character) {
+	// todo: quest logic
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 17438,
+		},
+		NcStruct: &structs.NcQuestResetTimeClientCmd{
+			ResetYear:  1577862000,
+			ResetMonth: 1585724400,
+			ResetWeek:  1586761200,
+			ResetDay:   1587279600,
+		},
+	}
+	pc.Send(ctx)
 }
