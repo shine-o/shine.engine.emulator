@@ -37,7 +37,7 @@ func NewHandlerWarden(ch *CommandHandlers) *HandleWarden {
 }
 
 // Read packet data from segments
-func (hw *HandleWarden) handleSegments(ctx context.Context, segment <-chan []byte) {
+func (hw *HandleWarden) handleInboundSegments(ctx context.Context, segment <-chan []byte) {
 	var (
 		data      []byte
 		offset    int
@@ -63,11 +63,11 @@ func (hw *HandleWarden) handleSegments(ctx context.Context, segment <-chan []byt
 		case b := <-segment:
 			data = append(data, b...)
 
-			if offset > len(data) {
+			if offset >= len(data) {
 				break
 			}
 
-			if offset != len(data) {
+			for offset < len(data) {
 				var (
 					skipBytes int
 					pLen      int

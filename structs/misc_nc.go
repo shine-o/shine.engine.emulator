@@ -1,10 +1,5 @@
 package structs
 
-import (
-	"encoding/json"
-	"reflect"
-)
-
 // RE client struct:
 // struct PROTO_NC_MISC_SEED_ACK
 // {
@@ -16,23 +11,6 @@ type NcMiscSeedAck struct {
 	Seed uint16
 }
 
-func (nc *NcMiscSeedAck) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcMiscSeedAck) PdbType() string {
-	return `
-		struct PROTO_NC_MISC_SEED_ACK
-		{
-		  unsigned __int16 seed;
-		};
-`
-}
-
 // struct PROTO_NC_MISC_GAMETIME_ACK
 // {
 //	char hour;
@@ -40,28 +18,9 @@ func (nc *NcMiscSeedAck) PdbType() string {
 //	char second;
 // };
 type NcMiscGameTimeAck struct {
-	Hour   byte `struct:"byte"`
-	Minute byte `struct:"byte"`
-	Second byte `struct:"byte"`
-}
-
-func (nc *NcMiscGameTimeAck) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcMiscGameTimeAck) PdbType() string {
-	return `
-	struct PROTO_NC_MISC_GAMETIME_ACK
-	{
-	  char hour;
-	  char minute;
-	  char second;
-	};
-`
+	Hour   byte
+	Minute byte
+	Second byte
 }
 
 // struct PROTO_NC_MISC_HEARTBEAT_ACK
@@ -69,21 +28,4 @@ func (nc *NcMiscGameTimeAck) PdbType() string {
 //  char dummy[1];
 //};
 type NcMiscHeartBeatAck struct {
-}
-
-func (nc *NcMiscHeartBeatAck) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcMiscHeartBeatAck) PdbType() string {
-	return `
-	struct PROTO_NC_MISC_HEARTBEAT_ACK
-	{
-	  char dummy[1];
-	};
-`
 }
