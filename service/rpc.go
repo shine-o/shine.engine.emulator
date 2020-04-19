@@ -36,7 +36,10 @@ func (s *server) RegisterZone(ctx context.Context, zd *zm.ZoneDetails) (*zm.Zone
 		}
 		log.Infof("registering map %v for zone %v:%v", m, zd.Conn.IP, zd.Conn.Port)
 	}
-
+	err = persist(&rm)
+	if err != nil {
+		return &zm.ZoneRegistered{}, fmt.Errorf("failed to persist data to redis: %v", err)
+	}
 	return &zm.ZoneRegistered{
 		Success: true,
 		ZoneID:  "",
@@ -48,7 +51,27 @@ func (s *server) RegisterZone(ctx context.Context, zd *zm.ZoneDetails) (*zm.Zone
 }
 
 func (s *server) WhereIsMap(ctx context.Context, zd *zm.MapQuery) (*zm.ConnectionInfo, error) {
-	return &zm.ConnectionInfo{}, nil
+	var rm registeredMaps
+
+	res, err := redisClient.Get("zone-master").Result()
+	if err != nil {
+		return &zm.ConnectionInfo{}, fmt.Errorf("failed to fetch data from redis: %v", err)
+	}
+
+	err = json.Unmarshal([]byte(res), &rm)
+	if err != nil {
+		return &zm.ConnectionInfo{}, fmt.Errorf("failed to unmarshal data from redis: %v", err)
+	}
+
+	ci, ok := rm[zd.Name]
+	if !ok {
+		return &zm.ConnectionInfo{}, fmt.Errorf("no ConnectionInfofor map %v: %v",zd.Name, err)
+	}
+
+	return &zm.ConnectionInfo{
+		IP:                   ci.IP,
+		Port:                 ci.Port,
+	}, nil
 }
 
 func newRPCClient(name string) (*grpc.ClientConn, error) {
