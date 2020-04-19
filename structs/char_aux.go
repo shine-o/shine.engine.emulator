@@ -406,3 +406,59 @@ type ShineCharStatVar struct {
 	Base   uint32
 	Change uint32
 }
+
+//struct PLAYER_QUEST_INFO
+//{
+//  unsigned __int16 ID;
+//  char Status;
+//  PLAYER_QUEST_DATA Data;
+//};
+type PlayerQuestInfo struct {
+	ID uint16
+	Status byte
+	Data PlayerQuestData
+}
+
+//struct PLAYER_QUEST_DATA
+//{
+//  __int64 StartTime;
+//  __int64 EndTime;
+//  unsigned int RepeatCount;
+//  char ProgressStep;
+//  char End_NPCMobCount[5];
+//  char _bf26;
+//  unsigned __int16 End_RunningTimeSec;
+//};
+type PlayerQuestData struct {
+	StartTime int64
+	EndTime int64
+	RepeatCount uint32
+	ProgressStep byte
+	EndNpcMobCount [5]byte
+	BF26 byte
+	EndRunningTimeSec uint16
+}
+
+//struct PLAYER_QUEST_DONE_INFO
+//{
+//  unsigned __int16 ID;
+//  __int64 tEndTime;
+//};
+type PlayerQuestDoneInfo struct {
+	ID uint16
+	EndTime int64
+}
+
+//struct PROTO_CHARGEDBUFF_INFO
+//{
+//  unsigned int ChargedBuffKey;
+//  unsigned __int16 ChargedBuffID;
+//  ShineDateTime UseTime;
+//  ShineDateTime EndTime;
+//};
+type ChargedBuffInfo struct {
+	BuffKey uint32
+	BuffID uint16
+	UseTime ShineDateTime
+	EndTime ShineDateTime
+}

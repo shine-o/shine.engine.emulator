@@ -318,3 +318,97 @@ type NcCharSkillPassiveCmd struct {
 
 //NC_CHAR_CLIENT_PASSIVE_CMD
 type NcCharClientPassiveCmd NcCharSkillPassiveCmd
+
+//struct PROTO_NC_CHAR_QUEST_READ_CMD
+//{
+//  unsigned int chrregnum;
+//  unsigned __int16 nNumOfReadQuest;
+//  unsigned __int16 QuestReadIDArray[];
+//};
+type NcCharQuestReadCmd struct {
+	CharID uint32
+	NumOfReadQuests uint16
+	Quests []uint16 `struct:"sizefrom=NumOfReadQuests"`
+}
+
+//NC_CHAR_CLIENT_QUEST_READ_CMD
+type NcCharClientQuestReadCmd NcCharQuestReadCmd
+
+//struct PROTO_NC_CHAR_QUEST_DOING_CMD
+//{
+//  unsigned int chrregnum;
+//  char bNeedClear;
+//  char nNumOfDoingQuest;
+//  PLAYER_QUEST_INFO QuestDoingArray[];
+//};
+type NcCharQuestDoingCmd struct {
+	CharID uint32
+	NeedClear byte
+	NumOfDoingQuest byte
+	Quests []PlayerQuestInfo `struct:"sizefrom=NumOfDoingQuest"`
+}
+
+//NC_CHAR_CLIENT_QUEST_DOING_CMD
+type NcCharClientQuestDoingCmd NcCharQuestDoingCmd
+
+//struct PROTO_NC_CHAR_QUEST_DONE_CMD
+//{
+//  unsigned int chrregnum;
+//  unsigned __int16 nTotalDoneQuest;
+//  unsigned __int16 nTotalDoneQuestSize;
+//  unsigned __int16 nDoneQuestCount;
+//  unsigned __int16 nIndex;
+//  PLAYER_QUEST_DONE_INFO QuestDoneArray[];
+//};
+type NcCharQuestDoneCmd struct {
+	CharID uint32
+	TotalDoneQuest uint16
+	TotalDoneQuestSize uint16
+	Count uint16
+	Index uint16
+	Quests []PlayerQuestDoneInfo `struct:"sizefrom=Count"`
+}
+
+//NC_CHAR_CLIENT_QUEST_DONE_CMD
+type NcCharClientQuestDoneCmd NcCharQuestDoneCmd
+
+//struct PROTO_NC_CHAR_QUEST_REPEAT_CMD
+//{
+//  unsigned int chrregnum;
+//  unsigned __int16 nNumOfRepeatQuest;
+//  PLAYER_QUEST_INFO QuestRepeatArray[];
+//};
+type NcCharQuestRepeatCmd struct {
+	CharID uint32
+	Count uint16
+	Quests []PlayerQuestInfo `struct:"sizefrom=Count"`
+}
+
+//NC_CHAR_CLIENT_QUEST_REPEAT_CMD
+type NcCharClientQuestRepeatCmd NcCharQuestRepeatCmd
+
+//struct PROTO_NC_CHAR_CHARGEDBUFF_CMD
+//{
+//  unsigned __int16 NumOfChargedBuff;
+//  PROTO_CHARGEDBUFF_INFO ChargedBuff[];
+//};
+type NcCharChargedBuffCmd struct {
+	Count uint16
+	Buffs []ChargedBuffInfo `struct:"sizefrom=Count"`
+}
+
+//NC_CHAR_CLIENT_CHARGEDBUFF_CMD
+type NcCharClientChargedBuffCmd NcCharChargedBuffCmd
+
+//struct PROTO_NC_CHAR_COININFO_CMD
+//{
+//  unsigned __int64 nCoin;
+//  unsigned __int64 nExchangedCoin;
+//};
+type NcCharCoinInfoCmd struct {
+	Coin uint64
+	ExchangedCoin uint64
+}
+
+//NC_CHAR_CLIENT_COININFO_CMD
+type NcCharClientCoinInfoCmd NcCharCoinInfoCmd
