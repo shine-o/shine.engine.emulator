@@ -431,8 +431,8 @@ func (c *Character) initialLocation() *Character {
 	c.Location = &Location{
 		CharacterID: c.ID,
 		MapName:     startMap,
-		X:           3000,
-		Y:           11666,
+		X:           5323,
+		Y:           4501,
 		D:           90,
 		IsKQ:        false,
 	}

@@ -148,73 +148,22 @@ func handleOutboundSegments(ctx context.Context, w *bufio.Writer, segment <-chan
 
 // Send bytes to the client
 func (pc *Command) Send(ctx context.Context) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		cwv := ctx.Value(ConnectionWriter)
-		cw := cwv.(chan []byte)
+	cwv := ctx.Value(ConnectionWriter)
+	cw := cwv.(chan []byte)//maybe the handlers themselves should receive the outboundSegments channel as parameter
 
-		if pc.NcStruct != nil {
-			data, err := structs.Pack(pc.NcStruct)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-			pc.Base.Data = data
-			sd, err := json.Marshal(pc.NcStruct)
-			if err != nil {
-				log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(pc.NcStruct).String(), err)
-			}
-			log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), string(sd))
-		}
-
-		log.Infof("[outbound] metadata: %v", pc.Base.String())
-		cw <- pc.Base.RawData()
-		//cw.mu.Lock()
-		//if _, err := cw.w.Write(pc.Base.RawData()); err != nil {
-		//	log.Error(err)
-		//} else {
-		//	if err = cw.w.Flush(); err != nil {
-		//		log.Error(err)
-		//	}
-		//}
-		//cw.mu.Unlock()
-	}
-}
-
-func (pc *Command) SyncSend(ctx context.Context, err chan<- error) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		cwv := ctx.Value(ConnectionWriter)
-		cw := cwv.(*clientWriter)
-
-		if pc.NcStruct != nil {
-			data, err := structs.Pack(pc.NcStruct)
-			if err != nil {
-				log.Error(err)
-				return
-			}
-			pc.Base.Data = data
-			sd, err := json.Marshal(pc.NcStruct)
-			if err != nil {
-				log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(pc.NcStruct).String(), err)
-			}
-			log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), string(sd))
-		}
-
-		log.Infof("[outbound] metadata: %v", pc.Base.String())
-
-		cw.mu.Lock()
-		if _, err := cw.w.Write(pc.Base.RawData()); err != nil {
+	if pc.NcStruct != nil {
+		data, err := structs.Pack(pc.NcStruct)
+		if err != nil {
 			log.Error(err)
-		} else {
-			if err = cw.w.Flush(); err != nil {
-				log.Error(err)
-			}
+			return
 		}
-		cw.mu.Unlock()
+		pc.Base.Data = data
+		sd, err := json.Marshal(pc.NcStruct)
+		if err != nil {
+			log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(pc.NcStruct).String(), err)
+		}
+		log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), string(sd))
 	}
+	log.Infof("[outbound] metadata: %v", pc.Base.String())
+	cw <- pc.Base.RawData()
 }
