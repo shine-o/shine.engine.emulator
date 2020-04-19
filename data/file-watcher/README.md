@@ -1,0 +1,1 @@
+> real time processing of files, to parse and reload. this package should offer methods for the service to react on file changes

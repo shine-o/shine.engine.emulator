@@ -1,10 +1,5 @@
 package structs
 
-import (
-	"encoding/json"
-	"reflect"
-)
-
 //struct PROTO_NC_BRIEFINFO_ABSTATE_CHANGE_CMD
 //{
 //  unsigned __int16 handle;
@@ -15,47 +10,12 @@ type NcBriefInfoAbstateChangeCmd struct {
 	Info   AbstateInformation
 }
 
-func (nc *NcBriefInfoAbstateChangeCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoAbstateChangeCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_ABSTATE_CHANGE_CMD
-	{
-	  unsigned __int16 handle;
-	  ABSTATE_INFORMATION info;
-	};
-`
-}
-
 //struct PROTO_NC_BRIEFINFO_BRIEFINFODELETE_CMD
 //{
 //  unsigned __int16 hnd;
 //};
 type NcBriefInfoDeleteCmd struct {
 	Handle uint16
-}
-
-func (nc *NcBriefInfoDeleteCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoDeleteCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_BRIEFINFODELETE_CMD
-	{
-	  unsigned __int16 hnd;
-	};
-`
 }
 
 //struct PROTO_NC_BRIEFINFO_DROPEDITEM_CMD
@@ -74,27 +34,6 @@ type NcBriefInfoDroppedItemCmd struct {
 	Attr          NcBriefInfoDroppedItemCmdAttr
 }
 
-func (nc *NcBriefInfoDroppedItemCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoDroppedItemCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_DROPEDITEM_CMD
-	{
-	  unsigned __int16 handle;
-	  unsigned __int16 itemid;
-	  SHINE_XY_TYPE location;
-	  unsigned __int16 dropmobhandle;
-	  PROTO_NC_BRIEFINFO_DROPEDITEM_CMD::<unnamed-type-attr> attr;
-	};
-`
-}
-
 //struct PROTO_NC_BRIEFINFO_CHANGEDECORATE_CMD
 //{
 //  unsigned __int16 handle;
@@ -107,25 +46,6 @@ type NcBriefInfoChangeDecorateCmd struct {
 	SlotNum byte
 }
 
-func (nc *NcBriefInfoChangeDecorateCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoChangeDecorateCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_CHANGEDECORATE_CMD
-	{
-	  unsigned __int16 handle;
-	  unsigned __int16 item;
-	  char nSlotNum;
-	};
-`
-}
-
 //struct PROTO_NC_BRIEFINFO_MOB_CMD
 //{
 //  char mobnum;
@@ -136,24 +56,6 @@ type NcBriefInfoMobCmd struct {
 	Mobs   []NcBriefInfoRegenMobCmd `struct:"sizefrom=MobNum"`
 }
 
-func (nc *NcBriefInfoMobCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoMobCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_MOB_CMD
-	{
-	  char mobnum;
-	  PROTO_NC_BRIEFINFO_REGENMOB_CMD mobs[];
-	};
-`
-}
-
 //struct PROTO_NC_BRIEFINFO_UNEQUIP_CMD
 //{
 //  unsigned __int16 handle;
@@ -162,24 +64,6 @@ func (nc *NcBriefInfoMobCmd) PdbType() string {
 type NcBriefInfoUnequipCmd struct {
 	Handle uint16
 	Slot   byte
-}
-
-func (nc *NcBriefInfoUnequipCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoUnequipCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_UNEQUIP_CMD
-	{
-	  unsigned __int16 handle;
-	  char slot;
-	};
-`
 }
 
 //struct PROTO_NC_BRIEFINFO_REGENMOB_CMD
@@ -209,32 +93,6 @@ type NcBriefInfoRegenMobCmd struct {
 	RegenAni       byte
 }
 
-func (nc *NcBriefInfoRegenMobCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoRegenMobCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_REGENMOB_CMD
-	{
-	  unsigned __int16 handle;
-	  char mode;
-	  unsigned __int16 mobid;
-	  SHINE_COORD_TYPE coord;
-	  char flagstate;
-	  PROTO_NC_BRIEFINFO_REGENMOB_CMD::<unnamed-type-flag> flag;
-	  char sAnimation[32];
-	  char nAnimationLevel;
-	  char nKQTeamType;
-	  char bRegenAni;
-	};
-`
-}
-
 //struct PROTO_NC_BRIEFINFO_ABSTATE_CHANGE_LIST_CMD
 //{
 //  unsigned __int16 handle;
@@ -247,25 +105,6 @@ type NcBriefInfoAbstateChangeListCmd struct {
 	List   []AbstateInformation `struct:"sizefrom=Count"`
 }
 
-func (nc *NcBriefInfoAbstateChangeListCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoAbstateChangeListCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_ABSTATE_CHANGE_LIST_CMD
-	{
-	  unsigned __int16 handle;
-	  char count;
-	  ABSTATE_INFORMATION infoList[];
-	};
-`
-}
-
 //struct PROTO_NC_BRIEFINFO_CHARACTER_CMD
 //{
 //  char charnum;
@@ -274,25 +113,6 @@ func (nc *NcBriefInfoAbstateChangeListCmd) PdbType() string {
 type NcBriefInfoCharacterCmd struct {
 	Number     byte
 	Characters []NcBriefInfoLoginCharacterCmd `struct:"sizefrom=Number"`
-}
-
-func (nc *NcBriefInfoCharacterCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoCharacterCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_ABSTATE_CHANGE_LIST_CMD
-	{
-	  unsigned __int16 handle;
-	  char count;
-	  ABSTATE_INFORMATION infoList[];
-	};
-`
 }
 
 //struct PROTO_NC_BRIEFINFO_REGENMOVER_CMD
@@ -315,29 +135,6 @@ type NcBriefInfoRegenMoverCmd struct {
 	SlotHandle  [9]uint16
 }
 
-func (nc *NcBriefInfoRegenMoverCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoRegenMoverCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_REGENMOVER_CMD
-	{
-	  unsigned __int16 nHandle;
-	  unsigned int nID;
-	  unsigned int nHP;
-	  SHINE_COORD_TYPE nCoord;
-	  ABNORMAL_STATE_BIT AbstateBit;
-	  char nGrade;
-	  unsigned __int16 nSlotHandle[10];
-	};
-`
-}
-
 //struct PROTO_NC_BRIEFINFO_CHANGEUPGRADE_CMD
 //{
 //  unsigned __int16 handle;
@@ -352,26 +149,6 @@ type NcBriefInfoChangeUpgradeCmd struct {
 	SlotNum byte
 }
 
-func (nc *NcBriefInfoChangeUpgradeCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoChangeUpgradeCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_CHANGEUPGRADE_CMD
-	{
-	  unsigned __int16 handle;
-	  unsigned __int16 item;
-	  char upgrade;
-	  char nSlotNum;
-	};
-`
-}
-
 //struct PROTO_NC_BRIEFINFO_MOVER_CMD
 //{
 //  char nMoverNum;
@@ -380,24 +157,6 @@ func (nc *NcBriefInfoChangeUpgradeCmd) PdbType() string {
 type NcBriefInfoMoverCmd struct {
 	Count  byte
 	Movers []NcBriefInfoRegenMoverCmd `struct:"sizefrom=Count"`
-}
-
-func (nc *NcBriefInfoMoverCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoMoverCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_MOVER_CMD
-	{
-	  char nMoverNum;
-	  PROTO_NC_BRIEFINFO_REGENMOVER_CMD Movers[];
-	};
-`
 }
 
 //struct PROTO_NC_BRIEFINFO_LOGINCHARACTER_CMD
@@ -448,24 +207,6 @@ type NcBriefInfoLoginCharacterCmd struct {
 	UsingMinipet    byte
 }
 
-func (nc *NcBriefInfoLoginCharacterCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoLoginCharacterCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_MOVER_CMD
-	{
-	  char nMoverNum;
-	  PROTO_NC_BRIEFINFO_REGENMOVER_CMD Movers[];
-	};
-`
-}
-
 //struct PROTO_NC_BRIEFINFO_CHANGEWEAPON_CMD
 //{
 //  PROTO_NC_BRIEFINFO_CHANGEUPGRADE_CMD upgradeinfo;
@@ -478,25 +219,6 @@ type NcBriefInfoChangeWeaponCmd struct {
 	CurrentKillLevel byte
 }
 
-func (nc *NcBriefInfoChangeWeaponCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoChangeWeaponCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_CHANGEWEAPON_CMD
-	{
-	  PROTO_NC_BRIEFINFO_CHANGEUPGRADE_CMD upgradeinfo;
-	  unsigned __int16 currentmobid;
-	  char currentkilllevel;
-	};
-`
-}
-
 //struct PROTO_NC_BRIEFINFO_INFORM_CMD
 //{
 //  unsigned __int16 nMyHnd;
@@ -507,23 +229,4 @@ type NcBriefInfoInformCmd struct {
 	MyHandle          uint16
 	ReceiveNetCommand NetCommand
 	Handle            uint16
-}
-
-func (nc *NcBriefInfoInformCmd) String() string {
-	sd, err := json.Marshal(nc)
-	if err != nil {
-		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)
-	}
-	return string(sd)
-}
-
-func (nc *NcBriefInfoInformCmd) PdbType() string {
-	return `
-	struct PROTO_NC_BRIEFINFO_INFORM_CMD
-	{
-	  unsigned __int16 nMyHnd;
-	  NETCOMMAND ReceiveNetCommand;
-	  unsigned __int16 hnd;
-	};
-`
 }

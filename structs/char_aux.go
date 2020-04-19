@@ -53,6 +53,16 @@ type ProtoItemPacketInformation struct {
 	ItemData []byte `struct:"sizefrom=DataSize"`
 }
 
+//struct SHINE_ITEM_STRUCT
+//{
+//  unsigned __int16 itemid;
+//  SHINE_ITEM_ATTRIBUTE itemattr;
+//};
+type ShineItem struct {
+	ItemID uint16
+	//Attr [101]byte
+}
+
 //struct CT_INFO
 //{
 //  char Type;
@@ -109,7 +119,7 @@ type NcCharOptionShortcutSize struct {
 //  Name5 sNotifyCharID;
 //  char sNotify[512];
 //};
-type GuildClient struct {
+type GuildClient struct {// WRONG, 2020 uses different struct
 	Number           uint32
 	Name             Name4
 	Money            uint64
@@ -262,4 +272,193 @@ type KeyMapData struct {
 //};
 type NcCharOptionWindowPos struct {
 	Data [392]byte
+}
+
+//struct PROTO_NC_CHAR_BASE_CMD::LoginLocation
+//{
+//  Name3 currentmap;
+//  SHINE_COORD_TYPE currentcoord;
+//};
+type NcCharBaseCmdLoginLocation struct {
+	CurrentMap   Name3
+	CurrentCoord ShineCoordType
+}
+
+//struct CHARSTATDISTSTR
+//{
+//  char Strength;
+//  char Constitute;
+//  char Dexterity;
+//  char Intelligence;
+//  char MentalPower;
+//  char RedistributePoint;
+//};
+type CharStats struct {
+	Strength          byte
+	Constitute        byte
+	Dexterity         byte
+	Intelligence      byte
+	MentalPower       byte
+	RedistributePoint byte
+}
+
+//struct PROTO_NC_CHAR_BASE_CMD::<unnamed-type-flags>::<unnamed-type-str>
+//{
+//  int _bf0;
+//};
+//
+//union PROTO_NC_CHAR_BASE_CMD::<unnamed-type-flags>
+//{
+//  unsigned int bin;
+//  PROTO_NC_CHAR_BASE_CMD::<unnamed-type-flags>::<unnamed-type-str> str;
+//};
+type NcCharBaseCmdFlag struct {
+	Val int32
+}
+
+//struct CHAR_PARAMETER_DATA
+//{
+//  unsigned __int64 PrevExp;
+//  unsigned __int64 NextExp;
+//  SHINE_CHAR_STATVAR Strength;
+//  SHINE_CHAR_STATVAR Constitute;
+//  SHINE_CHAR_STATVAR Dexterity;
+//  SHINE_CHAR_STATVAR Intelligence;
+//  SHINE_CHAR_STATVAR Wizdom;
+//  SHINE_CHAR_STATVAR MentalPower;
+//  SHINE_CHAR_STATVAR WClow;
+//  SHINE_CHAR_STATVAR WChigh;
+//  SHINE_CHAR_STATVAR AC;
+//  SHINE_CHAR_STATVAR TH;
+//  SHINE_CHAR_STATVAR TB;
+//  SHINE_CHAR_STATVAR MAlow;
+//  SHINE_CHAR_STATVAR MAhigh;
+//  SHINE_CHAR_STATVAR MR;
+//  SHINE_CHAR_STATVAR MH;
+//  SHINE_CHAR_STATVAR MB;
+//  unsigned int MaxHp;
+//  unsigned int MaxSp;
+//  unsigned int MaxLp;
+//  unsigned int MaxAp;
+//  unsigned int MaxHPStone;
+//  unsigned int MaxSPStone;
+//  CHAR_PARAMETER_DATA::<unnamed-type-PwrStone> PwrStone;
+//  CHAR_PARAMETER_DATA::<unnamed-type-PwrStone> GrdStone;
+//  SHINE_CHAR_STATVAR PainRes;
+//  SHINE_CHAR_STATVAR RestraintRes;
+//  SHINE_CHAR_STATVAR CurseRes;
+//  SHINE_CHAR_STATVAR ShockRes;
+//};
+type CharParameterData struct {
+	// i'll have to rename these fields later when I can identify exactly what each field is for x.x
+	PrevExp      uint64
+	NextExp      uint64
+	Strength     ShineCharStatVar
+	Constitute   ShineCharStatVar
+	Dexterity    ShineCharStatVar
+	Intelligence ShineCharStatVar
+	Wisdom       ShineCharStatVar
+	MentalPower  ShineCharStatVar
+	WCLow        ShineCharStatVar // min physical dmg
+	WCHigh       ShineCharStatVar // max physical dmg
+	AC           ShineCharStatVar // physical defense
+	TH           ShineCharStatVar //aim
+	TB           ShineCharStatVar //evasion
+	MALow        ShineCharStatVar // min magical dmg
+	MAHigh       ShineCharStatVar // max magical dmg
+	MR           ShineCharStatVar // magical defense
+	MH           ShineCharStatVar
+	MB           ShineCharStatVar
+	MaxHP        uint32
+	MaxSP        uint32
+	MaxLP        uint32
+	MaxAP        uint32
+	MaxHPStone   uint32
+	MaxSPStone   uint32
+	PwrStone     CharParameterDataPwrStone
+	GrdStone     CharParameterDataPwrStone
+	PainRes      ShineCharStatVar
+	RestraintRes ShineCharStatVar
+	CurseRes     ShineCharStatVar
+	ShockRes     ShineCharStatVar
+}
+
+//struct CHAR_PARAMETER_DATA::<unnamed-type-PwrStone>
+//{
+//  unsigned int flag;
+//  unsigned int EPPysic;
+//  unsigned int EPMagic;
+//  unsigned int MaxStone;
+//};
+type CharParameterDataPwrStone struct {
+	Flag      uint32
+	EPPPhysic uint32
+	EPMagic   uint32
+	MaxStone  uint32
+}
+
+//struct SHINE_CHAR_STATVAR
+//{
+//  unsigned int base;
+//  unsigned int change;
+//};
+type ShineCharStatVar struct {
+	Base   uint32
+	Change uint32
+}
+
+//struct PLAYER_QUEST_INFO
+//{
+//  unsigned __int16 ID;
+//  char Status;
+//  PLAYER_QUEST_DATA Data;
+//};
+type PlayerQuestInfo struct {
+	ID uint16
+	Status byte
+	Data PlayerQuestData
+}
+
+//struct PLAYER_QUEST_DATA
+//{
+//  __int64 StartTime;
+//  __int64 EndTime;
+//  unsigned int RepeatCount;
+//  char ProgressStep;
+//  char End_NPCMobCount[5];
+//  char _bf26;
+//  unsigned __int16 End_RunningTimeSec;
+//};
+type PlayerQuestData struct {
+	StartTime int64
+	EndTime int64
+	RepeatCount uint32
+	ProgressStep byte
+	EndNpcMobCount [5]byte
+	BF26 byte
+	EndRunningTimeSec uint16
+}
+
+//struct PLAYER_QUEST_DONE_INFO
+//{
+//  unsigned __int16 ID;
+//  __int64 tEndTime;
+//};
+type PlayerQuestDoneInfo struct {
+	ID uint16
+	EndTime int64
+}
+
+//struct PROTO_CHARGEDBUFF_INFO
+//{
+//  unsigned int ChargedBuffKey;
+//  unsigned __int16 ChargedBuffID;
+//  ShineDateTime UseTime;
+//  ShineDateTime EndTime;
+//};
+type ChargedBuffInfo struct {
+	BuffKey uint32
+	BuffID uint16
+	UseTime ShineDateTime
+	EndTime ShineDateTime
 }
