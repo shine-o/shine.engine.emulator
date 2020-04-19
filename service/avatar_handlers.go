@@ -7,7 +7,9 @@ import (
 	"github.com/shine-o/shine.engine.core/structs"
 )
 
-func avatarCreateReq(ctx context.Context, pc *networking.Command) {
+// NcAvatarCreateReq handles character creation request
+// NC_AVATAR_CREATE_REQ
+func NcAvatarCreateReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
@@ -38,11 +40,13 @@ func avatarCreateReq(ctx context.Context, pc *networking.Command) {
 			log.Error(err)
 			return
 		}
-		go avatarCreateSuccAck(ctx, ai)
+		go NcAvatarCreateSuccAck(ctx, ai)
 	}
 }
 
-func ncAvatarCreateFailAck(ctx context.Context, errCode uint16) {
+// NcAvatarCreateFailAck sends error message to the client when character creation fails
+// NC_AVATAR_CREATEFAIL_ACK
+func NcAvatarCreateFailAck(ctx context.Context, errCode uint16) {
 	select {
 	case <-ctx.Done():
 		return
@@ -59,7 +63,9 @@ func ncAvatarCreateFailAck(ctx context.Context, errCode uint16) {
 	}
 }
 
-func avatarCreateSuccAck(ctx context.Context, ai structs.AvatarInformation) {
+// NcAvatarCreateSuccAck notifies the character was created and sends the character info
+// NC_AVATAR_CREATESUCC_ACK
+func NcAvatarCreateSuccAck(ctx context.Context, ai structs.AvatarInformation) {
 	select {
 	case <-ctx.Done():
 		return
@@ -77,7 +83,9 @@ func avatarCreateSuccAck(ctx context.Context, ai structs.AvatarInformation) {
 	}
 }
 
-func avatarEraseReq(ctx context.Context, pc *networking.Command) {
+// NcAvatarEraseReq handles a petition to delete a character
+// NC_AVATAR_ERASE_REQ
+func NcAvatarEraseReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
@@ -97,13 +105,15 @@ func avatarEraseReq(ctx context.Context, pc *networking.Command) {
 			// todo: error nc if possible
 			return
 		}
-		go avatarEraseSuccAck(ctx, structs.NcAvatarEraseSuccAck{
+		go AvatarEraseSuccAck(ctx, structs.NcAvatarEraseSuccAck{
 			Slot: nc.Slot,
 		})
 	}
 }
 
-func avatarEraseSuccAck(ctx context.Context, ack structs.NcAvatarEraseSuccAck) {
+// AvatarEraseSuccAck notifies the client that the character was deleted successfully
+// AVATAR_ERASESUCC_ACK
+func AvatarEraseSuccAck(ctx context.Context, ack structs.NcAvatarEraseSuccAck) {
 	select {
 	case <-ctx.Done():
 		return
@@ -126,7 +136,7 @@ func createCharErr(ctx context.Context, err error) {
 	}
 	switch errChar.Code {
 	case 1:
-		go ncAvatarCreateFailAck(ctx, 385)
+		go NcAvatarCreateFailAck(ctx, 385)
 		return
 	}
 }

@@ -6,9 +6,12 @@ import (
 	"github.com/shine-o/shine.engine.core/structs"
 )
 
+
+// NcUserLoginWorldReq handles the player's attempt to login to the server
 // handle user, given his account
 // verify account and character data
-func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
+// NC_USER_LOGINWORLD_REQ
+func NcUserLoginWorldReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
@@ -23,14 +26,16 @@ func userLoginWorldReq(ctx context.Context, pc *networking.Command) {
 				log.Error(err)
 				return
 			}
-			go userLoginWorldAck(ctx, &networking.Command{})
+			go NcUserLoginWorldAck(ctx, &networking.Command{})
 		}
 	}
 }
 
+// NcUserLoginWorldAck acknowledges the player's attempt to login, returning player character information
 // acknowledge request of login to the service
 // send to the client service and character data
-func userLoginWorldAck(ctx context.Context, pc *networking.Command) {
+// NC_USER_LOGINWORLD_ACK
+func NcUserLoginWorldAck(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
@@ -39,6 +44,7 @@ func userLoginWorldAck(ctx context.Context, pc *networking.Command) {
 
 		nc, err := userWorldInfo(ctx)
 		if err != nil {
+			log.Error(err)
 			return
 		}
 		pc.NcStruct = &nc
@@ -46,16 +52,20 @@ func userLoginWorldAck(ctx context.Context, pc *networking.Command) {
 	}
 }
 
-func userWillWorldSelectReq(ctx context.Context, pc *networking.Command) {
+// NcUserWillWorldSelectReq handles a petition to return to server select
+// NC_USER_WILL_WORLD_SELECT_REQ
+func NcUserWillWorldSelectReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		go userWillWorldSelectAck(ctx)
+		go NcUserWillWorldSelectAck(ctx)
 	}
 }
 
-func userWillWorldSelectAck(ctx context.Context) {
+// NcUserWillWorldSelectAck acknowledges a petition to return to server select
+// NcUserWillWorldSelectAck
+func NcUserWillWorldSelectAck(ctx context.Context) {
 	select {
 	case <-ctx.Done():
 		return

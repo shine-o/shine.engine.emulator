@@ -16,8 +16,8 @@ import (
 )
 
 var (
-	log     *logger.Logger
-	db *pg.DB
+	log *logger.Logger
+	db  *pg.DB
 )
 
 func init() {
@@ -89,11 +89,15 @@ func startWorld(ctx context.Context) {
 		}
 
 		ch := &networking.CommandHandlers{
-			3087: userLoginWorldReq,
-			2061: miscGameTimeReq,
-			3123: userWillWorldSelectReq,
-			5121: avatarCreateReq,
-			5127:  avatarEraseReq,
+			3087: NcUserLoginWorldReq,
+			2061: NcMiscGameTimeReq,
+			3123: NcUserWillWorldSelectReq,
+			5121: NcAvatarCreateReq,
+			5127: NcAvatarEraseReq,
+			4097: NcCharLoginReq,
+			28684:NcCharOptionGetWindowPosReq,
+			28676: NcCharOptionGetShortcutSizeReq,
+			31750: NcPrisonGetReq,
 		}
 
 		hw := networking.NewHandlerWarden(ch)
