@@ -95,7 +95,7 @@ func config() {
 	endPort := viper.GetString("network.portRange.end")
 	portRange := fmt.Sprintf("%v-%v", startPort, endPort)
 	//filter = fmt.Sprintf("tcp and (dst portrange %v or src portrange %v)", portRange, portRange)
-	filter = fmt.Sprintf("tcp portrange %v", portRange)
+	filter = fmt.Sprintf("tcp and portrange %v", portRange)
 
 	s := &networking.Settings{}
 
@@ -463,10 +463,10 @@ func capturePackets(ctx context.Context, a *reassembly.Assembler) {
 		log.Fatal("error setting BPF filter: ", err)
 	}
 	var parser * gopacket.DecodingLayerParser
+	var lb layers.Loopback
 	var eth layers.Ethernet
 	var ip4 layers.IPv4
 	var tcp layers.TCP
-	var lb layers.Loopback
 	var payload gopacket.Payload
 
 	if viper.GetBool("network.loopback") {

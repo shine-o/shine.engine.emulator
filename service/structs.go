@@ -112,16 +112,16 @@ func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error
 		return ncStructData(&nc, data)
 	case 4154:
 		// NC_CHAR_CLIENT_QUEST_DOING_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcCharClientQuestDoingCmd{}
+		return ncStructData(&nc, data)
 	case 4302:
 		// NC_CHAR_CLIENT_QUEST_READ_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcCharClientQuestReadCmd{}
+		return ncStructData(&nc, data)
 	case 4311:
 		// NC_CHAR_CLIENT_QUEST_REPEAT_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcCharClientQuestRepeatCmd{}
+		return ncStructData(&nc, data)
 	case 4167:
 		// NC_CHAR_CLIENT_ITEM_CMD
 		nc := structs.NcCharClientItemCmd{}
@@ -136,28 +136,28 @@ func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error
 		break
 	case 4318:
 		// NC_CHAR_CLIENT_COININFO_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcCharClientCoinInfoCmd{}
+		return ncStructData(&nc, data)
 	case 4155:
 		// NC_CHAR_CLIENT_QUEST_DONE_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcCharClientQuestDoneCmd{}
+		return ncStructData(&nc, data)
 	case 4158:
 		// NC_CHAR_CLIENT_PASSIVE_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcCharClientPassiveCmd{}
+		return ncStructData(&nc, data)
 	case 6145:
 		// NC_MAP_LOGIN_REQ
 		nc := structs.NcMapLoginReq{}
 		return ncStructData(&nc, data)
 	case 4170:
 		// NC_CHAR_CLIENT_CHARGEDBUFF_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcCharClientChargedBuffCmd{}
+		return ncStructData(&nc, data)
 	case 17438:
 		// NC_QUEST_RESET_TIME_CLIENT_CMD
-		// return ncStructData(&nc, data)
-		break
+		nc := structs.NcQuestResetTimeClientCmd{}
+		return ncStructData(&nc, data)
 	case 6146:
 		// NC_MAP_LOGIN_ACK
 		nc := structs.NcMapLoginAck{}

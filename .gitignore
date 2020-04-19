@@ -5,3 +5,5 @@ output
 !tcp/*.pcapng
 capture_no_race.exe
 *.pprof
+streams.log
+*.log
