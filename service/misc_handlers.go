@@ -5,16 +5,20 @@ import (
 	"github.com/shine-o/shine.engine.core/networking"
 )
 
-func miscGameTimeReq(ctx context.Context, pc *networking.Command) {
+// NcMiscGameTimeReq requests the server time
+// NC_MISC_GAMETIME_REQ
+func NcMiscGameTimeReq(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return
 	default:
-		go miscGameTimeAck(ctx, &networking.Command{})
+		go NcMiscGameTimeAck(ctx, &networking.Command{})
 	}
 }
 
-func miscGameTimeAck(ctx context.Context, pc *networking.Command) {
+// NcMiscGameTimeAck sends the current server time
+// NC_MISC_GAMETIME_ACK
+func NcMiscGameTimeAck(ctx context.Context, pc *networking.Command) {
 	select {
 	case <-ctx.Done():
 		return

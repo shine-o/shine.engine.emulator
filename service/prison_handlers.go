@@ -6,17 +6,18 @@ import (
 	"github.com/shine-o/shine.engine.core/structs"
 )
 
-//NC_PRISON_GET_REQ
-func prisonGetReq(ctx context.Context, pc * networking.Command) {
-	go prisonGetAck(ctx)
+// NcPrisonGetReq client asks for how much time in prison ô_o
+// NC_PRISON_GET_REQ
+func NcPrisonGetReq(ctx context.Context, pc * networking.Command) {
+	go NcPrisonGetAck(ctx)
 }
 
-
-//NC_PRISON_GET_ACK
-func prisonGetAck(ctx context.Context) {
+// NcPrisonGetAck sends how much time the player spends in prison
+// NC_PRISON_GET_ACK
+func NcPrisonGetAck(ctx context.Context) {
 	pc := networking.Command{
 		Base:     networking.CommandBase{
-			OperationCode:31751,
+			OperationCode: 31751,
 		},
 		NcStruct: &structs.NcPrisonGetAck{
 			Err:    3505,

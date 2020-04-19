@@ -89,15 +89,15 @@ func startWorld(ctx context.Context) {
 		}
 
 		ch := &networking.CommandHandlers{
-			3087: userLoginWorldReq,
-			2061: miscGameTimeReq,
-			3123: userWillWorldSelectReq,
-			5121: avatarCreateReq,
-			5127: avatarEraseReq,
-			4097: loginReq,
-			28684: windowPosReq,
-			28676: shortcutSizeReq,
-			31750: prisonGetReq,
+			3087: NcUserLoginWorldReq,
+			2061: NcMiscGameTimeReq,
+			3123: NcUserWillWorldSelectReq,
+			5121: NcAvatarCreateReq,
+			5127: NcAvatarEraseReq,
+			4097: NcCharLoginReq,
+			28684:NcCharOptionGetWindowPosReq,
+			28676: NcCharOptionGetShortcutSizeReq,
+			31750: NcPrisonGetReq,
 		}
 
 		hw := networking.NewHandlerWarden(ch)
