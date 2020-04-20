@@ -151,7 +151,7 @@ type NcActSomeoneJumpCmd struct {
 //};
 type NcActWalkReq struct {
 	From ShineXYType
-	To ShineXYType
+	To   ShineXYType
 }
 
 //NC_ACT_MOVERUN_CMD
@@ -165,8 +165,8 @@ type NcActMoveRunCmd NcActWalkReq
 //};
 type NcActSomeoneWalkCmd struct {
 	Handle uint16
-	From ShineXYType
-	To ShineXYType
+	From   ShineXYType
+	To     ShineXYType
 }
 
 //NC_ACT_SOMEONEMOVERUN_CMD

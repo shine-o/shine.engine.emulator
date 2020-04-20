@@ -276,8 +276,8 @@ type NcCharClientShapeCmd ProtoAvatarShapeInfo
 //  SHINE_XY_TYPE logincoord;
 //};
 type NcCharMapLoginAck struct {
-	Handle uint16
-	Params CharParameterData
+	Handle     uint16
+	Params     CharParameterData
 	LoginCoord ShineXYType
 }
 
@@ -288,8 +288,8 @@ type NcCharMapLoginAck struct {
 //  unsigned __int16 wldmanhandle;
 //};
 type NcCharReviveOtherCmd struct {
-	Link NcCharReviveSameCmd
-	Socket NcCharLoginAck
+	Link    NcCharReviveSameCmd
+	Socket  NcCharLoginAck
 	WorldID uint16
 }
 
@@ -299,7 +299,7 @@ type NcCharReviveOtherCmd struct {
 //  SHINE_XY_TYPE location;
 //};
 type NcCharReviveSameCmd struct {
-	MapID uint16
+	MapID    uint16
 	Location ShineXYType
 }
 
@@ -312,7 +312,7 @@ type NcMapLinkOtherCmd NcCharReviveOtherCmd
 //  unsigned __int16 passive[];
 //};
 type NcCharSkillPassiveCmd struct {
-	Number uint16
+	Number   uint16
 	Passives []uint16 `struct:"sizefrom=Number"`
 }
 
@@ -326,9 +326,9 @@ type NcCharClientPassiveCmd NcCharSkillPassiveCmd
 //  unsigned __int16 QuestReadIDArray[];
 //};
 type NcCharQuestReadCmd struct {
-	CharID uint32
+	CharID          uint32
 	NumOfReadQuests uint16
-	Quests []uint16 `struct:"sizefrom=NumOfReadQuests"`
+	Quests          []uint16 `struct:"sizefrom=NumOfReadQuests"`
 }
 
 //NC_CHAR_CLIENT_QUEST_READ_CMD
@@ -342,10 +342,10 @@ type NcCharClientQuestReadCmd NcCharQuestReadCmd
 //  PLAYER_QUEST_INFO QuestDoingArray[];
 //};
 type NcCharQuestDoingCmd struct {
-	CharID uint32
-	NeedClear byte
+	CharID          uint32
+	NeedClear       byte
 	NumOfDoingQuest byte
-	Quests []PlayerQuestInfo `struct:"sizefrom=NumOfDoingQuest"`
+	Quests          []PlayerQuestInfo `struct:"sizefrom=NumOfDoingQuest"`
 }
 
 //NC_CHAR_CLIENT_QUEST_DOING_CMD
@@ -361,12 +361,12 @@ type NcCharClientQuestDoingCmd NcCharQuestDoingCmd
 //  PLAYER_QUEST_DONE_INFO QuestDoneArray[];
 //};
 type NcCharQuestDoneCmd struct {
-	CharID uint32
-	TotalDoneQuest uint16
+	CharID             uint32
+	TotalDoneQuest     uint16
 	TotalDoneQuestSize uint16
-	Count uint16
-	Index uint16
-	Quests []PlayerQuestDoneInfo `struct:"sizefrom=Count"`
+	Count              uint16
+	Index              uint16
+	Quests             []PlayerQuestDoneInfo `struct:"sizefrom=Count"`
 }
 
 //NC_CHAR_CLIENT_QUEST_DONE_CMD
@@ -380,7 +380,7 @@ type NcCharClientQuestDoneCmd NcCharQuestDoneCmd
 //};
 type NcCharQuestRepeatCmd struct {
 	CharID uint32
-	Count uint16
+	Count  uint16
 	Quests []PlayerQuestInfo `struct:"sizefrom=Count"`
 }
 
@@ -406,7 +406,7 @@ type NcCharClientChargedBuffCmd NcCharChargedBuffCmd
 //  unsigned __int64 nExchangedCoin;
 //};
 type NcCharCoinInfoCmd struct {
-	Coin uint64
+	Coin          uint64
 	ExchangedCoin uint64
 }
 
