@@ -128,16 +128,16 @@ type Attributes struct {
 	ID           uint64
 	CharacterID  uint64
 	Character    *Character
-	Level        uint8 `pg:",notnull"`
+	Level        uint8  `pg:",notnull"`
 	Experience   uint64 `pg:",notnull,use_zero"`
 	Fame         uint32 `pg:",notnull,use_zero"`
 	Hp           uint32 `pg:",notnull"`
 	Sp           uint32 `pg:",notnull"`
-	Intelligence uint8 `pg:",notnull,use_zero"`
-	Strength     uint8 `pg:",notnull,use_zero"`
-	Dexterity    uint8 `pg:",notnull,use_zero"`
-	Endurance    uint8 `pg:",notnull,use_zero"`
-	Spirit       uint8 `pg:",notnull,use_zero"`
+	Intelligence uint8  `pg:",notnull,use_zero"`
+	Strength     uint8  `pg:",notnull,use_zero"`
+	Dexterity    uint8  `pg:",notnull,use_zero"`
+	Endurance    uint8  `pg:",notnull,use_zero"`
+	Spirit       uint8  `pg:",notnull,use_zero"`
 	Money        uint64 `pg:",notnull,use_zero"`
 	KillPoints   uint32 `pg:",notnull,use_zero"`
 	HpStones     uint16 `pg:",notnull"`
@@ -156,7 +156,7 @@ type Location struct {
 	MapName     string `pg:",notnull"`
 	X           uint32 `pg:",notnull"`
 	Y           uint32 `pg:",notnull"`
-	D           uint8 `pg:",notnull,use_zero"`
+	D           uint8  `pg:",notnull,use_zero"`
 	IsKQ        bool   `pg:",notnull,use_zero"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
@@ -192,10 +192,10 @@ type Items struct {
 	InventoryType int    `pg:",pk,use_zero"`
 	Slot          uint16 `pg:",pk,use_zero"`
 	ShnID         uint16 `pg:",notnull"`
-	Stackable      bool   `pg:",notnull,use_zero"`
+	Stackable     bool   `pg:",notnull,use_zero"`
 	Amount        uint32
 	CreatedAt     time.Time
-	UpdatedAt   time.Time
+	UpdatedAt     time.Time
 	DeletedAt     time.Time `pg:",soft_delete"`
 }
 
@@ -596,18 +596,18 @@ func (c *Character) MiniHouseItems(db *pg.DB) *structs.NcCharClientItemCmd {
 	return c.getItemsByInventory(db, 12)
 }
 
-func (c *Character) PremiumActionItems(db *pg.DB)  *structs.NcCharClientItemCmd {
+func (c *Character) PremiumActionItems(db *pg.DB) *structs.NcCharClientItemCmd {
 	return c.getItemsByInventory(db, 15)
 }
 
 // if not 65535, add item to the list
 // todo: shn item processing
 // get all items where character id and inventory type (8 for equipped items) match
-func (c *Character) getItemsByInventory(db *pg.DB, inventoryType uint8) * structs.NcCharClientItemCmd  {
-	nc := &structs.NcCharClientItemCmd {
+func (c *Character) getItemsByInventory(db *pg.DB, inventoryType uint8) *structs.NcCharClientItemCmd {
+	nc := &structs.NcCharClientItemCmd{
 		NumOfItem: 0,
 		Box:       inventoryType,
-		Flag:      structs.ProtoNcCharClientItemCmdFlag{
+		Flag: structs.ProtoNcCharClientItemCmdFlag{
 			BF0: 183,
 		},
 	}

@@ -149,7 +149,7 @@ func handleOutboundSegments(ctx context.Context, w *bufio.Writer, segment <-chan
 // Send bytes to the client
 func (pc *Command) Send(ctx context.Context) {
 	cwv := ctx.Value(ConnectionWriter)
-	cw := cwv.(chan []byte)//maybe the handlers themselves should receive the outboundSegments channel as parameter
+	cw := cwv.(chan []byte) //maybe the handlers themselves should receive the outboundSegments channel as parameter
 
 	if pc.NcStruct != nil {
 		data, err := structs.Pack(pc.NcStruct)
