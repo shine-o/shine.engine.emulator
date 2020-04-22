@@ -98,9 +98,6 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 		outboundSegments = make(chan []byte, 4096)
 		r                *bufio.Reader
 		w                *bufio.Writer
-		//cw = &clientWriter{
-		//	w: bufio.NewWriter(c),
-		//}
 	)
 	r = bufio.NewReader(c)
 	w = bufio.NewWriter(c)
@@ -108,7 +105,7 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 	ctx = context.WithValue(ctx, ShineSession, ss.sf.New())
 	ctx = context.WithValue(ctx, ConnectionWriter, outboundSegments)
 
-	go ss.hw.handleInboundSegments(ctx, inboundSegments)
+	go handleInboundSegments(ctx, inboundSegments, ss.hw)
 
 	go handleOutboundSegments(ctx, w, outboundSegments)
 
@@ -123,24 +120,6 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 			} else {
 				log.Error(err)
 				return
-			}
-		}
-	}
-}
-
-func handleOutboundSegments(ctx context.Context, w *bufio.Writer, segment <-chan []byte) {
-	for {
-		select {
-		case <-ctx.Done():
-			log.Warning("handleOutboundSegments context canceled")
-			return
-		case data := <-segment:
-			if _, err := w.Write(data); err != nil {
-				log.Error(err)
-			} else {
-				if err = w.Flush(); err != nil {
-					log.Error(err)
-				}
 			}
 		}
 	}
