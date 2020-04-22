@@ -3,6 +3,7 @@ module github.com/shine-o/shine.engine.core
 go 1.13
 
 require (
+	github.com/RoaringBitmap/roaring v0.4.23
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-pg/pg/v9 v9.1.6
 	github.com/go-pg/urlstruct v0.4.0 // indirect
