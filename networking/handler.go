@@ -54,7 +54,7 @@ func protocolCommandWorker(ctx context.Context, hw *HandleWarden, pc <- chan *Co
 }
 
 // Read packet data from segments
-func handleInboundSegments(ctx context.Context, segment <-chan []byte, hw *HandleWarden) {
+func handleInboundSegments(ctx context.Context, segment <-chan []byte, hw *HandleWarden, closeConnection chan <- bool) {
 	var (
 		data      []byte
 		offset    int
@@ -66,10 +66,11 @@ func handleInboundSegments(ctx context.Context, segment <-chan []byte, hw *Handl
 	defer cancel()
 
 	pc := make(chan * Command, 4096)
-	// as many as needed can be spawned
-	go protocolCommandWorker(ctx, hw, pc)
-	go protocolCommandWorker(ctx, hw, pc)
-	go protocolCommandWorker(ctx, hw, pc)
+
+	for i := 0; i < 10; i++ {
+		go protocolCommandWorker(ctx, hw, pc)
+	}
+
 
 	pc <- &Command{
 		Base: CommandBase{
@@ -78,6 +79,7 @@ func handleInboundSegments(ctx context.Context, segment <-chan []byte, hw *Handl
 	}
 
 	offset = 0
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -97,6 +99,18 @@ func handleInboundSegments(ctx context.Context, segment <-chan []byte, hw *Handl
 				if nextOffset > len(data) {
 					break
 				}
+
+				if pLen == uint16(65535) {
+					closeConnection <- true
+					return
+				}
+
+				if nextOffset > len(data) {
+					log.Error("next offset [%v] is bigger than current available data [%v], cannot proceed", nextOffset, len(data))
+					closeConnection <- true
+					return
+				}
+
 				packetData := make([]byte, pLen)
 
 			    copy(packetData, data[offset+skipBytes:nextOffset])
@@ -108,7 +122,9 @@ func handleInboundSegments(ctx context.Context, segment <-chan []byte, hw *Handl
 
 				pc <- &c
 
-				offset += skipBytes + int(pLen)
+				offset = 0
+				data = nil
+				//offset += skipBytes + int(pLen)
 			}
 		}
 	}

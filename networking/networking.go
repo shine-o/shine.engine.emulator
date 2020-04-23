@@ -93,9 +93,10 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 	defer log.Infof("Closing connection %v", c.RemoteAddr().String())
 
 	var (
-		buffer           = make([]byte, 1024)
+		buffer           = make([]byte, 4096)
 		inboundSegments  = make(chan []byte, 4096)
 		outboundSegments = make(chan []byte, 4096)
+		closeConnection =  make(chan bool)
 		r                *bufio.Reader
 		w                *bufio.Writer
 	)
@@ -105,22 +106,32 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 	ctx = context.WithValue(ctx, ShineSession, ss.sf.New())
 	ctx = context.WithValue(ctx, ConnectionWriter, outboundSegments)
 
-	go handleInboundSegments(ctx, inboundSegments, ss.hw)
-
+	go handleInboundSegments(ctx, inboundSegments, ss.hw, closeConnection)
 	go handleOutboundSegments(ctx, w, outboundSegments)
-
+	go waitForClose(closeConnection, c)
 	for {
-		if n, err := r.Read(buffer); err == nil {
-			var data []byte
-			data = append(data, buffer[:n]...)
-			inboundSegments <- data
-		} else {
+		n, err := r.Read(buffer)
+		if err != nil {
 			if err == io.EOF {
 				break
 			} else {
 				log.Error(err)
+				cancel()
 				return
 			}
+		}
+		data := make([]byte, n)
+		copy(data, buffer[:n])
+		inboundSegments <- data
+	}
+}
+
+func waitForClose(close <- chan  bool, c net.Conn) {
+	for {
+		select{
+		case <- close:
+			c.Close()
+			return
 		}
 	}
 }
