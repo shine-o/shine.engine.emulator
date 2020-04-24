@@ -1123,6 +1123,7 @@ func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error
 func ncStructData(nc interface{}, data []byte) (ncRepresentation, error) {
 	err := structs.Unpack(data, nc)
 	if err != nil {
+		log.Error(err)
 		n, err := restruct.SizeOf(nc)
 		if err != nil {
 			log.Error(err)
@@ -1132,11 +1133,7 @@ func ncStructData(nc interface{}, data []byte) (ncRepresentation, error) {
 		log.Errorf("struct: %v, size: %v", reflect.TypeOf(nc).String(), n)
 		return ncRepresentation{}, err
 	}
-	//n, err := restruct.SizeOf(nc)
-	//if err != nil {
-	//	log.Error(err)
-	//}
-	//log.Warningf("struct: %v, size: %v", reflect.TypeOf(nc).String(), n)
+
 	sd, err := json.Marshal(nc)
 	if err != nil {
 		log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(nc).String(), err)

@@ -3,9 +3,9 @@
 ################################
 network:
   # required
-#  interface: "\\Device\\NPF_{3904F81A-F9DE-4578-B4C6-8626CE9B78CE}"
-  interface: "\\Device\\NPF_{0C0F3035-51CB-4486-B8B1-5D3442D92897}"
-  loopback: true
+  interface: "\\Device\\NPF_{3904F81A-F9DE-4578-B4C6-8626CE9B78CE}"
+#  interface: "\\Device\\NPF_{0C0F3035-51CB-4486-B8B1-5D3442D92897}"
+  loopback: false
   portRange:
     start: 9000
     end: 9600

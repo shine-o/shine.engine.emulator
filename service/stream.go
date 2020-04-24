@@ -215,8 +215,13 @@ func (ssf *shineStreamFactory) New(net, transport gopacket.Flow, tcp *layers.TCP
 }
 
 func (ss *shineStream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.AssemblerContext) {
-	dir, _, _, _ := sg.Info()
 	length, _ := sg.Lengths()
+	if length == 0 {
+		return
+	}
+
+	dir, _, _, _ := sg.Info()
+
 	seg := shineSegment{
 		data: sg.Fetch(length),
 		seen: ac.GetCaptureInfo().Timestamp,
@@ -247,7 +252,7 @@ func (ss *shineStream) ReassemblyComplete(ac reassembly.AssemblerContext) bool {
 // handle stream data flowing from the client
 func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan shineSegment, xorKeyFound <-chan bool, xorKey <-chan uint16) {
 	var (
-		d          []byte
+		data          []byte
 		offset     int
 		xorOffset  uint16
 		hasXorKey  bool
@@ -274,52 +279,51 @@ loop:
 				}
 			}
 		case segment := <-segments:
-			d = append(d, segment.data...)
+			data = append(data, segment.data...)
 
-			if offset >= len(d) {
+			if offset >= len(data) {
 				log.Warningf("not enough data, next offset is %v ", offset)
 				break
 			}
 
-			for offset < len(d) {
+			for offset < len(data) {
 				if !hasXorKey {
 					break
 				}
 				var skipBytes int
-				var pLen int
-				var pType string
-				var rs []byte
+				var pLen uint16
 
-				pLen, pType = networking.PacketBoundary(offset, d)
+				pLen, skipBytes = networking.PacketBoundary(offset, data)
 
-				if pType == "small" {
-					skipBytes = 1
-				} else {
-					skipBytes = 3
-				}
+				nextOffset := offset + skipBytes + int(pLen)
 
-				nextOffset := offset + skipBytes + pLen
-				if nextOffset > len(d) {
+				if nextOffset > len(data) {
 					log.Warningf("not enough data, next offset is %v ", nextOffset)
 					break
 				}
 
-				rs = append(rs, d[offset+skipBytes:nextOffset]...)
-
-				networking.XorCipher(rs, &xorOffset)
-				pc, err := networking.DecodePacket(pType, pLen, rs)
-				if err != nil {
-					log.Error(err)
+				if pLen == uint16(65535) {
+					log.Errorf("bad length value %v", pLen)
+					return
 				}
+
+				packetData := make([]byte, pLen)
+
+				copy(packetData, data[offset+skipBytes:nextOffset])
+
+				networking.XorCipher(packetData, &xorOffset)
+				p, _ := networking.DecodePacket(packetData)
 
 				if logActivated {
 					ss.packets <- decodedPacket{
 						seen:   segment.seen,
-						packet: pc,
+						packet: p,
 						direction: segment.direction,
 					}
 				}
-				offset += skipBytes + pLen
+				offset += skipBytes + int(pLen)
+				offset = 0
+				data = nil
 			}
 			if shouldQuit {
 				return
@@ -331,7 +335,7 @@ loop:
 // handle stream data flowing from the server
 func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan shineSegment, xorKeyFound chan<- bool, xorKey chan<- uint16) {
 	var (
-		d              []byte
+		data              []byte
 		offset         int
 		xorOffsetFound bool
 		shouldQuit     bool
@@ -347,37 +351,38 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 			shouldQuit = true
 			return
 		case segment := <-segments:
-			d = append(d, segment.data...)
-			if offset >= len(d) {
+			data = append(data, segment.data...)
+			if offset >= len(data) {
 				log.Warningf("not enough data, next offset is %v ", offset)
 				break
 			}
-			for offset < len(d) {
+
+			for offset < len(data) {
 				var skipBytes int
-				var pLen int
-				var pType string
-				var rs []byte
+				var pLen uint16
 
-				pLen, pType = networking.PacketBoundary(offset, d)
 
-				if pType == "small" {
-					skipBytes = 1
-				} else {
-					skipBytes = 3
-				}
+				pLen, skipBytes = networking.PacketBoundary(offset, data)
 
-				nextOffset := offset + skipBytes + pLen
-				if nextOffset > len(d) {
-					log.Warningf("not enough data, next offset is %v ", nextOffset)
+				
+				nextOffset := offset + skipBytes + int(pLen)
+
+				if nextOffset > len(data) {
+					log.Warningf("not enough data for stream %v, next offset is %v ", ss.transport, nextOffset)
 					break
 				}
 
-				rs = append(rs, d[offset+skipBytes:nextOffset]...)
-
-				pc, err := networking.DecodePacket(pType, pLen, rs)
-				if err != nil {
-					log.Error(err)
+				if pLen > uint16(32767) {
+					log.Errorf("bad length value %v", pLen)
+					return
 				}
+
+				packetData := make([]byte, pLen)
+
+				copy(packetData, data[offset+skipBytes:nextOffset])
+
+				pc, _ := networking.DecodePacket(packetData)
+
 
 				if !xorOffsetFound {
 					log.Info("xor offset not found")
@@ -401,7 +406,10 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 						direction: segment.direction,
 					}
 				}
-				offset += skipBytes + pLen
+
+				offset += skipBytes + int(pLen)
+				offset = 0
+				data = nil
 			}
 			if shouldQuit {
 				return
