@@ -119,9 +119,10 @@ type NcBatTargetInfoCmd struct {
 	Order         byte
 	Handle        uint16
 	TargetHP      uint32
+	TargetMaxHP   uint32
 	TargetSP      uint32
 	TargetMaxSP   uint32
-	TargetLP      uint16
+	TargetLP      uint32
 	TargetMaxLP   uint32
 	TargetLevel   byte
 	HpChangeOrder uint16
@@ -165,6 +166,7 @@ type NcBatSkillBashHitObjStartCmd struct {
 	Skill     uint16
 	TargetObj uint16
 	Index     uint16
+	Unk uint32
 }
 
 //struct PROTO_NC_BAT_SKILLBASH_HIT_BLAST_CMD

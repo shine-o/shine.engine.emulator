@@ -55,7 +55,6 @@ type Command struct {
 
 // CommandBase type used to store decoded data from a packet
 type CommandBase struct {
-	PacketType       string
 	Length           int
 	Department       uint16
 	Command          uint16
@@ -157,11 +156,6 @@ func (pcb *CommandBase) JSON() ExportedPcb {
 		Data:          hex.EncodeToString(pcb.Data),
 		RawData:       hex.EncodeToString(pcb.RawData()),
 		FriendlyName:  pcb.ClientStructName,
-	}
-	if pcb.PacketLength() > 255 {
-		ePcb.PacketType = "big"
-	} else {
-		ePcb.PacketType = "small"
 	}
 	return ePcb
 }

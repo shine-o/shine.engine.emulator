@@ -132,7 +132,7 @@ type NcBriefInfoRegenMoverCmd struct {
 	Coordinates ShineCoordType
 	AbstateBit  AbstateBit
 	Grade       byte
-	SlotHandle  [9]uint16
+	SlotHandle  [10]uint16
 }
 
 //struct PROTO_NC_BRIEFINFO_CHANGEUPGRADE_CMD
@@ -205,6 +205,7 @@ type NcBriefInfoLoginCharacterCmd struct {
 	MoverSlot       byte
 	KQTeamType      byte
 	UsingMinipet    byte
+	Unk byte
 }
 
 //struct PROTO_NC_BRIEFINFO_CHANGEWEAPON_CMD

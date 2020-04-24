@@ -151,22 +151,26 @@ type NcActSomeoneJumpCmd struct {
 //};
 type NcActWalkReq struct {
 	From ShineXYType
-	To ShineXYType
+	To   ShineXYType
 }
 
 //NC_ACT_MOVERUN_CMD
 type NcActMoveRunCmd NcActWalkReq
 
-//struct PROTO_NC_ACT_SOMEONEWALK_CMD
+//struct PROTO_NC_ACT_SOMEONEMOVEWALK_CMD
 //{
 //  unsigned __int16 handle;
 //  SHINE_XY_TYPE from;
 //  SHINE_XY_TYPE to;
+//  unsigned __int16 speed;
+//  PROTO_NC_ACT_SOMEONEMOVEWALK_CMD::<unnamed-type-moveattr> moveattr;
 //};
 type NcActSomeoneWalkCmd struct {
 	Handle uint16
-	From ShineXYType
-	To ShineXYType
+	From   ShineXYType
+	To     ShineXYType
+	Speed uint16 // not sure
+	MoveAttr uint16
 }
 
 //NC_ACT_SOMEONEMOVERUN_CMD

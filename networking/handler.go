@@ -1,6 +1,7 @@
 package networking
 
 import (
+	"bufio"
 	"context"
 	"sync"
 )
@@ -36,8 +37,24 @@ func NewHandlerWarden(ch *CommandHandlers) *HandleWarden {
 	return hw
 }
 
+
+func protocolCommandWorker(ctx context.Context, hw *HandleWarden, pc <- chan *Command) {
+	for {
+		select{
+		case <- ctx.Done():
+			return
+		case c := <- pc:
+			if callback, ok := hw.handlers[c.Base.OperationCode]; ok {
+				go callback(ctx, c)
+			} else {
+				log.Errorf("non existent operation code from the client %v", c.Base.OperationCode)
+			}
+		}
+	}
+}
+
 // Read packet data from segments
-func (hw *HandleWarden) handleInboundSegments(ctx context.Context, segment <-chan []byte) {
+func handleInboundSegments(ctx context.Context, segment <-chan []byte, hw *HandleWarden, closeConnection chan <- bool) {
 	var (
 		data      []byte
 		offset    int
@@ -45,17 +62,24 @@ func (hw *HandleWarden) handleInboundSegments(ctx context.Context, segment <-cha
 	)
 
 	ctx = context.WithValue(ctx, XorOffset, &xorOffset)
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 
-	hw.mu.Lock()
-	sendXorOffset := hw.handlers[2055]
-	go sendXorOffset(ctx, &Command{
+	pc := make(chan * Command, 4096)
+
+	for i := 0; i < 10; i++ {
+		go protocolCommandWorker(ctx, hw, pc)
+	}
+
+
+	pc <- &Command{
 		Base: CommandBase{
 			OperationCode: 2055,
 		},
-	})
-	hw.mu.Unlock()
+	}
 
 	offset = 0
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -68,36 +92,57 @@ func (hw *HandleWarden) handleInboundSegments(ctx context.Context, segment <-cha
 			}
 
 			for offset < len(data) {
-				var (
-					skipBytes int
-					pLen      int
-					pType     string
-					pd        []byte
-				)
+				pLen, skipBytes := PacketBoundary(offset, data)
 
-				pLen, pType = PacketBoundary(offset, data)
+				nextOffset := offset + skipBytes + int(pLen)
 
-				if pType == "small" {
-					skipBytes = 1
-				} else {
-					skipBytes = 3
-				}
-
-				nextOffset := offset + skipBytes + pLen
 				if nextOffset > len(data) {
 					break
 				}
 
-				pd = append(pd, data[offset+skipBytes:nextOffset]...)
-				XorCipher(pd, &xorOffset)
+				if pLen == uint16(65535) {
+					closeConnection <- true
+					return
+				}
 
-				pc, _ := DecodePacket(pType, pLen, pd)
+				if nextOffset > len(data) {
+					log.Errorf("next offset [%v] is bigger than current available data [%v], cannot proceed", nextOffset, len(data))
+					closeConnection <- true
+					return
+				}
 
-				log.Infof("[inbound] metadata %v", pc.Base.String())
+				packetData := make([]byte, pLen)
 
-				go hw.handleCommand(ctx, &pc)
+			    copy(packetData, data[offset+skipBytes:nextOffset])
 
-				offset += skipBytes + pLen
+				XorCipher(packetData, &xorOffset)
+				c, _ := DecodePacket(packetData)
+
+				log.Infof("[inbound] metadata %v", c.Base.String())
+
+				pc <- &c
+
+				offset = 0
+				data = nil
+				//offset += skipBytes + int(pLen)
+			}
+		}
+	}
+}
+
+func handleOutboundSegments(ctx context.Context, w *bufio.Writer, segment <-chan []byte) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Warning("handleOutboundSegments context canceled")
+			return
+		case data := <-segment:
+			if _, err := w.Write(data); err != nil {
+				log.Error(err)
+			} else {
+				if err = w.Flush(); err != nil {
+					log.Error(err)
+				}
 			}
 		}
 	}

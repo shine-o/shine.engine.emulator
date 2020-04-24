@@ -2,8 +2,9 @@ package structs
 
 import (
 	"encoding/binary"
+	"fmt"
+	"github.com/go-restruct/restruct"
 	"github.com/google/logger"
-	"gopkg.in/restruct.v1"
 	"io/ioutil"
 	"reflect"
 )
@@ -18,19 +19,26 @@ var log *logger.Logger
 func init() {
 	log = logger.Init("Structs Logger", true, false, ioutil.Discard)
 	log.Info("structs logger init()")
+	restruct.EnableExprBeta()
 }
+
 
 // ReadBinary data into a given struct
 // if struct size is bigger than available data, fill with zeros
 func Unpack(data []byte, nc interface{}) error {
 	err := restruct.Unpack(data, binary.LittleEndian, nc)
+	size, _ := restruct.SizeOf(nc)
 
 	if err != nil {
-		size, _ := restruct.SizeOf(nc)
 		log.Errorf("size of %v: %v, size of data %v", reflect.TypeOf(nc).String(), size, len(data))
 		log.Error(err)
 		return err
 	}
+
+	if size != len(data) {
+		return fmt.Errorf("size of %v: %v, size of data %v", reflect.TypeOf(nc).String(), size, len(data))
+	}
+
 	return nil
 }
 
