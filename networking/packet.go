@@ -38,8 +38,15 @@ func PacketBoundary(offset int, data []byte) (uint16, int) {
 	return uint16(pLen), 1
 }
 
+// todo: cleaner way to create packets
+//type RawPacket struct {
+//	OpCode uint16
+//	Data []byte `struct-while:"!_eof"`
+//}
+
 // DecodePacket data into a struct
 func DecodePacket(data []byte) (Command, error) {
+
 	var (
 		opCode     uint16
 		department uint16
@@ -50,7 +57,7 @@ func DecodePacket(data []byte) (Command, error) {
 	br := bytes.NewReader(data)
 
 	if err := binary.Read(br, binary.LittleEndian, &opCode); err != nil {
-		log.Error(err)
+		log.Errorf("data stream %v %v", data, err)
 		return pc, err
 	}
 
