@@ -106,7 +106,7 @@ func handleInboundSegments(ctx context.Context, segment <-chan []byte, hw *Handl
 				}
 
 				if nextOffset > len(data) {
-					log.Error("next offset [%v] is bigger than current available data [%v], cannot proceed", nextOffset, len(data))
+					log.Errorf("next offset [%v] is bigger than current available data [%v], cannot proceed", nextOffset, len(data))
 					closeConnection <- true
 					return
 				}

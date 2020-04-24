@@ -53,29 +53,24 @@ func TestStreamPacketBoundary(t *testing.T) {
 	// for each
 	for offset != len(data) {
 		var skipBytes int
-		var pLen int
-		var pType string
+		var pLen uint16
 		var pd []byte
 
-		pLen, pType = PacketBoundary(offset, data)
+		pLen, skipBytes = PacketBoundary(offset, data)
 
-		if pType == "small" {
-			skipBytes = 1
-		} else {
-			skipBytes = 3
-		}
 
-		nextOffset := offset + skipBytes + pLen
+		nextOffset := offset + skipBytes + int(pLen)
+
 		if nextOffset > len(data) {
 			break
 		}
 
 		pd = append(pd, data[offset+skipBytes:nextOffset]...)
-		offset += skipBytes + pLen
+		offset += skipBytes + int(pLen)
 
 		// test code
 		currentIteration := make(map[string]int)
-		currentIteration["pLen"] = pLen
+		currentIteration["pLen"] = int(pLen)
 		currentIteration["offset"] = offset
 		resultValues = append(resultValues, currentIteration)
 	}
@@ -109,26 +104,23 @@ func TestDecodeOutboundStream(t *testing.T) {
 	// for each
 	for offset != len(data) {
 		var skipBytes int
-		var pLen int
-		var pType string
+		var pLen uint16
 		var pd []byte
 
-		pLen, pType = PacketBoundary(offset, data)
+		pLen, skipBytes = PacketBoundary(offset, data)
 
-		if pType == "small" {
-			skipBytes = 1
-		} else {
-			skipBytes = 3
-		}
 
-		nextOffset := offset + skipBytes + pLen
+		nextOffset := offset + skipBytes + int(pLen)
+
 		if nextOffset > len(data) {
 			break
 		}
 
 		pd = append(pd, data[offset+skipBytes:nextOffset]...)
-		offset += skipBytes + pLen
-		if pc, err := DecodePacket(pType, pLen, pd); err != nil {
+		offset += skipBytes + int(pLen)
+
+
+		if pc, err := DecodePacket(pd); err != nil {
 			t.Fatal(err)
 		} else {
 			results = append(results, pc.Base.String())
@@ -162,29 +154,25 @@ func TestDecodeInboundStream(t *testing.T) {
 	// for each
 	for offset != len(data) {
 		var skipBytes int
-		var pLen int
-		var pType string
+		var pLen uint16
 		var pd []byte
 
-		pLen, pType = PacketBoundary(offset, data)
+		pLen, skipBytes = PacketBoundary(offset, data)
 
-		if pType == "small" {
-			skipBytes = 1
-		} else {
-			skipBytes = 3
-		}
 
-		nextOffset := offset + skipBytes + pLen
+		nextOffset := offset + skipBytes + int(pLen)
+
 		if nextOffset > len(data) {
 			break
 		}
 
 		pd = append(pd, data[offset+skipBytes:nextOffset]...)
+
 		XorCipher(pd, &xorOffset)
 
-		offset += skipBytes + pLen
+		offset += skipBytes + int(pLen)
 
-		if pc, err := DecodePacket(pType, pLen, pd); err != nil {
+		if pc, err := DecodePacket(pd); err != nil {
 			t.Fatal(err)
 		} else {
 			results = append(results, pc.Base.String())
