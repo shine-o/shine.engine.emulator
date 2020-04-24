@@ -215,7 +215,7 @@ type NcCharUseItemMinimonUseBroadCmd struct {
 	Use        byte
 }
 
-//NC_CHAR_CLIENT_BASE_CMD
+// NC_CHAR_CLIENT_BASE_CMD
 // idk why name is changed
 //struct PROTO_NC_CHAR_BASE_CMD
 //{

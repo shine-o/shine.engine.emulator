@@ -29,7 +29,7 @@ type ChargedItemInfo struct {
 //};
 type ShineItemVar struct {
 	ItemID   uint16
-	ItemAttr []byte
+	ItemAttr [19]byte // why 19?
 }
 
 //struct PROTO_ITEMPACKET_INFORM

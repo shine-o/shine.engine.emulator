@@ -3,7 +3,6 @@ package entities
 type Mob interface {
 	Handle() int
 	Location() (int, int)
-	Move(x,y int) error
 }
 
 type Player interface {
@@ -16,4 +15,9 @@ type NPC interface {
 
 type Monster interface {
 	Mob
+}
+
+type BasicActions interface {
+	Move(x,y int) error
+	Attack(uint16)
 }

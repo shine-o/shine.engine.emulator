@@ -3,8 +3,8 @@ package structs
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/go-restruct/restruct"
 	"github.com/google/logger"
-	"gopkg.in/restruct.v1"
 	"io/ioutil"
 	"reflect"
 )
@@ -19,6 +19,7 @@ var log *logger.Logger
 func init() {
 	log = logger.Init("Structs Logger", true, false, ioutil.Discard)
 	log.Info("structs logger init()")
+	restruct.EnableExprBeta()
 }
 
 
