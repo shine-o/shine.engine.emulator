@@ -12,7 +12,7 @@ type Name3 struct {
 	Name [12]byte `struct:"[12]byte"`
 }
 
-func (n * Name3) String() string {
+func (n *Name3) String() string {
 	b := n.Name[:]
 	return strings.TrimRight(string(b), "\x00")
 }
@@ -32,7 +32,7 @@ type Name4 struct {
 	Name [16]byte `struct:"[16]byte"`
 }
 
-func (n * Name4) String() string {
+func (n *Name4) String() string {
 	b := n.Name[:]
 	return strings.TrimRight(string(b), "\x00")
 }
@@ -54,7 +54,7 @@ type Name5 struct {
 	Name [20]byte `struct:"[20]byte"`
 }
 
-func (n * Name5) String() string {
+func (n *Name5) String() string {
 	b := n.Name[:]
 	return strings.TrimRight(string(b), "\x00")
 }
@@ -75,7 +75,7 @@ type Name8 struct {
 	Name [32]byte `struct:"[32]byte"`
 }
 
-func (n * Name8) String() string {
+func (n *Name8) String() string {
 	b := n.Name[:]
 	return strings.TrimRight(string(b), "\x00")
 }
@@ -95,7 +95,7 @@ type Name256Byte struct {
 	Name [256]byte `struct:"[256]byte"`
 }
 
-func (n * Name256Byte) String() string {
+func (n *Name256Byte) String() string {
 	b := n.Name[:]
 	return strings.TrimRight(string(b), "\x00")
 }

@@ -88,5 +88,5 @@ type CharTitleBriefInfo struct {
 //  char statebit[112]; 2020
 //};
 type AbstateBit struct {
-	Data [112]byte
+	Data [111]byte
 }

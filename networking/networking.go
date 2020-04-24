@@ -93,14 +93,12 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 	defer log.Infof("Closing connection %v", c.RemoteAddr().String())
 
 	var (
-		buffer           = make([]byte, 1024)
+		buffer           = make([]byte, 4096)
 		inboundSegments  = make(chan []byte, 4096)
 		outboundSegments = make(chan []byte, 4096)
+		closeConnection =  make(chan bool)
 		r                *bufio.Reader
 		w                *bufio.Writer
-		//cw = &clientWriter{
-		//	w: bufio.NewWriter(c),
-		//}
 	)
 	r = bufio.NewReader(c)
 	w = bufio.NewWriter(c)
@@ -108,40 +106,32 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 	ctx = context.WithValue(ctx, ShineSession, ss.sf.New())
 	ctx = context.WithValue(ctx, ConnectionWriter, outboundSegments)
 
-	go ss.hw.handleInboundSegments(ctx, inboundSegments)
-
+	go handleInboundSegments(ctx, inboundSegments, ss.hw, closeConnection)
 	go handleOutboundSegments(ctx, w, outboundSegments)
-
+	go waitForClose(closeConnection, c)
 	for {
-		if n, err := r.Read(buffer); err == nil {
-			var data []byte
-			data = append(data, buffer[:n]...)
-			inboundSegments <- data
-		} else {
+		n, err := r.Read(buffer)
+		if err != nil {
 			if err == io.EOF {
 				break
 			} else {
 				log.Error(err)
+				cancel()
 				return
 			}
 		}
+		data := make([]byte, n)
+		copy(data, buffer[:n])
+		inboundSegments <- data
 	}
 }
 
-func handleOutboundSegments(ctx context.Context, w *bufio.Writer, segment <-chan []byte) {
+func waitForClose(close <- chan  bool, c net.Conn) {
 	for {
-		select {
-		case <-ctx.Done():
-			log.Warning("handleOutboundSegments context canceled")
+		select{
+		case <- close:
+			c.Close()
 			return
-		case data := <-segment:
-			if _, err := w.Write(data); err != nil {
-				log.Error(err)
-			} else {
-				if err = w.Flush(); err != nil {
-					log.Error(err)
-				}
-			}
 		}
 	}
 }
@@ -149,7 +139,7 @@ func handleOutboundSegments(ctx context.Context, w *bufio.Writer, segment <-chan
 // Send bytes to the client
 func (pc *Command) Send(ctx context.Context) {
 	cwv := ctx.Value(ConnectionWriter)
-	cw := cwv.(chan []byte)//maybe the handlers themselves should receive the outboundSegments channel as parameter
+	cw := cwv.(chan []byte) //maybe the handlers themselves should receive the outboundSegments channel as parameter
 
 	if pc.NcStruct != nil {
 		data, err := structs.Pack(pc.NcStruct)

@@ -119,7 +119,7 @@ type NcCharOptionShortcutSize struct {
 //  Name5 sNotifyCharID;
 //  char sNotify[512];
 //};
-type GuildClient struct {// WRONG, 2020 uses different struct
+type GuildClient struct { // WRONG, 2020 uses different struct
 	Number           uint32
 	Name             Name4
 	Money            uint64
@@ -414,9 +414,9 @@ type ShineCharStatVar struct {
 //  PLAYER_QUEST_DATA Data;
 //};
 type PlayerQuestInfo struct {
-	ID uint16
+	ID     uint16
 	Status byte
-	Data PlayerQuestData
+	Data   PlayerQuestData
 }
 
 //struct PLAYER_QUEST_DATA
@@ -430,12 +430,12 @@ type PlayerQuestInfo struct {
 //  unsigned __int16 End_RunningTimeSec;
 //};
 type PlayerQuestData struct {
-	StartTime int64
-	EndTime int64
-	RepeatCount uint32
-	ProgressStep byte
-	EndNpcMobCount [5]byte
-	BF26 byte
+	StartTime         int64
+	EndTime           int64
+	RepeatCount       uint32
+	ProgressStep      byte
+	EndNpcMobCount    [5]byte
+	BF26              byte
 	EndRunningTimeSec uint16
 }
 
@@ -445,7 +445,7 @@ type PlayerQuestData struct {
 //  __int64 tEndTime;
 //};
 type PlayerQuestDoneInfo struct {
-	ID uint16
+	ID      uint16
 	EndTime int64
 }
 
@@ -458,7 +458,7 @@ type PlayerQuestDoneInfo struct {
 //};
 type ChargedBuffInfo struct {
 	BuffKey uint32
-	BuffID uint16
+	BuffID  uint16
 	UseTime ShineDateTime
 	EndTime ShineDateTime
 }

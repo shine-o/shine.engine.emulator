@@ -28,10 +28,10 @@ type NcQuestScriptCmdAck struct {
 //  int tResetDayQuest;
 //};
 type NcQuestResetTimeCmd struct {
-	ResetYear int32
+	ResetYear  int32
 	ResetMonth int32
-	ResetWeek int32
-	ResetDay int32
+	ResetWeek  int32
+	ResetDay   int32
 }
 
 //NC_QUEST_RESET_TIME_CLIENT_CMD
