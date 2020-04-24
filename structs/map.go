@@ -7,7 +7,7 @@ package structs
 //};
 type NcMapLoginReq struct {
 	CharData NcZoneCharDataReq
-	CheckSum [49]Name8
+	CheckSum [56]Name8
 }
 
 //struct PROTO_NC_CHAR_ZONE_CHARDATA_REQ

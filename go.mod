@@ -7,6 +7,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-pg/pg/v9 v9.1.6
 	github.com/go-pg/urlstruct v0.4.0 // indirect
+	github.com/go-restruct/restruct v0.0.0-20191227155143-5734170a48a1
 	github.com/golang/protobuf v1.3.5
 	github.com/google/go-cmp v0.4.0 // indirect
 	github.com/google/logger v1.1.0
