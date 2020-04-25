@@ -11,7 +11,6 @@ func LoadToEDB(shinePath string, edbPath string) {
 	//	err := b.Put([]byte(0), structs.Unpack(row))
 	//	return err
 	//})
-
 }
 
 // DecryptSHN decrypt binary data

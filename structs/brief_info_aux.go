@@ -56,7 +56,57 @@ type ShineCoordType struct {
 //  CHARBRIEFINFO_RIDE ride;
 //};
 type NcBriefInfoLoginCharacterCmdShapeData struct {
-	Data [45]byte
+	Data [45]byte //
+	//NotCamp CharBriefInfoNotCamped
+
+}
+
+//struct CHARBRIEFINFO_NOTCAMP
+//{
+//  PROTO_EQUIPMENT equip;
+//};
+type CharBriefInfoNotCamp struct {
+	Equip ProtoEquipment
+}
+
+//struct CHARBRIEFINFO_CAMP
+//{
+//  unsigned __int16 minihouse;
+//  char dummy[10];
+//};
+type CharBriefInfoCamp struct {
+	MiniHouse uint16
+	Dummy     [10]byte //
+}
+
+//struct CHARBRIEFINFO_BOOTH
+//{
+//  CHARBRIEFINFO_CAMP camp;
+//  char issell;
+//  STREETBOOTH_SIGNBOARD signboard;
+//};
+type CharBriefInfoBooth struct {
+	Camp CharBriefInfoCamp
+	IsSelling byte
+	SignBoard StreetBoothSignBoard
+}
+
+//struct CHARBRIEFINFO_RIDE::RideInfo
+//{
+//  unsigned __int16 horse;
+//};
+type CharBriefInfoRideInfo struct {
+	Horse uint16
+}
+
+//struct CHARBRIEFINFO_RIDE
+//{
+//  PROTO_EQUIPMENT equip;
+//  CHARBRIEFINFO_RIDE::RideInfo rideinfo;
+//};
+type CharBriefInfoRide struct {
+	Equip ProtoEquipment
+	RideInfo CharBriefInfoRideInfo
 }
 
 //struct STOPEMOTICON_DESCRIPT
