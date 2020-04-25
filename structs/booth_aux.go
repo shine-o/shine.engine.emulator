@@ -25,8 +25,6 @@ type NcBoothEntrySellAckItemList struct {
 	//  unsigned __int16 itemid;
 	//  SHINE_ITEM_ATTRIBUTE itemattr;
 	//};
-	Info struct {
-		ItemID   uint16
-		ItemAttr []byte `struct-size:"Parent.DataSize - 2"`
-	}
+	ItemID   uint16
+	ItemAttr []byte `struct-size:"DataSize - 11"`
 }
