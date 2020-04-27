@@ -22,7 +22,6 @@ func init() {
 	restruct.EnableExprBeta()
 }
 
-
 // ReadBinary data into a given struct
 // if struct size is bigger than available data, fill with zeros
 func Unpack(data []byte, nc interface{}) error {

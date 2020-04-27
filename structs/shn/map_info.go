@@ -1,6 +1,8 @@
 package shn
 
-import "github.com/shine-o/shine.engine.core/structs"
+import (
+	"github.com/shine-o/shine.engine.core/structs"
+)
 
 type ShineMapInfo struct {
 	DataSize    uint32
@@ -8,8 +10,13 @@ type ShineMapInfo struct {
 	FieldSize   uint32
 	ColumnCount uint32
 	Columns     []ShineColumn `struct:"sizefrom=ColumnCount"`
-	ShineRow    []MapInfo    `struct:"sizefrom=RowsCount"`
+	ShineRow    []MapInfo     `struct:"sizefrom=RowsCount"`
 }
+
+func (smi * ShineMapInfo) LoadData(filePath string) error {
+	return Load(filePath, smi)
+}
+
 
 //struct MapInfo
 //{
@@ -25,17 +32,17 @@ type ShineMapInfo struct {
 //  unsigned int Sight;
 //};
 type MapInfo struct {
-	_ uint16
-	ID uint16
-	MapName structs.Name3
-	Name string `struct:"[32]byte"`
-	IsWMLink WMLink
-	RegenX uint32
-	RegenY uint32
-	KingdomMap byte
+	_             uint16
+	ID            uint16
+	MapName       structs.Name3
+	Name          string `struct:"[32]byte"`
+	IsWMLink      WMLink
+	RegenX        uint32
+	RegenY        uint32
+	KingdomMap    byte
 	MapFolderName structs.Name3
-	InSide byte
-	Sight uint32
+	InSide        byte
+	Sight         uint32
 }
 
 //enum WM_Link
@@ -81,8 +88,8 @@ type MapInfo struct {
 //};
 type WMLink uint32
 
-const(
- 	WmNone WMLink = iota
+const (
+	WmNone WMLink = iota
 	WmRouN
 	WmRouCos01
 	WmRouCos02
