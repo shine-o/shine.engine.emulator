@@ -10,6 +10,7 @@ type NcActChatReq struct {
 	ItemLinkDataCount byte
 	Length            byte
 	Content           []byte `struct:"sizefrom=Length"`
+	ItemMetadata []byte `struct-while:"!_eof"`
 }
 
 //struct PROTO_NC_ACT_STOP_REQ
@@ -68,6 +69,8 @@ type NcActSomeoneShoutCmd struct {
 	Flag    NcActSomeoneShoutCmdFlag
 	Len     byte
 	Content []byte `struct:"sizefrom=Len"`
+	// data for viewing the item listed in the chat
+	ItemMetadata []byte `struct-while:"!_eof"`
 }
 
 //struct PROTO_NC_ACT_SOMEONESTOP_CMD

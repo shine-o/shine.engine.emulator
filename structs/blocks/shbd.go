@@ -1,8 +1,7 @@
 package blocks
 
 type SHBD struct {
-	X uint32
-	Y uint32
+	X    int    `struct:"int32"`
+	Y    int    `struct:"int32"`
 	Data []byte `struct-size:"X * Y"`
 }
-

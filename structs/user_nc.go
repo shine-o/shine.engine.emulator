@@ -23,8 +23,10 @@ type NcUserClientWrongVersionCheckAck struct{}
 //  Name5 spawnapps;
 // };
 type NcUserUsLoginReq struct {
-	UserName  [260]byte `struct:"[260]byte"`
-	Password  [36]byte  `struct:"[36]byte"`
+	//UserName  [260]byte `struct:"[260]byte"`
+	//Password  [36]byte  `struct:"[36]byte"`
+	UserName  string `struct:"[260]byte"`
+	Password  string  `struct:"[36]byte"`
 	SpawnApps Name5
 }
 

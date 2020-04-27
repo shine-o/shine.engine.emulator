@@ -1,14 +1,5 @@
 package structs
 
-//struct CHARBRIEFINFO_CAMP
-//{
-//  unsigned __int16 minihouse;
-//  char dummy[10];
-//};
-type CharBriefInfoCamp struct {
-	MiniHouse uint16
-	Dummy     [10]byte
-}
 
 //struct STREETBOOTH_SIGNBOARD
 //{
@@ -34,8 +25,6 @@ type NcBoothEntrySellAckItemList struct {
 	//  unsigned __int16 itemid;
 	//  SHINE_ITEM_ATTRIBUTE itemattr;
 	//};
-	Info struct {
-		ItemID   uint16
-		ItemAttr []byte `struct-size:"Parent.DataSize - 2"`
-	}
+	ItemID   uint16
+	ItemAttr []byte `struct-size:"DataSize - 11"`
 }
