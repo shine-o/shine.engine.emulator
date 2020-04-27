@@ -41,14 +41,15 @@ type ShineItemVar struct {
 type ItemPacketInfo struct {
 	DataSize byte
 	Location ItemInventory
-	//Info ShineItem
 	//struct SHINE_ITEM_STRUCT
 	//{
 	//  unsigned __int16 itemid;
 	//  SHINE_ITEM_ATTRIBUTE itemattr;
 	//};
-	Info struct {
-		ItemID   uint16
-		ItemAttr []byte `struct-size:"Parent.DataSize - 2"`
-	}
+	ItemID   uint16
+	ItemAttr []byte `struct-size:"DataSize - 4"`
+	//ShineItem struct {
+	//
+	//}
 }
+

@@ -487,20 +487,15 @@ func (c *Character) initialEquippedItems() *Character {
 
 // NcRepresentation returns a struct that can be serialized into bytes and can be sent to the client
 func (c *Character) NcRepresentation() structs.AvatarInformation {
-	var name [20]byte
-	var mapName [12]byte
-	copy(name[:], c.Name)
-	copy(mapName[:], c.Location.MapName)
-
 	nc := structs.AvatarInformation{
 		ChrRegNum: uint32(c.ID),
 		Name: structs.Name5{
-			Name: name,
+			Name: c.Name,
 		},
 		Level: uint16(c.Attributes.Level),
 		Slot:  c.Slot,
 		LoginMap: structs.Name3{
-			Name: mapName,
+			Name: c.Location.MapName,
 		},
 		DelInfo: structs.ProtoAvatarDeleteInfo{},
 		Shape:   c.Appearance.NcRepresentation(),
