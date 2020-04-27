@@ -17,7 +17,6 @@ func (smi * ShineMapInfo) LoadData(filePath string) error {
 	return Load(filePath, smi)
 }
 
-
 //struct MapInfo
 //{
 //  unsigned __int16 ID;

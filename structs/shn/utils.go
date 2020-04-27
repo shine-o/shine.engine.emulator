@@ -19,26 +19,21 @@ func Load(filePath string, shn interface{}) error {
 
 func LoadRawData(filePath string) ([]byte, error) {
 	var srf ShineRawFile
-	var content []byte
 	data, err := ioutil.ReadFile(filePath)
 
 	if err != nil {
-		return content, err
+		return srf.Data, err
 	}
 
 	err = structs.Unpack(data, &srf)
 
 	if err != nil {
-		return content, err
+		return srf.Data, err
 	}
 
-	content = make([]byte, len(data[36:]))
+	DecryptSHN(srf.Data, int(srf.FileSize) - 36)
 
-	copy(content, data[36:])
-
-	DecryptSHN(content, len(content))
-
-	return content, err
+	return srf.Data, err
 }
 
 func DecryptSHN(data []byte, length int) {
