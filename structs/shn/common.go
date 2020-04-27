@@ -155,6 +155,7 @@ type ShineRawFile struct {
 	Reserved   uint32
 	DataMode   ShineDataMode
 	FileSize   int32
+	Data []byte `struct-while:"!_eof"`
 }
 
 //struct CDataReader::FIELD
