@@ -55,7 +55,9 @@ func createDummyCharacters() {
 		name := fmt.Sprintf("mob%v", i+1)
 		c := structs.NcAvatarCreateReq{
 			SlotNum: byte(i),
-			Name:    structs.Name5{},
+			Name:    structs.Name5{
+				Name: name,
+			},
 			Shape: structs.ProtoAvatarShapeInfo{
 				BF:        133,
 				HairType:  6,
@@ -63,7 +65,6 @@ func createDummyCharacters() {
 				FaceShape: 0,
 			},
 		}
-		copy(c.Name.Name[:], name)
 		_, err := New(db, 1, c)
 		if err != nil {
 			log.Fatal(err)
@@ -142,11 +143,13 @@ func TestCharacterNameInUseError(t *testing.T) {
 	defer cleanDB()
 
 	createDummyCharacters()
-
+	
 	name := fmt.Sprintf("mob%v", 1)
 	c := structs.NcAvatarCreateReq{
 		SlotNum: byte(0),
-		Name:    structs.Name5{},
+		Name:    structs.Name5{
+			Name: name,
+		},
 		Shape: structs.ProtoAvatarShapeInfo{
 			BF:        133,
 			HairType:  6,
@@ -154,7 +157,6 @@ func TestCharacterNameInUseError(t *testing.T) {
 			FaceShape: 0,
 		},
 	}
-	copy(c.Name.Name[:], name)
 	err := Validate(db, 1, c)
 	if err == nil {
 		log.Error(err)
