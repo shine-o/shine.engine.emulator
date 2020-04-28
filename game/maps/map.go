@@ -21,12 +21,12 @@ type Map struct {
 type SectorGrid map[int]map[int]*Sector
 
 type Sector struct {
-	Row       int
-	Column    int
-	Image     image.Image
+	Row             int
+	Column          int
+	Image           image.Image
 	AdjacentSectors []*Sector
-	WalkableX * roaring.Bitmap
-	WalkableY * roaring.Bitmap
+	WalkableX       *roaring.Bitmap
+	WalkableY       *roaring.Bitmap
 }
 
 func SHBDToImage(s *blocks.SHBD) (*image.NRGBA, error) {
@@ -100,13 +100,13 @@ func ImageToSHBD(img *image.NRGBA) blocks.SHBD {
 	return rs
 }
 
-func CreateSectorGrid(s * blocks.SHBD, sectorX, sectorY int, img *image.NRGBA) (SectorGrid, error) {
+func CreateSectorGrid(s *blocks.SHBD, sectorX, sectorY int, img *image.NRGBA) (SectorGrid, error) {
 	sX := s.X * 8 / sectorX
 	sY := s.Y / sectorY
 
 	grid := make(SectorGrid)
 	for i := 1; i <= sY; i++ {
-		grid[i] = make(map[int] * Sector)
+		grid[i] = make(map[int]*Sector)
 	columnsLoop:
 		for j := 1; j <= sX; j++ {
 			subImg := img.SubImage(image.Rectangle{
@@ -195,14 +195,14 @@ func AdjacentSectors(row, column int, grid map[int]map[int]*Sector) []*Sector {
 func (sg *SectorGrid) AdjacentSectorsMesh() {
 	for i, row := range *sg {
 		for j, column := range row {
-			as := AdjacentSectors(i,j, *sg)
+			as := AdjacentSectors(i, j, *sg)
 			column.AdjacentSectors = as
 		}
 	}
 }
 
 // WalkingPositions creates two X,Y roaring bitmaps with walkable coordinates
-func WalkingPositions(s * blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap,  error){
+func WalkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) {
 	walkableX := roaring.BitmapOf()
 	walkableY := roaring.BitmapOf()
 
@@ -220,7 +220,6 @@ func WalkingPositions(s * blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap,  error
 					rY := y
 					walkableX.Add(uint32(rX))
 					walkableY.Add(uint32(rY))
-					//log.Infof("rX: %v, rY: %v", rX, rY)
 				}
 			}
 		}
@@ -272,7 +271,7 @@ func SaveSHBDFile(s *blocks.SHBD, path, fileName string) error {
 func SaveGridToBMPFiles(grid *SectorGrid, fileName string) error {
 	for i, row := range *grid {
 		for j, column := range row {
-			out, err := os.OpenFile(fileName + fmt.Sprintf("_sector_%v-%v_", i, j)+".bmp", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0700)
+			out, err := os.OpenFile(fileName+fmt.Sprintf("_sector_%v-%v_", i, j)+".bmp", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0700)
 			if err != nil {
 				return err
 			}

@@ -10,11 +10,7 @@ type ShineMapInfo struct {
 	FieldSize   uint32
 	ColumnCount uint32
 	Columns     []ShineColumn `struct:"sizefrom=ColumnCount"`
-	ShineRow    []MapInfo     `struct:"sizefrom=RowsCount"`
-}
-
-func (smi * ShineMapInfo) LoadData(filePath string) error {
-	return Load(filePath, smi)
+	Rows    []MapInfo     `struct:"sizefrom=RowsCount"`
 }
 
 //struct MapInfo
