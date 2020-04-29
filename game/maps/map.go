@@ -4,15 +4,35 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/RoaringBitmap/roaring"
-	"github.com/disintegration/imaging"
+	"github.com/google/logger"
+	"github.com/shine-o/shine.engine.core/game-data/blocks"
+	"github.com/shine-o/shine.engine.core/game-data/shn"
+	"github.com/shine-o/shine.engine.core/game-data/utils"
+	"github.com/shine-o/shine.engine.core/game-data/world"
 	"github.com/shine-o/shine.engine.core/structs"
-	"github.com/shine-o/shine.engine.core/structs/blocks"
+	bolt "go.etcd.io/bbolt"
 	"golang.org/x/image/bmp"
 	"image"
-	"image/color"
+	"io/ioutil"
 	"math"
 	"os"
 )
+
+var log *logger.Logger
+
+func init() {
+	log = logger.Init("maps logger", true, false, ioutil.Discard)
+	log.Info("maps logger init()")
+}
+
+type MapError struct {
+	Message string
+	Code	string
+}
+
+func (e *MapError) Error() string {
+	return e.Message
+}
 
 type Map struct {
 	ID uint16
@@ -29,75 +49,120 @@ type Sector struct {
 	WalkableY       *roaring.Bitmap
 }
 
-func SHBDToImage(s *blocks.SHBD) (*image.NRGBA, error) {
-	r := bytes.NewReader(s.Data)
+func LoadMapData(shineFolder string, db *bolt.DB) error {
+	var attributes map[int]world.MapAttributes
+	var mapInfo shn.ShineMapInfo
 
-	img := image.NewNRGBA(image.Rectangle{
-		Min: image.Point{
-			X: 0,
-			Y: 0,
-		},
-		Max: image.Point{
-			X: s.X * 8,
-			Y: s.Y,
-		},
+	err := db.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists([]byte("maps"))
+		if err != nil {
+			return err
+		}
+		return nil
 	})
 
-	for y := s.Y; y != 0; y-- {
+	if err != nil {
+		return err
+	}
+
+	mapFiles := []string{"NormalMaps.txt", "DungeonMaps.txt", "KingdomQuestMaps.txt", "GuildTournamentMaps.txt"}
+	
+	mapAttributesPath, err := utils.ValidPath(shineFolder + "/world/" + "MapAttributes.txt")
+
+	attributes, err = world.LoadMapAttributes(mapAttributesPath)
+	if err != nil {
+		return err
+	}
+
+	mapInfoPath, err := utils.ValidPath(shineFolder + "/shn/client/" + "MapInfo.shn")
+	if err != nil {
+		return err
+	}
+
+	err = shn.Load(mapInfoPath, &mapInfo)
+	if err != nil {
+		return err
+	}
+
+	for _, file := range mapFiles {
+		mapsPath, err := utils.ValidPath(shineFolder + "/world/" + file)
+		maps, err := world.LoadMaps(mapsPath)
+		if err != nil {
+			return err
+		}
+
+		for _, m := range maps {
+			if attr, ok := attributes[m.Attributes.ID]; ok {
+				m.Attributes = attr
+			} else {
+				return fmt.Errorf("unkown map attribute entry with ID %v", m.Attributes.ID)
+			}
+
+			for _, row := range mapInfo.Rows {
+				if row.MapName.Name == m.Attributes.MapInfoIndex {
+					m.Info = row
+					break
+				}
+			}
+
+			if m.Info == (shn.MapInfo{}) {
+					log.Errorf("no MapInfo.shn entry found for normal map entry with ID %v, ignoring map", m.Attributes.ID)
+				continue
+			}
+
+			// load shbd
+
+
+			err = db.Update(func(tx *bolt.Tx) error {
+				b := tx.Bucket([]byte("maps"))
+				data, err := structs.Pack(&m)
+				if err != nil {
+					return err
+				}
+				err = b.Put([]byte(m.Attributes.MapInfoIndex), data)
+				if err != nil {
+					return err
+				}
+				return nil
+			})
+		}
+	}
+	return nil
+}
+
+// CanWalk translates in game coordinates to SHBD coordinates
+func CanWalk(x, y *roaring.Bitmap, rX, rY int) bool {
+	if x.ContainsInt(rX) && y.ContainsInt(rY) {
+		return true
+	}
+	return false
+}
+
+// WalkingPositions creates two X,Y roaring bitmaps with walkable coordinates
+func WalkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) {
+	walkableX := roaring.BitmapOf()
+	walkableY := roaring.BitmapOf()
+
+	r := bytes.NewReader(s.Data)
+
+	for y := 0; y < s.Y; y++ {
 		for x := 0; x < s.X; x++ {
 			b, err := r.ReadByte()
 			if err != nil {
-				return img, err
+				return walkableX, walkableY, err
 			}
 			for i := 0; i < 8; i++ {
-				var (
-					rX, rY int
-					c      color.Color
-				)
-
-				rX = x*8 + i
-				rY = y
-
 				if b&byte(math.Pow(2, float64(i))) == 0 {
-					c = color.White
-				} else {
-					c = color.Black
+					rX := x*8 + i
+					rY := y
+					walkableX.Add(uint32(rX))
+					walkableY.Add(uint32(rY))
 				}
-				img.Set(rX, rY, c)
 			}
 		}
 	}
-	return img, nil
-}
 
-func ImageToSHBD(img *image.NRGBA) blocks.SHBD {
-	img = imaging.FlipV(img)
-
-	bounds := img.Bounds()
-
-	var rs = blocks.SHBD{
-		X:    bounds.Max.X / 8,
-		Y:    bounds.Max.Y,
-		Data: make([]byte, 0),
-	}
-
-	for y := 0; y < rs.Y; y++ {
-		for x := 0; x < rs.X; x++ {
-			var sb uint8 = 0
-
-			for i := 0; i < 8; i++ {
-				offset := img.PixOffset(x*8+i, y)
-
-				b := img.Pix[offset]
-
-				if b == 0 {
-					sb |= 1 << i
-				}
-			}
-			rs.Data = append(rs.Data, sb)
-		}
-	}
-	return rs
+	return walkableX, walkableY, nil
 }
 
 func CreateSectorGrid(s *blocks.SHBD, sectorX, sectorY int, img *image.NRGBA) (SectorGrid, error) {
@@ -120,7 +185,7 @@ func CreateSectorGrid(s *blocks.SHBD, sectorX, sectorY int, img *image.NRGBA) (S
 				},
 			}).(*image.NRGBA)
 
-			ss := ImageToSHBD(subImg)
+			ss := blocks.ImageToSHBD(subImg)
 
 			walkableX, walkableY, err := WalkingPositions(&ss)
 
@@ -199,72 +264,6 @@ func (sg *SectorGrid) AdjacentSectorsMesh() {
 			column.AdjacentSectors = as
 		}
 	}
-}
-
-// WalkingPositions creates two X,Y roaring bitmaps with walkable coordinates
-func WalkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) {
-	walkableX := roaring.BitmapOf()
-	walkableY := roaring.BitmapOf()
-
-	r := bytes.NewReader(s.Data)
-
-	for y := 0; y < s.Y; y++ {
-		for x := 0; x < s.X; x++ {
-			b, err := r.ReadByte()
-			if err != nil {
-				return walkableX, walkableY, err
-			}
-			for i := 0; i < 8; i++ {
-				if b&byte(math.Pow(2, float64(i))) == 0 {
-					rX := x*8 + i
-					rY := y
-					walkableX.Add(uint32(rX))
-					walkableY.Add(uint32(rY))
-				}
-			}
-		}
-	}
-
-	return walkableX, walkableY, nil
-}
-
-// CanWalk translates in game coordinates to SHBD coordinates
-func CanWalk(x, y *roaring.Bitmap, rX, rY int) bool {
-	if x.ContainsInt(rX) && y.ContainsInt(rY) {
-		return true
-	}
-	return false
-}
-
-// SaveBmpFile for debugging purposes
-func SaveBmpFile(img *image.NRGBA, path, fileName string) error {
-	out, err := os.OpenFile(path+fileName+".bmp", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0700)
-	if err != nil {
-		return err
-	}
-	err = bmp.Encode(out, img)
-	if err != nil {
-		return err
-	}
-	out.Close()
-	return nil
-}
-
-// SaveSHBDFile for debugging purposes
-func SaveSHBDFile(s *blocks.SHBD, path, fileName string) error {
-	data, err := structs.Pack(s)
-
-	if err != nil {
-		return err
-	}
-
-	out, err := os.OpenFile(path+fileName+".shbd", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0700)
-	if err != nil {
-		return err
-	}
-	out.Write(data)
-	out.Close()
-	return nil
 }
 
 // SaveGridToBMPFiles for debugging purposes

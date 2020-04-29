@@ -6,7 +6,7 @@ type ShineAbState struct {
 	FieldSize   uint32
 	ColumnCount uint32
 	Columns     []ShineColumn `struct:"sizefrom=ColumnCount"`
-	ShineRow    []AbState    `struct:"sizefrom=RowsCount"`
+	ShineRow    []AbState     `struct:"sizefrom=RowsCount"`
 }
 
 //struct AbnormalStateInfo
