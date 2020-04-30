@@ -6,7 +6,7 @@ import (
 )
 
 func Load(filePath string, shn interface{}) error {
-	data, err := LoadRawData(filePath)
+	data, err := loadRawData(filePath)
 	if err != nil {
 		return err
 	}
@@ -17,7 +17,7 @@ func Load(filePath string, shn interface{}) error {
 	return nil
 }
 
-func LoadRawData(filePath string) ([]byte, error) {
+func loadRawData(filePath string) ([]byte, error) {
 	var srf ShineRawFile
 	data, err := ioutil.ReadFile(filePath)
 
@@ -31,12 +31,12 @@ func LoadRawData(filePath string) ([]byte, error) {
 		return srf.Data, err
 	}
 
-	DecryptSHN(srf.Data, int(srf.FileSize) - 36)
+	decryptSHN(srf.Data, int(srf.FileSize) - 36)
 
 	return srf.Data, err
 }
 
-func DecryptSHN(data []byte, length int) {
+func decryptSHN(data []byte, length int) {
 	if length < 1 {
 		return
 	}

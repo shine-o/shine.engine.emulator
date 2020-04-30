@@ -3,15 +3,13 @@ package world
 import (
 	"encoding/csv"
 	"fmt"
-	"github.com/shine-o/shine.engine.core/game-data/shn"
 	"os"
 	"strconv"
 )
 
 type Map struct {
 	ID         int `struct:"int32"`
-	Info       shn.MapInfo
-	Attributes MapAttributes
+	MapAttributeID               int    `struct:"int32"`
 }
 
 type MapAttributes struct {
@@ -90,10 +88,8 @@ func LoadMaps(filePath string) ([]Map, error) {
 			return maps, err
 		}
 		maps = append(maps, Map{
-			ID: id,
-			Attributes: MapAttributes{
-				ID: mapAttributeID,
-			},
+			ID:             id,
+			MapAttributeID: mapAttributeID,
 		})
 	}
 	return maps, nil

@@ -19,5 +19,5 @@ type Monster interface {
 
 type BasicActions interface {
 	Move(x,y int) error
-	Attack(uint16)
+	Attack(int)
 }
