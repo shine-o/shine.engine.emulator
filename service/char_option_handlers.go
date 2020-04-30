@@ -63,7 +63,7 @@ func NcCharOptionImproveGetShortcutDataCmd(ctx context.Context, options *charact
 
 // NcCharOptionGetShortcutSizeReq ~~~ unknown yet what this data is for
 // NC_CHAR_OPTION_GET_SHORTCUTSIZE_REQ
-func NcCharOptionGetShortcutSizeReq(ctx context.Context, pc *networking.Command) {
+func NcCharOptionGetShortcutSizeReq(ctx context.Context, np * networking.Parameters) {
 	// gotta handle this
 	go NcCharOptionGetShortcutSizeAck(ctx)
 }
@@ -88,12 +88,12 @@ func NcCharOptionGetShortcutSizeAck(ctx context.Context) {
 		},
 		NcStruct: &nc,
 	}
-	go pc.Send(ctx)
+	pc.Send(ctx)
 }
 
 // NcCharOptionGetWindowPosReq ~~~ unknown yet what this data is for
 // NC_CHAR_OPTION_GET_WINDOWPOS_REQ
-func NcCharOptionGetWindowPosReq(ctx context.Context, pc *networking.Command) {
+func NcCharOptionGetWindowPosReq(ctx context.Context, np * networking.Parameters) {
 	go NcCharOptionGetWindowPosAck(ctx)
 }
 
@@ -116,5 +116,5 @@ func NcCharOptionGetWindowPosAck(ctx context.Context) {
 		},
 		NcStruct: &nc,
 	}
-	go pc.Send(ctx)
+	pc.Send(ctx)
 }

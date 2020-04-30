@@ -8,7 +8,7 @@ import (
 
 // NcPrisonGetReq client asks for how much time in prison ô_o
 // NC_PRISON_GET_REQ
-func NcPrisonGetReq(ctx context.Context, pc *networking.Command) {
+func NcPrisonGetReq(ctx context.Context, np * networking.Parameters) {
 	go NcPrisonGetAck(ctx)
 }
 
@@ -24,5 +24,5 @@ func NcPrisonGetAck(ctx context.Context) {
 			Minute: 0,
 		},
 	}
-	go pc.Send(ctx)
+	pc.Send(ctx)
 }
