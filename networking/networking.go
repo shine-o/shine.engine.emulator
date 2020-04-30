@@ -52,13 +52,18 @@ func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
 	}
 }
 
+
+
 // Listen on TPC socket for connection on given port
 func (ss *ShineService) Listen(ctx context.Context, port string) {
 	ss.s.Set()
 	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", port)); err == nil {
 		log.Infof("listening for TCP connections on: %v", l.Addr())
 		defer l.Close()
-		rand.Seed(time.Now().Unix())
+		//rand.Seed(time.Now().Unix())
+		var src cryptoSource
+		rnd := rand.New(src)
+		rand.Seed(rnd.Int63n(time.Now().Unix()))
 		for {
 			select {
 			case <-ctx.Done():
@@ -86,11 +91,11 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 
 	ctx, cancel := context.WithCancel(ctx)
 
-	log.Infof("Serving %v", c.RemoteAddr().String())
+	log.Infof("serving %v", c.RemoteAddr().String())
 
 	defer c.Close()
 	defer cancel()
-	defer log.Infof("Closing connection %v", c.RemoteAddr().String())
+	defer log.Infof("closing connection %v", c.RemoteAddr().String())
 
 	var (
 		buffer           = make([]byte, 4096)

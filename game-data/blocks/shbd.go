@@ -7,6 +7,7 @@ import (
 	"golang.org/x/image/bmp"
 	"image"
 	"image/color"
+	"io/ioutil"
 	"math"
 	"os"
 )
@@ -15,6 +16,22 @@ type SHBD struct {
 	X    int    `struct:"int32"`
 	Y    int    `struct:"int32"`
 	Data []byte `struct-size:"X * Y"`
+}
+
+func LoadSHBDFile(filePath string) (*SHBD, error) {
+	var s * SHBD
+
+	data, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return s, err
+	}
+
+	err = structs.Unpack(data, &s)
+	if err != nil {
+		return s, err
+	}
+
+	return s, nil
 }
 
 func SHBDToImage(s *SHBD) (*image.NRGBA, error) {
@@ -43,7 +60,7 @@ func SHBDToImage(s *SHBD) (*image.NRGBA, error) {
 					c      color.Color
 				)
 
-				rX = x*8 + i
+				rX = x * 8 + i
 				rY = y
 
 				if b&byte(math.Pow(2, float64(i))) == 0 {

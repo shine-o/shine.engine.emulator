@@ -3,7 +3,6 @@ package networking
 import (
 	"bufio"
 	"context"
-	"sync"
 )
 
 // ContextKey identifier for values of common use within the Context
@@ -19,10 +18,13 @@ const (
 	ConnectionWriter
 )
 
+type ShineContext interface {
+	BaseContext() context.Context
+}
+
 // HandleWarden utility struct for triggering functions implemented by the calling shine service
 type HandleWarden struct {
 	handlers map[uint16]func(ctx context.Context, command *Command)
-	mu       sync.Mutex
 }
 
 // NewHandlerWarden handlers are callbacks to be called when an operationCode is detected in a packet.
@@ -35,22 +37,6 @@ func NewHandlerWarden(ch *CommandHandlers) *HandleWarden {
 		hw.handlers[k] = v
 	}
 	return hw
-}
-
-
-func protocolCommandWorker(ctx context.Context, hw *HandleWarden, pc <- chan *Command) {
-	for {
-		select{
-		case <- ctx.Done():
-			return
-		case c := <- pc:
-			if callback, ok := hw.handlers[c.Base.OperationCode]; ok {
-				go callback(ctx, c)
-			} else {
-				log.Errorf("non existent operation code from the client %v", c.Base.OperationCode)
-			}
-		}
-	}
 }
 
 // Read packet data from segments
@@ -148,18 +134,18 @@ func handleOutboundSegments(ctx context.Context, w *bufio.Writer, segment <-chan
 	}
 }
 
-// match operation code with handler if it exists
-func (hw *HandleWarden) handleCommand(ctx context.Context, command *Command) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		hw.mu.Lock()
-		if callback, ok := hw.handlers[command.Base.OperationCode]; ok {
-			callback(ctx, command)
-		} else {
-			log.Errorf("non existent operation code from the client %v", command.Base.OperationCode)
+
+func protocolCommandWorker(ctx context.Context, hw *HandleWarden, pc <- chan *Command) {
+	for {
+		select{
+		case <- ctx.Done():
+			return
+		case c := <- pc:
+			if callback, ok := hw.handlers[c.Base.OperationCode]; ok {
+				go callback(ctx, c)
+			} else {
+				log.Errorf("non existent operation code from the client %v", c.Base.OperationCode)
+			}
 		}
-		hw.mu.Unlock()
 	}
 }

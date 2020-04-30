@@ -2,7 +2,6 @@ package maps
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.core/game-data/blocks"
@@ -11,11 +10,9 @@ import (
 	"github.com/shine-o/shine.engine.core/game-data/world"
 	"github.com/shine-o/shine.engine.core/structs"
 	bolt "go.etcd.io/bbolt"
-	"golang.org/x/image/bmp"
-	"image"
 	"io/ioutil"
 	"math"
-	"os"
+	"sync"
 )
 
 var log *logger.Logger
@@ -27,26 +24,24 @@ func init() {
 
 type MapError struct {
 	Message string
-	Code	string
+	Code    string
 }
 
 func (e *MapError) Error() string {
 	return e.Message
 }
 
-type Map struct {
-	ID uint16
+type MapData struct {
+	ID         int `struct:"int32"`
+	Attributes world.MapAttributes
+	Info       shn.MapInfo
+	SHBD       blocks.SHBD
 }
 
-type SectorGrid map[int]map[int]*Sector
-
-type Sector struct {
-	Row             int
-	Column          int
-	Image           image.Image
-	AdjacentSectors []*Sector
-	WalkableX       *roaring.Bitmap
-	WalkableY       *roaring.Bitmap
+type mapData struct {
+	attributes  map[int]world.MapAttributes
+	mapInfo     *shn.ShineMapInfo
+	shineFolder string
 }
 
 func LoadMapData(shineFolder string, db *bolt.DB) error {
@@ -66,7 +61,7 @@ func LoadMapData(shineFolder string, db *bolt.DB) error {
 	}
 
 	mapFiles := []string{"NormalMaps.txt", "DungeonMaps.txt", "KingdomQuestMaps.txt", "GuildTournamentMaps.txt"}
-	
+
 	mapAttributesPath, err := utils.ValidPath(shineFolder + "/world/" + "MapAttributes.txt")
 
 	attributes, err = world.LoadMapAttributes(mapAttributesPath)
@@ -84,50 +79,79 @@ func LoadMapData(shineFolder string, db *bolt.DB) error {
 		return err
 	}
 
+	var wg sync.WaitGroup
 	for _, file := range mapFiles {
+		var maps []world.Map
 		mapsPath, err := utils.ValidPath(shineFolder + "/world/" + file)
-		maps, err := world.LoadMaps(mapsPath)
+		maps, err = world.LoadMaps(mapsPath)
 		if err != nil {
 			return err
 		}
-
 		for _, m := range maps {
-			if attr, ok := attributes[m.Attributes.ID]; ok {
-				m.Attributes = attr
-			} else {
-				return fmt.Errorf("unkown map attribute entry with ID %v", m.Attributes.ID)
+			wg.Add(1)
+			md := mapData{
+				shineFolder: shineFolder,
+				attributes:  attributes,
+				mapInfo:     &mapInfo,
 			}
-
-			for _, row := range mapInfo.Rows {
-				if row.MapName.Name == m.Attributes.MapInfoIndex {
-					m.Info = row
-					break
-				}
-			}
-
-			if m.Info == (shn.MapInfo{}) {
-					log.Errorf("no MapInfo.shn entry found for normal map entry with ID %v, ignoring map", m.Attributes.ID)
-				continue
-			}
-
-			// load shbd
-
-
-			err = db.Update(func(tx *bolt.Tx) error {
-				b := tx.Bucket([]byte("maps"))
-				data, err := structs.Pack(&m)
-				if err != nil {
-					return err
-				}
-				err = b.Put([]byte(m.Attributes.MapInfoIndex), data)
-				if err != nil {
-					return err
-				}
-				return nil
-			})
+			go md.PersistMap(&wg, m, db)
 		}
 	}
+	wg.Wait()
 	return nil
+}
+
+func (md *mapData) PersistMap(wg *sync.WaitGroup, m world.Map, db *bolt.DB) {
+	defer wg.Done()
+	var lm MapData
+	if attr, ok := md.attributes[m.MapAttributeID]; ok {
+		lm.Attributes = attr
+	} else {
+		log.Errorf("unkown map attribute entry with ID %v", m.MapAttributeID)
+		return
+	}
+
+	for _, row := range md.mapInfo.Rows {
+		if row.MapName.Name == lm.Attributes.MapInfoIndex {
+			lm.Info = row
+		}
+	}
+
+	if lm.Info == (shn.MapInfo{}) {
+		log.Errorf("no MapInfo.shn entry found for normal map entry with ID %v, ignoring map", lm.Attributes.ID)
+		return
+	}
+
+	// load shbd
+	var s *blocks.SHBD
+
+	shbdPath, err := utils.ValidPath(md.shineFolder + "/blocks/" + lm.Info.MapName.Name + ".shbd")
+	if err != nil {
+		log.Errorf("shbd file found for normal map entry with ID %v, ignoring map", lm.Attributes.ID)
+	}
+
+	s, err = blocks.LoadSHBDFile(shbdPath)
+	if err != nil {
+		log.Errorf("failed to load shbd file for map entry with ID %v, ignoring map %v", lm.Attributes.ID, err)
+	}
+
+	lm.SHBD = *s
+
+	err = db.Update(func(tx *bolt.Tx) error {
+		b := tx.Bucket([]byte("maps"))
+		data, err := structs.Pack(&lm)
+		if err != nil {
+			return err
+		}
+		err = b.Put([]byte(lm.Attributes.MapInfoIndex), data)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
+	if err != nil {
+		log.Errorf("failed to persist map with id %v %v", lm.Attributes.ID, err)
+	}
 }
 
 // CanWalk translates in game coordinates to SHBD coordinates
@@ -163,123 +187,4 @@ func WalkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) 
 	}
 
 	return walkableX, walkableY, nil
-}
-
-func CreateSectorGrid(s *blocks.SHBD, sectorX, sectorY int, img *image.NRGBA) (SectorGrid, error) {
-	sX := s.X * 8 / sectorX
-	sY := s.Y / sectorY
-
-	grid := make(SectorGrid)
-	for i := 1; i <= sY; i++ {
-		grid[i] = make(map[int]*Sector)
-	columnsLoop:
-		for j := 1; j <= sX; j++ {
-			subImg := img.SubImage(image.Rectangle{
-				Min: image.Point{
-					X: sectorX * (j - 1),
-					Y: sectorY * (i - 1),
-				},
-				Max: image.Point{
-					X: sectorX * j,
-					Y: sectorY * i,
-				},
-			}).(*image.NRGBA)
-
-			ss := blocks.ImageToSHBD(subImg)
-
-			walkableX, walkableY, err := WalkingPositions(&ss)
-
-			if err != nil {
-				return grid, err
-			}
-
-			// ignore black only sectors
-			if walkableX.IsEmpty() && walkableY.IsEmpty() {
-				continue columnsLoop
-			}
-
-			grid[i][j] = &Sector{
-				Row:       i,
-				Column:    j,
-				Image:     subImg,
-				WalkableX: walkableX,
-				WalkableY: walkableY,
-			}
-		}
-	}
-	return grid, nil
-}
-
-func AdjacentSectors(row, column int, grid map[int]map[int]*Sector) []*Sector {
-	var adjacentSectors []*Sector
-
-	// top row
-	if topLeft, ok := grid[row-1][column-1]; ok {
-		adjacentSectors = append(adjacentSectors, topLeft)
-	}
-
-	if top, ok := grid[row-1][column]; ok {
-		adjacentSectors = append(adjacentSectors, top)
-	}
-
-	if topRight, ok := grid[row-1][column+1]; ok {
-		adjacentSectors = append(adjacentSectors, topRight)
-	}
-
-	// middle row
-	if middleLeft, ok := grid[row][column-1]; ok {
-		adjacentSectors = append(adjacentSectors, middleLeft)
-	}
-
-	// no need for the middle since its the one we're adding adjacent sectors to
-	//if middle, ok := grid[row][column]; ok {
-	//	adjacentSectors = append(adjacentSectors, middle)
-	//}
-
-	if middleRight, ok := grid[row][column+1]; ok {
-		adjacentSectors = append(adjacentSectors, middleRight)
-	}
-
-	// bottom row
-	if bottomLeft, ok := grid[row+1][column-1]; ok {
-		adjacentSectors = append(adjacentSectors, bottomLeft)
-	}
-
-	if bottom, ok := grid[row+1][column]; ok {
-		adjacentSectors = append(adjacentSectors, bottom)
-	}
-
-	if bottomRight, ok := grid[row+1][column+1]; ok {
-		adjacentSectors = append(adjacentSectors, bottomRight)
-	}
-
-	return adjacentSectors
-}
-
-// AdjacentSectorsMesh for each sector append adjacent sectors
-func (sg *SectorGrid) AdjacentSectorsMesh() {
-	for i, row := range *sg {
-		for j, column := range row {
-			as := AdjacentSectors(i, j, *sg)
-			column.AdjacentSectors = as
-		}
-	}
-}
-
-// SaveGridToBMPFiles for debugging purposes
-func SaveGridToBMPFiles(grid *SectorGrid, fileName string) error {
-	for i, row := range *grid {
-		for j, column := range row {
-			out, err := os.OpenFile(fileName+fmt.Sprintf("_sector_%v-%v_", i, j)+".bmp", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0700)
-			if err != nil {
-				return err
-			}
-			err = bmp.Encode(out, column.Image)
-			if err != nil {
-				return err
-			}
-			out.Close()
-		}
-	}
-	return nil
 }
