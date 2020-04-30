@@ -10,9 +10,9 @@ import (
 
 // NcCharLoginReq handles a petition to login to the zone where the character's location map is running
 // NC_CHAR_LOGIN_REQ
-func NcCharLoginReq(ctx context.Context, pc *networking.Command) {
+func NcCharLoginReq(ctx context.Context, np * networking.Parameters) {
 	nc := structs.NcCharLoginReq{}
-	if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
+	if err := structs.Unpack(np.Command.Base.Data, &nc); err != nil {
 		return
 	}
 
@@ -39,7 +39,9 @@ func NcCharLoginReq(ctx context.Context, pc *networking.Command) {
 	}
 
 	ack := structs.NcCharLoginAck{
-		ZoneIP:   structs.NewName4(ci.IP),
+		ZoneIP:   structs.Name4{
+			Name: ci.IP,
+		},
 		ZonePort: uint16(ci.Port),
 	}
 
@@ -62,5 +64,5 @@ func NcCharLoginAck(ctx context.Context, ack *structs.NcCharLoginAck) {
 		},
 		NcStruct: ack,
 	}
-	go pc.Send(ctx)
+	pc.Send(ctx)
 }

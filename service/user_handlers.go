@@ -10,23 +10,18 @@ import (
 // handle user, given his account
 // verify account and character data
 // NC_USER_LOGINWORLD_REQ
-func NcUserLoginWorldReq(ctx context.Context, pc *networking.Command) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		nc := structs.NcUserLoginWorldReq{}
-		if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
+func NcUserLoginWorldReq(ctx context.Context, np * networking.Parameters) {
+	nc := structs.NcUserLoginWorldReq{}
+	if err := structs.Unpack(np.Command.Base.Data, &nc); err != nil {
+		log.Error(err)
+		// TODO: define steps for this kind of errors, either kill the connection or send error code
+	} else {
+		np.Command.NcStruct = &nc
+		if err := loginToWorld(ctx, nc); err != nil {
 			log.Error(err)
-			// TODO: define steps for this kind of errors, either kill the connection or send error code
-		} else {
-			pc.NcStruct = &nc
-			if err := loginToWorld(ctx, nc); err != nil {
-				log.Error(err)
-				return
-			}
-			go NcUserLoginWorldAck(ctx, &networking.Command{})
+			return
 		}
+		go NcUserLoginWorldAck(ctx, &networking.Command{})
 	}
 }
 
@@ -34,54 +29,37 @@ func NcUserLoginWorldReq(ctx context.Context, pc *networking.Command) {
 // acknowledge request of login to the service
 // send to the client service and character data
 // NC_USER_LOGINWORLD_ACK
-func NcUserLoginWorldAck(ctx context.Context, pc *networking.Command) {
-	select {
-	case <-ctx.Done():
+func NcUserLoginWorldAck(ctx context.Context, c * networking.Command) {
+	c.Base.OperationCode = 3092
+	nc, err := userWorldInfo(ctx)
+	if err != nil {
+		log.Error(err)
 		return
-	default:
-		pc.Base.OperationCode = 3092
-
-		nc, err := userWorldInfo(ctx)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-		pc.NcStruct = &nc
-		go pc.Send(ctx)
 	}
+	c.NcStruct = &nc
+	c.Send(ctx)
 }
 
 // NcUserWillWorldSelectReq handles a petition to return to server select
 // NC_USER_WILL_WORLD_SELECT_REQ
-func NcUserWillWorldSelectReq(ctx context.Context, pc *networking.Command) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		go NcUserWillWorldSelectAck(ctx)
-	}
+func NcUserWillWorldSelectReq(ctx context.Context, np * networking.Parameters) {
+	go NcUserWillWorldSelectAck(ctx)
 }
 
 // NcUserWillWorldSelectAck acknowledges a petition to return to server select
 // NcUserWillWorldSelectAck
 func NcUserWillWorldSelectAck(ctx context.Context) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		pc := &networking.Command{
-			Base: networking.CommandBase{
-				OperationCode: 3124,
-			},
-			NcStruct: nil,
-		}
-		nc, err := returnToServerSelect(ctx)
-		if err != nil {
-			return
-		}
-		pc.NcStruct = &nc
-		go pc.Send(ctx)
+	pc := &networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 3124,
+		},
 	}
+	nc, err := returnToServerSelect()
+	if err != nil {
+		return
+	}
+	pc.NcStruct = &nc
+	pc.Send(ctx)
 }
 
 //func userLoginWorldFailAck(ctx context.Context, pc *networking.Command) {
