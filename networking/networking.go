@@ -12,61 +12,33 @@ import (
 	"math/rand"
 	"net"
 	"reflect"
-	"sync"
 	"time"
 )
 
 func init() {
-	log = logger.Init("NetworkingLogger", true, false, ioutil.Discard)
+	log = logger.Init("networking logger", true, false, ioutil.Discard)
 	log.Info("networking logger init()")
 }
 
-type clientReader struct {
-	r  *bufio.Reader
-	mu sync.Mutex
-}
-
-type clientWriter struct {
-	w  *bufio.Writer
-	mu sync.Mutex
-}
-
-// CommandHandlers is a map of known operation codes linked to a caller
-type CommandHandlers map[uint16]func(ctx context.Context, pc *Command)
-
-// ShineService to be used by the calling shine service to:
-// 	1. configure the settings for TCP socket
-// 	2. assign the handlers for the operation codes handled by the shine service
-//  3. use session factory specific to the shine service to create a session object in the context of each TCP connection
 type ShineService struct {
-	s  *Settings
-	hw *HandleWarden
-	sf SessionFactory
+	Settings
+	ShineHandler
+	SessionFactory
+	ExtraParameters interface {}
 }
-
-// NewShineService create new, the calling shine service must configure Settings and a HandlerWarden
-func NewShineService(s *Settings, hw *HandleWarden) *ShineService {
-	return &ShineService{
-		s:  s,
-		hw: hw,
-	}
-}
-
-
 
 // Listen on TPC socket for connection on given port
-func (ss *ShineService) Listen(ctx context.Context, port string) {
-	ss.s.Set()
+func (ss * ShineService) Listen(ctx context.Context, port string) {
+	ss.Settings.Set()
 	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", port)); err == nil {
 		log.Infof("listening for TCP connections on: %v", l.Addr())
 		defer l.Close()
-		//rand.Seed(time.Now().Unix())
 		var src cryptoSource
 		rnd := rand.New(src)
 		rand.Seed(rnd.Int63n(time.Now().Unix()))
 		for {
 			select {
-			case <-ctx.Done():
+			case <- ctx.Done():
 				return
 			default:
 				if c, err := l.Accept(); err == nil {
@@ -81,13 +53,8 @@ func (ss *ShineService) Listen(ctx context.Context, port string) {
 	}
 }
 
-// UseSessionFactory given by the shine service
-func (ss *ShineService) UseSessionFactory(sf SessionFactory) {
-	ss.sf = sf
-}
-
 // for each connection launch go routine that handles tcp segment data
-func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
+func (ss * ShineService) handleConnection(ctx context.Context, c net.Conn) {
 
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -101,18 +68,18 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 		buffer           = make([]byte, 4096)
 		inboundSegments  = make(chan []byte, 4096)
 		outboundSegments = make(chan []byte, 4096)
-		closeConnection =  make(chan bool)
+		closeConnection  = make(chan bool)
 		r                *bufio.Reader
 		w                *bufio.Writer
 	)
 	r = bufio.NewReader(c)
 	w = bufio.NewWriter(c)
 
-	ctx = context.WithValue(ctx, ShineSession, ss.sf.New())
+	ctx = context.WithValue(ctx, ShineSession, ss.SessionFactory.New())
 	ctx = context.WithValue(ctx, ConnectionWriter, outboundSegments)
 
-	go handleInboundSegments(ctx, inboundSegments, ss.hw, closeConnection)
-	go handleOutboundSegments(ctx, w, outboundSegments)
+	go ss.handleInboundSegments(ctx, inboundSegments, closeConnection)
+	go ss.handleOutboundSegments(ctx, w, outboundSegments)
 	go waitForClose(closeConnection, c)
 	for {
 		n, err := r.Read(buffer)
@@ -131,10 +98,10 @@ func (ss *ShineService) handleConnection(ctx context.Context, c net.Conn) {
 	}
 }
 
-func waitForClose(close <- chan  bool, c net.Conn) {
+func waitForClose(close <-chan bool, c net.Conn) {
 	for {
-		select{
-		case <- close:
+		select {
+		case <-close:
 			c.Close()
 			return
 		}

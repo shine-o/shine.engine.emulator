@@ -18,29 +18,18 @@ const (
 	ConnectionWriter
 )
 
-type ShineContext interface {
-	BaseContext() context.Context
+// ShineParameters is used by the Shine services to give extra parameters to their handlers
+type Parameters struct {
+	Command *Command
+	Extra interface{}
 }
 
 // HandleWarden utility struct for triggering functions implemented by the calling shine service
-type HandleWarden struct {
-	handlers map[uint16]func(ctx context.Context, command *Command)
-}
-
-// NewHandlerWarden handlers are callbacks to be called when an operationCode is detected in a packet.
-func NewHandlerWarden(ch *CommandHandlers) *HandleWarden {
-	hw := &HandleWarden{
-		handlers: make(map[uint16]func(ctx context.Context, command *Command)),
-	}
-	hw.handlers[2055] = miscSeedAck
-	for k, v := range *ch {
-		hw.handlers[k] = v
-	}
-	return hw
-}
+type ShineHandler map[uint16]func(context.Context, *Parameters)
 
 // Read packet data from segments
-func handleInboundSegments(ctx context.Context, segment <-chan []byte, hw *HandleWarden, closeConnection chan <- bool) {
+func (ss * ShineService) handleInboundSegments(ctx context.Context, segment <-chan []byte, closeConnection chan <- bool) {
+
 	var (
 		data      []byte
 		offset    int
@@ -53,10 +42,9 @@ func handleInboundSegments(ctx context.Context, segment <-chan []byte, hw *Handl
 
 	pc := make(chan * Command, 4096)
 
-	for i := 0; i < 10; i++ {
-		go protocolCommandWorker(ctx, hw, pc)
+	for i := 0; i < 10; i++ {// todo: number of routines to be put in config
+		go ss.handlerWorker(ctx, pc)
 	}
-
 
 	pc <- &Command{
 		Base: CommandBase{
@@ -116,10 +104,10 @@ func handleInboundSegments(ctx context.Context, segment <-chan []byte, hw *Handl
 	}
 }
 
-func handleOutboundSegments(ctx context.Context, w *bufio.Writer, segment <-chan []byte) {
+func (ss * ShineService) handleOutboundSegments(ctx context.Context, w *bufio.Writer, segment <-chan []byte) {
 	for {
 		select {
-		case <-ctx.Done():
+		case <- ctx.Done():
 			log.Warning("handleOutboundSegments context canceled")
 			return
 		case data := <-segment:
@@ -135,16 +123,19 @@ func handleOutboundSegments(ctx context.Context, w *bufio.Writer, segment <-chan
 }
 
 
-func protocolCommandWorker(ctx context.Context, hw *HandleWarden, pc <- chan *Command) {
+func (ss ShineService) handlerWorker(ctx context.Context, pc <- chan *Command) {
 	for {
 		select{
 		case <- ctx.Done():
 			return
 		case c := <- pc:
-			if callback, ok := hw.handlers[c.Base.OperationCode]; ok {
-				go callback(ctx, c)
+			if callback, ok := ss.ShineHandler[c.Base.OperationCode]; ok {
+				go callback(ctx, &Parameters{
+					Command: c,
+					Extra: ss.ExtraParameters,
+				})
 			} else {
-				log.Errorf("non existent operation code from the client %v", c.Base.OperationCode)
+				log.Errorf("non existent handler for operation code %v", c.Base.OperationCode)
 			}
 		}
 	}
