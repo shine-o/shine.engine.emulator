@@ -17,7 +17,7 @@ func NcMapLoginReq(ctx context.Context, pc *networking.Command) {
 		log.Error(err)
 		return
 	}
-	charName := nc.CharData.CharID.String()
+	charName := nc.CharData.CharID.Name
 	var char character.Character
 	err = db.Model(&char).
 		Relation("Appearance").
@@ -60,7 +60,9 @@ func NcCharClientBaseCmd(ctx context.Context, char *character.Character) {
 		},
 		NcStruct: &structs.NcCharClientBaseCmd{
 			ChrRegNum:  uint32(char.ID),
-			CharName:   structs.NewName5(char.Name),
+			CharName:   structs.Name5{
+				Name: char.Name,
+			},
 			Slot:       char.Slot,
 			Level:      char.Attributes.Level,
 			Experience: char.Attributes.Experience,
@@ -75,7 +77,9 @@ func NcCharClientBaseCmd(ctx context.Context, char *character.Character) {
 			Fame:       char.Attributes.Fame,
 			Cen:        54983635,
 			LoginInfo: structs.NcCharBaseCmdLoginLocation{
-				CurrentMap: structs.NewName3(char.Location.MapName),
+				CurrentMap: structs.Name3{
+					Name: char.Location.MapName,
+				},
 				CurrentCoord: structs.ShineCoordType{
 					XY: structs.ShineXYType{
 						X: char.Location.X,
@@ -106,11 +110,12 @@ func NcCharClientBaseCmd(ctx context.Context, char *character.Character) {
 
 //NC_CHAR_CLIENT_SHAPE_CMD
 func NcCharClientShapeCmd(ctx context.Context, ca *character.Appearance) {
+	shapeInfo := ca.NcRepresentation()
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4153,
 		},
-		NcStruct: ca.NcRepresentation(),
+		NcStruct: &shapeInfo,
 	}
 	pc.Send(ctx)
 }
@@ -249,10 +254,6 @@ func NcMapLoginAck(ctx context.Context, char *character.Character) {
 	pc.Send(ctx)
 	// Login coordinates
 }
-
-//NC_MAP_LOGINCOMPLETE_CMD
-//6147
-func NcMapLoginCompleteCmd(ctx context.Context, pc *networking.Command) {}
 
 //NC_CHAR_CLIENT_QUEST_READ_CMD
 //4302
@@ -441,3 +442,7 @@ func NcQuestResetTimeClientCmd(ctx context.Context, char *character.Character) {
 	}
 	pc.Send(ctx)
 }
+
+//NC_MAP_LOGINCOMPLETE_CMD
+//6147
+func NcMapLoginCompleteCmd(ctx context.Context, pc *networking.Command) {}

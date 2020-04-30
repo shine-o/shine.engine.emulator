@@ -11,11 +11,12 @@ protocol:
 
 shine_folder: ''
 
-maps:
-  - Rou
-  - RouCos01
-  - RouCos02
-  - RouCos03
+# world/NormalMaps.txt
+normal_maps:
+  - 1
+  - 2
+  - 3
+  - 4
 
 gRPC:
   servers:

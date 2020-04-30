@@ -14,6 +14,8 @@ type sessionFactory struct{}
 
 type session struct {
 	id string
+	characterName string
+
 }
 
 func (s sessionFactory) New() networking.Session {
