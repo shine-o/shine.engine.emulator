@@ -8,11 +8,11 @@ import (
 )
 
 //NC_MAP_LOGIN_REQ
-func NcMapLoginReq(ctx context.Context, pc *networking.Command) {
+func NcMapLoginReq(ctx context.Context, np * networking.Parameters) {
 	// todo: shn files checksum
 	nc := structs.NcMapLoginReq{}
 
-	err := structs.Unpack(pc.Base.Data, &nc)
+	err := structs.Unpack(np.Command.Base.Data, &nc)
 	if err != nil {
 		log.Error(err)
 		return

@@ -47,15 +47,13 @@ func Start(cmd *cobra.Command, args []string) {
 		Schema:   viper.GetString("world_database.schema"),
 	})
 
-	s := &networking.Settings{}
-
+	s := networking.Settings{}
 	if xk, err := hex.DecodeString(viper.GetString("crypt.xorKey")); err != nil {
 		log.Error(err)
 		os.Exit(1)
 	} else {
 		s.XorKey = xk
 	}
-
 	s.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
 
 	if path, err := filepath.Abs(viper.GetString("protocol.commands")); err != nil {
@@ -64,16 +62,17 @@ func Start(cmd *cobra.Command, args []string) {
 		s.CommandsFilePath = path
 	}
 
-	ch := &networking.CommandHandlers{
-		6145: NcMapLoginReq,
+	ss := networking.ShineService{
+		Settings:        s,
+		ShineHandler:    networking.ShineHandler{
+			2055: NcMiscSeedAck,
+			6145: NcMapLoginReq,
+		},
+		SessionFactory:  sessionFactory{},
+		// here I should add maps loaded in this zone
+		// that way when a command comes in, i can use the sector the player is situated in
+		ExtraParameters: nil,
 	}
-
-	hw := networking.NewHandlerWarden(ch)
-	ss := networking.NewShineService(s, hw)
-
-	zsf := &sessionFactory{}
-	ss.UseSessionFactory(zsf)
-
 	ss.Listen(ctx, zonePort)
 }
 

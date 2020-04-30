@@ -6,19 +6,10 @@ import (
 	"github.com/shine-o/shine.engine.core/game-data/blocks"
 	"github.com/shine-o/shine.engine.core/game/entities"
 	"github.com/shine-o/shine.engine.core/game/maps"
-	"github.com/shine-o/shine.engine.core/structs"
 	"golang.org/x/image/bmp"
 	"image"
 	"os"
 )
-
-// all events that can happen inside a sector
-// EntityMoved
-type event interface {
-	// all events are something that either the player triggers or it should be broadcast to nearby players or mobs
-	// in all cases, a network command is needed to notify the players
-	networkCommand() structs.NC
-}
 
 type sector struct {
 	row             int
@@ -28,10 +19,15 @@ type sector struct {
 	walkableX       *roaring.Bitmap
 	walkableY       *roaring.Bitmap
 	// broadcast data to all entities within the sector, usually data from an adjacent sector
-	input <-chan []byte
+	inbox <-chan event
 	// broadcast data to all entities in adjacent sectors
-	output   chan<- []byte
+	outbox   chan<- event
 	entities map[int]chan entities.Mob
+}
+
+func (s *sector) run() {
+	// launch logic routines (movement, combat, appearance)
+	// each nc handler takes the sector the player is at from
 }
 
 func (s *sector) registerEntity(handle int) {
@@ -40,11 +36,6 @@ func (s *sector) registerEntity(handle int) {
 
 func (s *sector) unregisterEntity(handle int) {
 
-}
-
-func (s *sector) broadcast() {
-	// to all player entities, send data
-	// listen on a channel for data and for each entity launch a goroutine for sending that data
 }
 
 type sectorGrid map[int]map[int]*sector
@@ -146,7 +137,7 @@ func (sg *sectorGrid) adjacentSectorsMesh() {
 	for i, row := range *sg {
 		for j, column := range row {
 			as := adjacentSectors(i, j, *sg)
-			column.AdjacentSectors = as
+			column.adjacentSectors = as
 		}
 	}
 }
@@ -159,7 +150,7 @@ func SaveGridToBMPFiles(grid *sectorGrid, fileName string) error {
 			if err != nil {
 				return err
 			}
-			err = bmp.Encode(out, column.Image)
+			err = bmp.Encode(out, column.image)
 			if err != nil {
 				return err
 			}
