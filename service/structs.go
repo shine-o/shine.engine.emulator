@@ -29,7 +29,7 @@ func generateOpCodeSwitch() {
 		List map[uint16]bool `json:"processedStructs"`
 	}
 	// load processed structs
-	filePath, err := filepath.Abs("defaults/processed-structs.json")
+	filePath, err := filepath.Abs("config/processed-structs.json")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -6,7 +6,16 @@ network:
   interface: "\\Device\\NPF_{3904F81A-F9DE-4578-B4C6-8626CE9B78CE}"
 #  interface: "\\Device\\NPF_{0C0F3035-51CB-4486-B8B1-5D3442D92897}"
   loopback: false
+  # if sniffing for traffic  between backend services, which may not be encrypted
+  ## loopback interface should be set to false and interface should be the local lo0 device
+  serverSideCapture: false
+  specificPorts:
+    useThis: true
+    ports:
+      - 9411
+      - 9511
   portRange:
+    useThis: false
     start: 9000
     end: 9600
   # SnapLen for pcap packet capture
@@ -23,7 +32,7 @@ protocol:
     verbose: false
     client: true
     server: true
-  commands: "defaults/commands.yml"
+  commands: "config/commands.yml"
 
 websocket:
   port: 7070

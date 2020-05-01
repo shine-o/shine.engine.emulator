@@ -7,3 +7,4 @@ capture_no_race.exe
 *.pprof
 streams.log
 *.log
+*.exe
