@@ -9,15 +9,15 @@ import (
 )
 
 // captureCmd represents the capture command
-var captureCmd = &cobra.Command{
-	Use:   "capture",
-	Short: "Start capturing and decoding packets",
+var decodeCmd = &cobra.Command{
+	Use:   "decode",
+	Short: "Decode file with packet data",
 	Run:   service.Capture,
 }
 
 func init() {
-	rootCmd.AddCommand(captureCmd)
-	err := doc.GenMarkdownTree(captureCmd, "docs")
+	rootCmd.AddCommand(decodeCmd)
+	err := doc.GenMarkdownTree(decodeCmd, "docs")
 	if err != nil {
 		log.Fatal(err)
 	}

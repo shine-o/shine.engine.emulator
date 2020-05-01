@@ -2057,9 +2057,9 @@ departments:
         NC_GUILD_ACADEMY_HISTORY_DB_LIST_REQ = 0x91,
         NC_GUILD_ACADEMY_HISTORY_DB_LIST_ACK = 0x92,
 
-#    - hexId: 0x1E
-#      name: NC_SCRIPT
-#      commands:
+    - hexId: 0x1E
+      name: NC_SCRIPT
+      commands:
     - hexId: 0x1F
       name: NC_PRISON
       commands: |-
@@ -2104,12 +2104,12 @@ departments:
         NC_DATA_REPORT_CANCEL_ACK = 0xA,
         NC_DATA_REPORT_GET_REQ = 0xB,
         NC_DATA_REPORT_GET_ACK = 0xC,
-#    - hexId: 0x21
-#      name: NC_EVENT_FRIEND
-#      commands:
-#    - hexId: 0x22
-#      name: NC_EVENT_WORLDCUP
-#      commands:
+    - hexId: 0x21
+      name: NC_EVENT_FRIEND
+      commands:
+    - hexId: 0x22
+      name: NC_EVENT_WORLDCUP
+      commands:
     - hexId: 0x23
       name: NC_MINIHOUSE
       commands: |-
@@ -2770,9 +2770,9 @@ departments:
         NC_GAMBLE_SLOTMACHINE_WINRANKING_REQ = 0xDB,
         NC_GAMBLE_SLOTMACHINE_WINRANKING_ACK = 0xDC,
         NC_GAMBLE_SLOTMACHINE_SOMEONE_GET_JACKPOT_CMD = 0xDD,
-#    - hexId: 0x30
-#      name: NC_MID
-#      commands:
+    - hexId: 0x30
+      name: NC_MID
+      commands:
     - hexId: 0x31
       name: NC_COLLECT
       commands: |-

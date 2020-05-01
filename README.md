@@ -11,11 +11,39 @@
 
 #### Configuration
 
-Adjust the **defaults/.sniffer.yml** file to your needs
+Adjust the **config/.sniffer.yml** file to your needs
 
 Optional:
 
    use the packet sniffer ui: https://github.com/shine-o/shine.engine.packet-sniffer-ui
+
+
+## sniffer capture
+
+Start capturing and decoding packets
+
+### Synopsis
+
+Start capturing and decoding packets
+
+```
+e.g:
+
+$ sniffer capture --config "config/.sniffer.yaml"
+```
+
+### Options
+
+```
+  -h, --help   help for capture
+```
+
+### Options inherited from parent commands
+
+```
+      --config string   config file (default is $HOME/.sniffer.yaml)
+```
+
 
 #### Packet info
 

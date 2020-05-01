@@ -5,6 +5,7 @@ import (
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcapgo"
+	"github.com/spf13/cobra"
 	"os"
 	"path/filepath"
 	"sync"
@@ -36,4 +37,8 @@ func (pf *Flows) persist() {
 		f.Close()
 	}
 	pf.m.Unlock()
+}
+
+func Decode(cmd *cobra.Command, args []string) {
+
 }
