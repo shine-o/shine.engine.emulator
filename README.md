@@ -2,11 +2,10 @@
 # Shine Online Packet Sniffer
 
 > Tool that captures all packets between the client and services and show them in real time.
-> The program also saves the streams between the flows to a pcapng file.
+>
 >
  [![Go Report Card](https://goreportcard.com/badge/github.com/shine-o/shine.engine.packet-sniffer)](https://goreportcard.com/report/github.com/shine-o/shine.engine.packet-sniffer)
  
-#### The road so far: [video showcase](https://www.youtube.com/watch?v=Y08oHJucHRI)
 
 
 #### Requirements
@@ -32,7 +31,7 @@ Start capturing and decoding packets
 ```
 e.g, server side capture:
 
-$ .\sniffer.exe capture --config "config/.sniffer.server.default.yml"
+$ .\sniffer.exe capture --config "config/.server.config.yml"
 ```
 
 ### Options
