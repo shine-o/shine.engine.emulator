@@ -366,9 +366,9 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 						direction: segment.direction,
 					}
 				}
-
 				offset += skipBytes + int(pLen)
 			}
+
 			if shouldQuit {
 				return
 			}
@@ -494,48 +494,52 @@ func capturePackets(a *reassembly.Assembler) {
 		}
 	}
 
-	//var parser * gopacket.DecodingLayerParser
-	//var lb layers.Loopback
-	//var eth layers.Ethernet
-	//var ip4 layers.IPv4
-	//var tcp layers.TCP
-	//var payload gopacket.Payload
-	//
-	//if viper.GetBool("network.loopback") {
-	//	parser = gopacket.NewDecodingLayerParser(layers.LayerTypeLoopback, &lb, &ip4, &tcp, &payload)
-	//} else {
-	//	parser = gopacket.NewDecodingLayerParser(layers.LayerTypeEthernet, &eth, &ip4, &tcp, &payload)
-	//}
-	//
-	//decoded := make([]gopacket.LayerType, 0, 4)
-	//for {
-	//	data, ci, err := handle.ZeroCopyReadPacketData()
-	//
-	//	if err != nil {
-	//		log.Errorf("error getting packet: %v	", err)
-	//		break
-	//	}
-	//	err = parser.DecodeLayers(data, &decoded)
-	//	if err != nil {
-	//		break
-	//	}
-	//	foundNetLayer := false
-	//	var netFlow gopacket.Flow
-	//	for _, typ := range decoded {
-	//		switch typ {
-	//		case layers.LayerTypeIPv4:
-	//			netFlow = ip4.NetworkFlow()
-	//			foundNetLayer = true
-	//		case layers.LayerTypeTCP:
-	//			if foundNetLayer {
-	//				c := Context{
-	//					ci: ci,
-	//				}
-	//				a.AssembleWithContext(netFlow, &tcp, c)
-	//			} else {
-	//				log.Error("could not find IPv4 or IPv6 layer, ignoring")
-	//			}
-	//		}
-	//	}
-	//}
+//
+//	var parser * gopacket.DecodingLayerParser
+//	var lb layers.Loopback
+//	var eth layers.Ethernet
+//	var ip4 layers.IPv4
+//	var tcp layers.TCP
+//	var payload gopacket.Payload
+//
+//	if viper.GetBool("network.loopback") {
+//		parser = gopacket.NewDecodingLayerParser(layers.LayerTypeLoopback, &lb, &ip4, &tcp, &payload)
+//	} else {
+//		parser = gopacket.NewDecodingLayerParser(layers.LayerTypeEthernet, &eth, &ip4, &tcp, &payload)
+//	}
+//
+//	decoded := make([]gopacket.LayerType, 4096, 4096)
+//
+//loop:
+//	for {
+//		data, ci, err := handle.ZeroCopyReadPacketData()
+//
+//		if err != nil {
+//			log.Errorf("error getting packet: %v	", err)
+//			continue
+//		}
+//		err = parser.DecodeLayers(data, &decoded)
+//		if err != nil {
+//			continue
+//		}
+//		foundNetLayer := false
+//		var netFlow gopacket.Flow
+//		for _, typ := range decoded {
+//			switch typ {
+//			case layers.LayerTypeIPv4:
+//				netFlow = ip4.NetworkFlow()
+//				foundNetLayer = true
+//			case layers.LayerTypeTCP:
+//				if foundNetLayer {
+//					c := Context{
+//						ci: ci,
+//					}
+//					a.AssembleWithContext(netFlow, &tcp, c)
+//				} else {
+//					log.Error("could not find IPv4 or IPv6 layer, ignoring")
+//				}
+//				continue loop
+//			}
+//		}
+//	}
 }
