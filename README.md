@@ -13,10 +13,12 @@
 
 Adjust the **config/.sniffer.yml** file to your needs
 
-Optional:
 
-   use the packet sniffer ui: https://github.com/shine-o/shine.engine.packet-sniffer-ui
+## build
 
+ ``` 
+ $ go build -o sniffer.exe
+ ```
 
 ## sniffer capture
 
@@ -27,9 +29,9 @@ Start capturing and decoding packets
 Start capturing and decoding packets
 
 ```
-e.g:
+e.g, server side capture:
 
-$ sniffer capture --config "config/.sniffer.yaml"
+$ sniffer capture --config "config/.sniffer.server.default.yml"
 ```
 
 ### Options
