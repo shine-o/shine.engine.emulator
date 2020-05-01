@@ -9,9 +9,10 @@
 #### The road so far: [video showcase](https://www.youtube.com/watch?v=Y08oHJucHRI)
 
 
-#### Configuration
+#### Requirements
 
-Adjust the **config/.sniffer.yml** file to your needs
+- Install [NMAP](https://nmap.org/download.html)
+- Adjust the **config/.sniffer.yml** file to your needs
 
 
 ## build
@@ -31,7 +32,7 @@ Start capturing and decoding packets
 ```
 e.g, server side capture:
 
-$ sniffer capture --config "config/.sniffer.server.default.yml"
+$ .\sniffer.exe capture --config "config/.sniffer.server.default.yml"
 ```
 
 ### Options
