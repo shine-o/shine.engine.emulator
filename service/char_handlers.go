@@ -15,7 +15,6 @@ func NcMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	// here the player logs in, we take the map hes at and given the coordinates we know which sector
 
 	// we have a function which given a map id and coordinates it returns us the sector channel which can take event data
-
 	// todo: shn files checksum
 	nc := structs.NcMapLoginReq{}
 
@@ -38,25 +37,36 @@ func NcMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		log.Error(err)
 		return
 	}
-
 	// todo: check if these packets should be sent sequentially
+
+	// todo: quest wrapper
 	NcCharClientBaseCmd(ctx, &char) // todo: check if race condition
 	NcCharClientShapeCmd(ctx, char.Appearance)
+
+	// todo: quest wrapper
 	NcCharClientQuestDoingCmd(ctx, &char)
 	NcCharClientQuestDoneCmd(ctx, &char)
 	NcCharClientQuestReadCmd(ctx, &char)
 	NcCharClientQuestRepeatCmd(ctx, &char)
+
+	// todo: skills wrapper
 	NcCharClientPassiveCmd(ctx, &char)
 	NcCharClientSkillCmd(ctx, &char)
+
 	NcCharClientItemCmd(ctx, char.AllEquippedItems(db))
 	NcCharClientItemCmd(ctx, char.InventoryItems(db))
 	NcCharClientItemCmd(ctx, char.MiniHouseItems(db))
 	NcCharClientItemCmd(ctx, char.PremiumActionItems(db))
+
 	NcCharClientCharTitleCmd(ctx, &char)
+
 	NcCharClientGameCmd(ctx)
 	NcCharClientChargedBuffCmd(ctx, &char)
+
 	NcCharClientCoinInfoCmd(ctx, &char)
+
 	NcQuestResetTimeClientCmd(ctx, &char)
+
 	NcMapLoginAck(ctx, &char)
 
 	// also send nearby players, mobs, mounts
@@ -64,57 +74,11 @@ func NcMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	// NC_BRIEFINFO_MOB_CMD
 	// NC_BRIEFINFO_MOVER_CMD
 
-	if zp, ok := np.Extra.(zoneParameters); ok {
-		// take the map the character is in
-
-		if m, ok := zp.rm[int(char.Location.MapID)]; ok {
-
-			entity := &player{
-				baseEntity: baseEntity{
-					handle: m.handles.newHandle(),
-					location: struct {
-						x, y int
-					}{
-						x: char.Location.X,
-						y: char.Location.Y,
-					},
-					events: make(chan event),
-				},
-			}
-
-			m.send[playerAppeared] <- playerAppearedEvent{
-				nc: structs.NcBriefInfoLoginCharacterCmd{
-					Handle: entity.getHandle(),
-					CharID: structs.Name5{
-						Name: char.Name,
-					},
-					Coordinates:     structs.ShineCoordType{},
-					Mode:            0,
-					Class:           char.Appearance.Class,
-					Shape:           char.Appearance.NcRepresentation(),
-					ShapeData:       structs.NcBriefInfoLoginCharacterCmdShapeData{},
-					Polymorph:       0,
-					Emoticon:        structs.StopEmoticonDescript{},
-					CharTitle:       structs.CharTitleBriefInfo{},
-					AbstateBit:      structs.AbstateBit{},
-					MyGuild:         0,
-					Type:            0,
-					IsAcademyMember: 0,
-					IsAutoPick:      0,
-					Level:           char.Attributes.Level,
-					Animation:       [32]byte{},
-					MoverHandle:     0,
-					MoverSlot:       0,
-					KQTeamType:      0,
-					UsingMinipet:    0,
-					Unk:             0,
-				},
-			}
-		} else {
-			return
-		}
-	} else {
-		return
+	//runPlayerAppearedEvent(np, char)
+	var pae playerAppearedEvent
+	err = pae.process(np, char)
+	if err != nil {
+		log.Error(err)
 	}
 }
 

@@ -22,11 +22,11 @@ type zoneMap struct {
 	recv      map[uint32]<-chan event
 }
 
-
 type mapEntities struct {
-	counter   uint16
-	entities  map[uint16]entity
-	mu sync.RWMutex
+	counter uint16
+	players map[uint16]player
+	monsters    map[uint16]monster
+	mu      sync.RWMutex
 }
 
 func (zm *zoneMap) run() {
@@ -36,57 +36,46 @@ func (zm *zoneMap) run() {
 	go zm.entityMovement()
 }
 
-func (zm *zoneMap) entityMovement() {
-	for {
-		select {
-		case e := <-zm.recv[playerAppeared]:
-			// notify all nearby entities about it
-			// players will get packet data
-			// mobs will check if player is in range for attack
-			if e.eventType() != playerAppeared {
-				log.Errorf("unexpected event %v", e.eventType())
-				return
-			}
-			ev := e.(playerAppearedEvent)
-			for _, entity := range zm.handles.entities {
-				p := entity.(player)
-				if p.getHandle() == entity.getHandle() {
-					continue
-				}
-				go NcBriefInfoLoginCharacterCmd(p.conn, &ev.nc)
-			}
-
-		case e := <-zm.recv[playerDisappeared]:
-			log.Info(e)
-		case e := <-zm.recv[playerMoved]:
-			log.Info(e)
-		case e := <-zm.recv[playerStopped]:
-			log.Info(e)
-		case e := <-zm.recv[playerJumped]:
-			log.Info(e)
-		}
-	}
-}
-
-func (e * mapEntities) newHandle() uint16  {
+func (e *mapEntities) newHandle() uint16 {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+
 	e.counter++
-	if _, used := e.entities[e.counter]; used {
+
+	if _, used := e.players[e.counter]; used {
+		return e.newHandle()
+	} else if _, used := e.monsters[e.counter]; used {
 		return e.newHandle()
 	} else {
 		return e.counter
 	}
 }
 
-func (e * mapEntities) addEntity(en entity) {
+func (e *mapEntities) addEntity(en entity) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
-	e.entities[en.getHandle()] = en
+
+	if pen, ok := en.(player); ok {
+		e.players[en.getHandle()] = pen
+	} else if men, ok := en.(monster); ok {
+		e.monsters[en.getHandle()] = men
+	} else {
+		log.Error("unknown entity")
+	}
 }
 
-func (e *mapEntities) removeEntity(handle int) {}
+func (e *mapEntities) removeEntity(en entity) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
 
+	if pen, ok := en.(player); ok {
+		delete(e.players, pen.getHandle())
+	} else if men, ok := en.(monster); ok {
+		delete(e.monsters, men.getHandle())
+	} else {
+		log.Error("unknown entity")
+	}
+}
 
 // load maps
 func loadMaps() []zoneMap {
@@ -136,12 +125,12 @@ func loadMaps() []zoneMap {
 			data:      md,
 			walkableX: walkableX,
 			walkableY: walkableY,
-			handles:   mapEntities{
+			handles: mapEntities{
 				counter:  0,
 				entities: make(map[uint16]entity),
 			},
-			send:      nil,
-			recv:      nil,
+			send: nil,
+			recv: nil,
 		}
 		zoneMaps = append(zoneMaps, zm)
 	}
