@@ -1,43 +1,28 @@
 package service
 
+import (
+	"github.com/shine-o/shine.engine.core/structs"
+)
+
 // all events that can happen inside a sector
 // EntityMoved
 type event interface {
 	// all events are something that either the player triggers or it should be broadcast to nearby players or mobs
-	// in all cases, a network command is needed to notify the players
-	networkCommand() interface{}
+	eventType() uint32
 }
 
-//
-//type entityAppeared struct {
-//	event
-//	entities.Mob
-//}
-//
-//type entityDisappeared struct {
-//	event
-//	entities.Mob
-//}
-//
-//type entityMoved struct {
-//	event
-//	entities.Mob
-//}
-//
-//type entityStopped struct {
-//	event
-//	entities.Mob
-//}
-//
-//type entityJumped struct {
-//	event
-//	entities.Mob
-//}
+type playerAppearedEvent struct {
+	nc structs.NcBriefInfoLoginCharacterCmd
+}
+
+func (pae playerAppearedEvent) eventType() uint32 {
+	return playerAppeared
+}
 
 const (
-	entityAppeared uint32 = iota
-	entityDisappeared
-	entityMoved
-	entityStopped
-	entityJumped
+	playerAppeared uint32 = iota
+	playerDisappeared
+	playerMoved
+	playerStopped
+	playerJumped
 )

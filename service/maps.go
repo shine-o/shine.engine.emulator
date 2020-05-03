@@ -10,50 +10,83 @@ import (
 	"github.com/spf13/viper"
 	bolt "go.etcd.io/bbolt"
 	"math"
+	"sync"
 )
 
 type zoneMap struct {
 	data      world.MapData
 	walkableX *roaring.Bitmap
 	walkableY *roaring.Bitmap
-	entities  map[uint32]entity
-	send    map[uint32]chan <- event
-	recv    map[uint32]<-chan event
+	handles   mapEntities
+	send      map[uint32]chan<- event
+	recv      map[uint32]<-chan event
 }
 
-func (zm *zoneMap) addEntity(handle int) {
 
-}
-
-func (zm *zoneMap) removeEntity(handle int) {
-
+type mapEntities struct {
+	counter   uint16
+	entities  map[uint16]entity
+	mu sync.RWMutex
 }
 
 func (zm *zoneMap) run() {
 	// load NPCs for this map
 	// run logic routines
+	// as many workers as needed can be launched
 	go zm.entityMovement()
 }
 
 func (zm *zoneMap) entityMovement() {
 	for {
 		select {
-		case e := <- zm.recv[entityAppeared]:
-			log.Info(e)
+		case e := <-zm.recv[playerAppeared]:
 			// notify all nearby entities about it
 			// players will get packet data
 			// mobs will check if player is in range for attack
-		case e := <- zm.recv[entityDisappeared]:
+			if e.eventType() != playerAppeared {
+				log.Errorf("unexpected event %v", e.eventType())
+				return
+			}
+			ev := e.(playerAppearedEvent)
+			for _, entity := range zm.handles.entities {
+				p := entity.(player)
+				if p.getHandle() == entity.getHandle() {
+					continue
+				}
+				go NcBriefInfoLoginCharacterCmd(p.conn, &ev.nc)
+			}
+
+		case e := <-zm.recv[playerDisappeared]:
 			log.Info(e)
-		case e := <- zm.recv[entityMoved]:
+		case e := <-zm.recv[playerMoved]:
 			log.Info(e)
-		case e := <- zm.recv[entityStopped]:
+		case e := <-zm.recv[playerStopped]:
 			log.Info(e)
-		case e := <- zm.recv[entityJumped]:
+		case e := <-zm.recv[playerJumped]:
 			log.Info(e)
 		}
 	}
 }
+
+func (e * mapEntities) newHandle() uint16  {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.counter++
+	if _, used := e.entities[e.counter]; used {
+		return e.newHandle()
+	} else {
+		return e.counter
+	}
+}
+
+func (e * mapEntities) addEntity(en entity) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.entities[en.getHandle()] = en
+}
+
+func (e *mapEntities) removeEntity(handle int) {}
+
 
 // load maps
 func loadMaps() []zoneMap {
@@ -103,7 +136,12 @@ func loadMaps() []zoneMap {
 			data:      md,
 			walkableX: walkableX,
 			walkableY: walkableY,
-			entities:  make(map[uint32]entity),
+			handles:   mapEntities{
+				counter:  0,
+				entities: make(map[uint16]entity),
+			},
+			send:      nil,
+			recv:      nil,
 		}
 		zoneMaps = append(zoneMaps, zm)
 	}
