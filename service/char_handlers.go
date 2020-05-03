@@ -8,16 +8,24 @@ import (
 )
 
 //NC_MAP_LOGIN_REQ
-func NcMapLoginReq(ctx context.Context, pc *networking.Command) {
+func NcMapLoginReq(ctx context.Context, np *networking.Parameters) {
+
+	// now how die fukken we know which sector and which handle
+
+	// here the player logs in, we take the map hes at and given the coordinates we know which sector
+
+	// we have a function which given a map id and coordinates it returns us the sector channel which can take event data
+
 	// todo: shn files checksum
 	nc := structs.NcMapLoginReq{}
 
-	err := structs.Unpack(pc.Base.Data, &nc)
+	err := structs.Unpack(np.Command.Base.Data, &nc)
 	if err != nil {
 		log.Error(err)
 		return
 	}
-	charName := nc.CharData.CharID.String()
+
+	charName := nc.CharData.CharID.Name
 	var char character.Character
 	err = db.Model(&char).
 		Relation("Appearance").
@@ -50,6 +58,64 @@ func NcMapLoginReq(ctx context.Context, pc *networking.Command) {
 	NcCharClientCoinInfoCmd(ctx, &char)
 	NcQuestResetTimeClientCmd(ctx, &char)
 	NcMapLoginAck(ctx, &char)
+
+	// also send nearby players, mobs, mounts
+	// NC_BRIEFINFO_CHARACTER_CMD
+	// NC_BRIEFINFO_MOB_CMD
+	// NC_BRIEFINFO_MOVER_CMD
+
+	if zp, ok := np.Extra.(zoneParameters); ok {
+		// take the map the character is in
+
+		if m, ok := zp.rm[int(char.Location.MapID)]; ok {
+
+			entity := &player{
+				baseEntity: baseEntity{
+					handle: m.handles.newHandle(),
+					location: struct {
+						x, y int
+					}{
+						x: char.Location.X,
+						y: char.Location.Y,
+					},
+					events: make(chan event),
+				},
+			}
+
+			m.send[playerAppeared] <- playerAppearedEvent{
+				nc: structs.NcBriefInfoLoginCharacterCmd{
+					Handle: entity.getHandle(),
+					CharID: structs.Name5{
+						Name: char.Name,
+					},
+					Coordinates:     structs.ShineCoordType{},
+					Mode:            0,
+					Class:           char.Appearance.Class,
+					Shape:           char.Appearance.NcRepresentation(),
+					ShapeData:       structs.NcBriefInfoLoginCharacterCmdShapeData{},
+					Polymorph:       0,
+					Emoticon:        structs.StopEmoticonDescript{},
+					CharTitle:       structs.CharTitleBriefInfo{},
+					AbstateBit:      structs.AbstateBit{},
+					MyGuild:         0,
+					Type:            0,
+					IsAcademyMember: 0,
+					IsAutoPick:      0,
+					Level:           char.Attributes.Level,
+					Animation:       [32]byte{},
+					MoverHandle:     0,
+					MoverSlot:       0,
+					KQTeamType:      0,
+					UsingMinipet:    0,
+					Unk:             0,
+				},
+			}
+		} else {
+			return
+		}
+	} else {
+		return
+	}
 }
 
 //NC_CHAR_CLIENT_BASE_CMD
@@ -59,8 +125,10 @@ func NcCharClientBaseCmd(ctx context.Context, char *character.Character) {
 			OperationCode: 4152,
 		},
 		NcStruct: &structs.NcCharClientBaseCmd{
-			ChrRegNum:  uint32(char.ID),
-			CharName:   structs.NewName5(char.Name),
+			ChrRegNum: uint32(char.ID),
+			CharName: structs.Name5{
+				Name: char.Name,
+			},
 			Slot:       char.Slot,
 			Level:      char.Attributes.Level,
 			Experience: char.Attributes.Experience,
@@ -75,11 +143,13 @@ func NcCharClientBaseCmd(ctx context.Context, char *character.Character) {
 			Fame:       char.Attributes.Fame,
 			Cen:        54983635,
 			LoginInfo: structs.NcCharBaseCmdLoginLocation{
-				CurrentMap: structs.NewName3(char.Location.MapName),
+				CurrentMap: structs.Name3{
+					Name: char.Location.MapName,
+				},
 				CurrentCoord: structs.ShineCoordType{
 					XY: structs.ShineXYType{
-						X: char.Location.X,
-						Y: char.Location.Y,
+						X: uint32(char.Location.X),
+						Y: uint32(char.Location.Y),
 					},
 					Direction: char.Location.D,
 				},
@@ -106,11 +176,12 @@ func NcCharClientBaseCmd(ctx context.Context, char *character.Character) {
 
 //NC_CHAR_CLIENT_SHAPE_CMD
 func NcCharClientShapeCmd(ctx context.Context, ca *character.Appearance) {
+	shapeInfo := ca.NcRepresentation()
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4153,
 		},
-		NcStruct: ca.NcRepresentation(),
+		NcStruct: &shapeInfo,
 	}
 	pc.Send(ctx)
 }
@@ -241,18 +312,13 @@ func NcMapLoginAck(ctx context.Context, char *character.Character) {
 				},
 			},
 			LoginCoord: structs.ShineXYType{
-				X: char.Location.X,
-				Y: char.Location.Y,
+				X: uint32(char.Location.X),
+				Y: uint32(char.Location.Y),
 			},
 		},
 	}
 	pc.Send(ctx)
-	// Login coordinates
 }
-
-//NC_MAP_LOGINCOMPLETE_CMD
-//6147
-func NcMapLoginCompleteCmd(ctx context.Context, pc *networking.Command) {}
 
 //NC_CHAR_CLIENT_QUEST_READ_CMD
 //4302
@@ -441,3 +507,8 @@ func NcQuestResetTimeClientCmd(ctx context.Context, char *character.Character) {
 	}
 	pc.Send(ctx)
 }
+
+//NC_MAP_LOGINCOMPLETE_CMD
+//6147
+func NcMapLoginCompleteCmd(ctx context.Context, pc *networking.Command) {}
+

@@ -3,11 +3,9 @@ package service
 import (
 	"context"
 	"encoding/hex"
-	"errors"
 	"github.com/go-pg/pg/v9"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.core/database"
-	zm "github.com/shine-o/shine.engine.core/grpc/zone-master"
 	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -25,6 +23,10 @@ func init() {
 	log = logger.Init("zone master logger", true, false, ioutil.Discard)
 }
 
+type zoneParameters struct {
+	rm runningMaps
+}
+
 func Start(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 
@@ -34,11 +36,8 @@ func Start(cmd *cobra.Command, args []string) {
 
 	log.Infof("starting the service on port: %v", zonePort)
 
-	// register against the zone master
-	err := registerZone()
-	if err != nil {
-		log.Fatal(err)
-	}
+	var rm runningMaps
+	rm = loadZone()
 
 	db = database.Connection(ctx, database.ConnectionParams{
 		User:     viper.GetString("world_database.db_user"),
@@ -49,15 +48,13 @@ func Start(cmd *cobra.Command, args []string) {
 		Schema:   viper.GetString("world_database.schema"),
 	})
 
-	s := &networking.Settings{}
-
+	s := networking.Settings{}
 	if xk, err := hex.DecodeString(viper.GetString("crypt.xorKey")); err != nil {
 		log.Error(err)
 		os.Exit(1)
 	} else {
 		s.XorKey = xk
 	}
-
 	s.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
 
 	if path, err := filepath.Abs(viper.GetString("protocol.commands")); err != nil {
@@ -66,45 +63,21 @@ func Start(cmd *cobra.Command, args []string) {
 		s.CommandsFilePath = path
 	}
 
-	ch := &networking.CommandHandlers{
-		6145: NcMapLoginReq,
+	ss := networking.ShineService{
+		Settings:        s,
+		ShineHandler:    networking.ShineHandler{
+			2055: NcMiscSeedAck,
+			6145: NcMapLoginReq,
+		},
+		SessionFactory:  sessionFactory{},
+		// here I should add maps loaded in this zone
+		// that way when a command comes in, i can send events to the map the player is situated in
+		// the map logic routines will handle the received event
+		ExtraParameters: zoneParameters{
+			rm: rm,
+		},
 	}
-
-	hw := networking.NewHandlerWarden(ch)
-	ss := networking.NewShineService(s, hw)
-
-	zsf := &sessionFactory{}
-	ss.UseSessionFactory(zsf)
 
 	ss.Listen(ctx, zonePort)
 }
 
-func registerZone() error {
-	conn, err := newRPCClient("zone_master")
-
-	if err != nil {
-		return err
-	}
-	c := zm.NewMasterClient(conn)
-	rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
-
-	zr, err := c.RegisterZone(rpcCtx, &zm.ZoneDetails{
-		Maps: viper.GetStringSlice("maps"),
-		Conn: &zm.ConnectionInfo{
-			IP:   viper.GetString("serve.external_ip"),
-			Port: viper.GetInt32("serve.port"),
-		},
-	})
-
-	if err != nil {
-		return err
-	}
-	if !zr.Success {
-		return errors.New("failed to register against the zone master")
-	}
-
-	viper.SetDefault("world.ip", zr.World.IP)
-	viper.SetDefault("world.port", zr.World.Port)
-
-	return nil
-}
