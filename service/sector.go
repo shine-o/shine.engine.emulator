@@ -2,9 +2,7 @@ package service
 
 import (
 	"fmt"
-	"github.com/RoaringBitmap/roaring"
 	"github.com/shine-o/shine.engine.core/game-data/blocks"
-	"github.com/shine-o/shine.engine.core/game/entities"
 	"golang.org/x/image/bmp"
 	"image"
 	"os"

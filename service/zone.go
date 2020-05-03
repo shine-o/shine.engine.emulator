@@ -18,11 +18,11 @@ func loadZone() map[int]zoneMap {
 
 		events := make(map[uint32]chan event)
 
-		events[playerAppeared] = make(chan event)
-		events[playerDisappeared] = make(chan event)
-		events[playerJumped] = make(chan event)
-		events[playerMoved] = make(chan event)
-		events[playerStopped] = make(chan event)
+		events[playerAppeared] = make(chan event, 512)
+		events[playerDisappeared] = make(chan event, 512)
+		events[playerJumped] = make(chan event, 512)
+		events[playerMoved] = make(chan event, 4096)
+		events[playerStopped] = make(chan event, 512)
 
 		m.recv = make(map[uint32]<-chan event)
 		m.send = make(map[uint32]chan<- event)
