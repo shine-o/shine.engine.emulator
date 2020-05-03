@@ -7,7 +7,36 @@ import (
 	"github.com/spf13/viper"
 )
 
-func registerZone() error {
+type runningMaps map[uint32]zoneMap
+
+func loadZone() {
+	var registerMaps []int32
+	zoneMaps := loadMaps()
+	for _, m := range zoneMaps {
+		registerMaps = append(registerMaps, int32(m.data.ID))
+
+		events := make(map[uint32]chan<- event)
+
+		events[entityAppeared] = make(chan event)
+		events[entityDisappeared] = make(chan event)
+		events[entityJumped] = make(chan event)
+		events[entityMoved] = make(chan event)
+		events[entityStopped] = make(chan event)
+
+		go m.run()
+	}
+
+	err := registerZone(registerMaps)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func registerZone(mapIDs []int32) error {
+	zoneIP := viper.GetString("serve.external_ip")
+	zonePort := viper.GetInt32("serve.port")
+
 	conn, err := newRPCClient("zone_master")
 
 	if err != nil {
@@ -17,10 +46,10 @@ func registerZone() error {
 	rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
 
 	zr, err := c.RegisterZone(rpcCtx, &zm.ZoneDetails{
-		Maps: viper.GetStringSlice("maps"),
+		Maps: mapIDs,
 		Conn: &zm.ConnectionInfo{
-			IP:   viper.GetString("serve.external_ip"),
-			Port: viper.GetInt32("serve.port"),
+			IP:   zoneIP,
+			Port: zonePort,
 		},
 	})
 
@@ -31,8 +60,5 @@ func registerZone() error {
 	if !zr.Success {
 		return errors.New("failed to register against the zone master")
 	}
-
-	viper.SetDefault("world.ip", zr.World.IP)
-	viper.SetDefault("world.port", zr.World.Port)
 	return nil
 }

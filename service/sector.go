@@ -5,7 +5,6 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/shine-o/shine.engine.core/game-data/blocks"
 	"github.com/shine-o/shine.engine.core/game/entities"
-	"github.com/shine-o/shine.engine.core/game/maps"
 	"golang.org/x/image/bmp"
 	"image"
 	"os"
@@ -16,27 +15,18 @@ type sector struct {
 	column          int
 	image           image.Image
 	adjacentSectors []*sector
-	walkableX       *roaring.Bitmap
-	walkableY       *roaring.Bitmap
+
 	// broadcast data to all entities within the sector, usually data from an adjacent sector
-	inbox <-chan event
-	// broadcast data to all entities in adjacent sectors
-	outbox   chan<- event
-	entities map[int]chan entities.Mob
+
 }
 
+// Sectors are overkill.
 func (s *sector) run() {
 	// launch logic routines (movement, combat, appearance)
 	// each nc handler takes the sector the player is at from
 }
 
-func (s *sector) registerEntity(handle int) {
 
-}
-
-func (s *sector) unregisterEntity(handle int) {
-
-}
 
 type sectorGrid map[int]map[int]*sector
 
@@ -63,7 +53,7 @@ func createSectorGrid(s *blocks.SHBD, sectorX, sectorY int, img *image.NRGBA) (s
 
 			ss := blocks.ImageToSHBD(subImg)
 
-			walkableX, walkableY, err := maps.WalkingPositions(&ss)
+			walkableX, walkableY, err := walkingPositions(&ss)
 
 			if err != nil {
 				return grid, err
@@ -132,7 +122,7 @@ func adjacentSectors(row, column int, grid map[int]map[int]*sector) []*sector {
 	return adjacentSectors
 }
 
-// AdjacentSectorsMesh for each sector append adjacent sectors
+// for each sector append adjacent sectors
 func (sg *sectorGrid) adjacentSectorsMesh() {
 	for i, row := range *sg {
 		for j, column := range row {

@@ -32,11 +32,7 @@ func Start(cmd *cobra.Command, args []string) {
 
 	log.Infof("starting the service on port: %v", zonePort)
 
-	// register against the zone master
-	err := registerZone()
-	if err != nil {
-		log.Fatal(err)
-	}
+	loadZone()
 
 	db = database.Connection(ctx, database.ConnectionParams{
 		User:     viper.GetString("world_database.db_user"),
@@ -73,6 +69,7 @@ func Start(cmd *cobra.Command, args []string) {
 		// that way when a command comes in, i can use the sector the player is situated in
 		ExtraParameters: nil,
 	}
+
 	ss.Listen(ctx, zonePort)
 }
 

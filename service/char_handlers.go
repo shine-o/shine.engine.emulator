@@ -9,6 +9,15 @@ import (
 
 //NC_MAP_LOGIN_REQ
 func NcMapLoginReq(ctx context.Context, np * networking.Parameters) {
+
+	// now how die fukken we know which sector and which handle
+
+	// here the player logs in, we take the map hes at and given the coordinates we know which sector
+
+	// we have a function which given a map id and coordinates it returns us the sector channel which can take event data
+
+
+
 	// todo: shn files checksum
 	nc := structs.NcMapLoginReq{}
 
