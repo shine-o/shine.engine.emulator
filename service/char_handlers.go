@@ -16,8 +16,6 @@ func NcMapLoginReq(ctx context.Context, np * networking.Parameters) {
 
 	// we have a function which given a map id and coordinates it returns us the sector channel which can take event data
 
-
-
 	// todo: shn files checksum
 	nc := structs.NcMapLoginReq{}
 

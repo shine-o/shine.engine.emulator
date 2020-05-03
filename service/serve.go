@@ -23,6 +23,10 @@ func init() {
 	log = logger.Init("zone master logger", true, false, ioutil.Discard)
 }
 
+type zoneParameters struct {
+	rm runningMaps
+}
+
 func Start(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 
@@ -32,7 +36,8 @@ func Start(cmd *cobra.Command, args []string) {
 
 	log.Infof("starting the service on port: %v", zonePort)
 
-	loadZone()
+	var rm runningMaps
+	rm = loadZone()
 
 	db = database.Connection(ctx, database.ConnectionParams{
 		User:     viper.GetString("world_database.db_user"),
@@ -66,8 +71,11 @@ func Start(cmd *cobra.Command, args []string) {
 		},
 		SessionFactory:  sessionFactory{},
 		// here I should add maps loaded in this zone
-		// that way when a command comes in, i can use the sector the player is situated in
-		ExtraParameters: nil,
+		// that way when a command comes in, i can send events to the map the player is situated in
+		// the map logic routines will handle the received event
+		ExtraParameters: zoneParameters{
+			rm: rm,
+		},
 	}
 
 	ss.Listen(ctx, zonePort)

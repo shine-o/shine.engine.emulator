@@ -6,7 +6,6 @@ import (
 	"github.com/shine-o/shine.engine.core/game-data/blocks"
 	"github.com/shine-o/shine.engine.core/game-data/utils"
 	"github.com/shine-o/shine.engine.core/game-data/world"
-	"github.com/shine-o/shine.engine.core/game/entities"
 	"github.com/shine-o/shine.engine.core/structs"
 	"github.com/spf13/viper"
 	bolt "go.etcd.io/bbolt"
@@ -17,11 +16,10 @@ type zoneMap struct {
 	data      world.MapData
 	walkableX *roaring.Bitmap
 	walkableY *roaring.Bitmap
-	entities  map[uint32]entities.Mob
-	inbox     map[uint32]<-chan event
+	entities  map[uint32]entity
+	send    map[uint32]chan <- event
+	recv    map[uint32]<-chan event
 }
-
-
 
 func (zm *zoneMap) addEntity(handle int) {
 
@@ -34,20 +32,24 @@ func (zm *zoneMap) removeEntity(handle int) {
 func (zm *zoneMap) run() {
 	// load NPCs for this map
 	// run logic routines
+	go zm.entityMovement()
 }
 
 func (zm *zoneMap) entityMovement() {
 	for {
 		select {
-		case e := <- zm.inbox[entityAppeared]:
+		case e := <- zm.recv[entityAppeared]:
 			log.Info(e)
-		case e := <- zm.inbox[entityDisappeared]:
+			// notify all nearby entities about it
+			// players will get packet data
+			// mobs will check if player is in range for attack
+		case e := <- zm.recv[entityDisappeared]:
 			log.Info(e)
-		case e := <- zm.inbox[entityMoved]:
+		case e := <- zm.recv[entityMoved]:
 			log.Info(e)
-		case e := <- zm.inbox[entityStopped]:
+		case e := <- zm.recv[entityStopped]:
 			log.Info(e)
-		case e := <- zm.inbox[entityJumped]:
+		case e := <- zm.recv[entityJumped]:
 			log.Info(e)
 		}
 	}
@@ -101,7 +103,7 @@ func loadMaps() []zoneMap {
 			data:      md,
 			walkableX: walkableX,
 			walkableY: walkableY,
-			entities:  make(map[uint32]entities.Mob),
+			entities:  make(map[uint32]entity),
 		}
 		zoneMaps = append(zoneMaps, zm)
 	}
