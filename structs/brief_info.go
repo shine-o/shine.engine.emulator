@@ -183,7 +183,7 @@ type NcBriefInfoMoverCmd struct {
 //  char nKQTeamType;
 //  char IsUseItemMinimon;
 //};
-	type NcBriefInfoLoginCharacterCmd struct {
+type NcBriefInfoLoginCharacterCmd struct {
 	Handle          uint16
 	CharID          Name5
 	Coordinates     ShineCoordType

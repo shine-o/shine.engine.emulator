@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 )
 
+// check if path is correct and return absolute path
 func ValidPath(path string) (string, error) {
 	var absPath string
 	absPath, err := filepath.Abs(path)
