@@ -6,12 +6,23 @@ import (
 )
 
 // NC_BRIEFINFO_LOGINCHARACTER_CMD
-func NcBriefInfoLoginCharacterCmd(conn playerConnection, nc * structs.NcBriefInfoLoginCharacterCmd) {
+func ncBriefInfoLoginCharacterCmd(p *player, nc *structs.NcBriefInfoLoginCharacterCmd) {
 	pc := networking.Command{
-		Base:     networking.CommandBase{
+		Base: networking.CommandBase{
 			OperationCode: 7174,
 		},
 		NcStruct: nc,
 	}
-	pc.SendDirectly(conn.data)
+	pc.SendDirectly(p.conn.data)
+}
+
+// NC_BRIEFINFO_CHARACTER_CMD
+func ncBriefInfoCharacterCmd(p *player, nc *structs.NcBriefInfoCharacterCmd) {
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 7175,
+		},
+		NcStruct: nc,
+	}
+	pc.SendDirectly(p.conn.data)
 }

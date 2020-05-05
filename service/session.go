@@ -13,10 +13,10 @@ var redisClient *redis.Client
 type sessionFactory struct{}
 
 type session struct {
-	id string
-	characterID uint64
+	id            string
+	characterID   uint64
 	characterName string
-	sector * sector
+	sector        *sector
 }
 
 func (s sessionFactory) New() networking.Session {

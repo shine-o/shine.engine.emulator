@@ -23,9 +23,7 @@ func init() {
 	log = logger.Init("zone master logger", true, false, ioutil.Discard)
 }
 
-type zoneParameters struct {
-	rm runningMaps
-}
+var rm runningMaps
 
 func Start(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
@@ -36,7 +34,6 @@ func Start(cmd *cobra.Command, args []string) {
 
 	log.Infof("starting the service on port: %v", zonePort)
 
-	var rm runningMaps
 	rm = loadZone()
 
 	db = database.Connection(ctx, database.ConnectionParams{
@@ -64,20 +61,17 @@ func Start(cmd *cobra.Command, args []string) {
 	}
 
 	ss := networking.ShineService{
-		Settings:        s,
-		ShineHandler:    networking.ShineHandler{
-			2055: NcMiscSeedAck,
-			6145: NcMapLoginReq,
+		Settings: s,
+		ShineHandler: networking.ShineHandler{
+			2055: ncMiscSeedAck,
+			6145: ncMapLoginReq,
+			4209: ncCharLogoutReadyCmd,
 		},
-		SessionFactory:  sessionFactory{},
+		SessionFactory: sessionFactory{},
 		// here I should add maps loaded in this zone
 		// that way when a command comes in, i can send events to the map the player is situated in
 		// the map logic routines will handle the received event
-		ExtraParameters: zoneParameters{
-			rm: rm,
-		},
 	}
 
 	ss.Listen(ctx, zonePort)
 }
-

@@ -2,6 +2,7 @@ package service
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/RoaringBitmap/roaring"
 	"github.com/shine-o/shine.engine.core/game-data/blocks"
 	"github.com/shine-o/shine.engine.core/game-data/utils"
@@ -23,17 +24,18 @@ type zoneMap struct {
 }
 
 type mapEntities struct {
-	counter uint16
-	players map[uint16]player
-	monsters    map[uint16]monster
-	mu      sync.RWMutex
+	counter  uint16
+	players  map[uint16]*player
+	monsters map[uint16]*monster
+	mu       sync.RWMutex
 }
 
 func (zm *zoneMap) run() {
 	// load NPCs for this map
 	// run logic routines
 	// as many workers as needed can be launched
-	go zm.entityMovement()
+	go zm.playerActivity()
+	go zm.playerActivity()
 }
 
 func (e *mapEntities) newHandle() uint16 {
@@ -55,9 +57,9 @@ func (e *mapEntities) addEntity(en entity) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	if pen, ok := en.(player); ok {
+	if pen, ok := en.(*player); ok {
 		e.players[en.getHandle()] = pen
-	} else if men, ok := en.(monster); ok {
+	} else if men, ok := en.(*monster); ok {
 		e.monsters[en.getHandle()] = men
 	} else {
 		log.Error("unknown entity")
@@ -105,7 +107,7 @@ func loadMaps() []zoneMap {
 
 		err = db.View(func(tx *bolt.Tx) error {
 			b := tx.Bucket([]byte("maps"))
-			data := b.Get([]byte(string(id)))
+			data := b.Get([]byte(fmt.Sprintf("%v", id)))
 			err = structs.Unpack(data, &md)
 			if err != nil {
 				return err
@@ -127,7 +129,8 @@ func loadMaps() []zoneMap {
 			walkableY: walkableY,
 			handles: mapEntities{
 				counter:  0,
-				entities: make(map[uint16]entity),
+				players:  make(map[uint16]*player),
+				monsters: make(map[uint16]*monster),
 			},
 			send: nil,
 			recv: nil,
