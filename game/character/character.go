@@ -128,6 +128,7 @@ type Location struct {
 	ID          uint64
 	CharacterID uint64 //
 	Character   *Character
+	MapID       uint32 `pg:",notnull"`
 	MapName     string `pg:",notnull"`
 	X           uint32 `pg:",notnull"`
 	Y           uint32 `pg:",notnull"`
@@ -176,8 +177,9 @@ type Items struct {
 }
 
 const (
-	startLevel = 1
-	startMap   = "Rou"
+	startLevel 	 = 1
+	startMapID   = 1
+	startMapName   = "Rou"
 )
 
 // ErrInvalidSlot happens if the client tries to bypass client side verification
@@ -217,7 +219,7 @@ func Validate(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) error {
 		return ErrInvalidSlot
 	}
 
-	name := strings.TrimRight(string(req.Name.Name[:]), "\x00")
+	name := req.Name.Name
 
 	var charName string
 	err := db.Model((*Character)(nil)).Column("name").Where("name = ?", name).Select(&charName)
@@ -238,6 +240,9 @@ func Validate(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) error {
 		return ErrInvalidName
 	}
 
+
+	// todo: missing validation: default hair, color, face values
+	// todo: missing validation: default starter class values ( mage, cleric, archer, fighter)
 	isMale := (req.Shape.BF >> 7) & 1
 	class := (req.Shape.BF >> 2) & 31
 
@@ -321,6 +326,18 @@ func New(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) (structs.Avata
 		}
 	}
 	return char.NcRepresentation(), newTx.Commit()
+}
+
+func Get(db *pg.DB, characterID uint64) (Character, error) {
+	var c Character
+	c.ID = characterID
+	err := db.Model(&c).
+		WherePK().
+		Relation("Appearance").
+		Relation("Attributes").
+		Relation("Location").
+		Select()
+	return c, err
 }
 
 // Delete character for User with userID
@@ -430,9 +447,11 @@ func (c *Character) initialAttributes() *Character {
 }
 
 func (c *Character) initialLocation() *Character {
+	// loadDB
 	c.Location = &Location{
 		CharacterID: c.ID,
-		MapName:     startMap,
+		MapID:       startMapID,
+		MapName:     startMapName,
 		X:           5323,
 		Y:           4501,
 		D:           90,

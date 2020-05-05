@@ -15,6 +15,7 @@ type NPC interface {
 
 type Monster interface {
 	Mob
+	Inbox()
 }
 
 type BasicActions interface {

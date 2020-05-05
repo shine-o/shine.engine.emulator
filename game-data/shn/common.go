@@ -56,17 +56,6 @@ package shn
 //};
 
 
-//enum CDataReader::DATA_MODE
-//{
-//  DATA_MODE_NORMAL = 0x0,
-//  DATA_MODE_ENCRYPTION = 0x1,
-//};
-type ShineDataMode uint32
-
-const (
-	DataModeNormal     = 0
-	DataModeEncryption = 1
-)
 
 //enum CDataReader::TYPE_LIST
 //{
@@ -136,6 +125,18 @@ const (
 	TypeListTwoInx
 )
 
+//enum CDataReader::DATA_MODE
+//{
+//  DATA_MODE_NORMAL = 0x0,
+//  DATA_MODE_ENCRYPTION = 0x1,
+//};
+type ShineDataMode uint32
+
+const (
+	DataModeNormal     = 0
+	DataModeEncryption = 1
+)
+
 //struct CDataReader::HEAD
 //{
 //  unsigned int nVersionKey;
@@ -155,6 +156,7 @@ type ShineRawFile struct {
 	Reserved   uint32
 	DataMode   ShineDataMode
 	FileSize   int32
+	// column, row data
 	Data []byte `struct-while:"!_eof"`
 }
 
