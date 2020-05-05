@@ -43,10 +43,6 @@ func (s *server) RegisterZone(ctx context.Context, zd *zm.ZoneDetails) (*zm.Zone
 	return &zm.ZoneRegistered{
 		Success: true,
 		ZoneID:  "",
-		World: &zm.World{
-			IP:   viper.GetString("world.ip"),
-			Port: viper.GetInt32("world.port"),
-		},
 	}, nil
 }
 
@@ -63,9 +59,9 @@ func (s *server) WhereIsMap(ctx context.Context, zd *zm.MapQuery) (*zm.Connectio
 		return &zm.ConnectionInfo{}, fmt.Errorf("failed to unmarshal data from redis: %v", err)
 	}
 
-	ci, ok := rm[zd.Name]
+	ci, ok := rm[zd.ID]
 	if !ok {
-		return &zm.ConnectionInfo{}, fmt.Errorf("no ConnectionInfofor map %v: %v",zd.Name, err)
+		return &zm.ConnectionInfo{}, fmt.Errorf("no ConnectionInfofor map %v: %v",zd.ID, err)
 	}
 
 	return &zm.ConnectionInfo{

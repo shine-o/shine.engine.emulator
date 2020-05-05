@@ -5,4 +5,4 @@ type ZoneInfo struct {
 	Port int32
 }
 
-type registeredMaps map[string]ZoneInfo
+type registeredMaps map[int32]ZoneInfo
