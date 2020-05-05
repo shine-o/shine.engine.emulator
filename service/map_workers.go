@@ -1,6 +1,6 @@
 package service
 
-func (zm *zoneMap) playerMovement() {
+func (zm *zoneMap) playerActivity() {
 	for {
 		select {
 		case e := <-zm.recv[playerAppeared]:
@@ -11,13 +11,12 @@ func (zm *zoneMap) playerMovement() {
 				log.Errorf("unexpected event %v", e.eventType())
 				return
 			}
-			ev := e.(playerAppearedEvent)
-			for _, p := range zm.handles.players {
-				if p.getHandle() == p.getHandle() {
-					return
-				}
-				go NcBriefInfoLoginCharacterCmd(p.conn, &ev.nc)
-			}
+			ev := e.(*playerAppearedEvent)
+			zm.handles.mu.Lock()
+			zm.handles.players[ev.player.handle] = ev.player
+			zm.handles.mu.Unlock()
+			go newPlayer(zm, ev)
+			go nearbyPlayers(ev.player, zm.handles.players)
 
 		case e := <-zm.recv[playerDisappeared]:
 			log.Info(e)

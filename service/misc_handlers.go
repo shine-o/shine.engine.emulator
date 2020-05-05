@@ -7,9 +7,9 @@ import (
 	"github.com/spf13/viper"
 )
 
-func NcMiscSeedAck(ctx context.Context, np *networking.Parameters) {
+func ncMiscSeedAck(ctx context.Context, np *networking.Parameters) {
 	select {
-	case <- ctx.Done():
+	case <-ctx.Done():
 		return
 	default:
 

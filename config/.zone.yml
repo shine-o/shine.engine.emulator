@@ -24,7 +24,7 @@ protocol:
 
 game_data:
   # if changes were made to the files, load them again
-  reload: true
+  reload: false
   database: 'config/game-data.db'
 
 shine_folder: 'C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files'

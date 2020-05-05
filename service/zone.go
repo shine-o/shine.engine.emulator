@@ -7,34 +7,33 @@ import (
 	"github.com/spf13/viper"
 )
 
-type runningMaps map[int]zoneMap
+type runningMaps map[int]*zoneMap
 
-func loadZone() map[int]zoneMap {
+func loadZone() map[int]*zoneMap {
 	var registerMaps []int32
 	rm := make(runningMaps)
 	zoneMaps := loadMaps()
-	for _, m := range zoneMaps {
+	for i, m := range zoneMaps {
 		registerMaps = append(registerMaps, int32(m.data.ID))
 
 		events := make(map[uint32]chan event)
 
-		events[playerAppeared] = make(chan event, 512)
-		events[playerDisappeared] = make(chan event, 512)
-		events[playerJumped] = make(chan event, 512)
-		events[playerMoved] = make(chan event, 4096)
-		events[playerStopped] = make(chan event, 512)
+		events[playerAppeared] = make(chan event, 5)
+		events[playerDisappeared] = make(chan event, 5)
+		events[playerJumped] = make(chan event, 5)
+		events[playerMoved] = make(chan event, 5)
+		events[playerStopped] = make(chan event, 5)
 
-		m.recv = make(map[uint32]<-chan event)
-		m.send = make(map[uint32]chan<- event)
+		zoneMaps[i].recv = make(map[uint32]<-chan event)
+		zoneMaps[i].send = make(map[uint32]chan<- event)
 
 		for k, v := range events {
-			m.recv[k] = v
-			m.send[k] = v
+			zoneMaps[i].recv[k] = v
+			zoneMaps[i].send[k] = v
 		}
 
-		go m.run()
-
-		rm[m.data.ID] = m
+		go zoneMaps[i].run()
+		rm[m.data.ID] = &zoneMaps[i]
 	}
 
 	err := registerZone(registerMaps)

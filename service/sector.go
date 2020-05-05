@@ -24,8 +24,6 @@ func (s *sector) run() {
 	// each nc handler takes the sector the player is at from
 }
 
-
-
 type sectorGrid map[int]map[int]*sector
 
 func createSectorGrid(s *blocks.SHBD, sectorX, sectorY int, img *image.NRGBA) (sectorGrid, error) {
@@ -63,11 +61,9 @@ func createSectorGrid(s *blocks.SHBD, sectorX, sectorY int, img *image.NRGBA) (s
 			}
 
 			grid[i][j] = &sector{
-				row:       i,
-				column:    j,
-				image:     subImg,
-				walkableX: walkableX,
-				walkableY: walkableY,
+				row:    i,
+				column: j,
+				image:  subImg,
 			}
 		}
 	}

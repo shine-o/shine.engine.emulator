@@ -4,32 +4,40 @@ import "fmt"
 
 type entity interface {
 	getHandle() uint16
-	getLocation() (int, int)
+	getLocation() (uint32, uint32)
 	inbox() chan<- event
+	poke() chan<- tick
 }
 
 type basicActions interface {
 	move(x, y int) error
 }
 
-type baseEntity struct {
-	handle uint16
-	location struct {
-		x,y int
-	}
-	events chan <- event
+type location struct {
+	x, y uint32
 }
 
-func (b baseEntity) getHandle() uint16  {
+type baseEntity struct {
+	handle uint16
+	location
+	events chan<- event
+	ticks  chan<- tick
+}
+
+func (b baseEntity) getHandle() uint16 {
 	return b.handle
 }
 
-func (b baseEntity) getLocation() (int, int){
+func (b baseEntity) getLocation() (uint32, uint32) {
 	return b.location.x, b.location.y
 }
 
 func (b baseEntity) inbox() chan<- event {
 	return b.events
+}
+
+func (b baseEntity) poke() chan<- tick {
+	return b.ticks
 }
 
 func (b baseEntity) move(m zoneMap, x, y int) error {
@@ -39,17 +47,7 @@ func (b baseEntity) move(m zoneMap, x, y int) error {
 	return fmt.Errorf("entity %v cannot move to x %v  y %v", b.getHandle(), x, y)
 }
 
-type player struct {
-	baseEntity
-	conn playerConnection
-}
-
-type playerConnection struct {
-	close chan <- bool
-	data chan <- []byte
-}
-
-type mover struct{
+type mover struct {
 	baseEntity
 }
 
@@ -57,6 +55,4 @@ type monster struct {
 	baseEntity
 }
 
-type npc struct {}
-
-
+type npc struct{}
