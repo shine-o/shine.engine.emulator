@@ -340,6 +340,17 @@ func Get(db *pg.DB, characterID uint64) (Character, error) {
 	return c, err
 }
 
+func GetByName(db *pg.DB, name string) (Character, error) {
+	var c Character
+	err := db.Model(&c).
+		Relation("Appearance").
+		Relation("Attributes").
+		Relation("Location").
+		Where("name = ?", name).
+		Select() // query the world for a character with name
+	return c, err
+}
+
 // Delete character for User with userID
 // soft deletion is performed
 func Delete(db *pg.DB, userID uint64, req structs.NcAvatarEraseReq) error {
