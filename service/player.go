@@ -13,7 +13,7 @@ type player struct {
 
 type playerConnection struct {
 	close chan<- bool
-	data  chan<- []byte
+	outboundData  chan<- []byte
 }
 
 func (p *player) ncLoginRepresentation(char *character.Character) structs.NcBriefInfoLoginCharacterCmd {

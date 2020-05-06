@@ -3,14 +3,13 @@ package service
 func (zm *zoneMap) playerActivity() {
 	for {
 		select {
+		case e := <-zm.recv[playerEntersMap]:
+			log.Info(e)
+
 		case e := <-zm.recv[playerAppeared]:
 			// notify all nearby entities about it
 			// players will get packet data
 			// mobs will check if player is in range for attack
-			if e.eventType() != playerAppeared {
-				log.Errorf("unexpected event %v", e.eventType())
-				return
-			}
 			ev := e.(*playerAppearedEvent)
 			zm.handles.mu.Lock()
 			zm.handles.players[ev.player.handle] = ev.player
