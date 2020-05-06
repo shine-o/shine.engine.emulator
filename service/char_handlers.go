@@ -7,9 +7,8 @@ import (
 	"github.com/shine-o/shine.engine.core/structs"
 )
 
-//NC_MAP_LOGIN_REQ
+// NC_MAP_LOGIN_REQ
 func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
-
 	// todo: shn files checksum
 	nc := structs.NcMapLoginReq{}
 
@@ -19,55 +18,58 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	charName := nc.CharData.CharID.Name
-	var char character.Character
-	err = db.Model(&char).
-		Relation("Appearance").
-		Relation("Attributes").
-		Relation("Location").
-		Where("name = ?", charName).
-		Select() // query the world for a character with name
+	// NC_MAP_LOGIN_REQ process
+	// 		shnFileCheck event
+	// 		character data event(shape, stats, quests, items, etc..)
+	//
+	// 		NC_MAP_LOGIN_ACK
+	//			registerPlayerHandle event  (save handle id in session, for when client sends NC_MAP_LOGINCOMPLETE_CMD)
+	//
+	//			NC_MAP_LOGINCOMPLETE_CMD (continued in handler: ncMapLoginCompleteCmd)
+	// 			playerAppearedEvent
+	//			socialNotificationsEvent
 
-	if err != nil {
-		log.Error(err)
-		return
-	}
 
-	// todo: check if these packets should be sent sequentially
+	
 
-	// todo: quest wrapper
-	ncCharClientBaseCmd(ctx, &char) // todo: check if race condition
-	ncCharClientShapeCmd(ctx, char.Appearance)
 
-	// todo: quest wrapper
-	ncCharClientQuestDoingCmd(ctx, &char)
-	ncCharClientQuestDoneCmd(ctx, &char)
-	ncCharClientQuestReadCmd(ctx, &char)
-	ncCharClientQuestRepeatCmd(ctx, &char)
-
-	// todo: skills wrapper
-	ncCharClientPassiveCmd(ctx, &char)
-	ncCharClientSkillCmd(ctx, &char)
-
-	ncCharClientItemCmd(ctx, char.AllEquippedItems(db))
-	ncCharClientItemCmd(ctx, char.InventoryItems(db))
-	ncCharClientItemCmd(ctx, char.MiniHouseItems(db))
-	ncCharClientItemCmd(ctx, char.PremiumActionItems(db))
-
-	ncCharClientCharTitleCmd(ctx, &char)
-
-	ncCharClientGameCmd(ctx)
-	ncCharClientChargedBuffCmd(ctx, &char)
-	ncCharClientCoinInfoCmd(ctx, &char)
-	ncQuestResetTimeClientCmd(ctx, &char)
-
-	var pae playerAppearedEvent
-	err = pae.process(np, &char)
-	if err != nil {
-		log.Error(err)
-	}
-
-	ncMapLoginAck(pae.player, &char)
+	//// todo: check if these packets should be sent sequentially
+	//
+	//// todo: quest wrapper
+	//ncCharClientBaseCmd(ctx, &char) // todo: check if race condition
+	//ncCharClientShapeCmd(ctx, char.Appearance)
+	//
+	//// todo: quest wrapper
+	//ncCharClientQuestDoingCmd(ctx, &char)
+	//ncCharClientQuestDoneCmd(ctx, &char)
+	//ncCharClientQuestReadCmd(ctx, &char)
+	//ncCharClientQuestRepeatCmd(ctx, &char)
+	//
+	//// todo: skills wrapper
+	//ncCharClientPassiveCmd(ctx, &char)
+	//ncCharClientSkillCmd(ctx, &char)
+	//
+	//ncCharClientItemCmd(ctx, char.AllEquippedItems(db))
+	//ncCharClientItemCmd(ctx, char.InventoryItems(db))
+	//ncCharClientItemCmd(ctx, char.MiniHouseItems(db))
+	//ncCharClientItemCmd(ctx, char.PremiumActionItems(db))
+	//
+	//ncCharClientCharTitleCmd(ctx, &char)
+	//
+	//ncCharClientGameCmd(ctx)
+	//ncCharClientChargedBuffCmd(ctx, &char)
+	//ncCharClientCoinInfoCmd(ctx, &char)
+	//ncQuestResetTimeClientCmd(ctx, &char)
+	//
+	//// this should be sent after the client sends  the cmd packet acknowledging the map login is complete
+	//var pae playerAppearedEvent
+	//err = pae.process(np, &char)
+	//
+	//if err != nil {
+	//	log.Error(err)
+	//}
+	//
+	//ncMapLoginAck(pae.player, &char)
 
 	// also send nearby players, mobs, mounts
 	// NC_BRIEFINFO_CHARACTER_CMD
@@ -280,7 +282,7 @@ func ncMapLoginAck(p *player, char *character.Character) {
 			},
 		},
 	}
-	pc.SendDirectly(p.conn.data)
+	pc.SendDirectly(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_QUEST_READ_CMD
