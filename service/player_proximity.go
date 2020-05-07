@@ -6,12 +6,12 @@ import (
 )
 
 // notify every player in proximity about player that logged in
-func newPlayer(zm *zoneMap, ev *playerAppearedEvent) {
-	for _, p := range zm.handles.players {
-		if p.handle == ev.player.handle {
+func newPlayer(p *player, nearbyPlayers map[uint16]*player) {
+	for _, np := range nearbyPlayers {
+		if p.handle == np.handle {
 			continue
 		}
-		ncBriefInfoLoginCharacterCmd(p, &ev.nc)
+		//ncBriefInfoLoginCharacterCmd(p, &ev.nc)
 	}
 }
 

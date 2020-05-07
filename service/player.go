@@ -8,12 +8,29 @@ import (
 type player struct {
 	baseEntity
 	conn        playerConnection
-	characterID uint64
+	stats playerStats
+	state playerState
 }
 
 type playerConnection struct {
 	close chan<- bool
 	outboundData  chan<- []byte
+}
+
+
+
+type playerState struct {
+	level uint8
+	autoPickup bool
+	class uint8
+	gender uint8
+	hairType uint8
+	hairColour uint8
+	faceType uint8
+	polymorph uint16
+	moverHandle uint16
+	moverSlot uint8
+	miniPet bool
 }
 
 func (p *player) ncLoginRepresentation(char *character.Character) structs.NcBriefInfoLoginCharacterCmd {
