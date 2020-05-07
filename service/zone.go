@@ -9,45 +9,17 @@ import (
 
 type runningMaps map[int]*zoneMap
 
-func loadZone() map[int]*zoneMap {
-	var registerMaps []int32
-	rm := make(runningMaps)
-	zoneMaps := loadMaps()
-	for i, m := range zoneMaps {
-		registerMaps = append(registerMaps, int32(m.data.ID))
-
-		events := make(map[uint32]chan event)
-
-		events[playerAppeared] = make(chan event, 5)
-		events[playerDisappeared] = make(chan event, 5)
-		events[playerJumped] = make(chan event, 5)
-		events[playerMoved] = make(chan event, 5)
-		events[playerStopped] = make(chan event, 5)
-
-		zoneMaps[i].recv = make(map[uint32]<-chan event)
-		zoneMaps[i].send = make(map[uint32]chan<- event)
-
-		for k, v := range events {
-			zoneMaps[i].recv[k] = v
-			zoneMaps[i].send[k] = v
-		}
-
-		go zoneMaps[i].run()
-		rm[m.data.ID] = &zoneMaps[i]
-	}
-
-	err := registerZone(registerMaps)
-	if err != nil {
-		// close all event channels
-		for _, m := range zoneMaps {
-			for _, e := range m.send {
-				close(e)
-			}
-		}
-		log.Fatal(err)
-	}
-	return rm
+type zone struct {
+	rm      runningMaps
+	queries   recvEvents
+	send      sendEvents
+	recv      recvEvents
 }
+
+// instead of accessing global variables for data
+// fire a query event struct, which will be populated with the requested data by a worker (event receiver)
+var queries sendEvents
+var zoneEvents sendEvents
 
 func registerZone(mapIDs []int32) error {
 	zoneIP := viper.GetString("serve.external_ip")
@@ -77,4 +49,110 @@ func registerZone(mapIDs []int32) error {
 		return errors.New("failed to register against the zone master")
 	}
 	return nil
+}
+
+func (z *zone) load() {
+	var registerMaps []int32
+	rm := make(runningMaps)
+	zoneMaps := loadMaps()
+	for i, m := range zoneMaps {
+		registerMaps = append(registerMaps, int32(m.data.ID))
+
+		zoneMaps[i].recv = make(recvEvents)
+		zoneMaps[i].send = make(sendEvents)
+
+		events := []eventIndex{playerAppeared, playerDisappeared, playerJumped, playerMoved, playerStopped}
+
+		for _, index := range events {
+			c := make(chan event, 5)
+			zoneMaps[i].recv[index] = c
+			zoneMaps[i].send[index] = c
+		}
+
+		go zoneMaps[i].run()
+		rm[m.data.ID] = &zoneMaps[i]
+	}
+
+	events := []eventIndex{clientSHN}
+	z.recv = make(recvEvents)
+	z.send = make(sendEvents)
+
+	for _, index := range events {
+		c := make(chan event, 5)
+		z.recv[index] = c
+		z.send[index] = c
+	}
+
+	zoneEvents = z.send
+
+	err := registerZone(registerMaps)
+	if err != nil {
+		// close all event channels
+		for _, m := range zoneMaps {
+			for _, e := range m.send {
+				close(e)
+			}
+		}
+		for _, e := range zoneEvents {
+			close(z.send[e])
+		}
+		log.Fatal(err)
+	}
+	z.rm = rm
+	go z.run()
+}
+
+func (z *zone) run() {
+	// run query workers
+	queries = z.loadQueries()
+	go z.loadQueryWorkers()
+	go z.loadSecurityWorker()
+}
+
+func (z *zone) loadQueries() sendEvents {
+	queries := make(sendEvents)
+	z.mapQueries(queries)
+	z.playerQueries(queries)
+	z.monsterQueries(queries)
+	return queries
+}
+
+func (z *zone) mapQueries(queries sendEvents) {
+	mapQueries := []eventIndex{queryMap}
+	for _, index := range mapQueries {
+		c := make(chan event, 5)
+		queries[index] = c
+		z.queries[index] = c
+	}
+}
+
+func (z *zone) playerQueries(queries sendEvents) {
+	playerQueries := []eventIndex{queryPlayer}
+	for _, index := range playerQueries {
+		c := make(chan event, 5)
+		queries[index] = c
+		z.queries[index] = c
+	}
+}
+
+func (z *zone) monsterQueries(queries sendEvents) {
+	monsterQueries := []eventIndex{queryMonster}
+	for _, index := range monsterQueries {
+		c := make(chan event, 5)
+		queries[index] = c
+		z.queries[index] = c
+	}
+}
+
+func (z *zone) loadQueryWorkers() {
+	go z.mapQueryWorkers()
+	go z.playerQueryWorkers()
+	go z.monsterQueryWorkers()
+}
+
+
+func cleanUpQueries() {
+	for _, q := range queries {
+		close(q)
+	}
 }

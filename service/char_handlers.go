@@ -19,7 +19,9 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	// NC_MAP_LOGIN_REQ process
-	// 		shnFileCheck event
+	// 		shnFileCheck event (bifurcation)
+	//			if !ok
+	//			NC_MAP_LOGINFAIL_ACK
 	// 		character data event(shape, stats, quests, items, etc..)
 	//
 	// 		NC_MAP_LOGIN_ACK
@@ -29,8 +31,45 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	// 			playerAppearedEvent
 	//			socialNotificationsEvent
 
+	cse := clientSHNEvent{
+		inboundNC: nc,
+		ok:        make(chan bool),
+	}
 
-	
+	zoneEvents[clientSHN] <- &cse
+
+	select {
+	case <- cse.ok:
+		break
+	case err := <- cse.erroneous():
+		log.Error(err)
+		// fail ack with failure code
+		// drop connection
+		return
+	}
+
+	cde := playerDataEvent{
+		player:         make(chan *player),
+		playerName: nc.CharData.CharID.Name,
+	}
+
+	var player * player
+	select {
+	case player = <- cde.player:
+		break
+	case err := <- cse.erroneous():
+		log.Error(err)
+		// fail ack with failure code
+		// drop connection
+		return
+	}
+
+	pmhe := playerMapHandleEvent{
+		player: player,
+	}
+	player.
+	//
+
 
 
 	//// todo: check if these packets should be sent sequentially
@@ -160,6 +199,30 @@ func ncCharClientItemCmd(ctx context.Context, cmd *structs.NcCharClientItemCmd) 
 		NcStruct: cmd,
 	}
 	pc.Send(ctx)
+}
+
+type stat struct {
+	base 	 uint32
+	withGear uint32
+}
+
+type playerStats struct {
+	prevExp uint64
+	nextExp uint64
+	str stat
+	end stat
+	dex stat
+	int stat
+	spr stat
+	physicalDamage stat
+	magicalDamage stat
+	physicalDefense stat
+	magicalDefense stat
+	evasion stat
+	aim stat
+	hp uint32
+	sp uint32
+	lp uint32
 }
 
 //NC_MAP_LOGIN_ACK

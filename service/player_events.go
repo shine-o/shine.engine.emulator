@@ -11,11 +11,28 @@ type playerEventError struct {
 	message string
 }
 
-type playerEntersMapEvent struct {
-	session *session
-	netParams networking.Network
-	inboundNC structs.NcMapLoginReq
+func (e playerEventError) Error() string {
+	return e.message
+}
+
+type playerDataEvent struct {
+	player  chan *player
+	playerName string
 	err chan error
+}
+
+func (e *playerDataEvent) erroneous() <- chan error {
+	return e.err
+}
+
+
+type playerMapHandleEvent struct {
+	player * player
+	err chan error
+}
+
+func (e *playerMapHandleEvent) erroneous() <- chan error {
+	return e.err
 }
 
 type playerAppearedEvent struct {
@@ -26,27 +43,15 @@ type playerAppearedEvent struct {
 	err chan error
 }
 
-const (
-	playerEntersMap uint32 = iota
-	playerAppeared
-	playerDisappeared
-	playerMoved
-	playerStopped
-	playerJumped
-)
+func (e *playerAppearedEvent) erroneous() <- chan error {
+	return e.err
+}
 
 var errInvalidMap = playerEventError{
 	code:    0,
 	message: "character is located in an map that is not running on this zone",
 }
 
-func (pae *playerAppearedEvent) erroneous() <- chan error {
-	return pae.err
-}
-
-func (pem *playerEntersMapEvent) erroneous() <- chan error {
-	return pem.err
-}
 //func (pae *playerAppearedEvent) process() error {
 //	return nil
 //}
@@ -82,6 +87,3 @@ func (pem *playerEntersMapEvent) erroneous() <- chan error {
 //	}
 //}
 
-func (e playerEventError) Error() string {
-	return e.message
-}

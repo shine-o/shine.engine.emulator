@@ -14,13 +14,14 @@ import (
 	"sync"
 )
 
+
 type zoneMap struct {
 	data      world.MapData
 	walkableX *roaring.Bitmap
 	walkableY *roaring.Bitmap
 	handles   mapEntities
-	send      map[uint32]chan<- event
-	recv      map[uint32]<-chan event
+	send      sendEvents
+	recv      recvEvents
 }
 
 type mapEntities struct {
@@ -98,6 +99,9 @@ func loadMaps() []zoneMap {
 			log.Fatal(err)
 		}
 		err = world.LoadMapData(shineAbsPath, db)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	// zones defined in the service, load them and register the loaded ones to the master

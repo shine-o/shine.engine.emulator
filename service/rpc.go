@@ -3,7 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
-	"github.com/shine-o/shine.engine.core/grpc/zone"
+	z "github.com/shine-o/shine.engine.core/grpc/zone"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"net"
@@ -13,7 +13,7 @@ import (
 const gRPCTimeout = time.Second * 2
 
 type server struct {
-	zone.UnimplementedZoneServer
+	z.UnimplementedZoneServer
 }
 
 var errBadRPCClient = errors.New("gRPC client is not present in the config file")
@@ -47,7 +47,7 @@ func newRPCServer(name string) {
 			log.Errorf("could listen on port %v for service %v : %v", name, port, err)
 		}
 		s := grpc.NewServer()
-		zone.RegisterZoneServer(s, &server{})
+		z.RegisterZoneServer(s, &server{})
 
 		log.Infof("Loading gRPC server connection %v@::%v", name, port)
 		if err := s.Serve(lis); err != nil {

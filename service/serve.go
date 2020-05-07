@@ -15,6 +15,7 @@ import (
 )
 
 var (
+	// grr todo: move these to the zone object, as all logic operations will have access to that object in some form
 	log *logger.Logger
 	db  *pg.DB
 )
@@ -22,8 +23,6 @@ var (
 func init() {
 	log = logger.Init("zone master logger", true, false, ioutil.Discard)
 }
-
-var rm runningMaps
 
 func Start(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
@@ -34,7 +33,8 @@ func Start(cmd *cobra.Command, args []string) {
 
 	log.Infof("starting the service on port: %v", zonePort)
 
-	rm = loadZone()
+	z := zone{}
+	z.load()
 
 	db = database.Connection(ctx, database.ConnectionParams{
 		User:     viper.GetString("world_database.db_user"),
