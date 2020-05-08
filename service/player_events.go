@@ -15,19 +15,21 @@ func (e playerEventError) Error() string {
 	return e.message
 }
 
+// set player data, send it to the client and return the player through the channel
 type playerDataEvent struct {
-	player  chan *player
+	player     chan *player
 	playerName string
-	err chan error
+	err        chan error
+	net        *networking.Parameters
 }
 
 func (e *playerDataEvent) erroneous() <- chan error {
 	return e.err
 }
 
-
 type playerMapHandleEvent struct {
 	player * player
+	session * session
 	err chan error
 }
 
