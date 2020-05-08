@@ -7,6 +7,7 @@ import (
 
 type player struct {
 	baseEntity
+	char     *character.Character
 	conn     playerConnection
 	view     playerView
 	stats    playerStats
@@ -34,15 +35,18 @@ type playerView struct {
 }
 
 type playerStats struct {
-	prevExp             uint64
-	nextExp             uint64
-	str                 stat
-	end                 stat
-	dex                 stat
-	int                 stat
-	spr                 stat
-	physicalDamage      stat
-	magicalDamage       stat
+	points            playerStatPoints
+	str               stat
+	end               stat
+	dex               stat
+	int               stat
+	spr               stat
+	minPhysicalDamage stat
+	maxPhysicalDamage stat
+
+	minMagicalDamage stat
+	maxMagicalDamage stat
+
 	physicalDefense     stat
 	magicalDefense      stat
 	evasion             stat
@@ -58,7 +62,19 @@ type playerStats struct {
 	rollbackResistance  stat
 }
 
+type playerStatPoints struct {
+	str                  uint8
+	end                  uint8
+	dex                  uint8
+	int                  uint8
+	spr                  uint8
+	redistributionPoints uint8
+}
+
 type playerState struct {
+	prevExp     uint64
+	exp         uint64
+	nextExp     uint64
 	level       uint8
 	autoPickup  uint8
 	polymorph   uint16
@@ -77,7 +93,7 @@ type playerItems struct {
 
 type playerMoney struct {
 	coins       uint64
-	fame        uint64
+	fame        uint32
 	wastedCoins uint64
 	wastedFame  uint64
 }
@@ -135,8 +151,8 @@ type item struct {
 }
 
 type stat struct {
-	base     uint32
-	withGear uint32
+	base       uint32
+	withExtras uint32
 }
 
 func (p *player) load(name string) error {
@@ -195,12 +211,12 @@ func (p *player) load(name string) error {
 		return err
 	}
 	// for p launch routines to create player inner structs view, state, stats
-	//
+
 	return nil
 }
 
-func (p *player) viewData(view chan <- playerView, c *character.Character, err chan error) {
-	v := playerView { // todo: validation just in case, so we don't log a bad player that could potentially bin other player
+func (p *player) viewData(view chan<- playerView, c *character.Character, err chan error) {
+	v := playerView{ // todo: validation just in case, so we don't log a bad player that could potentially bin other player
 		name:       c.Name,
 		class:      c.Appearance.Class,
 		gender:     c.Appearance.Gender,
@@ -211,9 +227,12 @@ func (p *player) viewData(view chan <- playerView, c *character.Character, err c
 	view <- v
 }
 
-func (p *player) stateData(state chan  <-playerState, c *character.Character, err chan  <-error) {
+func (p *player) stateData(state chan<- playerState, c *character.Character, err chan<- error) {
 	s := playerState{
-		level:       c.Attributes.Level,
+		prevExp: 100,
+		exp:     150,
+		nextExp: 800,
+		level:   c.Attributes.Level,
 		// player state should also include buffs and debuffs in the future
 		autoPickup:  0,
 		polymorph:   65535,
@@ -224,56 +243,56 @@ func (p *player) stateData(state chan  <-playerState, c *character.Character, er
 	state <- s
 }
 
-func (p *player) statsData(stats chan  <-playerStats, c *character.Character, err chan  <-error) {
+func (p *player) statsData(stats chan<- playerStats, c *character.Character, err chan<- error) {
 	// given all:
 	//  class base stats for current level, equipped items, charged buffs, buffs/debuffs, assigned stat points
 	// calculate base stats (class base stats for current level, assigned stat points) , and stats with gear on (equipped items, charged buffs, buffs/debuffs)
+	// given that equipped
 	s := playerStats{
-		prevExp: 0,
-		nextExp: 0,
+
 		str: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
 		end: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
 		dex: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
 		int: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
 		spr: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
-		physicalDamage: stat{
-			base:     0,
-			withGear: 0,
+		minPhysicalDamage: stat{
+			base:       0,
+			withExtras: 0,
 		},
 		magicalDamage: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
 		physicalDefense: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
 		magicalDefense: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
 		evasion: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
 		aim: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
 		hp:       100,
 		sp:       100,
@@ -281,47 +300,89 @@ func (p *player) statsData(stats chan  <-playerStats, c *character.Character, er
 		hpStones: 0,
 		spStones: 0,
 		curseResistance: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
 		restraintResistance: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
 		poisonResistance: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
 		rollbackResistance: stat{
-			base:     0,
-			withGear: 0,
+			base:       0,
+			withExtras: 0,
 		},
 	}
 
 	stats <- s
 }
 
-func (p *player) itemData(items chan  <-playerItems, c *character.Character, err chan <- error) {
-
+func (p *player) itemData(items chan<- playerItems, c *character.Character, err chan<- error) {
+	// for this character, load all items in each respective box
+	// each item loaded should be validated so that, best way is to iterate all items and for each item launch a routine that validates it and returns the valid item through a channel
+	// we also forward the error channel in case there is an error
+	i := playerItems{
+		equipped: itemBox{
+			box: 8,
+		},
+		inventory: itemBox{
+			box: 9,
+		},
+		miniHouse: itemBox{
+			box: 12,
+		},
+		reward: itemBox{
+			box: 2,
+		},
+		premium: itemBox{
+			box: 15,
+		},
+	}
+	items <- i
 }
 
-func (p *player) titleData(titles chan <- playerTitles, c *character.Character, err chan  <-error) {
-
+func (p *player) titleData(titles chan<- playerTitles, c *character.Character, err chan<- error) {
+	// bit operation for titles u.u
+	t := playerTitles{
+		current: struct {
+			id      uint8
+			element uint8
+			mobID   uint16
+		}{
+			id:      0,
+			element: 0,
+			mobID:   0,
+		},
+		titles: nil,
+	}
+	titles <- t
 }
 
-func (p *player) moneyData(money chan  <-playerMoney, c *character.Character, err chan <- error) {
-
+func (p *player) moneyData(money chan<- playerMoney, c *character.Character, err chan<- error) {
+	m := playerMoney{
+		coins:       100000,
+		fame:        100000,
+		wastedCoins: 0,
+		wastedFame:  0,
+	}
+	money <- m
 }
 
-func (p *player) skillData(skills chan <- []skill, c *character.Character, err chan  <-error) {
-
+func (p *player) skillData(skills chan<- []skill, c *character.Character, err chan<- error) {
+	// all learned skills stored in the database
+	var s []skill
+	skills <- s
 }
 
-func (p *player) passiveData(passives chan <- []passive, c *character.Character, err chan <- error) {
-
+func (p *player) passiveData(passives chan<- []passive, c *character.Character, err chan<- error) {
+	var pa []passive
+	passives <- pa
 }
 
-//ncCharClientBaseCmd(ctx, &char) 
+//ncCharClientBaseCmd(ctx, &char)
 //ncCharClientShapeCmd(ctx, char.Appearance)
 //
 //// todo: quest wrapper
@@ -358,14 +419,9 @@ func (p *player) ncLoginRepresentation() structs.NcBriefInfoLoginCharacterCmd {
 			},
 			Direction: p.location.d,
 		},
-		Mode:  0,
-		Class: p.view.class,
-		Shape: structs.ProtoAvatarShapeInfo{
-			BF:        1 | p.view.class<<2 | p.view.gender<<7,
-			HairType:  0,
-			HairColor: 0,
-			FaceShape: 0,
-		},
+		Mode:            0,
+		Class:           p.view.class,
+		Shape:           p.view.protoAvatarShapeInfo(),
 		ShapeData:       structs.NcBriefInfoLoginCharacterCmdShapeData{},
 		Polymorph:       p.state.polymorph,
 		Emoticon:        structs.StopEmoticonDescript{},
@@ -384,4 +440,154 @@ func (p *player) ncLoginRepresentation() structs.NcBriefInfoLoginCharacterCmd {
 		Unk:             0,
 	}
 	return nc
+}
+
+func (pv *playerView) protoAvatarShapeInfo() structs.ProtoAvatarShapeInfo {
+	return structs.ProtoAvatarShapeInfo{
+		BF:        1 | pv.class<<2 | pv.gender<<7,
+		HairType:  pv.hairType,
+		HairColor: pv.hairColour,
+		FaceShape: pv.faceType,
+	}
+}
+
+func (p *player) charParameterData() structs.CharParameterData {
+	return structs.CharParameterData{
+		PrevExp: p.state.prevExp,
+		NextExp: p.state.nextExp,
+		Strength: structs.ShineCharStatVar{
+			Base:   p.stats.str.base,
+			Change: p.stats.str.withExtras,
+		},
+		Constitute: structs.ShineCharStatVar{
+			Base:   p.stats.end.base,
+			Change: p.stats.end.withExtras,
+		},
+		Dexterity: structs.ShineCharStatVar{
+			Base:   p.stats.dex.base,
+			Change: p.stats.dex.withExtras,
+		},
+		Intelligence: structs.ShineCharStatVar{
+			Base:   p.stats.int.base,
+			Change: p.stats.int.withExtras,
+		},
+		Wisdom: structs.ShineCharStatVar{
+			Base:   p.stats.spr.base,
+			Change: p.stats.spr.withExtras,
+		},
+		MentalPower: structs.ShineCharStatVar{
+			Base:   0,
+			Change: 0,
+		},
+		WCLow: structs.ShineCharStatVar{
+			Base:   p.stats.minPhysicalDamage.base,
+			Change: p.stats.minPhysicalDamage.withExtras,
+		},
+		WCHigh: structs.ShineCharStatVar{
+			Base:   p.stats.maxPhysicalDamage.base,
+			Change: p.stats.maxPhysicalDamage.withExtras,
+		},
+		AC: structs.ShineCharStatVar{
+			Base:   0,
+			Change: 0,
+		},
+		TH: structs.ShineCharStatVar{
+			Base:   0,
+			Change: 0,
+		},
+		TB: structs.ShineCharStatVar{
+			Base:   0,
+			Change: 0,
+		},
+		MALow: structs.ShineCharStatVar{
+			Base:   p.stats.minMagicalDamage.base,
+			Change: p.stats.minMagicalDamage.withExtras,
+		},
+		MAHigh: structs.ShineCharStatVar{
+			Base:   p.stats.maxMagicalDamage.base,
+			Change: p.stats.maxMagicalDamage.withExtras,
+		},
+		MR: structs.ShineCharStatVar{
+			Base:   0,
+			Change: 0,
+		},
+		MH: structs.ShineCharStatVar{
+			Base:   0,
+			Change: 0,
+		},
+		MB: structs.ShineCharStatVar{
+			Base:   0,
+			Change: 0,
+		},
+		MaxHP:      p.stats.hp,
+		MaxSP:      p.stats.sp,
+		MaxLP:      p.stats.lp,
+		MaxAP:      0, // ¿?
+		MaxHPStone: p.stats.spStones,
+		MaxSPStone: p.stats.spStones,
+		PwrStone: structs.CharParameterDataPwrStone{ // ¿?
+			Flag:      0,
+			EPPPhysic: 0,
+			EPMagic:   0,
+			MaxStone:  0,
+		},
+		GrdStone: structs.CharParameterDataPwrStone{ // ??
+			Flag:      0,
+			EPPPhysic: 0,
+			EPMagic:   0,
+			MaxStone:  0,
+		},
+		PainRes: structs.ShineCharStatVar{
+			Base:   p.stats.poisonResistance.base,
+			Change: p.stats.poisonResistance.withExtras,
+		},
+		RestraintRes: structs.ShineCharStatVar{
+			Base:   p.stats.restraintResistance.base,
+			Change: p.stats.restraintResistance.withExtras,
+		},
+		CurseRes: structs.ShineCharStatVar{
+			Base:   p.stats.curseResistance.base,
+			Change: p.stats.curseResistance.withExtras,
+		},
+		ShockRes: structs.ShineCharStatVar{
+			Base:   p.stats.rollbackResistance.base,
+			Change: p.stats.rollbackResistance.withExtras,
+		},
+	}
+}
+
+func (pi *playerItems) ncCharClientItemCmd() []structs.NcCharClientItemCmd {
+	var ncs []structs.NcCharClientItemCmd
+	// for now empty, later on process each box type item
+	ncs = []structs.NcCharClientItemCmd{
+		{
+			NumOfItem: 0,
+			Box:       pi.equipped.box,
+			Flag: structs.ProtoNcCharClientItemCmdFlag{
+				BF0: 183,
+			},
+		},
+		{
+			NumOfItem: 0,
+			Box:       pi.inventory.box,
+			Flag: structs.ProtoNcCharClientItemCmdFlag{
+				BF0: 165,
+			},
+		},
+		{
+			NumOfItem: 0,
+			Box:       pi.miniHouse.box,
+			Flag: structs.ProtoNcCharClientItemCmdFlag{
+				BF0: 209,
+			},
+		},
+		{
+			NumOfItem: 0,
+			Box:       pi.premium.box,
+			Flag: structs.ProtoNcCharClientItemCmdFlag{
+				BF0: 243,
+			},
+		},
+	}
+	return ncs
 }
