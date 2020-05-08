@@ -15,6 +15,7 @@ type basicActions interface {
 
 type location struct {
 	mapID int
+	mapName string
 	x,y uint32
 	d uint8
 }
