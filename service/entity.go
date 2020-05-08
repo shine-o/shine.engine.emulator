@@ -14,7 +14,9 @@ type basicActions interface {
 }
 
 type location struct {
-	x, y uint32
+	mapID int
+	x,y uint32
+	d uint8
 }
 
 type baseEntity struct {

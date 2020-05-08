@@ -50,6 +50,7 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 
 	cde := playerDataEvent{
 		player:         make(chan *player),
+		net: np,
 		playerName: nc.CharData.CharID.Name,
 	}
 
@@ -67,7 +68,6 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	pmhe := playerMapHandleEvent{
 		player: player,
 	}
-	player.
 	//
 
 
@@ -199,30 +199,6 @@ func ncCharClientItemCmd(ctx context.Context, cmd *structs.NcCharClientItemCmd) 
 		NcStruct: cmd,
 	}
 	pc.Send(ctx)
-}
-
-type stat struct {
-	base 	 uint32
-	withGear uint32
-}
-
-type playerStats struct {
-	prevExp uint64
-	nextExp uint64
-	str stat
-	end stat
-	dex stat
-	int stat
-	spr stat
-	physicalDamage stat
-	magicalDamage stat
-	physicalDefense stat
-	magicalDefense stat
-	evasion stat
-	aim stat
-	hp uint32
-	sp uint32
-	lp uint32
 }
 
 //NC_MAP_LOGIN_ACK
@@ -526,7 +502,7 @@ func ncQuestResetTimeClientCmd(ctx context.Context, char *character.Character) {
 		Base: networking.CommandBase{
 			OperationCode: 17438,
 		},
-		NcStruct: &structs.NcQuestResetTimeClientCmd{
+		NcStruct: &structs.NcQuestResetTimeClientCmd {
 			ResetYear:  1577862000,
 			ResetMonth: 1585724400,
 			ResetWeek:  1586761200,
