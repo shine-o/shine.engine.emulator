@@ -139,13 +139,16 @@ func md5Hash(text string) string {
 }
 
 func fixtures(db *pg.DB) error {
-	password := md5Hash("admin")
-	err := db.Insert(&User{
-		UserName: "admin",
-		Password: password,
-	})
-	if err != nil {
-		return err
+	for i := 0 ; i < 20; i++ {
+		userName := fmt.Sprintf("admin%v", i)
+		password := md5Hash(fmt.Sprintf("admin%v", i))
+		err := db.Insert(&User{
+			UserName: userName,
+			Password: password,
+		})
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
