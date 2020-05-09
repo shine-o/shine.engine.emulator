@@ -136,7 +136,6 @@ func (ss *ShineService) handleConnection(conn net.Conn) {
 				break
 			} else {
 				log.Error(err)
-				cancel()
 				return
 			}
 		}

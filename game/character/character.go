@@ -561,7 +561,7 @@ func (c *Character) getItemsByInventory(db *pg.DB, inventoryType uint8) *structs
 		nc.Flag.BF0 = 243
 		break
 	}
-
+	
 	if err != nil {
 		return nc
 	}

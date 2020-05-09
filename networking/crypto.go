@@ -25,7 +25,7 @@ func (s cryptoSource) Uint64() (v uint64) {
 func RandomUint16Between(min, max uint16) uint16 {
 	var src cryptoSource
 	rnd := rand.New(src)
-	return uint16(rnd.Intn(int(min+max) - min))
+	return uint16(rnd.Intn(int(max-min)) + int(min))
 }
 
 // RandomXorKey generate a random number between 0 and the defined xorLimit
