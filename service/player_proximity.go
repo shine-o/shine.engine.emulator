@@ -1,7 +1,6 @@
 package service
 
 import (
-	"github.com/shine-o/shine.engine.core/game/character"
 	"github.com/shine-o/shine.engine.core/structs"
 )
 
@@ -22,12 +21,7 @@ func nearbyPlayers(p *player, nearbyPlayers map[uint16]*player) {
 		if np.handle == p.handle {
 			continue
 		}
-		char, err := character.Get(db, np.characterID)
-		if err != nil {
-			log.Error(err)
-			continue
-		}
-		nc := np.ncLoginRepresentation(&char)
+		nc := np.ncBriefInfoLoginCharacterCmd()
 		characters = append(characters, nc)
 	}
 	ncBriefInfoCharacterCmd(p, &structs.NcBriefInfoCharacterCmd{

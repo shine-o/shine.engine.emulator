@@ -4,56 +4,43 @@ import (
 	"reflect"
 )
 
-func (zm *zoneMap) playerActivity() {
+func (z *zone) playerSession() {
 	for {
 		select {
-		case e := <-zm.recv[playerData]:
-
+		case e := <-z.recv[playerData]:
 			ev, ok := e.(*playerDataEvent)
 			if !ok {
 				log.Errorf("expected event type %vEvent but got %v", playerData, reflect.TypeOf(e).String())
 			}
 
-			p := &player{
+				p := &player{
 				conn: playerConnection{
 					close:        ev.net.NetVars.CloseConnection,
 					outboundData: ev.net.NetVars.OutboundSegments.Send,
 				},
 			}
 
-			p.load(ev.playerName)
-			//ncCharClientBaseCmd(ctx, &char) // todo: check if race condition
-			//ncCharClientShapeCmd(ctx, char.Appearance)
-			//
-			//// todo: quest wrapper
-			//ncCharClientQuestDoingCmd(ctx, &char)
-			//ncCharClientQuestDoneCmd(ctx, &char)
-			//ncCharClientQuestReadCmd(ctx, &char)
-			//ncCharClientQuestRepeatCmd(ctx, &char)
-			//
-			//// todo: skills wrapper
-			//ncCharClientPassiveCmd(ctx, &char)
-			//ncCharClientSkillCmd(ctx, &char)
-			//
-			//ncCharClientItemCmd(ctx, char.AllEquippedItems(db))
-			//ncCharClientItemCmd(ctx, char.InventoryItems(db))
-			//ncCharClientItemCmd(ctx, char.MiniHouseItems(db))
-			//ncCharClientItemCmd(ctx, char.PremiumActionItems(db))
-			//
-			//ncCharClientCharTitleCmd(ctx, &char)
-			//
-			//ncCharClientGameCmd(ctx)
-			//ncCharClientChargedBuffCmd(ctx, &char)
-			//ncCharClientCoinInfoCmd(ctx, &char)
-			//ncQuestResetTimeClientCmd(ctx, &char)
+			err := p.load(ev.playerName)
+			if err != nil {
+				ev.err <- err
+				break
+			}
+			ev.player <- p
+		}
+	}
+}
 
+func (zm *zoneMap) playerActivity() {
+	for {
+		select {
 		case e := <-zm.recv[playerAppeared]:
 			// notify all nearby entities about it
 			// players will get packet data
 			// mobs will check if player is in range for attack
 			ev, ok := e.(*playerAppearedEvent)
 			if !ok {
-				log.Errorf("expected event type %vEvent but got %v", playerAppeared, reflect.TypeOf(e).String())
+				log.Errorf("expected event type %vEvent but got %v", playerAppeared, reflect.TypeOf(ev).String())
+				break
 			}
 			zm.handles.mu.Lock()
 			zm.handles.players[ev.player.handle] = ev.player

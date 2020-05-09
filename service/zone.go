@@ -11,9 +11,9 @@ type runningMaps map[int]*zoneMap
 
 type zone struct {
 	rm      runningMaps
-	queries   recvEvents
-	send      sendEvents
-	recv      recvEvents
+	queries recvEvents
+	send    sendEvents
+	recv    recvEvents
 }
 
 // instead of accessing global variables for data
@@ -73,7 +73,7 @@ func (z *zone) load() {
 		rm[m.data.ID] = &zoneMaps[i]
 	}
 
-	events := []eventIndex{clientSHN}
+	events := []eventIndex{clientSHN, playerData}
 	z.recv = make(recvEvents)
 	z.send = make(sendEvents)
 
@@ -93,7 +93,7 @@ func (z *zone) load() {
 				close(e)
 			}
 		}
-		for _, e := range zoneEvents {
+		for _, e := range events {
 			close(z.send[e])
 		}
 		log.Fatal(err)
@@ -104,52 +104,54 @@ func (z *zone) load() {
 
 func (z *zone) run() {
 	// run query workers
+	queries = make(sendEvents)
+	z.queries = make(recvEvents)
 	queries = z.loadQueries()
-	go z.loadQueryWorkers()
-	go z.loadSecurityWorker()
+	go z.queryWorkers()
+	go z.security()
+	go z.playerSession()
 }
 
 func (z *zone) loadQueries() sendEvents {
 	queries := make(sendEvents)
-	z.mapQueries(queries)
-	z.playerQueries(queries)
-	z.monsterQueries(queries)
+	z.loadMapQueries(queries)
+	z.loadPlayerQueries(queries)
+	z.loadMonsterQueries(queries)
 	return queries
 }
 
-func (z *zone) mapQueries(queries sendEvents) {
-	mapQueries := []eventIndex{queryMap}
-	for _, index := range mapQueries {
+func (z *zone) loadMapQueries(queries sendEvents) {
+	loadMapQueries := []eventIndex{queryMap}
+	for _, index := range loadMapQueries {
 		c := make(chan event, 5)
 		queries[index] = c
 		z.queries[index] = c
 	}
 }
 
-func (z *zone) playerQueries(queries sendEvents) {
-	playerQueries := []eventIndex{queryPlayer}
-	for _, index := range playerQueries {
+func (z *zone) loadPlayerQueries(queries sendEvents) {
+	loadPlayerQueries := []eventIndex{queryPlayer}
+	for _, index := range loadPlayerQueries {
 		c := make(chan event, 5)
 		queries[index] = c
 		z.queries[index] = c
 	}
 }
 
-func (z *zone) monsterQueries(queries sendEvents) {
-	monsterQueries := []eventIndex{queryMonster}
-	for _, index := range monsterQueries {
+func (z *zone) loadMonsterQueries(queries sendEvents) {
+	loadMonsterQueries := []eventIndex{queryMonster}
+	for _, index := range loadMonsterQueries {
 		c := make(chan event, 5)
 		queries[index] = c
 		z.queries[index] = c
 	}
 }
 
-func (z *zone) loadQueryWorkers() {
-	go z.mapQueryWorkers()
-	go z.playerQueryWorkers()
-	go z.monsterQueryWorkers()
+func (z *zone) queryWorkers() {
+	go z.mapQueries()
+	go z.playerQueries()
+	go z.monsterQueries()
 }
-
 
 func cleanUpQueries() {
 	for _, q := range queries {

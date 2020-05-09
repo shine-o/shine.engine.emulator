@@ -1,6 +1,6 @@
 package service
 
-func (z *zone) mapQueryWorkers() {
+func (z *zone) mapQueries() {
 	for {
 		select {
 		case eq := <- z.queries[queryMap]:
@@ -9,7 +9,7 @@ func (z *zone) mapQueryWorkers() {
 	}
 }
 
-func (z *zone) playerQueryWorkers() {
+func (z *zone) playerQueries() {
 	for {
 		select {
 		case eq := <- z.queries[queryPlayer]:
@@ -18,7 +18,7 @@ func (z *zone) playerQueryWorkers() {
 	}
 }
 
-func (z *zone) monsterQueryWorkers() {
+func (z *zone) monsterQueries() {
 	for {
 		select {
 		case eq := <- z.queries[queryMonster]:

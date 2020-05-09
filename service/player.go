@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/shine-o/shine.engine.core/game/character"
 	"github.com/shine-o/shine.engine.core/structs"
+	"math"
 )
 
 type player struct {
@@ -54,8 +55,10 @@ type playerStats struct {
 	hp                  uint32
 	sp                  uint32
 	lp                  uint32
-	hpStones            uint32
-	spStones            uint32
+	maxHpStones            uint32
+	maxSpStones            uint32
+	hpStones            uint16
+	spStones            uint16
 	curseResistance     stat
 	restraintResistance stat
 	poisonResistance    stat
@@ -162,6 +165,14 @@ func (p *player) load(name string) error {
 		return err
 	}
 
+	p.char = &char
+
+	p.location.mapName = char.Location.MapName
+	p.location.mapID = int(char.Location.MapID)
+	p.location.x = char.Location.X
+	p.location.y = char.Location.Y
+	p.location.d = char.Location.D
+
 	view := make(chan playerView)
 	state := make(chan playerState)
 	stats := make(chan playerStats)
@@ -182,37 +193,54 @@ func (p *player) load(name string) error {
 	go p.skillData(skills, &char, pErr)
 	go p.passiveData(passives, &char, pErr)
 
-	select {
-	case v := <-view:
-		p.view = v
-	case s := <-state:
-		p.state = s
-	case s := <-stats:
-		p.stats = s
-	case i := <-items:
-		p.items = i
+	done := 0
+	for {
+		select {
+		case v := <-view:
+			p.view = v
+			view = nil
+			done++
+		case st := <-state:
+			p.state = st
+			state = nil
+			done++
+		case s := <-stats:
+			p.stats = s
+			stats = nil
+			done++
+		case i := <-items:
+			p.items = i
+			items = nil
+			done++
+		case m := <-money:
+			p.money = m
+			money = nil
+			done++
+		case t := <-titles:
+			p.titles = t
+			titles = nil
+			done++
+		case q := <-quests:
+			p.quests = q
+			quests = nil
+			done++
+		case sk := <-skills:
+			p.skills = sk
+			skills = nil
+			done++
+		case pa := <-passives:
+			p.passives = pa
+			passives = nil
+			done++
+		case err := <-pErr:
+			return err
+		}
 
-	case m := <-money:
-		p.money = m
-
-	case t := <-titles:
-		p.titles = t
-
-	case q := <-quests:
-		p.quests = q
-
-	case s := <-skills:
-		p.skills = s
-
-	case pa := <-passives:
-		p.passives = pa
-
-	case err := <-pErr:
-		return err
+		if done == 8 {// risky, checking if channels are nil is safer
+			return nil
+		}
 	}
 	// for p launch routines to create player inner structs view, state, stats
-
-	return nil
 }
 
 func (p *player) viewData(view chan<- playerView, c *character.Character, err chan error) {
@@ -249,7 +277,6 @@ func (p *player) statsData(stats chan<- playerStats, c *character.Character, err
 	// calculate base stats (class base stats for current level, assigned stat points) , and stats with gear on (equipped items, charged buffs, buffs/debuffs)
 	// given that equipped
 	s := playerStats{
-
 		str: stat{
 			base:       0,
 			withExtras: 0,
@@ -274,7 +301,15 @@ func (p *player) statsData(stats chan<- playerStats, c *character.Character, err
 			base:       0,
 			withExtras: 0,
 		},
-		magicalDamage: stat{
+		maxPhysicalDamage: stat{
+			base:       0,
+			withExtras: 0,
+		},
+		minMagicalDamage: stat{
+			base:       0,
+			withExtras: 0,
+		},
+		maxMagicalDamage: stat{
 			base:       0,
 			withExtras: 0,
 		},
@@ -296,9 +331,9 @@ func (p *player) statsData(stats chan<- playerStats, c *character.Character, err
 		},
 		hp:       100,
 		sp:       100,
-		lp:       0,
-		hpStones: 0,
-		spStones: 0,
+		lp:       math.MaxUint32,
+		hpStones: 15,
+		spStones: 15,
 		curseResistance: stat{
 			base:       0,
 			withExtras: 0,
@@ -356,7 +391,6 @@ func (p *player) titleData(titles chan<- playerTitles, c *character.Character, e
 			element: 0,
 			mobID:   0,
 		},
-		titles: nil,
 	}
 	titles <- t
 }
@@ -382,31 +416,7 @@ func (p *player) passiveData(passives chan<- []passive, c *character.Character, 
 	passives <- pa
 }
 
-//ncCharClientBaseCmd(ctx, &char)
-//ncCharClientShapeCmd(ctx, char.Appearance)
-//
-//// todo: quest wrapper
-//ncCharClientQuestDoingCmd(ctx, &char)
-//ncCharClientQuestDoneCmd(ctx, &char)
-//ncCharClientQuestReadCmd(ctx, &char)
-//ncCharClientQuestRepeatCmd(ctx, &char)
-//
-//// todo: skills wrapper
-//ncCharClientPassiveCmd(ctx, &char)
-//ncCharClientSkillCmd(ctx, &char)
-//
-//ncCharClientItemCmd(ctx, char.AllEquippedItems(db))
-//ncCharClientItemCmd(ctx, char.InventoryItems(db))
-//ncCharClientItemCmd(ctx, char.MiniHouseItems(db))
-//ncCharClientItemCmd(ctx, char.PremiumActionItems(db))
-//
-//ncCharClientCharTitleCmd(ctx, &char)
-//
-//ncCharClientGameCmd(ctx)
-//ncCharClientChargedBuffCmd(ctx, &char)
-//ncCharClientCoinInfoCmd(ctx, &char)
-//ncQuestResetTimeClientCmd(ctx, &char)
-func (p *player) ncLoginRepresentation() structs.NcBriefInfoLoginCharacterCmd {
+func (p *player) ncBriefInfoLoginCharacterCmd() structs.NcBriefInfoLoginCharacterCmd {
 	nc := structs.NcBriefInfoLoginCharacterCmd{
 		Handle: p.getHandle(),
 		CharID: structs.Name5{
@@ -421,7 +431,7 @@ func (p *player) ncLoginRepresentation() structs.NcBriefInfoLoginCharacterCmd {
 		},
 		Mode:            0,
 		Class:           p.view.class,
-		Shape:           p.view.protoAvatarShapeInfo(),
+		Shape:           *p.view.protoAvatarShapeInfo(),
 		ShapeData:       structs.NcBriefInfoLoginCharacterCmdShapeData{},
 		Polymorph:       p.state.polymorph,
 		Emoticon:        structs.StopEmoticonDescript{},
@@ -442,8 +452,8 @@ func (p *player) ncLoginRepresentation() structs.NcBriefInfoLoginCharacterCmd {
 	return nc
 }
 
-func (pv *playerView) protoAvatarShapeInfo() structs.ProtoAvatarShapeInfo {
-	return structs.ProtoAvatarShapeInfo{
+func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
+	return &structs.ProtoAvatarShapeInfo{
 		BF:        1 | pv.class<<2 | pv.gender<<7,
 		HairType:  pv.hairType,
 		HairColor: pv.hairColour,
@@ -488,16 +498,16 @@ func (p *player) charParameterData() structs.CharParameterData {
 			Change: p.stats.maxPhysicalDamage.withExtras,
 		},
 		AC: structs.ShineCharStatVar{
-			Base:   0,
-			Change: 0,
+			Base:   p.stats.physicalDefense.base,
+			Change: p.stats.physicalDefense.withExtras,
 		},
 		TH: structs.ShineCharStatVar{
-			Base:   0,
-			Change: 0,
+			Base:   p.stats.aim.base,
+			Change: p.stats.aim.withExtras,
 		},
 		TB: structs.ShineCharStatVar{
-			Base:   0,
-			Change: 0,
+			Base:   p.stats.evasion.base,
+			Change: p.stats.evasion.withExtras,
 		},
 		MALow: structs.ShineCharStatVar{
 			Base:   p.stats.minMagicalDamage.base,
@@ -508,23 +518,23 @@ func (p *player) charParameterData() structs.CharParameterData {
 			Change: p.stats.maxMagicalDamage.withExtras,
 		},
 		MR: structs.ShineCharStatVar{
-			Base:   0,
-			Change: 0,
+			Base:   p.stats.magicalDefense.base,
+			Change: p.stats.magicalDefense.withExtras,
 		},
 		MH: structs.ShineCharStatVar{
-			Base:   0,
-			Change: 0,
+			Base:   500, // ?
+			Change: 500, // ?
 		},
 		MB: structs.ShineCharStatVar{
-			Base:   0,
-			Change: 0,
+			Base:   500, // ?
+			Change: 500, // ?
 		},
 		MaxHP:      p.stats.hp,
 		MaxSP:      p.stats.sp,
 		MaxLP:      p.stats.lp,
 		MaxAP:      0, // ¿?
-		MaxHPStone: p.stats.spStones,
-		MaxSPStone: p.stats.spStones,
+		MaxHPStone: p.stats.maxHpStones,
+		MaxSPStone: p.stats.maxSpStones,
 		PwrStone: structs.CharParameterDataPwrStone{ // ¿?
 			Flag:      0,
 			EPPPhysic: 0,
@@ -581,13 +591,13 @@ func (pi *playerItems) ncCharClientItemCmd() []structs.NcCharClientItemCmd {
 				BF0: 209,
 			},
 		},
-		{
-			NumOfItem: 0,
-			Box:       pi.premium.box,
-			Flag: structs.ProtoNcCharClientItemCmdFlag{
-				BF0: 243,
-			},
-		},
+		//{
+		//	NumOfItem: 0,
+		//	Box:       pi.premium.box,
+		//	Flag: structs.ProtoNcCharClientItemCmdFlag{
+		//		BF0: 243,
+		//	},
+		//},
 	}
 	return ncs
 }

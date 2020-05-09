@@ -36,7 +36,6 @@ func (zm *zoneMap) run() {
 	// run logic routines
 	// as many workers as needed can be launched
 	go zm.playerActivity()
-	go zm.playerActivity()
 }
 
 func (e *mapEntities) newHandle() uint16 {
