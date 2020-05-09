@@ -14,69 +14,53 @@ import (
 	"sync"
 )
 
-
 type zoneMap struct {
 	data      world.MapData
 	walkableX *roaring.Bitmap
 	walkableY *roaring.Bitmap
-	handles   mapEntities
+	entities   entities
 	send      sendEvents
 	recv      recvEvents
 }
 
-type mapEntities struct {
-	counter  uint16
-	players  map[uint16]*player
-	monsters map[uint16]*monster
-	mu       sync.RWMutex
+type entities struct {
+	players
+	monsters
 }
+
+type players struct {
+	manager  handleManager
+	active map[uint16]*player
+	sync.RWMutex
+}
+
+type monsters struct {
+	manager  handleManager
+	active map[uint16]*monster
+	sync.RWMutex
+}
+
+type handleManager struct {
+	min         uint16
+	max         uint16
+	index       uint16
+	maxAttempts uint16
+	list        *roaring.Bitmap
+}
+
+const playerHandleMin = 8000
+const playerHandleMax = 12000
+const playerAttemptsMax = 50
+
+const monsterHandleMin = 17000
+const monsterHandleMax = 27000
+const monsterAttemptsMax = 50
 
 func (zm *zoneMap) run() {
 	// load NPCs for this map
 	// run logic routines
 	// as many workers as needed can be launched
 	go zm.playerActivity()
-}
-
-func (e *mapEntities) newHandle() uint16 {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	e.counter++
-
-	if _, used := e.players[e.counter]; used {
-		return e.newHandle()
-	} else if _, used := e.monsters[e.counter]; used {
-		return e.newHandle()
-	} else {
-		return e.counter
-	}
-}
-
-func (e *mapEntities) addEntity(en entity) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	if pen, ok := en.(*player); ok {
-		e.players[en.getHandle()] = pen
-	} else if men, ok := en.(*monster); ok {
-		e.monsters[en.getHandle()] = men
-	} else {
-		log.Error("unknown entity")
-	}
-}
-
-func (e *mapEntities) removeEntity(en entity) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
-	if pen, ok := en.(player); ok {
-		delete(e.players, pen.getHandle())
-	} else if men, ok := en.(monster); ok {
-		delete(e.monsters, men.getHandle())
-	} else {
-		log.Error("unknown entity")
-	}
 }
 
 // load maps
@@ -130,13 +114,28 @@ func loadMaps() []zoneMap {
 			data:      md,
 			walkableX: walkableX,
 			walkableY: walkableY,
-			handles: mapEntities{
-				counter:  0,
-				players:  make(map[uint16]*player),
-				monsters: make(map[uint16]*monster),
+			entities: entities{
+				players: players{
+					manager: handleManager{
+						min:         playerHandleMin,
+						max:         playerHandleMax,
+						index:       playerHandleMin,
+						maxAttempts: playerAttemptsMax,
+						list:        roaring.NewBitmap(),
+					},
+				},
+				monsters: monsters{
+					manager: handleManager{
+						min:         monsterHandleMin,
+						max:         monsterHandleMax,
+						index:       monsterHandleMin,
+						maxAttempts: monsterAttemptsMax,
+						list:        roaring.NewBitmap(),
+					},
+				},
 			},
-			send: nil,
-			recv: nil,
+			send: make(sendEvents),
+			recv: make(recvEvents),
 		}
 		zoneMaps = append(zoneMaps, zm)
 	}
@@ -177,4 +176,35 @@ func walkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) 
 	}
 
 	return walkableX, walkableY, nil
+}
+
+func (h *handleManager) newHandle() error {
+	var attempts uint16 = 0
+	for h.index < h.max {
+		if attempts == h.maxAttempts {
+			return fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
+		}
+		h.index++
+		if h.index == h.max {
+			h.index = h.min
+		}
+		if h.list.Contains(uint32(h.index)) {
+			fmt.Printf("\nhandle %v already in use", h.index)
+			attempts++
+			continue
+		} else {
+			h.list.Add(uint32(h.index))
+			return nil
+		}
+	}
+	return nil
+}
+
+func (h *handleManager) removeHandle(index uint16) error {
+	if h.list.Contains(uint32(index)) {
+		h.list.Remove(uint32(index))
+		return nil
+	} else {
+		return fmt.Errorf("\nhandle %v not in use, removal is not necessary", index)
+	}
 }

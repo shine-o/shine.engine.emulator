@@ -88,12 +88,12 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		go ncQuestResetTimeClientCmd(p)
 	}()
 
+	//// register player handle at the map he's in
 	//pmhe := playerMapHandleEvent{
 	//	player: player,
 	//}
 
 	ncMapLoginAck(p)
-
 
 	// also send nearby players, mobs, mounts
 	// NC_BRIEFINFO_CHARACTER_CMD
