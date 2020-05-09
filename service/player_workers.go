@@ -42,12 +42,12 @@ func (zm *zoneMap) playerActivity() {
 				log.Errorf("expected event type %vEvent but got %v", playerAppeared, reflect.TypeOf(ev).String())
 				break
 			}
-			zm.handles.mu.Lock()
-			zm.handles.players[ev.player.handle] = ev.player
-			zm.handles.mu.Unlock()
+			zm.entities.players.Lock()
+			zm.entities.players.active[ev.player.handle] = ev.player
+			zm.entities.players.Unlock()
 
-			go newPlayer(ev.player, zm.handles.players)
-			go nearbyPlayers(ev.player, zm.handles.players)
+			go newPlayer(ev.player, zm.entities.players.active)
+			go nearbyPlayers(ev.player, zm.entities.players.active)
 
 		case e := <-zm.recv[playerDisappeared]:
 			log.Info(e)

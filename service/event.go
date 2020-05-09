@@ -10,12 +10,9 @@ type event interface {
 
 type eventIndex uint32
 
-type events map[eventIndex]chan event
-
 type sendEvents map[eventIndex]chan<- event
 
 type recvEvents map[eventIndex]<-chan event
-
 
 const (
 	playerData eventIndex = iota
@@ -31,4 +28,6 @@ const (
 	queryMonster
 
 	clientSHN
+
+	handleCleanUp
 )

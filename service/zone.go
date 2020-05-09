@@ -57,10 +57,6 @@ func (z *zone) load() {
 	zoneMaps := loadMaps()
 	for i, m := range zoneMaps {
 		registerMaps = append(registerMaps, int32(m.data.ID))
-
-		zoneMaps[i].recv = make(recvEvents)
-		zoneMaps[i].send = make(sendEvents)
-
 		events := []eventIndex{playerAppeared, playerDisappeared, playerJumped, playerMoved, playerStopped}
 
 		for _, index := range events {
