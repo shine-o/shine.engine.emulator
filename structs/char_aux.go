@@ -48,9 +48,9 @@ type ProtoNcCharClientItemCmdFlag struct {
 //};
 type ProtoItemPacketInformation struct {
 	DataSize byte
-	// can't be done like this, since data size also covers Location and Info and there's no way to use sizefrom with operators -+ :(
-	// at the handler level, i would have to read the fields manually.
-	ItemData []byte `struct:"sizefrom=DataSize"`
+	Location ItemInventory
+	ItemID   uint16
+	ItemAttr []byte `struct-size:"DataSize - 4"`
 }
 
 //struct SHINE_ITEM_STRUCT

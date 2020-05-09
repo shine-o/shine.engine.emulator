@@ -133,8 +133,8 @@ const (
 type ShineDataMode uint32
 
 const (
-	DataModeNormal     = 0
-	DataModeEncryption = 1
+	DataModeNormal   ShineDataMode  = iota
+	DataModeEncryption
 )
 
 //struct CDataReader::HEAD
