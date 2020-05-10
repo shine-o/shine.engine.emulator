@@ -60,6 +60,7 @@ func (zm *zoneMap) run() {
 	// load NPCs for this map
 	// run logic routines
 	// as many workers as needed can be launched
+	go zm.mapHandles()
 	go zm.playerActivity()
 }
 

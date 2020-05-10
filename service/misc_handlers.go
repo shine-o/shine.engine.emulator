@@ -12,7 +12,6 @@ func ncMiscSeedAck(ctx context.Context, np *networking.Parameters) {
 	case <-ctx.Done():
 		return
 	default:
-
 		xov := ctx.Value(networking.XorOffset)
 		xo := xov.(*uint16)
 
@@ -29,4 +28,20 @@ func ncMiscSeedAck(ctx context.Context, np *networking.Parameters) {
 		np.Command.NcStruct = &nc
 		np.Command.Send(ctx)
 	}
+}
+
+// for the zone service it is the server that makes use of this handler
+func ncMiscHeartBeatReq(p *player) {
+	pc := networking.Command{
+		Base:     networking.CommandBase{
+			OperationCode: 2052,
+		},
+	}
+	pc.SendDirectly(p.conn.outboundData)
+}
+
+// for the zone service it is the client that makes use of this handler
+func ncMiscHeartBeatAck(ctx context.Context, np *networking.Parameters) {
+	// this player's session has info about the handle
+	// update it
 }

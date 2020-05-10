@@ -2,6 +2,7 @@ package service
 
 import (
 	"reflect"
+	"time"
 )
 
 func (zm *zoneMap) mapHandles() {
@@ -15,10 +16,12 @@ func (zm *zoneMap) mapHandles() {
 			}
 			zm.entities.players.Lock()
 			for _, ap := range zm.entities.players.active {
-				//if ap.conn.
+				if time.Since(ap.conn.lastHeartBeat).Seconds() > 15 {
+					ap.conn.close <- true
+					ap.send[heartbeatMissing] <- &emptyEvent{}
+				}
 			}
 			zm.entities.players.Unlock()
-
 
 		case e := <-zm.recv[registerPlayerHandle]:
 			ev, ok := e.(*registerPlayerHandleEvent)
@@ -33,7 +36,7 @@ func (zm *zoneMap) mapHandles() {
 				ev.err <- err
 			}
 			ev.player.handle = zm.entities.players.manager.index
-			//zm.entities.players.active[ev.player.handle] = ev.player
+			ev.session.handle = zm.entities.players.manager.index
 			zm.entities.players.Unlock()
 		}
 	}

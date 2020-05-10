@@ -4,6 +4,7 @@ import (
 	"github.com/shine-o/shine.engine.core/game/character"
 	"github.com/shine-o/shine.engine.core/structs"
 	"math"
+	"time"
 )
 
 type player struct {
@@ -22,6 +23,7 @@ type player struct {
 }
 
 type playerConnection struct {
+	lastHeartBeat time.Time
 	close        chan<- bool
 	outboundData chan<- []byte
 }

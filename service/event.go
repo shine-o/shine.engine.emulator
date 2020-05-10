@@ -14,6 +14,11 @@ type sendEvents map[eventIndex]chan<- event
 
 type recvEvents map[eventIndex]<-chan event
 
+// to use when no particular data is needed
+type emptyEvent struct {
+	err chan error
+}
+
 const (
 	loadPlayerData eventIndex = iota
 	registerPlayerHandle
@@ -30,4 +35,10 @@ const (
 	clientSHN
 
 	handleCleanUp
+
+	heartbeatMissing
 )
+
+func (e * emptyEvent) erroneous() <-chan error  {
+	return e.err
+}
