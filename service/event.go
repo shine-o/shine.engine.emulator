@@ -5,7 +5,7 @@ package service
 type event interface {
 	// notify the caller about an error while processing event
 	// the process triggering the event should handle next steps in case of error
-	erroneous() <- chan error
+	erroneous() <-chan error
 }
 
 type eventIndex uint32
@@ -15,8 +15,8 @@ type sendEvents map[eventIndex]chan<- event
 type recvEvents map[eventIndex]<-chan event
 
 const (
-	playerData eventIndex = iota
-	playerMapHandle
+	loadPlayerData eventIndex = iota
+	registerPlayerHandle
 	playerAppeared
 	playerDisappeared
 	playerMoved

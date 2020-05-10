@@ -55,8 +55,8 @@ type playerStats struct {
 	hp                  uint32
 	sp                  uint32
 	lp                  uint32
-	maxHpStones            uint32
-	maxSpStones            uint32
+	maxHpStones         uint32
+	maxSpStones         uint32
 	hpStones            uint16
 	spStones            uint16
 	curseResistance     stat
@@ -236,7 +236,7 @@ func (p *player) load(name string) error {
 			return err
 		}
 
-		if done == 8 {// risky, checking if channels are nil is safer
+		if done == 8 { // risky, checking if channels are nil is safer
 			return nil
 		}
 	}
