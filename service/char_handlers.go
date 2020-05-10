@@ -30,70 +30,85 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	// 			playerAppearedEvent
 	//			socialNotificationsEvent
 
-	cse := clientSHNEvent{
+	var (
+		cse            clientSHNEvent
+		cde            playerDataEvent
+		shnOK          = make(chan bool)
+		playerData     = make(chan *player)
+		playerDataSent = make(chan bool)
+		eErr           = make(chan error)
+	)
+
+	cse = clientSHNEvent{
 		inboundNC: nc,
-		ok:        make(chan bool),
+		ok:        shnOK,
+		err:       eErr,
 	}
 
 	zoneEvents[clientSHN] <- &cse
 
-	select {
-	case <- cse.ok:
-		break
-	case err := <- cse.erroneous():
-		log.Error(err)
-		// fail ack with failure code
-		// drop connection
-		return
-	}
-
-	cde := playerDataEvent{
-		player:         make(chan *player),
-		net: np,
+	cde = playerDataEvent{
+		player:     playerData,
+		net:        np,
 		playerName: nc.CharData.CharID.Name,
+		err:        eErr,
 	}
 
-	zoneEvents[playerData] <- &cde
+	zoneEvents[loadPlayerData] <- &cde
 
-	var p * player
 	select {
-	case p = <- cde.player:
+	case <-cse.ok:
 		break
-	case err := <- cde.erroneous():
+	case err := <-cse.erroneous():
 		log.Error(err)
 		// fail ack with failure code
 		// drop connection
 		return
 	}
 
+	var p *player
 
-	ncCharClientBaseCmd(p)
-	ncCharClientShapeCmd(p)
+	select {
+	case p = <-cde.player:
+		go func() {
+			ncCharClientBaseCmd(p)
+			ncCharClientShapeCmd(p)
+			ncCharClientQuestDoingCmd(p)
+			ncCharClientQuestDoneCmd(p)
+			ncCharClientQuestReadCmd(p)
+			ncCharClientQuestRepeatCmd(p)
 
-	go func() {
-		go ncCharClientQuestDoingCmd(p)
-		go ncCharClientQuestDoneCmd(p)
-		go ncCharClientQuestReadCmd(p)
-		go ncCharClientQuestRepeatCmd(p)
-
-		go ncCharClientPassiveCmd(p)
-		go ncCharClientSkillCmd(p)
-		for _, c := range p.items.ncCharClientItemCmd() {
-			go ncCharClientItemCmd(p, c)
-		}
-		go ncCharClientCharTitleCmd(p)
-		go ncCharClientGameCmd(p)
-		go ncCharClientChargedBuffCmd(p)
-		go ncCharClientCoinInfoCmd(p)
-		go ncQuestResetTimeClientCmd(p)
-	}()
+			ncCharClientPassiveCmd(p)
+			ncCharClientSkillCmd(p)
+			for _, c := range p.items.ncCharClientItemCmd() {
+				go ncCharClientItemCmd(p, c)
+			}
+			ncCharClientCharTitleCmd(p)
+			ncCharClientGameCmd(p)
+			ncCharClientChargedBuffCmd(p)
+			ncCharClientCoinInfoCmd(p)
+			ncQuestResetTimeClientCmd(p)
+			playerDataSent <- true
+		}()
+		break
+	case err := <-cde.erroneous():
+		log.Error(err)
+		// fail ack with failure code
+		// drop connection
+		return
+	}
 
 	//// register player handle at the map he's in
 	//pmhe := playerMapHandleEvent{
 	//	player: player,
 	//}
 
-	ncMapLoginAck(p)
+	select {
+	case <-playerDataSent:
+		ncMapLoginAck(p)
+		break
+
+	}
 
 	// also send nearby players, mobs, mounts
 	// NC_BRIEFINFO_CHARACTER_CMD
@@ -108,7 +123,7 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 }
 
 //NC_CHAR_CLIENT_BASE_CMD
-func ncCharClientBaseCmd(p * player) {
+func ncCharClientBaseCmd(p *player) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4152,
@@ -164,7 +179,7 @@ func ncCharClientBaseCmd(p * player) {
 }
 
 //NC_CHAR_CLIENT_SHAPE_CMD
-func ncCharClientShapeCmd(p * player) {
+func ncCharClientShapeCmd(p *player) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4153,
@@ -175,7 +190,7 @@ func ncCharClientShapeCmd(p * player) {
 }
 
 //NC_CHAR_CLIENT_ITEM_CMD
-func ncCharClientItemCmd(p * player, nc structs.NcCharClientItemCmd) {
+func ncCharClientItemCmd(p *player, nc structs.NcCharClientItemCmd) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4167,
@@ -186,7 +201,7 @@ func ncCharClientItemCmd(p * player, nc structs.NcCharClientItemCmd) {
 }
 
 //NC_MAP_LOGIN_ACK
-func ncMapLoginAck(p * player) {
+func ncMapLoginAck(p *player) {
 	// handle ID
 	// character complete Parameters (resultant stats from base + items )
 	// todo: character stat calculation given the assigned stats, title, equipped items, abstate
@@ -208,14 +223,14 @@ func ncMapLoginAck(p * player) {
 
 //NC_CHAR_CLIENT_QUEST_READ_CMD
 //4302
-func ncCharClientQuestReadCmd(p * player) {
+func ncCharClientQuestReadCmd(p *player) {
 	// todo: quest logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4302,
 		},
 		NcStruct: &structs.NcCharClientQuestReadCmd{
-			CharID:             uint32(p.char.ID),
+			CharID:          uint32(p.char.ID),
 			NumOfReadQuests: 0,
 		},
 	}
@@ -224,14 +239,14 @@ func ncCharClientQuestReadCmd(p * player) {
 
 //NC_CHAR_CLIENT_QUEST_DOING_CMD
 //4154
-func ncCharClientQuestDoingCmd(p * player) {
+func ncCharClientQuestDoingCmd(p *player) {
 	// todo: quest logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4154,
 		},
 		NcStruct: &structs.NcCharClientQuestDoingCmd{
-			CharID:             uint32(p.char.ID),
+			CharID:          uint32(p.char.ID),
 			NeedClear:       0,
 			NumOfDoingQuest: 0,
 		},
@@ -241,7 +256,7 @@ func ncCharClientQuestDoingCmd(p * player) {
 
 //NC_CHAR_CLIENT_QUEST_DONE_CMD
 //4155
-func ncCharClientQuestDoneCmd(p * player) {
+func ncCharClientQuestDoneCmd(p *player) {
 	// todo: quest logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -260,14 +275,14 @@ func ncCharClientQuestDoneCmd(p * player) {
 
 //NC_CHAR_CLIENT_QUEST_REPEAT_CMD
 //4311
-func ncCharClientQuestRepeatCmd(p * player) {
+func ncCharClientQuestRepeatCmd(p *player) {
 	// todo: quest logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4311,
 		},
 		NcStruct: &structs.NcCharClientQuestRepeatCmd{
-			CharID:             uint32(p.char.ID),
+			CharID: uint32(p.char.ID),
 			Count:  0,
 		},
 	}
@@ -276,7 +291,7 @@ func ncCharClientQuestRepeatCmd(p * player) {
 
 //NC_CHAR_CLIENT_PASSIVE_CMD
 //4158
-func ncCharClientPassiveCmd(p * player) {
+func ncCharClientPassiveCmd(p *player) {
 	// todo: skill logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -291,7 +306,7 @@ func ncCharClientPassiveCmd(p * player) {
 
 //NC_CHAR_CLIENT_SKILL_CMD
 //4157
-func ncCharClientSkillCmd(p * player) {
+func ncCharClientSkillCmd(p *player) {
 	// todo: skill logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -314,7 +329,7 @@ func ncCharClientSkillCmd(p * player) {
 
 //NC_CHAR_CLIENT_CHARTITLE_CMD
 //4169
-func ncCharClientCharTitleCmd(p * player) {
+func ncCharClientCharTitleCmd(p *player) {
 	// todo: character title logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -332,7 +347,7 @@ func ncCharClientCharTitleCmd(p * player) {
 
 //NC_CHAR_CLIENT_GAME_CMD
 //4168
-func ncCharClientGameCmd(p * player) {
+func ncCharClientGameCmd(p *player) {
 	// no idea what this is for
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -348,7 +363,7 @@ func ncCharClientGameCmd(p * player) {
 
 //NC_CHAR_CLIENT_CHARGEDBUFF_CMD
 //4170
-func ncCharClientChargedBuffCmd(p * player) {
+func ncCharClientChargedBuffCmd(p *player) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4170,
@@ -362,7 +377,7 @@ func ncCharClientChargedBuffCmd(p * player) {
 
 //NC_CHAR_CLIENT_COININFO_CMD
 //4318
-func ncCharClientCoinInfoCmd(p * player) {
+func ncCharClientCoinInfoCmd(p *player) {
 	// todo: money && fame logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -378,13 +393,13 @@ func ncCharClientCoinInfoCmd(p * player) {
 
 //NC_QUEST_RESET_TIME_CLIENT_CMD
 //17438
-func ncQuestResetTimeClientCmd(p * player) {
+func ncQuestResetTimeClientCmd(p *player) {
 	// todo: quest logic
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 17438,
 		},
-		NcStruct: &structs.NcQuestResetTimeClientCmd {
+		NcStruct: &structs.NcQuestResetTimeClientCmd{
 			ResetYear:  1577862000,
 			ResetMonth: 1585724400,
 			ResetWeek:  1586761200,

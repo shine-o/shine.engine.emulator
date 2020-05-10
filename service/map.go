@@ -18,7 +18,7 @@ type zoneMap struct {
 	data      world.MapData
 	walkableX *roaring.Bitmap
 	walkableY *roaring.Bitmap
-	entities   entities
+	entities  entities
 	send      sendEvents
 	recv      recvEvents
 }
@@ -29,14 +29,14 @@ type entities struct {
 }
 
 type players struct {
-	manager  handleManager
-	active map[uint16]*player
+	manager handleManager
+	active  map[uint16]*player
 	sync.RWMutex
 }
 
 type monsters struct {
-	manager  handleManager
-	active map[uint16]*monster
+	manager handleManager
+	active  map[uint16]*monster
 	sync.RWMutex
 }
 
