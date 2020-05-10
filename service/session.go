@@ -16,7 +16,9 @@ type session struct {
 	id            string
 	characterID   uint64
 	characterName string
-	sector        *sector
+	mapID int
+	mapName int
+	handle uint16
 }
 
 func (s sessionFactory) New() networking.Session {

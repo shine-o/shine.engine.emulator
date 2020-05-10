@@ -102,13 +102,14 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	//pmhe := playerMapHandleEvent{
 	//	player: player,
 	//}
-
 	select {
 	case <-playerDataSent:
 		ncMapLoginAck(p)
 		break
-
 	}
+
+	// register player event
+
 
 	// also send nearby players, mobs, mounts
 	// NC_BRIEFINFO_CHARACTER_CMD

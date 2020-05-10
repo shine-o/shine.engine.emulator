@@ -11,20 +11,12 @@ type playerEventError struct {
 	message string
 }
 
-func (e playerEventError) Error() string {
-	return e.message
-}
-
 // set player data, send it to the client and return the player through the channel
 type playerDataEvent struct {
 	player     chan *player
 	playerName string
 	err        chan error
 	net        *networking.Parameters
-}
-
-func (e *playerDataEvent) erroneous() <-chan error {
-	return e.err
 }
 
 type playerAppearedEvent struct {
@@ -35,11 +27,19 @@ type playerAppearedEvent struct {
 	err        chan error
 }
 
+var errInvalidMap = playerEventError{
+	code:    0,
+	message: "character is located in an map that is not running on this zone",
+}
+
+func (e *playerDataEvent) erroneous() <-chan error {
+	return e.err
+}
+
 func (e *playerAppearedEvent) erroneous() <-chan error {
 	return e.err
 }
 
-var errInvalidMap = playerEventError{
-	code:    0,
-	message: "character is located in an map that is not running on this zone",
+func (e playerEventError) Error() string {
+	return e.message
 }

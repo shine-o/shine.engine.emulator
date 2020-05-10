@@ -5,8 +5,6 @@ import "fmt"
 type entity interface {
 	getHandle() uint16
 	getLocation() (uint32, uint32)
-	inbox() chan<- event
-	poke() chan<- tick
 }
 
 type basicActions interface {
@@ -23,8 +21,8 @@ type location struct {
 type baseEntity struct {
 	handle uint16
 	location
-	events chan<- event
-	ticks  chan<- tick
+	send sendEvents
+	recv recvEvents
 }
 
 func (b baseEntity) getHandle() uint16 {
@@ -33,14 +31,6 @@ func (b baseEntity) getHandle() uint16 {
 
 func (b baseEntity) getLocation() (uint32, uint32) {
 	return b.location.x, b.location.y
-}
-
-func (b baseEntity) inbox() chan<- event {
-	return b.events
-}
-
-func (b baseEntity) poke() chan<- tick {
-	return b.ticks
 }
 
 func (b baseEntity) move(m zoneMap, x, y int) error {
