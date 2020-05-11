@@ -2,7 +2,13 @@ package service
 
 type queryMapEvent struct {
 	id  int
-	zm  chan<- *zoneMap
+	zm  chan *zoneMap
+	err chan error
+}
+
+type queryPlayerEvent struct {
+	id  int
+	zm  chan *player
 	err chan error
 }
 

@@ -3,7 +3,6 @@ package service
 import (
 	"github.com/shine-o/shine.engine.core/game/character"
 	"github.com/shine-o/shine.engine.core/structs"
-	"math"
 	"time"
 )
 
@@ -333,7 +332,7 @@ func (p *player) statsData(stats chan<- playerStats, c *character.Character, err
 		},
 		hp:       100,
 		sp:       100,
-		lp:       math.MaxUint32,
+		lp:       0,
 		hpStones: 15,
 		spStones: 15,
 		curseResistance: stat{
@@ -370,9 +369,6 @@ func (p *player) itemData(items chan<- playerItems, c *character.Character, err 
 		},
 		miniHouse: itemBox{
 			box: 12,
-		},
-		reward: itemBox{
-			box: 2,
 		},
 		premium: itemBox{
 			box: 15,
@@ -576,30 +572,30 @@ func (pi *playerItems) ncCharClientItemCmd() []structs.NcCharClientItemCmd {
 			NumOfItem: 0,
 			Box:       pi.equipped.box,
 			Flag: structs.ProtoNcCharClientItemCmdFlag{
-				BF0: 183,
+				BF0: 0,
 			},
 		},
 		{
 			NumOfItem: 0,
 			Box:       pi.inventory.box,
 			Flag: structs.ProtoNcCharClientItemCmdFlag{
-				BF0: 165,
+				BF0: 0,
 			},
 		},
 		{
 			NumOfItem: 0,
 			Box:       pi.miniHouse.box,
 			Flag: structs.ProtoNcCharClientItemCmdFlag{
-				BF0: 209,
+				BF0: 0,
 			},
 		},
-		//{
-		//	NumOfItem: 0,
-		//	Box:       pi.premium.box,
-		//	Flag: structs.ProtoNcCharClientItemCmdFlag{
-		//		BF0: 243,
-		//	},
-		//},
+		{
+			NumOfItem: 0,
+			Box:       pi.premium.box,
+			Flag: structs.ProtoNcCharClientItemCmdFlag{
+				BF0: 0,
+			},
+		},
 	}
 	return ncs
 }

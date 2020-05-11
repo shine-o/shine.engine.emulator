@@ -6,12 +6,13 @@ import (
 )
 
 func (zm *zoneMap) mapHandles() {
+	log.Infof("[map_worker] mapHandles worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
 		case e := <-zm.recv[handleCleanUp]:
 			ev, ok := e.(*handleCleanUpEvent)
 			if !ok {
-				log.Errorf("expected event type %vEvent but got %v", handleCleanUp, reflect.TypeOf(ev).String())
+				log.Errorf("expected event type %v but got %v", reflect.TypeOf(handleCleanUpEvent{}).String(), reflect.TypeOf(ev).String())
 				break
 			}
 			zm.entities.players.Lock()
@@ -26,7 +27,7 @@ func (zm *zoneMap) mapHandles() {
 		case e := <-zm.recv[registerPlayerHandle]:
 			ev, ok := e.(*registerPlayerHandleEvent)
 			if !ok {
-				log.Errorf("expected event type %vEvent but got %v", registerPlayerHandle, reflect.TypeOf(ev).String())
+				log.Errorf("expected event type %v but got %v", reflect.TypeOf(&registerPlayerHandleEvent{}).String(), reflect.TypeOf(ev).String())
 				break
 			}
 			//
@@ -34,15 +35,21 @@ func (zm *zoneMap) mapHandles() {
 			err := zm.entities.players.manager.newHandle()
 			if err != nil {
 				ev.err <- err
+				break
 			}
-			ev.player.handle = zm.entities.players.manager.index
-			ev.session.handle = zm.entities.players.manager.index
+			handle := zm.entities.players.manager.index
 			zm.entities.players.Unlock()
+
+			ev.player.handle = handle
+			ev.session.handle = handle
+			go ev.player.heartbeat()
+			ev.done <- true
 		}
 	}
 }
 
 func (zm *zoneMap) playerActivity() {
+	log.Infof("[map_worker] playerActivity worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
 		case e := <-zm.recv[playerAppeared]:
@@ -51,15 +58,15 @@ func (zm *zoneMap) playerActivity() {
 			// mobs will check if player is in range for attack
 			ev, ok := e.(*playerAppearedEvent)
 			if !ok {
-				log.Errorf("expected event type %vEvent but got %v", playerAppeared, reflect.TypeOf(ev).String())
+				log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
 				break
 			}
 			zm.entities.players.Lock()
-			zm.entities.players.active[ev.player.handle] = ev.player
+			player := zm.entities.players.active[ev.playerHandle]
 			zm.entities.players.Unlock()
 
-			go newPlayer(ev.player, zm.entities.players.active)
-			go nearbyPlayers(ev.player, zm.entities.players.active)
+			go newPlayer(player, zm.entities.players.active)
+			go nearbyPlayers(player, zm.entities.players.active)
 
 		case e := <-zm.recv[playerDisappeared]:
 			log.Info(e)
@@ -69,6 +76,26 @@ func (zm *zoneMap) playerActivity() {
 			log.Info(e)
 		case e := <-zm.recv[playerJumped]:
 			log.Info(e)
+		}
+	}
+}
+
+func (zm *zoneMap) playerQueries() {
+	log.Infof("[map_worker] playerQueries worker for map %v", zm.data.Info.MapName)
+	for {
+		select {
+		case eq := <-zm.recv[queryPlayer]:
+			log.Info(eq)
+		}
+	}
+}
+
+func (zm *zoneMap) monsterQueries() {
+	log.Infof("[map_worker] monsterQueries worker for map %v", zm.data.Info.MapName)
+	for {
+		select {
+		case eq := <-zm.recv[queryMonster]:
+			log.Info(eq)
 		}
 	}
 }

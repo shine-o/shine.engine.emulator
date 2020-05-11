@@ -62,6 +62,8 @@ func (zm *zoneMap) run() {
 	// as many workers as needed can be launched
 	go zm.mapHandles()
 	go zm.playerActivity()
+	go zm.playerQueries()
+	go zm.monsterQueries()
 }
 
 // load maps
