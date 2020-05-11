@@ -24,6 +24,17 @@ func (z *zone) playerSession() {
 					outboundData:  ev.net.NetVars.OutboundSegments.Send,
 				},
 			}
+
+			events := []eventIndex{heartbeatMissing}
+			p.recv = make(recvEvents)
+			p.send = make(sendEvents)
+
+			for _, index := range events {
+				c := make(chan event, 2)
+				p.recv[index] = c
+				p.send[index] = c
+			}
+
 			err := p.load(ev.playerName)
 			if err != nil {
 				ev.err <- err

@@ -61,6 +61,7 @@ func (zm *zoneMap) run() {
 	// run logic routines
 	// as many workers as needed can be launched
 	go zm.mapHandles()
+	go zm.removeInactiveHandles()
 	go zm.playerActivity()
 	go zm.playerQueries()
 	go zm.monsterQueries()
@@ -126,6 +127,7 @@ func loadMaps() []zoneMap {
 						maxAttempts: playerAttemptsMax,
 						list:        roaring.NewBitmap(),
 					},
+					active:  make(map[uint16]*player),
 				},
 				monsters: monsters{
 					manager: handleManager{
@@ -134,7 +136,9 @@ func loadMaps() []zoneMap {
 						index:       monsterHandleMin,
 						maxAttempts: monsterAttemptsMax,
 						list:        roaring.NewBitmap(),
+
 					},
+					active:  make(map[uint16]*monster),
 				},
 			},
 			send: make(sendEvents),

@@ -56,7 +56,7 @@ func (z *zone) load() {
 	zoneMaps := loadMaps()
 	for i, m := range zoneMaps {
 		registerMaps = append(registerMaps, int32(m.data.ID))
-		events := []eventIndex{registerPlayerHandle, queryPlayer, queryMonster, playerAppeared, playerDisappeared, playerJumped, playerMoved, playerStopped}
+		events := []eventIndex{registerPlayerHandle, handleCleanUp,queryPlayer, queryMonster, playerAppeared, playerDisappeared, playerJumped, playerMoved, playerStopped}
 
 		for _, index := range events {
 			c := make(chan event, 5)
@@ -64,8 +64,9 @@ func (z *zone) load() {
 			zoneMaps[i].send[index] = c
 		}
 
-		go zoneMaps[i].run()
 		rm[m.data.ID] = &zoneMaps[i]
+
+		go zoneMaps[i].run()
 	}
 
 	events := []eventIndex{clientSHN, loadPlayerData, queryMap}
