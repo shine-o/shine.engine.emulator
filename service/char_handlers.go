@@ -142,6 +142,9 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	case <-handleRegistered:
 		ncMapLoginAck(p)
 		return
+	case err := <-rphe.erroneous():
+		log.Error(err)
+		return
 	}
 	// also send nearby players, mobs, mounts
 	// NC_BRIEFINFO_CHARACTER_CMD
@@ -440,7 +443,7 @@ func ncQuestResetTimeClientCmd(p *player) {
 
 // NC_MAP_LOGINCOMPLETE_CMD
 // 6147
-func ncMapLoginCompleteCmd(ctx context.Context, pc *networking.Command) {
+func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 	// fetch user session
 	var (
 		mqe queryMapEvent

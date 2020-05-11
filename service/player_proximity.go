@@ -10,7 +10,7 @@ func newPlayer(p *player, nearbyPlayers map[uint16]*player) {
 		if p.handle == np.handle {
 			continue
 		}
-		//ncBriefInfoLoginCharacterCmd(p, &ev.nc)
+		ncBriefInfoLoginCharacterCmd(p, p.ncBriefInfoLoginCharacterCmd())
 	}
 }
 

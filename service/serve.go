@@ -65,6 +65,7 @@ func Start(cmd *cobra.Command, args []string) {
 		ShineHandler: networking.ShineHandler{
 			2055: ncMiscSeedAck,
 			6145: ncMapLoginReq,
+			6147: ncMapLoginCompleteCmd,
 			4209: ncCharLogoutReadyCmd,
 		},
 		SessionFactory: sessionFactory{},
