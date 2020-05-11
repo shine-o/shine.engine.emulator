@@ -80,7 +80,7 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		ncCharClientPassiveCmd(p)
 		ncCharClientSkillCmd(p)
 		cmd := p.items.ncCharClientItemCmd()
-		for _, c := range  cmd {
+		for _, c := range cmd {
 			ncCharClientItemCmd(p, c)
 		}
 		ncCharClientCharTitleCmd(p)
@@ -94,7 +94,7 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	//query map
 	var (
 		mapResult = make(chan *zoneMap)
-		zm     *zoneMap
+		zm        *zoneMap
 	)
 
 	mqe = queryMapEvent{
@@ -440,32 +440,31 @@ func ncQuestResetTimeClientCmd(p *player) {
 	pc.SendDirectly(p.conn.outboundData)
 }
 
-
 // NC_MAP_LOGINCOMPLETE_CMD
 // 6147
 func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 	// fetch user session
 	var (
-		mqe queryMapEvent
-		pae playerAppearedEvent
+		mqe      queryMapEvent
+		pae      playerAppearedEvent
 		eventErr = make(chan error)
 	)
 
 	sv := ctx.Value(networking.ShineSession)
 
-		session, ok := sv.(*session)
+	session, ok := sv.(*session)
 
-		if !ok {
+	if !ok {
 		log.Error("no session available")
 		return
 	}
 
-		var (
+	var (
 		mapResult = make(chan *zoneMap)
-		zm     *zoneMap
+		zm        *zoneMap
 	)
 
-		mqe = queryMapEvent{
+	mqe = queryMapEvent{
 		id:  session.mapID,
 		zm:  mapResult,
 		err: eventErr,
@@ -474,9 +473,9 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 	zoneEvents[queryMap] <- &mqe
 
 	select {
-	case zm = <- mapResult:
+	case zm = <-mapResult:
 		break
-	case e := <- eventErr:
+	case e := <-eventErr:
 		log.Error(e)
 		return
 	}

@@ -25,7 +25,7 @@ func (z *zone) playerSession() {
 				},
 			}
 
-			events := []eventIndex{heartbeatMissing}
+			events := []eventIndex{heartbeatMissing, heartbeatUpdate}
 			p.recv = make(recvEvents)
 			p.send = make(sendEvents)
 
