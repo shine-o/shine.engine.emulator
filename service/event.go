@@ -36,6 +36,7 @@ const (
 
 	handleCleanUp
 
+	heartbeatUpdate
 	heartbeatMissing
 )
 
