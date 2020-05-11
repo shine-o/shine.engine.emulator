@@ -17,28 +17,15 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	// NC_MAP_LOGIN_REQ process
-	// 		shnFileCheck event (bifurcation)
-	//			if !ok
-	//			NC_MAP_LOGINFAIL_ACK
-	// 		character data event(shape, stats, quests, items, etc..)
-	//
-	// 		NC_MAP_LOGIN_ACK
-	//			registerPlayerHandle event  (save handle id in session, for when client sends NC_MAP_LOGINCOMPLETE_CMD)
-	//
-	//			NC_MAP_LOGINCOMPLETE_CMD (continued in handler: ncMapLoginCompleteCmd)
-	// 			playerAppearedEvent
-	//			socialNotificationsEvent
-
 	var (
-		cse            clientSHNEvent
-		cde            playerDataEvent
-		shnOK          = make(chan bool)
-		playerData     = make(chan *player)
-		playerDataSent = make(chan bool)
-		eErr           = make(chan error)
+		cse  clientSHNEvent
+		cde  playerDataEvent
+		mqe  queryMapEvent
+		rphe registerPlayerHandleEvent
+		eErr = make(chan error)
 	)
 
+	var shnOK = make(chan bool)
 	cse = clientSHNEvent{
 		inboundNC: nc,
 		ok:        shnOK,
@@ -46,6 +33,12 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	zoneEvents[clientSHN] <- &cse
+
+	var (
+		p              *player
+		playerData     = make(chan *player)
+		playerDataSent = make(chan bool)
+	)
 
 	cde = playerDataEvent{
 		player:     playerData,
@@ -57,7 +50,7 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	zoneEvents[loadPlayerData] <- &cde
 
 	select {
-	case <-cse.ok:
+	case <-shnOK:
 		break
 	case err := <-cse.erroneous():
 		log.Error(err)
@@ -66,30 +59,8 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	var p *player
-
 	select {
-	case p = <-cde.player:
-		go func() {
-			ncCharClientBaseCmd(p)
-			ncCharClientShapeCmd(p)
-			ncCharClientQuestDoingCmd(p)
-			ncCharClientQuestDoneCmd(p)
-			ncCharClientQuestReadCmd(p)
-			ncCharClientQuestRepeatCmd(p)
-
-			ncCharClientPassiveCmd(p)
-			ncCharClientSkillCmd(p)
-			for _, c := range p.items.ncCharClientItemCmd() {
-				go ncCharClientItemCmd(p, c)
-			}
-			ncCharClientCharTitleCmd(p)
-			ncCharClientGameCmd(p)
-			ncCharClientChargedBuffCmd(p)
-			ncCharClientCoinInfoCmd(p)
-			ncQuestResetTimeClientCmd(p)
-			playerDataSent <- true
-		}()
+	case p = <-playerData:
 		break
 	case err := <-cde.erroneous():
 		log.Error(err)
@@ -98,29 +69,84 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	//// register player handle at the map he's in
-	//pmhe := playerMapHandleEvent{
-	//	player: player,
-	//}
+	ncCharClientBaseCmd(p)
+	ncCharClientShapeCmd(p)
+	go func(done chan<- bool) {
+		ncCharClientQuestDoingCmd(p)
+		ncCharClientQuestDoneCmd(p)
+		ncCharClientQuestReadCmd(p)
+		ncCharClientQuestRepeatCmd(p)
+
+		ncCharClientPassiveCmd(p)
+		ncCharClientSkillCmd(p)
+		cmd := p.items.ncCharClientItemCmd()
+		for _, c := range  cmd {
+			ncCharClientItemCmd(p, c)
+		}
+		ncCharClientCharTitleCmd(p)
+		ncCharClientGameCmd(p)
+		ncCharClientChargedBuffCmd(p)
+		ncCharClientCoinInfoCmd(p)
+		ncQuestResetTimeClientCmd(p)
+		done <- true
+	}(playerDataSent)
+
+	//query map
+	var (
+		mapResult = make(chan *zoneMap)
+		zm     *zoneMap
+	)
+
+	mqe = queryMapEvent{
+		id:  p.location.mapID,
+		zm:  mapResult,
+		err: eErr,
+	}
+
+	zoneEvents[queryMap] <- &mqe
+
 	select {
 	case <-playerDataSent:
-		ncMapLoginAck(p)
 		break
 	}
 
-	// register player event
+	select {
+	case zm = <-mapResult:
+		break
+	case err := <-mqe.erroneous():
+		log.Error(err)
+		return
+	}
 
+	sv := ctx.Value(networking.ShineSession)
 
+	session, ok := sv.(*session)
+
+	if !ok {
+		log.Errorf("no session available for player %v", p.view.name)
+		return
+	}
+
+	var handleRegistered = make(chan bool)
+
+	rphe = registerPlayerHandleEvent{
+		player:  p,
+		session: session,
+		done:    handleRegistered,
+		err:     eErr,
+	}
+
+	zm.send[registerPlayerHandle] <- &rphe
+
+	select {
+	case <-handleRegistered:
+		ncMapLoginAck(p)
+		return
+	}
 	// also send nearby players, mobs, mounts
 	// NC_BRIEFINFO_CHARACTER_CMD
 	// NC_BRIEFINFO_MOB_CMD
 	// NC_BRIEFINFO_MOVER_CMD
-
-	// register player to map
-
-	//runPlayerAppearedEvent(np, char)
-
-	// to this player send him info about nearby players, mobs, npc
 }
 
 //NC_CHAR_CLIENT_BASE_CMD
@@ -211,7 +237,8 @@ func ncMapLoginAck(p *player) {
 			OperationCode: 6146,
 		},
 		NcStruct: &structs.NcMapLoginAck{
-			Handle: 2222, // id of the entity inside this map
+			Handle: p.handle, // id of the entity inside this map
+			//Handle: 2222, // id of the entity inside this map
 			Params: p.charParameterData(),
 			LoginCoord: structs.ShineXYType{
 				X: p.location.x,
@@ -316,7 +343,7 @@ func ncCharClientSkillCmd(p *player) {
 		NcStruct: &structs.NcCharClientSkillCmd{
 			RestEmpower: 0,
 			PartMark: structs.PartMark{
-				BF0: 3,
+				BF0: 0,
 			},
 			MaxNum: 0,
 			Skills: structs.NcCharSkillClientCmd{
@@ -349,7 +376,7 @@ func ncCharClientCharTitleCmd(p *player) {
 //NC_CHAR_CLIENT_GAME_CMD
 //4168
 func ncCharClientGameCmd(p *player) {
-	// no idea what this is for
+	// no idea what this is f	or
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4168,
@@ -410,9 +437,63 @@ func ncQuestResetTimeClientCmd(p *player) {
 	pc.SendDirectly(p.conn.outboundData)
 }
 
+
 // NC_MAP_LOGINCOMPLETE_CMD
 // 6147
-func ncMapLoginCompleteCmd(ctx context.Context, pc *networking.Command) {}
+func ncMapLoginCompleteCmd(ctx context.Context, pc *networking.Command) {
+	// fetch user session
+	var (
+		mqe queryMapEvent
+		pae playerAppearedEvent
+		eventErr = make(chan error)
+	)
+
+	sv := ctx.Value(networking.ShineSession)
+
+		session, ok := sv.(*session)
+
+		if !ok {
+		log.Error("no session available")
+		return
+	}
+
+		var (
+		mapResult = make(chan *zoneMap)
+		zm     *zoneMap
+	)
+
+		mqe = queryMapEvent{
+		id:  session.mapID,
+		zm:  mapResult,
+		err: eventErr,
+	}
+
+	zoneEvents[queryMap] <- &mqe
+
+	select {
+	case zm = <- mapResult:
+		break
+	case e := <- eventErr:
+		log.Error(e)
+		return
+	}
+
+	pae = playerAppearedEvent{
+		playerHandle: session.handle,
+		mapID:        session.mapID,
+		err:          eventErr,
+	}
+
+	zm.send[playerAppeared] <- &pae
+
+	// there's the mapID, handle ID
+
+	// start the heartbeat for this player
+
+	// send info about surrounding mobs, players to this player
+
+	// to all surrounding players, send info about this player
+}
 
 //NC_CHAR_LOGOUTREADY_CMD
 func ncCharLogoutReadyCmd(ctx context.Context, np *networking.Parameters) {

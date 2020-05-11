@@ -1,15 +1,8 @@
 package service
 
 import (
-	"github.com/shine-o/shine.engine.core/game/character"
 	"github.com/shine-o/shine.engine.core/networking"
-	"github.com/shine-o/shine.engine.core/structs"
 )
-
-type playerEventError struct {
-	code    int
-	message string
-}
 
 // set player data, send it to the client and return the player through the channel
 type playerDataEvent struct {
@@ -20,16 +13,9 @@ type playerDataEvent struct {
 }
 
 type playerAppearedEvent struct {
-	np         *networking.Parameters
-	char       *character.Character
-	player     *player
-	outboundNC structs.NcBriefInfoLoginCharacterCmd
-	err        chan error
-}
-
-var errInvalidMap = playerEventError{
-	code:    0,
-	message: "character is located in an map that is not running on this zone",
+	playerHandle uint16
+	mapID 		 int
+	err        	 chan error
 }
 
 func (e *playerDataEvent) erroneous() <-chan error {
@@ -38,8 +24,4 @@ func (e *playerDataEvent) erroneous() <-chan error {
 
 func (e *playerAppearedEvent) erroneous() <-chan error {
 	return e.err
-}
-
-func (e playerEventError) Error() string {
-	return e.message
 }
