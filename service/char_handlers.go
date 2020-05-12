@@ -37,7 +37,7 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	var (
 		p              *player
 		playerData     = make(chan *player)
-		playerDataSent = make(chan bool)
+		//playerDataSent = make(chan bool)
 	)
 
 	cde = playerDataEvent{
@@ -69,27 +69,26 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	ncCharClientBaseCmd(p)
-	ncCharClientShapeCmd(p)
-	go func(done chan<- bool) {
-		ncCharClientQuestDoingCmd(p)
-		ncCharClientQuestDoneCmd(p)
-		ncCharClientQuestReadCmd(p)
-		ncCharClientQuestRepeatCmd(p)
 
-		ncCharClientPassiveCmd(p)
-		ncCharClientSkillCmd(p)
-		cmd := p.items.ncCharClientItemCmd()
-		for _, c := range cmd {
-			ncCharClientItemCmd(p, c)
-		}
-		ncCharClientCharTitleCmd(p)
-		ncCharClientGameCmd(p)
-		ncCharClientChargedBuffCmd(p)
-		ncCharClientCoinInfoCmd(p)
-		ncQuestResetTimeClientCmd(p)
-		done <- true
-	}(playerDataSent)
+	//go func(done chan<- bool) {
+	//	//ncCharClientQuestDoingCmd(p)
+	//	//ncCharClientQuestDoneCmd(p)
+	//	//ncCharClientQuestReadCmd(p)
+	//	//ncCharClientQuestRepeatCmd(p)
+	//	//
+	//	//ncCharClientPassiveCmd(p)
+	//	//ncCharClientSkillCmd(p)
+	//	//cmd := p.items.ncCharClientItemCmd()
+	//	//for _, c := range cmd {
+	//	//	ncCharClientItemCmd(p, c)
+	//	//}
+	//	//ncCharClientCharTitleCmd(p)
+	//	//ncCharClientGameCmd(p)
+	//	//ncCharClientChargedBuffCmd(p)
+	//	//ncCharClientCoinInfoCmd(p)
+	//	//ncQuestResetTimeClientCmd(p)
+	//	done <- true
+	//}(playerDataSent)
 
 	//query map
 	var (
@@ -104,11 +103,11 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	zoneEvents[queryMap] <- &mqe
-
-	select {
-	case <-playerDataSent:
-		break
-	}
+	//
+	//select {
+	//case <-playerDataSent:
+	//	break
+	//}
 
 	select {
 	case zm = <-mapResult:
@@ -140,6 +139,9 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 
 	select {
 	case <-handleRegistered:
+		ncCharClientBaseCmd(p)
+		ncCharClientShapeCmd(p)
+		// weird b
 		ncMapLoginAck(p)
 		return
 	case err := <-rphe.erroneous():
@@ -499,5 +501,7 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 
 //NC_CHAR_LOGOUTREADY_CMD
 func ncCharLogoutReadyCmd(ctx context.Context, np *networking.Parameters) {
+	// start a ticker that in 10 seconds will close the connection
+	// another packet can be received which will cancel that ticker
 	np.NetVars.CloseConnection <- true
 }

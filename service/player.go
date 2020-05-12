@@ -283,8 +283,8 @@ func (p *player) statsData(stats chan<- playerStats, c *character.Character, err
 			withExtras: 0,
 		},
 		end: stat{
-			base:       0,
-			withExtras: 0,
+			base:       150,
+			withExtras: 150,
 		},
 		dex: stat{
 			base:       0,
@@ -330,8 +330,8 @@ func (p *player) statsData(stats chan<- playerStats, c *character.Character, err
 			base:       0,
 			withExtras: 0,
 		},
-		hp:       100,
-		sp:       100,
+		hp:       1000,
+		sp:       1000,
 		lp:       0,
 		hpStones: 15,
 		spStones: 15,
@@ -445,7 +445,7 @@ func (p *player) ncBriefInfoLoginCharacterCmd() structs.NcBriefInfoLoginCharacte
 		MoverSlot:       p.state.moverSlot,
 		KQTeamType:      0,
 		UsingMinipet:    p.state.miniPet,
-		Unk:             0,
+		Unk:             1,
 	}
 	return nc
 }
