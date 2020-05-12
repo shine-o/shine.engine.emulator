@@ -4,20 +4,21 @@ import (
 	"reflect"
 	"time"
 )
-
+const playerHeartbeatLimit = 30
 func (zm *zoneMap) mapHandles() {
 	log.Infof("[map_worker] mapHandles worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
 		case <-zm.recv[handleCleanUp]:
 			for i, ap := range zm.entities.players.active {
-				if time.Since(ap.conn.lastHeartBeat).Seconds() > 15 {
-					zm.entities.players.Lock()
-					zm.entities.players.active[i].conn.close <- true
-					zm.entities.players.active[i].send[heartbeatMissing] <- &emptyEvent{}
-					delete(zm.entities.players.active, i)
-					zm.entities.players.Unlock()
-
+				if time.Since(ap.conn.lastHeartBeat).Seconds() > playerHeartbeatLimit {
+					go func() {
+						zm.entities.players.active[i].send[heartbeatMissing] <- &emptyEvent{}
+						time.Sleep(500 * time.Millisecond)
+						zm.entities.players.Lock()
+						delete(zm.entities.players.active, i)
+						zm.entities.players.Unlock()
+					}()
 				}
 			}
 		case e := <-zm.recv[registerPlayerHandle]:

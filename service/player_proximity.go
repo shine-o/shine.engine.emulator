@@ -10,11 +10,13 @@ func newPlayer(p *player, nearbyPlayers map[uint16]*player) {
 		if p.handle == np.handle {
 			continue
 		}
-		ncBriefInfoLoginCharacterCmd(p, p.ncBriefInfoLoginCharacterCmd())
+		nc := p.ncBriefInfoLoginCharacterCmd()
+		ncBriefInfoLoginCharacterCmd(np, &nc)
 	}
 }
 
 // send info to player about nearby players
+// so this one works!
 func nearbyPlayers(p *player, nearbyPlayers map[uint16]*player) {
 	var characters []structs.NcBriefInfoLoginCharacterCmd
 	for _, np := range nearbyPlayers {
