@@ -35,10 +35,12 @@ type OutboundSegments struct {
 	Recv <-chan []byte
 	Send chan<- []byte
 }
+
 type Commands struct {
 	Send chan<- *Command
 	Recv <-chan *Command
 }
+
 type Network struct {
 	InboundSegments
 	OutboundSegments
@@ -59,9 +61,26 @@ const (
 	NetworkVariables
 )
 
+var logInboundPackets  chan <- * Command
+var logOutboundPackets chan <- * Command
+
+
 // Listen on TPC socket for connection on given port
 func (ss *ShineService) Listen(ctx context.Context, port string) {
 	ss.Settings.Set()
+
+
+	in :=  make(chan * Command, 4096)
+	out :=  make(chan * Command, 4096)
+
+	logInboundPackets  = in
+	logOutboundPackets = out
+
+	go logPackets(ctx, in, out)
+	go logPackets(ctx, in, out)
+	go logPackets(ctx, in, out)
+	go logPackets(ctx, in, out)
+
 	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", port)); err == nil {
 		log.Infof("listening for TCP connections on: %v", l.Addr())
 		defer l.Close()
@@ -161,7 +180,7 @@ func waitForClose(n *Network) {
 // Send bytes to the client
 func (pc *Command) Send(ctx context.Context) {
 	nv := ctx.Value(NetworkVariables)
-	n := nv.(*Network) //maybe the handlers themselves should receive the outboundSegments channel as parameter
+	n := nv.(*Network)
 
 	if pc.NcStruct != nil {
 		data, err := structs.Pack(pc.NcStruct)
@@ -170,15 +189,9 @@ func (pc *Command) Send(ctx context.Context) {
 			return
 		}
 		pc.Base.Data = data
-		// todo: option to disable this in settings
-		sd, err := json.Marshal(pc.NcStruct)
-		if err != nil {
-			log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(pc.NcStruct).String(), err)
-		}
-		log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), string(sd))
 	}
-	log.Infof("[outbound] metadata: %v", pc.Base.String())
 	n.OutboundSegments.Send <- pc.Base.RawData()
+	logOutboundPackets <- pc
 }
 
 func (pc * Command) SendDirectly(outboundStream chan<- []byte) {
@@ -189,13 +202,52 @@ func (pc * Command) SendDirectly(outboundStream chan<- []byte) {
 			return
 		}
 		pc.Base.Data = data
-		// todo: option to disable this in settings
+	}
+	outboundStream <- pc.Base.RawData()
+	logOutboundPackets <- pc
+}
+
+
+func logPackets(ctx context.Context, in <- chan* Command, out <-chan *Command) {
+	for {
+		select {
+		case <- ctx.Done():
+			return
+		case ipc := <- in:
+			logDirection(ipc, "inbound")
+		case opc := <- out:
+			logDirection(opc, "outbound")
+		}
+	}
+}
+
+func logDirection(pc * Command, direction string) {
+	pc.RLock()
+	defer pc.RUnlock()
+	cn :=  commandName(pc)
+	log.Infof("%v %v packet metadata: %v", direction, cn, pc.Base.String())
+	if pc.NcStruct != nil {
 		sd, err := json.Marshal(pc.NcStruct)
 		if err != nil {
 			log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(pc.NcStruct).String(), err)
+		} else {
+			log.Infof("%v %v packet structure data: %v %v", direction, cn, reflect.TypeOf(pc.NcStruct).String(), string(sd))
 		}
-		log.Infof("[outbound] structured packet data: %v %v", reflect.TypeOf(pc.NcStruct).String(), string(sd))
 	}
-	log.Infof("[outbound] metadata: %v", pc.Base.String())
-	outboundStream <- pc.Base.RawData()
+}
+
+func commandName(pc *Command) string {
+	commandList.mu.Lock()
+	defer 		commandList.mu.Unlock()
+	if (&PCList{}) != commandList {// should be commented out on production to increase performance
+		opCode := pc.Base.OperationCode
+		department := opCode >> 10
+		command := opCode &1023
+		if dpt, ok := commandList.Departments[uint8(department)]; ok {
+			return  dpt.ProcessedCommands[fmt.Sprintf("%X", command)]
+		} else {
+			log.Warningf("Missing friendly name for command with: operationCode %v,  department %v, command %v, ", opCode, department, fmt.Sprintf("%X", command))
+		}
+	}
+	return ""
 }

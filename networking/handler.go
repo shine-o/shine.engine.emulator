@@ -19,29 +19,36 @@ type Parameters struct {
 type ShineHandler map[uint16]func(context.Context, *Parameters)
 
 // Read packet data from segments
-func (ss *ShineService) handleInboundSegments(ctx context.Context, n *Network) {
+func (ss *ShineService) 	handleInboundSegments(ctx context.Context, n *Network) {
 	var (
 		data      []byte
 		offset    int
 		xorOffset uint16
+		randomXorOffset =  make(chan uint16)
 	)
 
-	ctx = context.WithValue(ctx, XorOffset, &xorOffset)
+	ctx = context.WithValue(ctx, XorOffset, randomXorOffset)
 	ctx, cancel := context.WithCancel(ctx)
-
-	for i := 0; i < 10; i++ { // todo: number of routines to be put in config
-		go ss.handlerWorker(ctx, n)
-	}
-
-	n.Commands.Send <- &Command{
-		Base: CommandBase{
-			OperationCode: 2055,
-		},
-	}
-
 	defer cancel()
 
+	go func() {
+		for i := 0; i < 10; i++ { // todo: number of routines to be put in config
+			go ss.handlerWorker(ctx, n)
+		}
+
+		n.Commands.Send <- &Command{
+			Base: CommandBase{
+				OperationCode: 2055,
+			},
+		}
+	}()
+
 	offset = 0
+
+	select {
+		case xorOffset = <- randomXorOffset:
+			break
+	}
 
 	for {
 		select {
@@ -63,7 +70,8 @@ func (ss *ShineService) handleInboundSegments(ctx context.Context, n *Network) {
 					break
 				}
 
-				if pLen == uint16(65535) {
+				if pLen >= uint16(65535) {
+					log.Error("max value reached for packet length")
 					n.CloseConnection <- true
 					return
 				}
@@ -77,16 +85,13 @@ func (ss *ShineService) handleInboundSegments(ctx context.Context, n *Network) {
 				packetData := make([]byte, pLen)
 
 				copy(packetData, data[offset+skipBytes:nextOffset])
-
 				XorCipher(packetData, &xorOffset)
 				c, _ := DecodePacket(packetData)
 
-				log.Infof("[inbound] metadata %v", c.Base.String())
-
 				n.Commands.Send <- &c
+				logInboundPackets <- &c
 
-				offset = 0
-				data = nil
+				offset += skipBytes + int(pLen)
 			}
 		}
 	}
