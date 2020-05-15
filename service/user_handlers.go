@@ -62,6 +62,11 @@ func NcUserWillWorldSelectAck(ctx context.Context) {
 	pc.Send(ctx)
 }
 
+//NC_USER_NORMALLOGOUT_CMD
+func NcUserNormalLogoutCmd(ctx context.Context, np * networking.Parameters) {
+	np.NetVars.CloseConnection <- true
+}
+
 //func userLoginWorldFailAck(ctx context.Context, pc *networking.Command) {
 //	select {
 //	case <-ctx.Done():

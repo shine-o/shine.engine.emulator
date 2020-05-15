@@ -16,13 +16,22 @@ func NcCharLoginReq(ctx context.Context, np * networking.Parameters) {
 		return
 	}
 
+	wsi := ctx.Value(networking.ShineSession)
+	ws, ok := wsi.(*session)
+	if !ok {
+		log.Error("session is not available")
+	}
+
 	// get character where user_id and slot match
 	var char character.Character
 	err := db.Model(&char).
 		Relation("Location").
-		Relation("Options").Where("slot = ?", nc.Slot).Select()
+		Relation("Options").
+		Where("user_id = ?", ws.UserID).
+		Where("slot = ?", nc.Slot).Select()
 
 	if err != nil {
+		log.Error(err)
 		return
 	}
 
@@ -31,10 +40,11 @@ func NcCharLoginReq(ctx context.Context, np * networking.Parameters) {
 	rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
 
 	ci, err := c.WhereIsMap(rpcCtx, &zm.MapQuery{
-		Name: char.Location.MapName,
+		ID: int32(char.Location.MapID),
 	})
 
 	if err != nil {
+		log.Error(err)
 		return
 	}
 
