@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/shine-o/shine.engine.core/game/character"
 	"github.com/shine-o/shine.engine.core/structs"
+	"sync"
 	"time"
 )
 
@@ -19,6 +20,7 @@ type player struct {
 	quests   playerQuests
 	skills   []skill
 	passives []passive
+	sync.RWMutex
 }
 
 type playerConnection struct {

@@ -21,6 +21,7 @@ func ncMiscSeedAck(ctx context.Context, np *networking.Parameters) {
 	}
 
 	np.Command.NcStruct = &nc
+
 	np.Command.Send(ctx)
 
 	xc <- xorOffset

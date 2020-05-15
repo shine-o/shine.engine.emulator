@@ -4,39 +4,53 @@ import (
 	"reflect"
 	"time"
 )
+
 const playerHeartbeatLimit = 30
+
 func (zm *zoneMap) mapHandles() {
 	log.Infof("[map_worker] mapHandles worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
 		case <-zm.recv[handleCleanUp]:
-			for i, ap := range zm.entities.players.active {
-				if time.Since(ap.conn.lastHeartBeat).Seconds() > playerHeartbeatLimit {
-					go func() {
-						zm.entities.players.active[i].send[heartbeatMissing] <- &emptyEvent{}
-						time.Sleep(500 * time.Millisecond)
-						zm.entities.players.Lock()
-						delete(zm.entities.players.active, i)
-						zm.entities.players.Unlock()
-					}()
-				}
-			}
-		case e := <-zm.recv[registerPlayerHandle]:
-			ev, ok := e.(*registerPlayerHandleEvent)
-			if !ok {
-				log.Errorf("expected event type %v but got %v", reflect.TypeOf(&registerPlayerHandleEvent{}).String(), reflect.TypeOf(ev).String())
-				continue
-			}
 			go func() {
 				zm.entities.players.Lock()
-				err := zm.entities.players.manager.newHandle()
+				for i, ap := range zm.entities.players.active {
+					ap.RLock()
+					if time.Since(ap.conn.lastHeartBeat).Seconds() < playerHeartbeatLimit {
+						ap.RUnlock()
+						continue
+					}
+					ap.Lock()
+					select {
+					case zm.entities.players.active[i].send[heartbeatStop] <- &emptyEvent{}:
+					default:
+						log.Error("failed to stop heartbeat")
+						return
+					}
+					time.Sleep(500 * time.Millisecond)
+					delete(zm.entities.players.active, i)
+					ap.Unlock()
+				}
+				zm.entities.players.Unlock()
+			}()
+
+		case e := <-zm.recv[registerPlayerHandle]:
+			go func() {
+				ev, ok := e.(*registerPlayerHandleEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&registerPlayerHandleEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				zm.entities.players.Lock()
+				handle, err := zm.entities.players.newHandle()
 				if err != nil {
+					zm.entities.players.Unlock()
 					ev.err <- err
 					return
 				}
-				handle := zm.entities.players.manager.index
 				zm.entities.players.active[handle] = ev.player
 				zm.entities.players.Unlock()
+
 				ev.player.handle = handle
 				ev.session.handle = handle
 				ev.session.mapID = ev.player.mapID
@@ -51,22 +65,21 @@ func (zm *zoneMap) playerActivity() {
 	for {
 		select {
 		case e := <-zm.recv[playerAppeared]:
-			// notify all nearby entities about it
-			// players will get packet data
-			// mobs will check if player is in range for attack
-			ev, ok := e.(*playerAppearedEvent)
-			if !ok {
-				log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
-				break
-			}
-			zm.entities.players.Lock()
-			player := zm.entities.players.active[ev.playerHandle]
-			zm.entities.players.Unlock()
-
-			go player.heartbeat()
-
-			go newPlayer(player, zm.entities.players.active)
-			go nearbyPlayers(player, zm.entities.players.active)
+			go func() {
+				ev, ok := e.(*playerAppearedEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				zm.entities.players.Lock()
+				player := zm.entities.players.active[ev.playerHandle]
+				zm.entities.players.Unlock()
+				player.RLock()
+				go player.heartbeat()
+				go newPlayer(player, zm.entities.players.active)
+				go nearbyPlayers(player, zm.entities.players.active)
+				player.RUnlock()
+			}()
 
 		case e := <-zm.recv[playerDisappeared]:
 			log.Info(e)
