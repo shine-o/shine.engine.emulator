@@ -7,7 +7,6 @@ func (z *zone) security() {
 	for {
 		select {
 		case e := <-z.recv[clientSHN]:
-			log.Info(e)
 			ev, ok := e.(*clientSHNEvent)
 			if !ok {
 				log.Errorf("expected event type %v but got %v", reflect.TypeOf(clientSHNEvent{}).String(), reflect.TypeOf(ev).String())

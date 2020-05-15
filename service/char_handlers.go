@@ -8,8 +8,13 @@ import (
 
 // NC_MAP_LOGIN_REQ
 func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
-	// todo: shn files checksum
-	nc := structs.NcMapLoginReq{}
+	var (
+		nc   structs.NcMapLoginReq
+		cse  clientSHNEvent
+		cde  playerDataEvent
+		mqe  queryMapEvent
+		rphe registerPlayerHandleEvent
+	)
 
 	err := structs.Unpack(np.Command.Base.Data, &nc)
 	if err != nil {
@@ -17,102 +22,57 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	var (
-		cse  clientSHNEvent
-		cde  playerDataEvent
-		mqe  queryMapEvent
-		rphe registerPlayerHandleEvent
-		eErr = make(chan error)
-	)
-
-	var shnOK = make(chan bool)
 	cse = clientSHNEvent{
 		inboundNC: nc,
-		ok:        shnOK,
-		err:       eErr,
+		ok:        make(chan bool),
+		err:       make(chan error),
 	}
 
 	zoneEvents[clientSHN] <- &cse
 
-	var (
-		p              *player
-		playerData     = make(chan *player)
-		//playerDataSent = make(chan bool)
-	)
-
 	cde = playerDataEvent{
-		player:     playerData,
+		player:     make(chan *player),
 		net:        np,
 		playerName: nc.CharData.CharID.Name,
-		err:        eErr,
+		err:        make(chan error),
 	}
 
 	zoneEvents[loadPlayerData] <- &cde
 
 	select {
-	case <-shnOK:
+	case <-cse.ok:
 		break
-	case err := <-cse.erroneous():
+	case err := <-cse.err:
 		log.Error(err)
 		// fail ack with failure code
 		// drop connection
 		return
 	}
 
+	var p *player
 	select {
-	case p = <-playerData:
+	case p = <-cde.player:
 		break
-	case err := <-cde.erroneous():
+	case err := <-cde.err:
 		log.Error(err)
 		// fail ack with failure code
 		// drop connection
 		return
 	}
-
-
-	//go func(done chan<- bool) {
-	//	//ncCharClientQuestDoingCmd(p)
-	//	//ncCharClientQuestDoneCmd(p)
-	//	//ncCharClientQuestReadCmd(p)
-	//	//ncCharClientQuestRepeatCmd(p)
-	//	//
-	//	//ncCharClientPassiveCmd(p)
-	//	//ncCharClientSkillCmd(p)
-	//	//cmd := p.items.ncCharClientItemCmd()
-	//	//for _, c := range cmd {
-	//	//	ncCharClientItemCmd(p, c)
-	//	//}
-	//	//ncCharClientCharTitleCmd(p)
-	//	//ncCharClientGameCmd(p)
-	//	//ncCharClientChargedBuffCmd(p)
-	//	//ncCharClientCoinInfoCmd(p)
-	//	//ncQuestResetTimeClientCmd(p)
-	//	done <- true
-	//}(playerDataSent)
-
-	//query map
-	var (
-		mapResult = make(chan *zoneMap)
-		zm        *zoneMap
-	)
 
 	mqe = queryMapEvent{
 		id:  p.location.mapID,
-		zm:  mapResult,
-		err: eErr,
+		zm:  make(chan *zoneMap),
+		err: make(chan error),
 	}
 
 	zoneEvents[queryMap] <- &mqe
-	//
-	//select {
-	//case <-playerDataSent:
-	//	break
-	//}
 
+	var zm *zoneMap
 	select {
-	case zm = <-mapResult:
+	case zm = <-mqe.zm:
 		break
-	case err := <-mqe.erroneous():
+	case err := <-mqe.err:
 		log.Error(err)
 		return
 	}
@@ -126,32 +86,24 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	var handleRegistered = make(chan bool)
-
 	rphe = registerPlayerHandleEvent{
 		player:  p,
 		session: session,
-		done:    handleRegistered,
-		err:     eErr,
+		done:    make(chan bool),
+		err:     make(chan error),
 	}
 
 	zm.send[registerPlayerHandle] <- &rphe
 
 	select {
-	case <-handleRegistered:
+	case <-rphe.done:
 		ncCharClientBaseCmd(p)
 		ncCharClientShapeCmd(p)
-		// weird b
+		// weird bug sometimes the client stucks in character select
 		ncMapLoginAck(p)
-		return
-	case err := <-rphe.erroneous():
+	case err := <-rphe.err:
 		log.Error(err)
-		return
 	}
-	// also send nearby players, mobs, mounts
-	// NC_BRIEFINFO_CHARACTER_CMD
-	// NC_BRIEFINFO_MOB_CMD
-	// NC_BRIEFINFO_MOVER_CMD
 }
 
 //NC_CHAR_CLIENT_BASE_CMD
@@ -447,9 +399,8 @@ func ncQuestResetTimeClientCmd(p *player) {
 func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 	// fetch user session
 	var (
-		mqe      queryMapEvent
-		pae      playerAppearedEvent
-		eventErr = make(chan error)
+		mqe queryMapEvent
+		pae playerAppearedEvent
 	)
 
 	sv := ctx.Value(networking.ShineSession)
@@ -461,23 +412,19 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	var (
-		mapResult = make(chan *zoneMap)
-		zm        *zoneMap
-	)
-
 	mqe = queryMapEvent{
 		id:  session.mapID,
-		zm:  mapResult,
-		err: eventErr,
+		zm:  make(chan *zoneMap),
+		err: make(chan error),
 	}
 
 	zoneEvents[queryMap] <- &mqe
 
+	var zm *zoneMap
 	select {
-	case zm = <-mapResult:
+	case zm = <-mqe.zm:
 		break
-	case e := <-eventErr:
+	case e := <-mqe.err:
 		log.Error(e)
 		return
 	}
@@ -485,7 +432,7 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 	pae = playerAppearedEvent{
 		playerHandle: session.handle,
 		mapID:        session.mapID,
-		err:          eventErr,
+		err:          make(chan error),
 	}
 
 	zm.send[playerAppeared] <- &pae

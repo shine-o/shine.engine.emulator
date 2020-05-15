@@ -16,7 +16,6 @@ func newPlayer(p *player, nearbyPlayers map[uint16]*player) {
 }
 
 // send info to player about nearby players
-// so this one works!
 func nearbyPlayers(p *player, nearbyPlayers map[uint16]*player) {
 	var characters []structs.NcBriefInfoLoginCharacterCmd
 	for _, np := range nearbyPlayers {

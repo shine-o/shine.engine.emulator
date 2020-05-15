@@ -8,8 +8,10 @@ func (p *player) heartbeat() {
 	for {
 		select {
 		case <- p.recv[heartbeatUpdate]:
+			p.Lock()
 			p.conn.lastHeartBeat = time.Now()
-		case <- p.recv[heartbeatMissing]:
+			p.Unlock()
+		case <- p.recv[heartbeatStop]:
 			tick.Stop()
 			select {
 			case p.conn.close <- true:

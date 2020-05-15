@@ -29,32 +29,24 @@ type entities struct {
 }
 
 type players struct {
-	manager handleManager
+	handleIndex uint16
 	active  map[uint16]*player
 	sync.RWMutex
 }
 
 type monsters struct {
-	manager handleManager
+	handleIndex uint16
 	active  map[uint16]*monster
 	sync.RWMutex
 }
 
-type handleManager struct {
-	min         uint16
-	max         uint16
-	index       uint16
-	maxAttempts uint16
-	list        *roaring.Bitmap
-}
+const playerHandleMin uint16 = 8000
+const playerHandleMax uint16 = 12000
+const playerAttemptsMax uint16 = 50
 
-const playerHandleMin = 8000
-const playerHandleMax = 12000
-const playerAttemptsMax = 50
-
-const monsterHandleMin = 17000
-const monsterHandleMax = 27000
-const monsterAttemptsMax = 50
+const monsterHandleMin uint16= 17000
+const monsterHandleMax uint16= 27000
+const monsterAttemptsMax uint16= 50
 
 func (zm *zoneMap) run() {
 	// load NPCs for this map
@@ -120,24 +112,11 @@ func loadMaps() []zoneMap {
 			walkableY: walkableY,
 			entities: entities{
 				players: players{
-					manager: handleManager{
-						min:         playerHandleMin,
-						max:         playerHandleMax,
-						index:       playerHandleMin,
-						maxAttempts: playerAttemptsMax,
-						list:        roaring.NewBitmap(),
-					},
-					active:  make(map[uint16]*player),
+					handleIndex: playerHandleMin,
+					active:      make(map[uint16]*player),
 				},
 				monsters: monsters{
-					manager: handleManager{
-						min:         monsterHandleMin,
-						max:         monsterHandleMax,
-						index:       monsterHandleMin,
-						maxAttempts: monsterAttemptsMax,
-						list:        roaring.NewBitmap(),
-
-					},
+					handleIndex: playerHandleMin,
 					active:  make(map[uint16]*monster),
 				},
 			},
@@ -185,33 +164,63 @@ func walkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) 
 	return walkableX, walkableY, nil
 }
 
-func (h *handleManager) newHandle() error {
+func (m *monsters) newHandle() (uint16, error) {
 	var attempts uint16 = 0
-	for h.index < h.max {
-		if attempts == h.maxAttempts {
-			return fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
+	min := monsterHandleMin
+	max := monsterHandleMax
+	maxAttempts := monsterAttemptsMax
+
+	index := m.handleIndex
+
+	for {
+
+		if attempts == maxAttempts {
+			return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
 		}
-		h.index++
-		if h.index == h.max {
-			h.index = h.min
+
+		index++
+
+		if index == max {
+			index = min
 		}
-		if h.list.Contains(uint32(h.index)) {
-			fmt.Printf("\nhandle %v already in use", h.index)
+
+		m.handleIndex = index
+
+		if _, used := m.active[index]; used {
 			attempts++
 			continue
-		} else {
-			h.list.Add(uint32(h.index))
-			return nil
 		}
+
+		return index, nil
 	}
-	return nil
 }
 
-func (h *handleManager) removeHandle(index uint16) error {
-	if h.list.Contains(uint32(index)) {
-		h.list.Remove(uint32(index))
-		return nil
-	} else {
-		return fmt.Errorf("\nhandle %v not in use, removal is not necessary", index)
+func (p *players) newHandle() (uint16, error) {
+	var attempts uint16 = 0
+	min := playerHandleMin
+	max := playerHandleMax
+	maxAttempts := playerAttemptsMax
+
+	index := p.handleIndex
+
+	for {
+		if attempts == maxAttempts {
+			return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
+		}
+
+		index++
+
+		if index == max {
+			index = min
+		}
+
+		p.handleIndex = index
+
+		if _, used := p.active[index]; used {
+			attempts++
+			continue
+		}
+
+		return index, nil
 	}
 }

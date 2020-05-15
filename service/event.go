@@ -2,6 +2,8 @@ package service
 
 // all events are something that either the player triggers or it should be broadcast to nearby players or mobs
 // all processes can define event structures with more channels on which to receive data
+// the reason for events and workers is to define access points for data.
+// a worker is typically a method which has access to data (map, mobs, players)
 type event interface {
 	// notify the caller about an error while processing event
 	// the process triggering the event should handle next steps in case of error
@@ -37,7 +39,7 @@ const (
 	handleCleanUp
 
 	heartbeatUpdate
-	heartbeatMissing
+	heartbeatStop
 )
 
 func (e * emptyEvent) erroneous() <-chan error  {
