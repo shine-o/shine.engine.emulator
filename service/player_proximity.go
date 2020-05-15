@@ -10,7 +10,9 @@ func newPlayer(p *player, nearbyPlayers map[uint16]*player) {
 		if p.handle == np.handle {
 			continue
 		}
+		p.RLock()
 		nc := p.ncBriefInfoLoginCharacterCmd()
+		p.RUnlock()
 		ncBriefInfoLoginCharacterCmd(np, &nc)
 	}
 }
@@ -22,7 +24,9 @@ func nearbyPlayers(p *player, nearbyPlayers map[uint16]*player) {
 		if np.handle == p.handle {
 			continue
 		}
-		nc := np.ncBriefInfoLoginCharacterCmd()
+		p.RLock()
+		nc := p.ncBriefInfoLoginCharacterCmd()
+		p.RUnlock()
 		characters = append(characters, nc)
 	}
 	ncBriefInfoCharacterCmd(p, &structs.NcBriefInfoCharacterCmd{
