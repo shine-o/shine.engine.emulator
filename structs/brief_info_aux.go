@@ -58,7 +58,6 @@ type ShineCoordType struct {
 type NcBriefInfoLoginCharacterCmdShapeData struct {
 	Data [45]byte //
 	//NotCamp CharBriefInfoNotCamped
-
 }
 
 //struct CHARBRIEFINFO_NOTCAMP

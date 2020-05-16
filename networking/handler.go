@@ -1,90 +1,60 @@
 package networking
 
 import (
-	"bufio"
 	"context"
-	"sync"
 )
 
 // ContextKey identifier for values of common use within the Context
 type ContextKey int
 
-const (
-	// XorOffset indicates what offset in the xor hex table to use to start decrypting client data
-	XorOffset ContextKey = iota
-	// ShineSession if used, shine service can access session data within their handler's context
-	ShineSession
-	// ConnectionWriter is a utility struct which contains the tcp connection object and a mutex
-	// it is used to write data to the client from any shine service handler
-	ConnectionWriter
-)
+// ShineParameters is used by the Shine services to give extra parameters to their handlers
+type Parameters struct {
+	Command *Command
+	NetVars *Network
+	// anything that the Shine service wants to be sent to all handles, an alternative to using global variables
+	ServiceParams interface{}
+}
 
 // HandleWarden utility struct for triggering functions implemented by the calling shine service
-type HandleWarden struct {
-	handlers map[uint16]func(ctx context.Context, command *Command)
-	mu       sync.Mutex
-}
-
-// NewHandlerWarden handlers are callbacks to be called when an operationCode is detected in a packet.
-func NewHandlerWarden(ch *CommandHandlers) *HandleWarden {
-	hw := &HandleWarden{
-		handlers: make(map[uint16]func(ctx context.Context, command *Command)),
-	}
-	hw.handlers[2055] = miscSeedAck
-	for k, v := range *ch {
-		hw.handlers[k] = v
-	}
-	return hw
-}
-
-
-func protocolCommandWorker(ctx context.Context, hw *HandleWarden, pc <- chan *Command) {
-	for {
-		select{
-		case <- ctx.Done():
-			return
-		case c := <- pc:
-			if callback, ok := hw.handlers[c.Base.OperationCode]; ok {
-				go callback(ctx, c)
-			} else {
-				log.Errorf("non existent operation code from the client %v", c.Base.OperationCode)
-			}
-		}
-	}
-}
+type ShineHandler map[uint16]func(context.Context, *Parameters)
 
 // Read packet data from segments
-func handleInboundSegments(ctx context.Context, segment <-chan []byte, hw *HandleWarden, closeConnection chan <- bool) {
+func (ss *ShineService) 	handleInboundSegments(ctx context.Context, n *Network) {
 	var (
 		data      []byte
 		offset    int
 		xorOffset uint16
+		randomXorOffset =  make(chan uint16)
 	)
 
-	ctx = context.WithValue(ctx, XorOffset, &xorOffset)
+	ctx = context.WithValue(ctx, XorOffset, randomXorOffset)
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	pc := make(chan * Command, 4096)
+	go func() {
+		for i := 0; i < 10; i++ { // todo: number of routines to be put in config
+			go ss.handlerWorker(ctx, n)
+		}
 
-	for i := 0; i < 10; i++ {
-		go protocolCommandWorker(ctx, hw, pc)
-	}
-
-
-	pc <- &Command{
-		Base: CommandBase{
-			OperationCode: 2055,
-		},
-	}
+		n.Commands.Send <- &Command{
+			Base: CommandBase{
+				OperationCode: 2055,
+			},
+		}
+	}()
 
 	offset = 0
+
+	select {
+		case xorOffset = <- randomXorOffset:
+			break
+	}
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case b := <-segment:
+		case b := <- n.InboundSegments.Recv:
 			data = append(data, b...)
 
 			if offset >= len(data) {
@@ -100,47 +70,44 @@ func handleInboundSegments(ctx context.Context, segment <-chan []byte, hw *Handl
 					break
 				}
 
-				if pLen == uint16(65535) {
-					closeConnection <- true
+				if pLen >= uint16(65535) {
+					log.Error("max value reached for packet length")
+					n.CloseConnection <- true
 					return
 				}
 
 				if nextOffset > len(data) {
 					log.Errorf("next offset [%v] is bigger than current available data [%v], cannot proceed", nextOffset, len(data))
-					closeConnection <- true
+					n.CloseConnection <- true
 					return
 				}
 
 				packetData := make([]byte, pLen)
 
-			    copy(packetData, data[offset+skipBytes:nextOffset])
-
+				copy(packetData, data[offset+skipBytes:nextOffset])
 				XorCipher(packetData, &xorOffset)
 				c, _ := DecodePacket(packetData)
 
-				log.Infof("[inbound] metadata %v", c.Base.String())
+				n.Commands.Send <- &c
+				logInboundPackets <- &c
 
-				pc <- &c
-
-				offset = 0
-				data = nil
-				//offset += skipBytes + int(pLen)
+				offset += skipBytes + int(pLen)
 			}
 		}
 	}
 }
 
-func handleOutboundSegments(ctx context.Context, w *bufio.Writer, segment <-chan []byte) {
+func (ss *ShineService) handleOutboundSegments(ctx context.Context, n *Network) {
 	for {
 		select {
 		case <-ctx.Done():
 			log.Warning("handleOutboundSegments context canceled")
 			return
-		case data := <-segment:
-			if _, err := w.Write(data); err != nil {
+		case data := <- n.OutboundSegments.Recv:
+			if _, err := n.Writer.Write(data); err != nil {
 				log.Error(err)
 			} else {
-				if err = w.Flush(); err != nil {
+				if err = n.Writer.Flush(); err != nil {
 					log.Error(err)
 				}
 			}
@@ -148,18 +115,21 @@ func handleOutboundSegments(ctx context.Context, w *bufio.Writer, segment <-chan
 	}
 }
 
-// match operation code with handler if it exists
-func (hw *HandleWarden) handleCommand(ctx context.Context, command *Command) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		hw.mu.Lock()
-		if callback, ok := hw.handlers[command.Base.OperationCode]; ok {
-			callback(ctx, command)
-		} else {
-			log.Errorf("non existent operation code from the client %v", command.Base.OperationCode)
+func (ss ShineService) handlerWorker(ctx context.Context, n *Network) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case c := <- n.Commands.Recv:
+			if callback, ok := ss.ShineHandler[c.Base.OperationCode]; ok {
+				go callback(ctx, &Parameters{
+					Command:       c,
+					NetVars:       n,
+					ServiceParams: ss.ExtraParameters,
+				})
+			} else {
+				log.Errorf("non existent handler for operation code  %v", c.Base.OperationCode)
+			}
 		}
-		hw.mu.Unlock()
 	}
 }

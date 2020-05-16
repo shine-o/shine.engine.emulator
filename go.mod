@@ -20,12 +20,14 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/vmihailenco/bufpool v0.1.11 // indirect
 	github.com/vmihailenco/msgpack/v4 v4.3.11 // indirect
+	go.etcd.io/bbolt v1.3.4
 	golang.org/x/crypto v0.0.0-20200406173513-056763e48d71 // indirect
+	golang.org/x/image v0.0.0-20191009234506-e7c1f5e7dbb8
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
 	golang.org/x/sys v0.0.0-20200409092240-59c9f1ba88fa // indirect
+	google.golang.org/appengine v1.6.5
 	google.golang.org/genproto v0.0.0-20200413115906-b5235f65be36 // indirect
 	google.golang.org/grpc v1.28.1
 	gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f // indirect
-	gopkg.in/restruct.v1 v1.0.0-20190323193435-3c2afb705f3c
 	gopkg.in/yaml.v2 v2.2.8
 )

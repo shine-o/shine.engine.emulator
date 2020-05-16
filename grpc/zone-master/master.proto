@@ -8,7 +8,7 @@ service Master {
 }
 
 message MapQuery {
-    string Name = 1;
+    int32 ID = 1;
 };
 
 message ConnectionInfo {
@@ -17,17 +17,11 @@ message ConnectionInfo {
 };
 
 message ZoneDetails {
-   repeated string maps = 1;
-   ConnectionInfo conn = 2;
+   repeated int32 Maps = 1;
+   ConnectionInfo Conn = 2;
 }
 
 message ZoneRegistered {
     bool Success = 1;
     string ZoneID = 2;
-    World World = 3;
-}
-
-message World {
-    string IP = 1;
-    int32 Port = 2;
 }

@@ -13,11 +13,22 @@ import (
 	"time"
 )
 
+
 var log *logger.Logger
 
 func init() {
-	log = logger.Init("NetworkingLogger", true, false, ioutil.Discard)
-	log.Info("networking logger init()")
+	log = logger.Init("character logger", true, false, ioutil.Discard)
+	log.Info("character logger init()")
+}
+
+// ErrCharacter is used to handle known errors
+type ErrCharacter struct {
+	Code    int
+	Message string
+}
+
+func (ec *ErrCharacter) Error() string {
+	return ec.Message
 }
 
 // EquippedItems model for the database layer
@@ -48,42 +59,6 @@ type EquippedItems struct {
 	ApparelAura      uint16
 	ApparelShield    uint16
 	DeletedAt        time.Time `pg:",soft_delete"`
-}
-
-// ErrInvalidSlot happens if the client tries to bypass client side verification
-var ErrInvalidSlot = &ErrCharacter{
-	Code:    0,
-	Message: "invalid slot",
-}
-
-// ErrNameTaken name is reserved or in use
-var ErrNameTaken = &ErrCharacter{
-	Code:    1,
-	Message: "name taken",
-}
-
-// ErrNoSlot happens if the client tries to bypass client side verification
-var ErrNoSlot = &ErrCharacter{
-	Code:    2,
-	Message: "no slot available",
-}
-
-// ErrInvalidName happens if the client tries to bypass client side verification
-var ErrInvalidName = &ErrCharacter{
-	Code:    3,
-	Message: "invalid name",
-}
-
-// ErrInvalidClassGender happens if the client tries to bypass client side verification
-var ErrInvalidClassGender = &ErrCharacter{
-	Code:    4,
-	Message: "invalid class gender data",
-}
-
-// ErrCharacter is used to handle known errors
-type ErrCharacter struct {
-	Code    int
-	Message string
 }
 
 // Character model for the database layer
@@ -153,6 +128,7 @@ type Location struct {
 	ID          uint64
 	CharacterID uint64 //
 	Character   *Character
+	MapID       uint32 `pg:",notnull"`
 	MapName     string `pg:",notnull"`
 	X           uint32 `pg:",notnull"`
 	Y           uint32 `pg:",notnull"`
@@ -175,6 +151,7 @@ type ClientOptions struct {
 	UpdatedAt   time.Time
 }
 
+// todo: move to inventory package
 type Items struct {
 	tableName struct{} `pg:"world.character_items"`
 	//ID          uint64
@@ -199,14 +176,41 @@ type Items struct {
 	DeletedAt     time.Time `pg:",soft_delete"`
 }
 
-func (ec *ErrCharacter) Error() string {
-	return ec.Message
+const (
+	startLevel 	 = 1
+	startMapID   = 1
+	startMapName   = "Rou"
+)
+
+// ErrInvalidSlot happens if the client tries to bypass client side verification
+var ErrInvalidSlot = &ErrCharacter{
+	Code:    0,
+	Message: "invalid slot",
 }
 
-const (
-	startLevel = 1
-	startMap   = "Rou"
-)
+// ErrNameTaken name is reserved or in use
+var ErrNameTaken = &ErrCharacter{
+	Code:    1,
+	Message: "name taken",
+}
+
+// ErrNoSlot happens if the client tries to bypass client side verification
+var ErrNoSlot = &ErrCharacter{
+	Code:    2,
+	Message: "no slot available",
+}
+
+// ErrInvalidName happens if the client tries to bypass client side verification
+var ErrInvalidName = &ErrCharacter{
+	Code:    3,
+	Message: "invalid name",
+}
+
+// ErrInvalidClassGender happens if the client tries to bypass client side verification
+var ErrInvalidClassGender = &ErrCharacter{
+	Code:    4,
+	Message: "invalid class gender data",
+}
 
 // Validate checks data sent by the client is valid
 func Validate(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) error {
@@ -215,7 +219,7 @@ func Validate(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) error {
 		return ErrInvalidSlot
 	}
 
-	name := strings.TrimRight(string(req.Name.Name[:]), "\x00")
+	name := req.Name.Name
 
 	var charName string
 	err := db.Model((*Character)(nil)).Column("name").Where("name = ?", name).Select(&charName)
@@ -236,6 +240,9 @@ func Validate(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) error {
 		return ErrInvalidName
 	}
 
+
+	// todo: missing validation: default hair, color, face values
+	// todo: missing validation: default starter class values ( mage, cleric, archer, fighter)
 	isMale := (req.Shape.BF >> 7) & 1
 	class := (req.Shape.BF >> 2) & 31
 
@@ -319,6 +326,29 @@ func New(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) (structs.Avata
 		}
 	}
 	return char.NcRepresentation(), newTx.Commit()
+}
+
+func Get(db *pg.DB, characterID uint64) (Character, error) {
+	var c Character
+	c.ID = characterID
+	err := db.Model(&c).
+		WherePK().
+		Relation("Appearance").
+		Relation("Attributes").
+		Relation("Location").
+		Select()
+	return c, err
+}
+
+func GetByName(db *pg.DB, name string) (Character, error) {
+	var c Character
+	err := db.Model(&c).
+		Relation("Appearance").
+		Relation("Attributes").
+		Relation("Location").
+		Where("name = ?", name).
+		Select() // query the world for a character with name
+	return c, err
 }
 
 // Delete character for User with userID
@@ -428,9 +458,11 @@ func (c *Character) initialAttributes() *Character {
 }
 
 func (c *Character) initialLocation() *Character {
+	// loadDB
 	c.Location = &Location{
 		CharacterID: c.ID,
-		MapName:     startMap,
+		MapID:       startMapID,
+		MapName:     startMapName,
 		X:           5323,
 		Y:           4501,
 		D:           90,
@@ -483,6 +515,58 @@ func (c *Character) initialEquippedItems() *Character {
 		ApparelShield:    65535,
 	}
 	return c
+}
+
+func (c *Character) AllEquippedItems(db *pg.DB) *structs.NcCharClientItemCmd {
+	return c.getItemsByInventory(db, 8)
+}
+
+func (c *Character) InventoryItems(db *pg.DB) *structs.NcCharClientItemCmd {
+	return c.getItemsByInventory(db, 9)
+}
+
+func (c *Character) MiniHouseItems(db *pg.DB) *structs.NcCharClientItemCmd {
+	return c.getItemsByInventory(db, 12)
+}
+
+func (c *Character) PremiumActionItems(db *pg.DB) *structs.NcCharClientItemCmd {
+	return c.getItemsByInventory(db, 15)
+}
+
+// if not 65535, add item to the list
+// todo: shn item processing
+// get all items where character id and inventory type (8 for equipped items) match
+func (c *Character) getItemsByInventory(db *pg.DB, inventoryType uint8) *structs.NcCharClientItemCmd {
+	nc := &structs.NcCharClientItemCmd{
+		NumOfItem: 0,
+		Box:       inventoryType,
+		Flag: structs.ProtoNcCharClientItemCmdFlag{
+			BF0: 183,
+		},
+	}
+	var items []Items
+	err := db.Model(&items).Where("character_id = ?", c.ID).Where("inventory_type = ?", inventoryType).Select()
+
+	switch inventoryType {
+	case 8:
+		nc.Flag.BF0 = 183
+		break
+	case 9:
+		nc.Flag.BF0 = 165
+		break
+	case 12:
+		nc.Flag.BF0 = 209
+		break
+	case 15:
+		nc.Flag.BF0 = 243
+		break
+	}
+	
+	if err != nil {
+		return nc
+	}
+
+	return nc
 }
 
 // NcRepresentation returns a struct that can be serialized into bytes and can be sent to the client
@@ -543,90 +627,4 @@ func (ca *Appearance) NcRepresentation() structs.ProtoAvatarShapeInfo {
 		HairColor: ca.HairColor,
 		FaceShape: ca.FaceType,
 	}
-}
-
-//enum ItemEquipEnum
-//{
-//  ITEMEQUIP_NONE = 0x0,
-//  ITEMEQUIP_HAT = 0x1,
-//  ITEMEQUIP_NOUSE03 = 0x2,
-//  ITEMEQUIP_NOUSE01 = 0x3,
-//  ITEMEQUIP_NOUSE02 = 0x4,
-//  ITEMEQUIP_FACETATTOO = 0x5,
-//  ITEMEQUIP_NECKLACE = 0x6,
-//  ITEMEQUIP_BODY = 0x7,
-//  ITEMEQUIP_BODYACC = 0x8,
-//  ITEMEQUIP_BACK = 0x9,
-//  ITEMEQUIP_LEFTHAND = 0xA,
-//  ITEMEQUIP_LEFTHANDACC = 0xB,
-//  ITEMEQUIP_RIGHTHAND = 0xC,
-//  ITEMEQUIP_RIGHTHANDACC = 0xD,
-//  ITEMEQUIP_BRACELET = 0xE,
-//  ITEMEQUIP_LEFTRING = 0xF,
-//  ITEMEQUIP_RIGHTRING = 0x10,
-//  ITEMEQUIP_COSEFF = 0x11,
-//  ITEMEQUIP_TAIL = 0x12,
-//  ITEMEQUIP_LEG = 0x13,
-//  ITEMEQUIP_LEGACC = 0x14,
-//  ITEMEQUIP_SHOES = 0x15,
-//  ITEMEQUIP_SHOESACC = 0x16,
-//  ITEMEQUIP_EARRING = 0x17,
-//  ITEMEQUIP_MOUTH = 0x18,
-//  ITEMEQUIP_MINIMON = 0x19,
-//  ITEMEQUIP_EYE = 0x1A,
-//  ITEMEQUIP_HATACC = 0x1B,
-//  ITEMEQUIP_MINIMON_R = 0x1C,
-//  ITEMEQUIP_SHIELDACC = 0x1D,
-//  MAX_ITEMEQUIPENUM = 0x1E,
-//};
-func (c *Character) AllEquippedItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(db, 8)
-}
-
-func (c *Character) InventoryItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(db, 9)
-}
-
-func (c *Character) MiniHouseItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(db, 12)
-}
-
-func (c *Character) PremiumActionItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(db, 15)
-}
-
-// if not 65535, add item to the list
-// todo: shn item processing
-// get all items where character id and inventory type (8 for equipped items) match
-func (c *Character) getItemsByInventory(db *pg.DB, inventoryType uint8) *structs.NcCharClientItemCmd {
-	nc := &structs.NcCharClientItemCmd{
-		NumOfItem: 0,
-		Box:       inventoryType,
-		Flag: structs.ProtoNcCharClientItemCmdFlag{
-			BF0: 183,
-		},
-	}
-	var items []Items
-	err := db.Model(&items).Where("character_id = ?", c.ID).Where("inventory_type = ?", inventoryType).Select()
-
-	switch inventoryType {
-	case 8:
-		nc.Flag.BF0 = 183
-		break
-	case 9:
-		nc.Flag.BF0 = 165
-		break
-	case 12:
-		nc.Flag.BF0 = 209
-		break
-	case 15:
-		nc.Flag.BF0 = 243
-		break
-	}
-
-	if err != nil {
-		return nc
-	}
-
-	return nc
 }
