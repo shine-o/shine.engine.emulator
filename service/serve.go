@@ -68,6 +68,7 @@ func Start(cmd *cobra.Command, args []string) {
 			6145: ncMapLoginReq,
 			6147: ncMapLoginCompleteCmd,
 			4209: ncCharLogoutReadyCmd,
+			4210: ncCharLogoutCancelCmd,
 		},
 		SessionFactory: sessionFactory{},
 		// here I should add maps loaded in this zone

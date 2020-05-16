@@ -9,11 +9,11 @@ import (
 // NC_MAP_LOGIN_REQ
 func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	var (
-		nc   structs.NcMapLoginReq
-		cse  clientSHNEvent
-		cde  playerDataEvent
-		mqe  queryMapEvent
-		rphe registerPlayerHandleEvent
+		nc  structs.NcMapLoginReq
+		pse playerSHNEvent
+		pde playerDataEvent
+		qme queryMapEvent
+		phe playerHandleEvent
 	)
 
 	err := structs.Unpack(np.Command.Base.Data, &nc)
@@ -22,27 +22,27 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	cse = clientSHNEvent{
+	pse = playerSHNEvent{
 		inboundNC: nc,
 		ok:        make(chan bool),
 		err:       make(chan error),
 	}
 
-	zoneEvents[clientSHN] <- &cse
+	zoneEvents[playerSHN] <- &pse
 
-	cde = playerDataEvent{
+	pde = playerDataEvent{
 		player:     make(chan *player),
 		net:        np,
 		playerName: nc.CharData.CharID.Name,
 		err:        make(chan error),
 	}
 
-	zoneEvents[loadPlayerData] <- &cde
+	zoneEvents[playerData] <- &pde
 
 	select {
-	case <-cse.ok:
+	case <-pse.ok:
 		break
-	case err := <-cse.err:
+	case err := <-pse.err:
 		log.Error(err)
 		// fail ack with failure code
 		// drop connection
@@ -51,28 +51,28 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 
 	var p *player
 	select {
-	case p = <-cde.player:
+	case p = <-pde.player:
 		break
-	case err := <-cde.err:
+	case err := <-pde.err:
 		log.Error(err)
 		// fail ack with failure code
 		// drop connection
 		return
 	}
 
-	mqe = queryMapEvent{
+	qme = queryMapEvent{
 		id:  p.location.mapID,
 		zm:  make(chan *zoneMap),
 		err: make(chan error),
 	}
 
-	zoneEvents[queryMap] <- &mqe
+	zoneEvents[queryMap] <- &qme
 
 	var zm *zoneMap
 	select {
-	case zm = <-mqe.zm:
+	case zm = <-qme.zm:
 		break
-	case err := <-mqe.err:
+	case err := <-qme.err:
 		log.Error(err)
 		return
 	}
@@ -86,22 +86,22 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	rphe = registerPlayerHandleEvent{
+	phe = playerHandleEvent{
 		player:  p,
 		session: session,
 		done:    make(chan bool),
 		err:     make(chan error),
 	}
 
-	zm.send[registerPlayerHandle] <- &rphe
+	zm.send[playerHandle] <- &phe
 
 	select {
-	case <-rphe.done:
+	case <-phe.done:
 		ncCharClientBaseCmd(p)
 		ncCharClientShapeCmd(p)
 		// weird bug sometimes the client stucks in character select
 		ncMapLoginAck(p)
-	case err := <-rphe.err:
+	case err := <-phe.err:
 		log.Error(err)
 	}
 }
@@ -446,9 +446,81 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 	// to all surrounding players, send info about this player
 }
 
+//4210
+func ncCharLogoutCancelCmd(ctx context.Context, np *networking.Parameters)  {
+	var (
+		plce playerLogoutCancelEvent
+	)
+
+	sv := ctx.Value(networking.ShineSession)
+
+	session, ok := sv.(*session)
+
+	if !ok {
+		log.Error("no session available")
+		return
+	}
+
+	plce = playerLogoutCancelEvent{
+		sessionID: session.id,
+		err:       make(chan error),
+	}
+
+	zoneEvents[playerLogoutCancel] <- &plce
+
+	select {
+	case e:= <- plce.err:
+		log.Error(e)
+	}
+}
+
 //NC_CHAR_LOGOUTREADY_CMD
 func ncCharLogoutReadyCmd(ctx context.Context, np *networking.Parameters) {
-	// start a ticker that in 10 seconds will close the connection
-	// another packet can be received which will cancel that ticker
-	np.NetVars.CloseConnection <- true
+	var (
+		plse playerLogoutStartEvent
+	)
+
+	sv := ctx.Value(networking.ShineSession)
+
+	session, ok := sv.(*session)
+
+	if !ok {
+		log.Error("no session available")
+		return
+	}
+
+	plse = playerLogoutStartEvent{
+		sessionID: session.id,
+		mapID:     session.mapID,
+		handle:    session.handle,
+		err:       make(chan error),
+	}
+
+	zoneEvents[playerLogoutStart] <- &plse
+
+	select {
+	case e:= <- plse.err:
+		log.Error(e)
+	}
+	//pqe = queryPlayerEvent{
+	//	handle:  session.handle,
+	//	p:  make(chan * player),
+	//	err: make(chan error),
+	//}
+	//
+	//var p * player
+	//select {
+	//case p = <-pqe.p:
+	//	break
+	//case e := <-pqe.err:
+	//	log.Error(e)
+	//	return
+	//}
+	//
+	//p.send[playerLogoutStart] <- &emptyEvent{}
+	//
+
+	// player attempts logout event
+
+	//np.NetVars.CloseConnection <- true
 }

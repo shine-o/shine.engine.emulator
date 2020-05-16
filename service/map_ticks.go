@@ -8,7 +8,7 @@ func (zm *zoneMap) removeInactiveHandles() {
 	for {
 		select {
 		case <- tick:
-			zm.send[handleCleanUp] <- &emptyEvent{}
+			zm.send[playerHandleMaintenance] <- &emptyEvent{}
 		}
 	}
 }

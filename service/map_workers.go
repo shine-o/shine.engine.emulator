@@ -11,7 +11,7 @@ func (zm *zoneMap) mapHandles() {
 	log.Infof("[map_worker] mapHandles worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
-		case <-zm.recv[handleCleanUp]:
+		case <-zm.recv[playerHandleMaintenance]:
 			go func() {
 				zm.entities.players.Lock()
 				for i, p := range zm.entities.players.active {
@@ -36,11 +36,11 @@ func (zm *zoneMap) mapHandles() {
 				zm.entities.players.Unlock()
 			}()
 
-		case e := <-zm.recv[registerPlayerHandle]:
+		case e := <-zm.recv[playerHandle]:
 			go func() {
-				ev, ok := e.(*registerPlayerHandleEvent)
+				ev, ok := e.(*playerHandleEvent)
 				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&registerPlayerHandleEvent{}).String(), reflect.TypeOf(ev).String())
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerHandleEvent{}).String(), reflect.TypeOf(ev).String())
 					return
 				}
 				zm.entities.players.Lock()
@@ -77,11 +77,9 @@ func (zm *zoneMap) playerActivity() {
 				zm.entities.players.Lock()
 				player := zm.entities.players.active[ev.playerHandle]
 				zm.entities.players.Unlock()
-				//player.RLock()
 				go player.heartbeat()
 				go newPlayer(player, &zm.entities.players)
 				go nearbyPlayers(player, &zm.entities.players)
-				//player.RUnlock()
 			}()
 
 		case e := <-zm.recv[playerDisappeared]:
@@ -100,8 +98,12 @@ func (zm *zoneMap) playerQueries() {
 	log.Infof("[map_worker] playerQueries worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
-		case eq := <-zm.recv[queryPlayer]:
-			log.Info(eq)
+		case e := <-zm.recv[queryPlayer]:
+			ev, ok := e.(*queryPlayerEvent)
+			if !ok {
+				log.Errorf("expected event type %v but got %v", reflect.TypeOf(queryPlayerEvent{}).String(), reflect.TypeOf(ev).String())
+				return
+			}
 		}
 	}
 }
@@ -110,8 +112,8 @@ func (zm *zoneMap) monsterQueries() {
 	log.Infof("[map_worker] monsterQueries worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
-		case eq := <-zm.recv[queryMonster]:
-			log.Info(eq)
+		case e := <-zm.recv[queryMonster]:
+			log.Info(e)
 		}
 	}
 }

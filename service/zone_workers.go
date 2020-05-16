@@ -11,7 +11,7 @@ func (z *zone) playerSession() {
 	log.Infof("[zone_worker] playerSession worker")
 	for {
 		select {
-		case e := <-z.recv[loadPlayerData]:
+		case e := <-z.recv[playerData]:
 			go func() {
 				ev, ok := e.(*playerDataEvent)
 				if !ok {
@@ -37,12 +37,97 @@ func (z *zone) playerSession() {
 				}
 
 				err := p.load(ev.playerName)
+
 				if err != nil {
 					log.Error(err)
 					ev.err <- err
 				}
 				ev.player <- p
 			}()
+		case e := <-z.recv[playerLogoutStart]:
+			go func() {
+				ev, ok := e.(*playerLogoutStartEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerLogoutStartEvent{}).String(), reflect.TypeOf(ev).String())
+				}
+				m, ok := z.rm[ev.mapID]
+				if !ok {
+					ev.err <- fmt.Errorf("map with id %v not available", ev.mapID)
+					return
+				}
+				p, ok := m.entities.players.active[ev.handle]
+				if !ok {
+					ev.err <- fmt.Errorf("map with id %v not available", ev.mapID)
+				}
+				cancel := z.dynamic.add(ev.sessionID, dLogoutCancel)
+				conclude := z.dynamic.add(ev.sessionID, dLogoutConclude)
+				go playerLogout(cancel,conclude, m, p)
+			}()
+		case e := <-z.recv[playerLogoutCancel]:
+			go func() {
+				ev, ok := e.(*playerLogoutCancelEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerLogoutCancelEvent{}).String(), reflect.TypeOf(ev).String())
+				}
+				z.dynamic.Lock()
+				defer z.dynamic.Unlock()
+				select {
+				case z.dynamic.events[ev.sessionID].send[dLogoutCancel] <- &emptyEvent{}:
+					return
+				default:
+					log.Error("failed to send event")
+					return
+				}
+			}()
+		case e := <-z.recv[playerLogoutConclude]:
+			go func() {
+				ev, ok := e.(*playerLogoutConcludeEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerLogoutConcludeEvent{}).String(), reflect.TypeOf(ev).String())
+				}
+				z.dynamic.Lock()
+				defer z.dynamic.Unlock()
+				select {
+				case z.dynamic.events[ev.sessionID].send[dLogoutConclude] <- &emptyEvent{}:
+					return
+				default:
+					log.Error("failed to send event")
+					return
+				}
+			}()
+		}
+	}
+}
+
+func playerLogout(cancel, conclude <-chan event, m * zoneMap, p * player) {
+	t := time.NewTicker(15 * time.Second)
+
+	finish := func() {
+		select {
+		case p.conn.close <- true:
+			//m.send[playerDisappeared] <- &playerDisappearedEvent{}
+			return
+		default:
+			log.Error("unexpected error occurred while closing connection")
+			return
+		}
+	}
+
+	for {
+		select {
+		case _, ok := <-cancel:
+			if !ok {
+				log.Error("failed to receive event")
+			}
+			return
+		case _, ok := <-conclude:
+			if !ok {
+				log.Error("failed to receive event")
+				return
+			}
+			finish()
+		case <- t.C:
+			finish()
 		}
 	}
 }
