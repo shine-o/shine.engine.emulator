@@ -12,10 +12,12 @@ func (p *player) heartbeat() {
 			p.conn.lastHeartBeat = time.Now()
 			p.Unlock()
 		case <- p.recv[heartbeatStop]:
-			tick.Stop()
 			select {
 			case p.conn.close <- true:
+				tick.Stop()
+				return
 			default:
+				tick.Stop()
 				return
 			}
 		case <- tick.C:

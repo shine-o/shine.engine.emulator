@@ -14,22 +14,24 @@ func (zm *zoneMap) mapHandles() {
 		case <-zm.recv[handleCleanUp]:
 			go func() {
 				zm.entities.players.Lock()
-				for i, ap := range zm.entities.players.active {
-					ap.RLock()
-					if time.Since(ap.conn.lastHeartBeat).Seconds() < playerHeartbeatLimit {
-						ap.RUnlock()
+				for i, p := range zm.entities.players.active {
+					p.Lock()
+					if time.Since(p.conn.lastHeartBeat).Seconds() < playerHeartbeatLimit {
+						p.Unlock()
 						continue
 					}
-					ap.Lock()
+					p.Unlock()
 					select {
 					case zm.entities.players.active[i].send[heartbeatStop] <- &emptyEvent{}:
+						time.Sleep(500 * time.Millisecond)
+						p.Lock()
+						delete(zm.entities.players.active, i)
+						p.Unlock()
+						// send event that notifies all players about the logout
 					default:
 						log.Error("failed to stop heartbeat")
-						return
+						break
 					}
-					time.Sleep(500 * time.Millisecond)
-					delete(zm.entities.players.active, i)
-					ap.Unlock()
 				}
 				zm.entities.players.Unlock()
 			}()
@@ -48,12 +50,13 @@ func (zm *zoneMap) mapHandles() {
 					ev.err <- err
 					return
 				}
+				ev.player.Lock()
 				zm.entities.players.active[handle] = ev.player
 				zm.entities.players.Unlock()
-
 				ev.player.handle = handle
 				ev.session.handle = handle
 				ev.session.mapID = ev.player.mapID
+				ev.player.Unlock()
 				ev.done <- true
 			}()
 		}
@@ -74,11 +77,11 @@ func (zm *zoneMap) playerActivity() {
 				zm.entities.players.Lock()
 				player := zm.entities.players.active[ev.playerHandle]
 				zm.entities.players.Unlock()
-				player.RLock()
+				//player.RLock()
 				go player.heartbeat()
-				go newPlayer(player, zm.entities.players.active)
-				go nearbyPlayers(player, zm.entities.players.active)
-				player.RUnlock()
+				go newPlayer(player, &zm.entities.players)
+				go nearbyPlayers(player, &zm.entities.players)
+				//player.RUnlock()
 			}()
 
 		case e := <-zm.recv[playerDisappeared]:
