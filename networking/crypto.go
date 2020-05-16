@@ -22,11 +22,15 @@ func (s cryptoSource) Uint64() (v uint64) {
 	return v
 }
 
-// RandomXorKey generate a random number between 0 and the defined xorLimit
-func RandomXorKey() uint16 {
+func RandomUint16Between(min, max uint16) uint16 {
 	var src cryptoSource
 	rnd := rand.New(src)
-	return uint16(rnd.Intn(int(xorLimit)))
+	return uint16(rnd.Intn(int(max-min)) + int(min))
+}
+
+// RandomXorKey generate a random number between 0 and the defined xorLimit
+func RandomXorKey(xorLimit uint16) uint16 {
+	return RandomUint16Between(0, xorLimit)
 }
 
 // XorCipher decrypt bytes using captured xorKey and xorTable
