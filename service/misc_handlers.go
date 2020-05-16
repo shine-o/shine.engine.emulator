@@ -72,8 +72,9 @@ func ncMiscHeartBeatAck(ctx context.Context, np *networking.Parameters) {
 		log.Error(e)
 		return
 	}
-
+	zm.entities.players.Lock()
 	p, ok := zm.entities.players.active[session.handle]
+	zm.entities.players.Unlock()
 	if !ok {
 		log.Error("player handle not available for character %v on map %v", session.characterName, zm.data.Info.MapName)
 	}
