@@ -11,13 +11,13 @@ func (e securityEventError) Error() string {
 	return e.message
 }
 
-type clientSHNEvent struct {
+type playerSHNEvent struct {
 	inboundNC structs.NcMapLoginReq
 	ok        chan bool
 	err       chan error
 }
 
-func (e *clientSHNEvent) erroneous() <-chan error {
+func (e *playerSHNEvent) erroneous() <-chan error {
 	return e.err
 }
 

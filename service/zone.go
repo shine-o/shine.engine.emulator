@@ -11,10 +11,13 @@ type runningMaps map[int]*zoneMap
 
 type zone struct {
 	rm      runningMaps
-	queries recvEvents
-	send    sendEvents
-	recv    recvEvents
+	// static events, i should add a wrapper type for these
+	//send    sendEvents
+	//recv    recvEvents
+	events
+	dynamic
 }
+
 
 // instead of accessing global variables for data
 // fire a query event struct, which will be populated with the requested data by a worker (event receiver)
@@ -56,7 +59,12 @@ func (z *zone) load() {
 	zoneMaps := loadMaps()
 	for i, m := range zoneMaps {
 		registerMaps = append(registerMaps, int32(m.data.ID))
-		events := []eventIndex{registerPlayerHandle, handleCleanUp,queryPlayer, queryMonster, playerAppeared, playerDisappeared, playerJumped, playerMoved, playerStopped}
+		events := []eventIndex{
+			playerHandle,
+			playerHandleMaintenance,
+			queryPlayer, queryMonster,
+			playerAppeared, playerDisappeared, playerJumped, playerMoved, playerStopped,
+		}
 
 		for _, index := range events {
 			c := make(chan event, 5)
@@ -69,11 +77,18 @@ func (z *zone) load() {
 		go zoneMaps[i].run()
 	}
 
-	events := []eventIndex{clientSHN, loadPlayerData, queryMap}
+	zEvents := []eventIndex{
+		playerSHN,
+		playerData,
+		queryMap,
+		playerLogoutStart, playerLogoutCancel, playerLogoutConclude,
+	}
+
 	z.recv = make(recvEvents)
 	z.send = make(sendEvents)
 
-	for _, index := range events {
+
+	for _, index := range zEvents {
 		c := make(chan event, 5)
 		z.recv[index] = c
 		z.send[index] = c
@@ -81,15 +96,19 @@ func (z *zone) load() {
 
 	zoneEvents = z.send
 
+	z.dynamic= dynamic{
+		events:  make(map[string]events),
+	}
+
 	err := registerZone(registerMaps)
 	if err != nil {
 		// close all event channels
-		for _, m := range zoneMaps {
-			for _, e := range m.send {
-				close(e)
+		for i, _ := range zoneMaps {
+			for j, _ := range zoneMaps[i].send {
+				close(zoneMaps[i].send[j])
 			}
 		}
-		for _, e := range events {
+		for _, e := range zEvents {
 			close(z.send[e])
 		}
 		log.Fatal(err)
@@ -103,19 +122,4 @@ func (z *zone) run() {
 	go z.mapQueries()
 	go z.security()
 	go z.playerSession()
-}
-
-func (z *zone) loadQueries() sendEvents {
-	queries := make(sendEvents)
-	z.loadMapQueries(queries)
-	return queries
-}
-
-func (z *zone) loadMapQueries(queries sendEvents) {
-	loadMapQueries := []eventIndex{queryMap}
-	for _, index := range loadMapQueries {
-		c := make(chan event, 5)
-		queries[index] = c
-		z.queries[index] = c
-	}
 }
