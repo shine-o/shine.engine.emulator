@@ -69,16 +69,16 @@ func Start(cmd *cobra.Command, args []string) {
 	}
 
 	sh := networking.ShineHandler{
-		2055: NcMiscSeedAck,
-		3087:  NcUserLoginWorldReq,
-		2061:  NcMiscGameTimeReq,
-		3123:  NcUserWillWorldSelectReq,
-		5121:  NcAvatarCreateReq,
-		5127:  NcAvatarEraseReq,
-		4097:  NcCharLoginReq,
-		28684: NcCharOptionGetWindowPosReq,
-		28676: NcCharOptionGetShortcutSizeReq,
-		31750: NcPrisonGetReq,
+		2055:  ncMiscSeedAck,
+		3087:  ncUserLoginWorldReq,
+		2061:  ncMiscGameTimeReq,
+		3123:  ncUserWillWorldSelectReq,
+		5121:  ncAvatarCreateReq,
+		5127:  ncAvatarEraseReq,
+		4097:  ncCharLoginReq,
+		28684: ncCharOptionGetWindowPosReq,
+		28676: ncCharOptionGetShortcutSizeReq,
+		31750: ncPrisonGetReq,
 	}
 
 	ss := networking.ShineService{

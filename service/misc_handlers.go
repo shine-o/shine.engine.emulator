@@ -21,26 +21,36 @@ func NcMiscSeedAck(ctx context.Context, np *networking.Parameters) {
 	}
 
 	np.Command.NcStruct = &nc
-	np.Command.Send(ctx)
+	np.Command.Send(np.OutboundSegments.Send)
 
 	xc <- xorOffset
 }
 
-
 // NcMiscGameTimeReq requests the server time
 // NC_MISC_GAMETIME_REQ
 func NcMiscGameTimeReq(ctx context.Context, np * networking.Parameters) {
-	go NcMiscGameTimeAck(ctx, &networking.Command{})
+	var ste serverTimeEvent
+
+	ste = serverTimeEvent{
+		np:  np,
+		err: make(chan error),
+	}
+
+	worldEvents[serverTime] <- &ste
+	select {
+	case e := <- ste.err:
+		log.Error(e)
+	}
 }
 
 // NcMiscGameTimeAck sends the current server time
 // NC_MISC_GAMETIME_ACK
-func NcMiscGameTimeAck(ctx context.Context, pc *networking.Command) {
-	pc.Base.OperationCode = 2062
-	nc, err := worldTime(ctx)
-	if err != nil {
-		return
+func NcMiscGameTimeAck(np * networking.Parameters, nc * structs.NcMiscGameTimeAck) {
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 2062,
+		},
+		NcStruct : nc,
 	}
-	pc.NcStruct = &nc
-	pc.Send(ctx)
+	pc.Send(np.OutboundSegments.Send)
 }

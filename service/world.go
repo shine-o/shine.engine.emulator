@@ -3,50 +3,73 @@ package service
 import (
 	"context"
 	"errors"
-	"github.com/shine-o/shine.engine.core/game/character"
+	"github.com/go-pg/pg/v9"
 	"github.com/shine-o/shine.engine.core/grpc/login"
-	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/shine-o/shine.engine.core/structs"
+	"github.com/shine-o/shine.engine.world/service/character"
 	"github.com/spf13/viper"
-	"strings"
 	"time"
 )
+
+type world struct {
+	db * pg.DB
+	events
+	dynamic
+}
+
+var worldEvents sendEvents
+
+func (w * world) load()  {
+	events := []eventIndex{
+		serverSelect, serverSelectToken, serverTime,
+		createCharacter, deleteCharacter,
+		characterLogin, characterSettings, characterKeymap, characterShortcuts,
+	}
+
+	for _, index := range events {
+		c := make(chan event, 5)
+		w.send[index] = c
+		w.recv[index] = c
+	}
+
+	worldEvents = w.send
+	// register to world-master
+}
+
+func (w * world) run() {
+	go w.session()
+	go w.characterCRUD()
+	go w.characterSession()
+}
+
 
 var errCC = errors.New("context was canceled")
 
 var errAccountInfo = errors.New("failed to fetch account info")
 
-func worldTime(ctx context.Context) (structs.NcMiscGameTimeAck, error) {
-	var (
-		t                    time.Time
-		hour, minute, second byte
-	)
 
-	t = time.Now()
-	hour = byte(t.Hour())
-	minute = byte(t.Minute())
-	second = byte(t.Second())
+func worldTime() structs.NcMiscGameTimeAck {
+	t := time.Now()
+	hour := byte(t.Hour())
+	minute := byte(t.Minute())
+	second := byte(t.Second())
 
 	return structs.NcMiscGameTimeAck{
 		Hour:   hour,
 		Minute: minute,
 		Second: second,
-	}, nil
+	}
 }
 
 // user wants to log to given service
 // check if service is okay
 // take user name, persist to redis
-func loginToWorld(ctx context.Context, req structs.NcUserLoginWorldReq) error {
-	wsi := ctx.Value(networking.ShineSession)
-	ws := wsi.(*session)
-	userName := strings.TrimRight(string(req.User.Name[:]), "\x00")
-	ws.UserName = userName
-
+func verifyUser(ws * session, req * structs.NcUserLoginWorldReq) error {
 	conn, err := newRPCClient("login")
 	if err != nil {
 		return err
 	}
+
 	defer conn.Close()
 
 	c := login.NewLoginClient(conn)
@@ -54,7 +77,7 @@ func loginToWorld(ctx context.Context, req structs.NcUserLoginWorldReq) error {
 	rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
 
 	ui, err := c.AccountInfo(rpcCtx, &login.User{
-		UserName: userName,
+		UserName:  req.User.Name,
 	})
 
 	if err != nil {
@@ -62,16 +85,17 @@ func loginToWorld(ctx context.Context, req structs.NcUserLoginWorldReq) error {
 	}
 
 	ws.UserID = ui.UserID
+	ws.UserName = req.User.Name
 
 	if err := persistSession(ws); err != nil {
+		ws.UserID =  0
+		ws.UserName = ""
 		return err
 	}
 	return nil
 }
 
-func userWorldInfo(ctx context.Context) (structs.NcUserLoginWorldAck, error) {
-	wsi := ctx.Value(networking.ShineSession)
-	ws := wsi.(*session)
+func userCharacters(ws * session) (structs.NcUserLoginWorldAck, error) {
 	worldID := viper.GetInt("service.id")
 
 	var avatars []structs.AvatarInformation
@@ -115,7 +139,7 @@ func returnToServerSelect() (structs.NcUserWillWorldSelectAck, error) {
 	}
 	nc := structs.NcUserWillWorldSelectAck{
 		Error: 7768,
-		Otp:   structs.Name8{
+		Otp: structs.Name8{
 			Name: otp,
 		},
 	}
