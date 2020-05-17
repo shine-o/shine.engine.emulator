@@ -2,77 +2,61 @@ package service
 
 import (
 	"context"
-	"github.com/shine-o/shine.engine.core/game/character"
-	zm "github.com/shine-o/shine.engine.core/grpc/zone-master"
 	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/shine-o/shine.engine.core/structs"
+	"github.com/shine-o/shine.engine.world/service/character"
 )
 
 // NcCharLoginReq handles a petition to login to the zone where the character's location map is running
 // NC_CHAR_LOGIN_REQ
 func NcCharLoginReq(ctx context.Context, np * networking.Parameters) {
-	nc := structs.NcCharLoginReq{}
+	var (
+		nc structs.NcCharLoginReq
+		cl characterLoginEvent
+	)
+
 	if err := structs.Unpack(np.Command.Base.Data, &nc); err != nil {
-		return
-	}
-
-	wsi := ctx.Value(networking.ShineSession)
-	ws, ok := wsi.(*session)
-	if !ok {
-		log.Error("session is not available")
-	}
-
-	// get character where user_id and slot match
-	var char character.Character
-	err := db.Model(&char).
-		Relation("Location").
-		Relation("Options").
-		Where("user_id = ?", ws.UserID).
-		Where("slot = ?", nc.Slot).Select()
-
-	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	conn, err := newRPCClient("zone_master")
-	c := zm.NewMasterClient(conn)
-	rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
+	cl = characterLoginEvent{
+		nc: &nc,
+		zoneInfo: make(chan * structs.NcCharLoginAck),
+		char : make(chan *character.Character),
+		err: make(chan error),
+	}
 
-	ci, err := c.WhereIsMap(rpcCtx, &zm.MapQuery{
-		ID: int32(char.Location.MapID),
-	})
+	worldEvents[characterLogin] <- &cl
 
-	if err != nil {
+	select {
+	case nc := <- cl.zoneInfo:
+		ncCharLoginAck(np, nc)
+	case char := <- cl.char:
+		gameOptions, err := character.NcGameOptions(char.Options.GameOptions)
+		keyMap, err := character.NcKeyMap(char.Options.Keymap)
+		shortcuts, err := character.NcShortcutData(char.Options.Shortcuts)
+
+		ncCharOptionImproveGetGameOptionCmd(np, &gameOptions)
+		ncCharOptionImproveGetKeymapCmd(np, &keyMap)
+		ncCharOptionImproveGetShortcutDataCmd(np, &shortcuts)
+
+	case err := <- cl.err:
 		log.Error(err)
 		return
 	}
-
-	ack := structs.NcCharLoginAck{
-		ZoneIP:   structs.Name4{
-			Name: ci.IP,
-		},
-		ZonePort: uint16(ci.Port),
-	}
-
-	// not sure if these should be ordered
-	NcCharOptionImproveGetGameOptionCmd(ctx, char.Options)
-	NcCharOptionImproveGetKeymapCmd(ctx, char.Options)
-	NcCharOptionImproveGetShortcutDataCmd(ctx, char.Options)
-
-	go NcCharLoginAck(ctx, &ack)
 }
 
 // NcCharLoginAck sends zone connection info to the client
 // NC_CHAR_LOGIN_ACK
-func NcCharLoginAck(ctx context.Context, ack *structs.NcCharLoginAck) {
+func ncCharLoginAck(np * networking.Parameters, nc *structs.NcCharLoginAck) {
 	// query the zone master for connection info for the map
 	// send it to the client
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 4099,
 		},
-		NcStruct: ack,
+		NcStruct: nc,
 	}
-	pc.Send(ctx)
+	pc.Send(np.OutboundSegments.Send)
 }
