@@ -8,13 +8,13 @@ import (
 
 // NcPrisonGetReq client asks for how much time in prison ô_o
 // NC_PRISON_GET_REQ
-func NcPrisonGetReq(ctx context.Context, np * networking.Parameters) {
-	go NcPrisonGetAck(ctx)
+func ncPrisonGetReq(ctx context.Context, np * networking.Parameters) {
+	go ncPrisonGetAck(np)
 }
 
 // NcPrisonGetAck sends how much time the player spends in prison
 // NC_PRISON_GET_ACK
-func NcPrisonGetAck(ctx context.Context) {
+func ncPrisonGetAck(np * networking.Parameters) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 31751,
@@ -24,5 +24,5 @@ func NcPrisonGetAck(ctx context.Context) {
 			Minute: 0,
 		},
 	}
-	pc.Send(ctx)
+	pc.Send(np.OutboundSegments.Send)
 }

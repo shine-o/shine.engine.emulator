@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-func NcMiscSeedAck(ctx context.Context, np *networking.Parameters) {
+func ncMiscSeedAck(ctx context.Context, np *networking.Parameters) {
 	xov := ctx.Value(networking.XorOffset)
 	xc := xov.(chan uint16)
 
@@ -28,7 +28,7 @@ func NcMiscSeedAck(ctx context.Context, np *networking.Parameters) {
 
 // NcMiscGameTimeReq requests the server time
 // NC_MISC_GAMETIME_REQ
-func NcMiscGameTimeReq(ctx context.Context, np * networking.Parameters) {
+func ncMiscGameTimeReq(ctx context.Context, np * networking.Parameters) {
 	var ste serverTimeEvent
 
 	ste = serverTimeEvent{

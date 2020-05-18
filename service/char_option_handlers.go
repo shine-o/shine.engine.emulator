@@ -43,7 +43,6 @@ func ncCharOptionImproveGetShortcutDataCmd(np * networking.Parameters, nc * stru
 	pc.Send(np.OutboundSegments.Send)
 }
 
-
 // NcCharOptionGetShortcutSizeReq
 // NC_CHAR_OPTION_GET_SHORTCUTSIZE_REQ
 func ncCharOptionGetShortcutSizeReq(ctx context.Context, np * networking.Parameters) {

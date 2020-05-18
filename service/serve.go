@@ -20,7 +20,7 @@ var (
 )
 
 func init() {
-	log = logger.Init("service service default logger", true, false, ioutil.Discard)
+	log = logger.Init("world service default logger", true, false, ioutil.Discard)
 }
 
 // Start the service service
@@ -44,7 +44,6 @@ func Start(cmd *cobra.Command, args []string) {
 	})
 
 	defer db.Close()
-	log = logger.Init("world logger", true, false, ioutil.Discard)
 
 	worldName := viper.GetString("world.name")
 	worldPort := viper.GetString("world.port")

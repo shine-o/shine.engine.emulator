@@ -32,26 +32,12 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestWorldTime(t *testing.T) {
-	ctx := context.Background()
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	if rnc, err := worldTime(ctx); err != nil {
-		t.Error(err)
-	} else {
-		if reflect.TypeOf(rnc) != reflect.TypeOf(structs.NcMiscGameTimeAck{}) {
-			t.Errorf("expected nc struct of type: %v but instead got %v", reflect.TypeOf(rnc).String(), reflect.TypeOf(structs.NcMiscGameTimeAck{}).String())
-		}
-	}
-}
-
 func TestReturnToServerSelect(t *testing.T) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	if rnc, err := returnToServerSelect(ctx); err != nil {
+	if rnc, err := returnToServerSelect(); err != nil {
 		t.Error(err)
 	} else {
 		if reflect.TypeOf(rnc) != reflect.TypeOf(structs.NcUserWillWorldSelectAck{}) {
