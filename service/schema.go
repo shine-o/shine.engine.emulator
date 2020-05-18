@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.core/database"
-	"github.com/shine-o/shine.engine.core/game/character"
+	"github.com/shine-o/shine.engine.world/service/character"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"

@@ -4,12 +4,11 @@ import (
 	"context"
 	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/shine-o/shine.engine.core/structs"
-	"github.com/shine-o/shine.engine.world/service/character"
 )
 
 // NcCharLoginReq handles a petition to login to the zone where the character's location map is running
 // NC_CHAR_LOGIN_REQ
-func NcCharLoginReq(ctx context.Context, np * networking.Parameters) {
+func ncCharLoginReq(ctx context.Context, np * networking.Parameters) {
 	var (
 		nc structs.NcCharLoginReq
 		cl characterLoginEvent
@@ -23,7 +22,6 @@ func NcCharLoginReq(ctx context.Context, np * networking.Parameters) {
 	cl = characterLoginEvent{
 		nc: &nc,
 		zoneInfo: make(chan * structs.NcCharLoginAck),
-		char : make(chan *character.Character),
 		err: make(chan error),
 	}
 
@@ -32,19 +30,12 @@ func NcCharLoginReq(ctx context.Context, np * networking.Parameters) {
 	select {
 	case nc := <- cl.zoneInfo:
 		ncCharLoginAck(np, nc)
-	case char := <- cl.char:
-		gameOptions, err := character.NcGameOptions(char.Options.GameOptions)
-		keyMap, err := character.NcKeyMap(char.Options.Keymap)
-		shortcuts, err := character.NcShortcutData(char.Options.Shortcuts)
-
-		ncCharOptionImproveGetGameOptionCmd(np, &gameOptions)
-		ncCharOptionImproveGetKeymapCmd(np, &keyMap)
-		ncCharOptionImproveGetShortcutDataCmd(np, &shortcuts)
-
+		break
 	case err := <- cl.err:
 		log.Error(err)
 		return
 	}
+
 }
 
 // NcCharLoginAck sends zone connection info to the client

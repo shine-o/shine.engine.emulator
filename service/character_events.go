@@ -25,7 +25,12 @@ type characterLoginEvent struct {
 	np       *networking.Parameters
 	zoneInfo chan *structs.NcCharLoginAck
 	err      chan error
-	char     chan *character.Character
+}
+
+type characterSettingsEvent struct {
+	char *character.Character
+	np   *networking.Parameters
+	err      chan error
 }
 
 func (e createCharacterEvent) erroneous() <-chan error {
@@ -37,5 +42,9 @@ func (e deleteCharacterEvent) erroneous() <-chan error {
 }
 
 func (e characterLoginEvent) erroneous() <-chan error {
+	return e.err
+}
+
+func (e characterSettingsEvent) erroneous() <-chan error {
 	return e.err
 }

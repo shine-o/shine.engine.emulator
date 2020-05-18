@@ -6,6 +6,7 @@ import (
 )
 
 func (w *world) session()  {
+	log.Info("[world_worker] session worker)")
 	for {
 		select {
 		case e := <- w.recv[serverTime]:

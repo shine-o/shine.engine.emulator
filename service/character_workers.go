@@ -10,6 +10,7 @@ import (
 )
 
 func (w *world) characterCRUD() {
+	log.Info("[character_worker] characterCRUD worker)")
 	for {
 		select {
 		case e := <- w.recv[createCharacter]:
@@ -58,10 +59,12 @@ func (w *world) characterCRUD() {
 }
 
 func (w *world) characterSession() {
+	log.Info("[character_worker] characterSession worker)")
 	for {
 		select {
 		case e := <- w.recv[characterLogin]:
 			go func() {
+				var cs characterSettingsEvent
 				ev, ok := e.(*characterLoginEvent)
 				if !ok {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&characterLoginEvent{}).String(), reflect.TypeOf(ev).String())
@@ -84,11 +87,39 @@ func (w *world) characterSession() {
 					ev.err <- err
 					return
 				}
-
+				cs = characterSettingsEvent{
+					char: &char,
+					np:   ev.np,
+				}
 				ev.zoneInfo <- &nc
+				worldEvents[characterSettings] <- &cs
 			}()
 		case e := <-w.recv[characterSettings]:
-			log.Info(e)
+			go func() {
+				ev, ok := e.(*characterSettingsEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&characterSettingsEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				gameOptions, err := character.NcGameOptions(ev.char.Options.GameOptions)
+				if err != nil {
+					log.Error(err)
+					return
+				}
+				keyMap, err := character.NcKeyMap(ev.char.Options.Keymap)
+				if err != nil {
+					log.Error(err)
+					return
+				}
+				shortcuts, err := character.NcShortcutData(ev.char.Options.Shortcuts)
+				if err != nil {
+					log.Error(err)
+					return
+				}
+				ncCharOptionImproveGetGameOptionCmd(ev.np, &gameOptions)
+				ncCharOptionImproveGetKeymapCmd(ev.np, &keyMap)
+				ncCharOptionImproveGetShortcutDataCmd(ev.np, &shortcuts)
+			}()
 		}
 	}
 }
