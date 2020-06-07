@@ -2,7 +2,7 @@ package networking
 
 // SessionFactory type for the shine service to implement if it needs session data
 type SessionFactory interface {
-	New() Session
+	New()  Session
 }
 
 // Session type for the shine service to implement if it needs session data

@@ -14,17 +14,6 @@ import (
 	"sync"
 )
 
-// Settings for decoding the packets detected by this library
-type Settings struct {
-	// xor hex table used to encrypt data on the client side, we use it here to decrypt data sent by the client
-	XorKey []byte
-	// xor hex table has a limit, when that limit is reached, while decrypting, we start from offset 0 of the xor hex table
-	XorLimit uint16
-	// operation codes are the result of bit operation on the Department (category) and Command (category item) values on the client side
-	// each Department has a DN and each Command has a a FQDN
-	// the FQDN of a Command is used to give useful info about a detected packet
-	CommandsFilePath string
-}
 
 // PCList protocol command list
 // friendly names for each Department and Commands within a Department
@@ -75,6 +64,26 @@ func (pcb *CommandBase) RawData() []byte {
 	}
 
 	data = append(data, buf.Bytes()...)
+	data = append(data, pcb.Data...)
+
+	if len(data) > 255 { // means big packet
+		header = append(header, byte(0))
+		lenBuf := new(bytes.Buffer)
+		if err := binary.Write(lenBuf, binary.LittleEndian, uint16(len(data))); err != nil {
+			log.Fatalf("failed writing length for big packet to buffer %v", err)
+		}
+		header = append(header, lenBuf.Bytes()...)
+	} else {
+		header = append(header, byte(len(data)))
+	}
+
+	return append(header, data...)
+}
+
+func (pcb *CommandBase) EncryptedRawData() []byte {
+	var header []byte
+	var data []byte
+
 	data = append(data, pcb.Data...)
 
 	if len(data) > 255 { // means big packet
@@ -159,19 +168,10 @@ func (pcb *CommandBase) JSON() ExportedPcb {
 	return ePcb
 }
 
-// Set Settings specified by the shine service
-func (s *Settings) Set() {
-	if cl, err := InitCommandList(s.CommandsFilePath); err != nil {
-		log.Error(err)
-	} else {
-		commandList = &cl
-	}
-	xorKey = s.XorKey
-	xorLimit = s.XorLimit
-}
+
 
 // InitCommandList from protocol commands file
-func InitCommandList(filePath string) (PCList, error) {
+func InitCommandList(filePath string)  error {
 	pcl := PCList{
 		Departments: make(map[uint8]Department),
 	}
@@ -180,14 +180,14 @@ func InitCommandList(filePath string) (PCList, error) {
 
 	if err != nil {
 		log.Error(err)
-		return PCList{}, err
+		return  err
 	}
 
 	rPcl := &RawPCList{}
 
 	if err = yaml.Unmarshal(d, rPcl); err != nil {
 		log.Error(err)
-		return PCList{}, err
+		return  err
 	}
 
 	for _, d := range rPcl.Departments {
@@ -219,5 +219,6 @@ func InitCommandList(filePath string) (PCList, error) {
 		pcl.Departments[uint8(dptIntVal)] = department
 	}
 
-	return pcl, nil
+	commandList = &pcl
+	return nil
 }
