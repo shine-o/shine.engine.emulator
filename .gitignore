@@ -1,5 +1,6 @@
 vendor
-output
+output/*
+!output/.gitignore
 .idea
 **/*.pcapng
 !tcp/*.pcapng

@@ -19,7 +19,7 @@ import (
 )
 
 func init() {
-	lf, err := os.OpenFile("streams.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
+	lf, err := os.OpenFile("output/streams.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
 	if err != nil {
 		logger.Fatalf("Failed to open log file: %v", err)
 	}

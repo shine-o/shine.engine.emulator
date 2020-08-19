@@ -20,7 +20,7 @@ type shineSegment struct {
 
 type decodedPacket struct {
 	seen      time.Time
-	packet    networking.Command
+	packet   * networking.Command
 	direction string
 }
 
@@ -98,7 +98,7 @@ loop:
 				if logActivated {
 					ss.packets <- decodedPacket{
 						seen:      segment.seen,
-						packet:    p,
+						packet:    &p,
 						direction: segment.direction,
 					}
 				}
@@ -180,7 +180,7 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 				if logActivated {
 					ss.packets <- decodedPacket{
 						seen:      segment.seen,
-						packet:    pc,
+						packet:    &pc,
 						direction: segment.direction,
 					}
 				}
@@ -210,6 +210,7 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 	if err != nil {
 		log.Error(err)
 	}
+	dp.packet.Base.ClientStructName = networking.CommandName(dp.packet)
 
 	pv := PacketView{
 		PacketID:      packetID.String(),
@@ -230,19 +231,24 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 	}
 
 	var tPorts string
+
 	if dp.direction == "inbound" {
 		tPorts = ss.transport.Reverse().String()
 	} else {
 		tPorts = ss.transport.String()
 	}
+
 	if viper.GetBool("protocol.log.verbose") {
 		log.Infof("\n%v\n%v\n%v\n%v\n%v\nunpacked data: %v \n%v", dp.packet.Base.ClientStructName, dp.seen, tPorts, dp.direction, dp.packet.Base.String(), pv.NcRepresentation.UnpackedData, hex.Dump(dp.packet.Base.Data))
 	} else {
-		log.Infof("%v %v %v %v", dp.seen, tPorts, dp.direction, dp.packet.Base.String())
+		log.Infof("%v %v %v %v %v", dp.seen, tPorts, dp.direction,dp.packet.Base.ClientStructName, dp.packet.Base.String())
 	}
+
 	pv.ConnectionKey = fmt.Sprintf("%v %v", ss.net.String(), ss.transport.String())
 	ocs.mu.Lock()
 	ocs.structs[dp.packet.Base.OperationCode] = dp.packet.Base.ClientStructName
 	ocs.mu.Unlock()
-	go sendPacketToUI(pv)
+
+	persistMovement(dp)
+	sendPacketToUI(pv)
 }

@@ -62,7 +62,6 @@ func generateOpCodeSwitch() {
 	}
 	ocs.mu.Unlock()
 	end := "}}"
-	//log.Error(start+end)
 
 	pathName, err := filepath.Abs("output/opcodes-switch.go")
 	if err != nil {
@@ -76,6 +75,7 @@ func generateOpCodeSwitch() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	f.Close()
 }
 
 func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error) {

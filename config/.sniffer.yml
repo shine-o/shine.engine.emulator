@@ -2,8 +2,8 @@
 ### DEFAULT VALUES ARE SHOWN ###
 ################################
 network:
-#  interface: "\\Device\\NPF_{3904F81A-F9DE-4578-B4C6-8626CE9B78CE}"
-  interface: "\\Device\\NPF_{0C0F3035-51CB-4486-B8B1-5D3442D92897}"
+  interface: "\\Device\\NPF_{E01ABFE4-F676-4228-A361-2FD9D6545134}"
+#  interface: "\\Device\\NPF_{0C0F3035-51CB-4486-B8B1-5D3442D92897}"
   # if sniffing for traffic between backend services, which may not be encrypted
   # interface should be the local lo0 device (nmap --iflist to see which one)
   serverSideCapture: false
@@ -26,7 +26,7 @@ network:
   portRange:
     useThis: true
     start: 9000
-    end: 9600
+    end: 9500
   snaplen: 65536
 
 protocol:
@@ -39,7 +39,7 @@ protocol:
   xorLimit: 499
 
   log:
-    verbose: false
+    verbose: true
     client: true
     server: true
   commands: "config/commands.yml"

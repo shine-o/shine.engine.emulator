@@ -37,21 +37,27 @@ func Capture(cmd *cobra.Command, args []string) {
 	sf := &shineStreamFactory{
 		shineContext: ctx,
 	}
+
 	sp := reassembly.NewStreamPool(sf)
 	a := reassembly.NewAssembler(sp)
 
 	go startUI(ctx)
 	go capturePackets(ctx, a)
+
+	em.Entities = make(map[uint16][]Movement)
+
 	c := make(chan os.Signal, 2)
-	signal.Notify(c, os.Kill, syscall.SIGTERM) // subscribe to system signals
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM) // subscribe to system signals
 	for {
 		select {
 		case <-c:
 			cancel()
 			//generateOpCodeSwitch()
+			exportEntitiesMovements()
 		}
 	}
 }
+
 
 func capturePackets(ctx context.Context, a *reassembly.Assembler) {
 	defer a.FlushAll()
