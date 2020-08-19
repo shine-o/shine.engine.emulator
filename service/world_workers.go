@@ -6,7 +6,7 @@ import (
 )
 
 func (w *world) session()  {
-	log.Info("[world_worker] session worker)")
+	log.Info("[world_worker] session worker")
 	for {
 		select {
 		case e := <- w.recv[serverTime]:
@@ -29,14 +29,17 @@ func (w *world) session()  {
 				s, ok := ev.np.Session.(*session)
 				if !ok {
 					ev.err <- fmt.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
+					return
 				}
 				err := verifyUser(s, ev.nc)
 				if err != nil {
 					ev.err <- err
+					return
 				}
-				nc, err := userCharacters(s)
+				nc, err := userCharacters(w.db, s)
 				if err != nil {
 					ev.err <- err
+					return
 				}
 				ncUserLoginWorldAck(ev.np, &nc)
 			}()
@@ -50,6 +53,7 @@ func (w *world) session()  {
 				nc, err := returnToServerSelect()
 				if err != nil {
 					ev.err <- err
+					return
 				}
 				ncUserWillWorldSelectAck(ev.np, &nc)
 			}()

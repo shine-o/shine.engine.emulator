@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"encoding/hex"
-	"github.com/go-pg/pg/v9"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.core/database"
 	"github.com/shine-o/shine.engine.core/networking"
@@ -16,7 +15,6 @@ import (
 
 var (
 	log *logger.Logger
-	db  *pg.DB
 )
 
 func init() {
@@ -32,9 +30,13 @@ func Start(cmd *cobra.Command, args []string) {
 	defer cancel()
 	initRedis()
 
+	w := world{}
+	w.load()
+	w.run()
+
 	go newRPCServer("world")
 
-	db = database.Connection(ctx, database.ConnectionParams{
+	db := database.Connection(ctx, database.ConnectionParams{
 		User:     viper.GetString("database.postgres.db_user"),
 		Password: viper.GetString("database.postgres.db_password"),
 		Host:     viper.GetString("database.postgres.host"),
@@ -44,6 +46,7 @@ func Start(cmd *cobra.Command, args []string) {
 	})
 
 	defer db.Close()
+	w.db = db
 
 	worldName := viper.GetString("world.name")
 	worldPort := viper.GetString("world.port")

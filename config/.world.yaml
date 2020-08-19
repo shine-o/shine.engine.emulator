@@ -14,18 +14,21 @@ protocol:
 gRPC:
   servers:
       world:
-        port: "50020"
+        port: 50020
   clients:
       login:
         host: 127.0.0.1
-        port: "50010"
+        port: 50010
+      world_master:
+        host: 127.0.0.1
+        port: 9400
       zone_master:
         host: 127.0.0.1
         port: 9500
 
 database:
   postgres:
-    host: 192.168.1.136
+    host: 127.0.0.1
     port: 5432
     db_name: shine
     db_user: user
@@ -33,6 +36,6 @@ database:
 
 session:
   redis:
-    host: 192.168.1.136
+    host: 127.0.0.1
     port: 6379
     db: 0
