@@ -119,8 +119,7 @@ func avatarEraseSuccAck(np *networking.Parameters, nc * structs.NcAvatarEraseSuc
 }
 
 func createCharErr(np *networking.Parameters, err error) {
-	log.Error(err)
-	errChar, ok := err.(*character.ErrCharacter)
+		errChar, ok := err.(*character.ErrCharacter)
 	if !ok {
 		return
 	}

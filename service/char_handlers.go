@@ -21,6 +21,7 @@ func ncCharLoginReq(ctx context.Context, np * networking.Parameters) {
 
 	cl = characterLoginEvent{
 		nc: &nc,
+		np: np,
 		zoneInfo: make(chan * structs.NcCharLoginAck),
 		err: make(chan error),
 	}

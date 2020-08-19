@@ -10,7 +10,7 @@ import (
 )
 
 func (w *world) characterCRUD() {
-	log.Info("[character_worker] characterCRUD worker)")
+	log.Info("[character_worker] characterCRUD worker")
 	for {
 		select {
 		case e := <- w.recv[createCharacter]:
@@ -29,7 +29,7 @@ func (w *world) characterCRUD() {
 					ev.err <- err
 					return
 				}
-				char, err := character.New(db, s.UserID, ev.nc)
+				char, err := character.New(w.db, s.UserID, ev.nc)
 				if err != nil {
 					ev.err <- err
 					return
@@ -47,7 +47,7 @@ func (w *world) characterCRUD() {
 				if !ok {
 					ev.err <- fmt.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
 				}
-				err := character.Delete(db, s.UserID, ev.nc)
+				err := character.Delete(w.db, s.UserID, ev.nc)
 				if err != nil {
 					ev.err <- err
 					return
@@ -59,7 +59,7 @@ func (w *world) characterCRUD() {
 }
 
 func (w *world) characterSession() {
-	log.Info("[character_worker] characterSession worker)")
+	log.Info("[character_worker] characterSession worker")
 	for {
 		select {
 		case e := <- w.recv[characterLogin]:
