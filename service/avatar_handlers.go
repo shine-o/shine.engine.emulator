@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/shine-o/shine.engine.core/structs"
-	"github.com/shine-o/shine.engine.world/service/character"
+	"github.com/shine-o/shine.engine.core/game/character"
 )
 
 // NcAvatarCreateReq handles character creation request
