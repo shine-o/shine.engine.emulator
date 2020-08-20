@@ -3,9 +3,9 @@ package service
 import (
 	"context"
 	"fmt"
+	"github.com/shine-o/shine.engine.core/game/character"
 	zm "github.com/shine-o/shine.engine.core/grpc/zone-master"
 	"github.com/shine-o/shine.engine.core/structs"
-	"github.com/shine-o/shine.engine.world/service/character"
 	"reflect"
 )
 

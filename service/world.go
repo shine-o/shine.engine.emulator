@@ -7,7 +7,7 @@ import (
 	"github.com/shine-o/shine.engine.core/grpc/login"
 	wm "github.com/shine-o/shine.engine.core/grpc/world-master"
 	"github.com/shine-o/shine.engine.core/structs"
-	"github.com/shine-o/shine.engine.world/service/character"
+	"github.com/shine-o/shine.engine.core/game/character"
 	"github.com/spf13/viper"
 	"time"
 )

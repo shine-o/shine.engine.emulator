@@ -3,7 +3,7 @@ package service
 import (
 	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/shine-o/shine.engine.core/structs"
-	"github.com/shine-o/shine.engine.world/service/character"
+	"github.com/shine-o/shine.engine.core/game/character"
 )
 
 type createCharacterEvent struct {
