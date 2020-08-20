@@ -1,19 +1,15 @@
 serve:
   port: 9010
 
-worlds:
-    - name: isya
-      id:  "1"
-
 gRPC:
   servers:
     login:
       port: "50010"
 
   clients:
-    isya:
+    world_master:
       host: 127.0.0.1
-      port: "50020"
+      port: 9400
 
 
 crypt:
@@ -29,8 +25,7 @@ protocol:
 
 database:
   postgres:
-#    host: 192.168.1.238
-    host: 192.168.1.139
+    host:  127.0.0.1
     port: 5432
     db_name: shine
     db_user: user
@@ -38,7 +33,6 @@ database:
 
 session:
   redis:
-#    host: 192.168.1.238
-    host: 192.168.1.139
+    host:  127.0.0.1
     port: 6379
     db: 0
