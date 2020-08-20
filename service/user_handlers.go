@@ -2,71 +2,78 @@ package service
 
 import (
 	"context"
-	w "github.com/shine-o/shine.engine.core/grpc/world"
 	"github.com/shine-o/shine.engine.core/networking"
 	"github.com/shine-o/shine.engine.core/structs"
 )
 
 // NcUserClientVersionCheckReq handles the client hash verification
 // NC_USER_CLIENT_VERSION_CHECK_REQ
-func NcUserClientVersionCheckReq(ctx context.Context, np *networking.Parameters) {
-	nc := structs.NcUserClientVersionCheckReq{}
-	//if err := nc.Unpack(pc.Base.Data); err != nil {
-	if err := structs.Unpack(np.Command.Base.Data, &nc); err != nil {
+func ncUserClientVersionCheckReq(ctx context.Context, np *networking.Parameters) {
+	var (
+		nc structs.NcUserClientVersionCheckReq
+		cve clientVersionEvent
+	)
+
+	err := structs.Unpack(np.Command.Base.Data, &nc)
+	if err != nil {
 		log.Error(err)
-		go NcUserClientWrongVersionCheckAck(ctx)
-	} else {
-		if _, err := checkClientVersion(nc); err != nil { // data is irrelevant in this call
-			log.Error(err)
-			go NcUserClientWrongVersionCheckAck(ctx)
-		} else {
-			go NcUserClientRightVersionCheckAck(ctx) // will be triggered by method
-		}
+		go ncUserClientWrongVersionCheckAck(np)
+		return
 	}
+
+	cve = clientVersionEvent{
+		nc:  &nc,
+		np: np,
+	}
+
+	loginEvents[clientVersion] <- &cve
 }
 
 // NcUserClientRightVersionCheckAck acknowledges the client is correct
 // NC_USER_CLIENT_RIGHTVERSION_CHECK_ACK
-func NcUserClientRightVersionCheckAck(ctx context.Context) {
-	pc := &networking.Command{
+func ncUserClientRightVersionCheckAck(np *networking.Parameters) {
+	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 3175,
 		},
 	}
-	pc.Send(ctx)
+	pc.Send(np.OutboundSegments.Send)
 }
 
 // NcUserClientWrongVersionCheckAck acknowledges the client is incorrect
 // NC_USER_CLIENT_WRONGVERSION_CHECK_ACK
-func NcUserClientWrongVersionCheckAck(ctx context.Context) {
-	pc := &networking.Command{
+func ncUserClientWrongVersionCheckAck(np *networking.Parameters) {
+	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 3176,
 		},
 	}
-	pc.Send(ctx)
+	pc.Send(np.OutboundSegments.Send)
 }
 
 // NcUserUsLoginReq handles account login
 // NC_USER_US_LOGIN_REQ
-func NcUserUsLoginReq(ctx context.Context, np *networking.Parameters) {
+func ncUserUsLoginReq(ctx context.Context, np *networking.Parameters) {
+	//np.Command.Lock()
+	//defer np.Command.Unlock()
+	var cle credentialsLoginEvent
 	nc := structs.NcUserUsLoginReq{}
 	if err := structs.Unpack(np.Command.Base.Data, &nc); err != nil {
-		go NcUserLoginFailAck(ctx, 69)
+		ncUserLoginFailAck(np, 69)
 		return
 	}
-	np.Command.NcStruct = &nc
-	if err := checkCredentials(nc); err != nil {
-		log.Error(err)
-		go NcUserLoginFailAck(ctx, 69)
-		return
+
+	cle = credentialsLoginEvent{
+		nc:  &nc,
+		np: np,
 	}
-	go NcUserLoginAck(ctx)
+
+	loginEvents[credentialsLogin] <- &cle
 }
 
 // NcUserLoginFailAck notifies the user about an error while attempting to log in
 // NC_USER_LOGINFAIL_ACK
-func NcUserLoginFailAck(ctx context.Context, errCode uint16) {
+func ncUserLoginFailAck(np *networking.Parameters, errCode uint16) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 3081,
@@ -75,128 +82,107 @@ func NcUserLoginFailAck(ctx context.Context, errCode uint16) {
 			Err: errCode,
 		},
 	}
-	pc.Send(ctx)
+	pc.Send(np.OutboundSegments.Send)
 }
 
 // NcUserLoginAck acknowledges the login attempt and sends the server list to the client
 // NC_USER_LOGIN_ACK
-func NcUserLoginAck(ctx context.Context) {
-	log.Info("Requesting data to the World service")
-	unexpectedFailure := func() {
-		NcUserLoginFailAck(ctx, 70)
-	}
-
+func ncUserLoginAck(np *networking.Parameters, nc structs.NcUserLoginAck) {
 	pc := &networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 3082,
 		},
+		NcStruct: &nc,
 	}
-
-	nc, err := serverSelectScreen(ctx)
-
-	if err != nil {
-		go unexpectedFailure()
-		log.Error(err)
-		return
-	}
-
-	pc.NcStruct = &nc
-	pc.Send(ctx)
+	pc.Send(np.OutboundSegments.Send)
 }
 
 // NcUserXtrapReq has no use, but client still sends it
 // NC_USER_XTRAP_REQ
-func NcUserXtrapReq(ctx context.Context, np *networking.Parameters) {}
+func ncUserXtrapReq(ctx context.Context, np *networking.Parameters) {}
 
 // NcUserWorldStatusReq pings the world server
 // NC_USER_WORLD_STATUS_REQ
-func NcUserWorldStatusReq(ctx context.Context, np *networking.Parameters) {
-	if err := checkWorldStatus(); err != nil {
-		log.Error(err)
-		return
+func ncUserWorldStatusReq(ctx context.Context, np *networking.Parameters) {
+	loginEvents[worldManagerStatus] <- &worldManagerStatusEvent{
+		np:np,
 	}
-	go NcUserWorldStatusAck(ctx, &networking.Command{})
 }
 
 // NcUserWorldStatusAck notifies the world is alive
 // TODO: different world statuses...
 // NC_USER_WORLD_STATUS_ACK
-func NcUserWorldStatusAck(ctx context.Context, pc * networking.Command) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-		pc.Base = networking.CommandBase{
+func ncUserWorldStatusAck(np *networking.Parameters) {
+	pc := networking.Command{
+		Base:  networking.CommandBase{
 			OperationCode: 3100,
-		}
-		pc.Send(ctx)
+		},
 	}
+	pc.Send(np.OutboundSegments.Send)
 }
 
 // NcUserWorldSelectReq handles a server selected petition
 // NC_USER_WORLDSELECT_REQ
-func NcUserWorldSelectReq(ctx context.Context, np *networking.Parameters) {
-	log.Info("Requesting data to the World service")
+func ncUserWorldSelectReq(ctx context.Context, np *networking.Parameters) {
+	var sse serverSelectEvent
+
 	unexpectedFailure := func() {
-		NcUserLoginFailAck(ctx, 70)
+		ncUserLoginFailAck(np, 70)
 	}
+
 	nc := structs.NcUserWorldSelectReq{}
-	if err := structs.Unpack(np.Command.Base.Data, &nc); err != nil {
-		go unexpectedFailure()
+	err := structs.Unpack(np.Command.Base.Data, &nc)
+
+	if  err != nil {
+		log.Error(err)
+		unexpectedFailure()
 		return
 	}
-	wci, err := userSelectedServer(ctx, nc)
-	if err != nil {
-		go unexpectedFailure()
-		return
+
+	sse = serverSelectEvent{
+		nc: &nc,
+		np: np,
 	}
-	go NcUserWorldSelectAck(ctx, wci)
+
+	loginEvents[serverSelect] <- &sse
 }
 
-// NcUserWorldSelectAck queries the world server for connection info and sends it to the clietn
+// NcUserWorldSelectAck queries the world server for connection info and sends it to the client
 // NC_USER_WORLDSELECT_ACK
-func NcUserWorldSelectAck(ctx context.Context, wd *w.WorldData) {
-	nc := structs.NcUserWorldSelectAck{
-		WorldStatus: 6,
-		Ip:          structs.Name4{
-			Name: wd.IP,
-		},
-		Port:        uint16(wd.Port),
-	}
-
+func ncUserWorldSelectAck(np *networking.Parameters, ack structs.NcUserWorldSelectAck) {
 	pc := &networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 3084,
 		},
-		NcStruct: &nc,
+		NcStruct: &ack,
 	}
-	pc.Send(ctx)
+	pc.Send(np.OutboundSegments.Send)
 }
 
 // NcUserNormalLogoutCmd not implemented yet ~~
 // NC_USER_NORMALLOGOUT_CMD
-func NcUserNormalLogoutCmd(ctx context.Context, np *networking.Parameters) {
-	select {
-	case <-ctx.Done():
-		return
-	default:
-	}
+func ncUserNormalLogoutCmd(ctx context.Context, np *networking.Parameters) {
+
 }
 
 // NcUserLoginWithOtpReq handles a petition where the client tries a false login
 // NC_USER_LOGIN_WITH_OTP_REQ
-func NcUserLoginWithOtpReq(ctx context.Context, np *networking.Parameters) {
+func ncUserLoginWithOtpReq(ctx context.Context, np *networking.Parameters) {
+	var tl tokenLoginEvent
+
 	nc := structs.NcUserLoginWithOtpReq{}
-	if err := structs.Unpack(np.Command.Base.Data, &nc); err != nil {
+	err := structs.Unpack(np.Command.Base.Data, &nc)
+	if err != nil {
 		log.Info(err)
-		go NcUserLoginFailAck(ctx, 70)
-	} else {
-		np.Command.NcStruct = &nc
-		if err := loginByCode(nc); err != nil {
-			log.Error(err)
-			go NcUserLoginFailAck(ctx, 69)
-		} else {
-			go NcUserLoginAck(ctx)
-		}
+		ncUserLoginFailAck(np, 70)
+		return
 	}
+
+	tl = tokenLoginEvent{
+		nc: &nc,
+		np: np,
+	}
+
+	loginEvents[tokenLogin] <- &tl
+
 }

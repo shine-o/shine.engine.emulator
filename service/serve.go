@@ -16,15 +16,6 @@ var (
 	log *logger.Logger
 )
 
-type LoginParameters struct {
-	nc networking.Command
-}
-
-func (lp * LoginParameters ) NetworkCommand() networking.Command {
-	return lp.nc
-}
-
-
 // Start the login service
 // that is, use networking library to handle TCP connection
 // configure networking library to use handlers implemented in this package for packets
@@ -59,19 +50,23 @@ func Start(cmd *cobra.Command, args []string) {
 		s.CommandsFilePath = path
 	}
 
+	l := login{}
+	l.load()
+
+
 	// note: use factory
 
 	ss := networking.ShineService{
 		Settings: s,
 		ShineHandler: networking.ShineHandler{
-			2055: NcMiscSeedAck,
-			3173: NcUserClientVersionCheckReq,
-			3162: NcUserUsLoginReq,
-			3076: NcUserXtrapReq,
-			3099: NcUserWorldStatusReq,
-			3083: NcUserWorldSelectReq,
-			3096: NcUserNormalLogoutCmd,
-			3127: NcUserLoginWithOtpReq,
+			2055: ncMiscSeedAck,
+			3173: ncUserClientVersionCheckReq,
+			3162: ncUserUsLoginReq,
+			3076: ncUserXtrapReq,
+			3099: ncUserWorldStatusReq,
+			3083: ncUserWorldSelectReq,
+			3096: ncUserNormalLogoutCmd,
+			3127: ncUserLoginWithOtpReq,
 		},
 		SessionFactory: sessionFactory{},
 	}

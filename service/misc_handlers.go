@@ -7,26 +7,21 @@ import (
 	"github.com/spf13/viper"
 )
 
-func NcMiscSeedAck(ctx context.Context, np *networking.Parameters) {
-	select {
-	case <- ctx.Done():
-		return
-	default:
+func ncMiscSeedAck(ctx context.Context, np *networking.Parameters) {
+	xov := ctx.Value(networking.XorOffset)
+	xc := xov.(chan uint16)
 
-		xov := ctx.Value(networking.XorOffset)
-		xo := xov.(*uint16)
+	xorLimit := uint16(viper.GetInt("crypt.xorLimit"))
 
-		xorLimit := uint16(viper.GetInt("crypt.xorLimit"))
+	xorOffset := networking.RandomXorKey(xorLimit)
+	log.Infof("[xor offset] %v", xorOffset)
 
-		xorOffset := networking.RandomXorKey(xorLimit)
-		log.Infof("[xor offset] %v", xorOffset)
-
-		*xo = xorOffset
-
-		nc := structs.NcMiscSeedAck{
-			Seed: xorOffset,
-		}
-		np.Command.NcStruct = &nc
-		np.Command.Send(ctx)
+	nc := structs.NcMiscSeedAck{
+		Seed: xorOffset,
 	}
+
+	np.Command.NcStruct = &nc
+	np.Command.Send(np.OutboundSegments.Send)
+
+	xc <- xorOffset
 }
