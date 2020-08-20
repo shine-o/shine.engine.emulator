@@ -27,6 +27,9 @@ jobs:
       - run:
           name: run network tests
           command: go test github.com/shine-o/shine.engine.core/networking
+      - run:
+          name: run character tests
+          command: go test github.com/shine-o/shine.engine.core/game/character
 #      - run:
 #          name: build docker image and push upstream
 #          command: /root/docker-image.sh
