@@ -12,9 +12,7 @@ func ncUserNormalLogoutCmd(ctx context.Context, np *networking.Parameters) {
 		plce playerLogoutConcludeEvent
 	)
 
-	sv := ctx.Value(networking.ShineSession)
-
-	session, ok := sv.(*session)
+	session, ok := np.Session.(*session)
 
 	if !ok {
 		log.Error("no session available")

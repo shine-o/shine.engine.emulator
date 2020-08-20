@@ -13,15 +13,11 @@ type playerDataEvent struct {
 }
 
 type playerAppearedEvent struct {
-	playerHandle uint16
-	mapID 		 int
+	handle 		uint16
 	err        	 chan error
 }
 
-func (e *playerDataEvent) erroneous() <-chan error {
-	return e.err
-}
-
-func (e *playerAppearedEvent) erroneous() <-chan error {
-	return e.err
+type playerDisappearedEvent struct {
+	handle uint16
+	err        	 chan error
 }

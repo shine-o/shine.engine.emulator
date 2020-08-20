@@ -16,15 +16,3 @@ type playerLogoutConcludeEvent struct {
 	sessionID string
 	err chan error
 }
-
-func (e *playerLogoutStartEvent) erroneous() <-chan error {
-	return e.err
-}
-
-func (e *playerLogoutCancelEvent) erroneous() <-chan error {
-	return e.err
-}
-
-func (e *playerLogoutConcludeEvent) erroneous() <-chan error {
-	return e.err
-}

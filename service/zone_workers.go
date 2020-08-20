@@ -21,8 +21,8 @@ func (z *zone) playerSession() {
 				p := &player{
 					conn: playerConnection{
 						lastHeartBeat: time.Now(),
-						close:         ev.net.NetVars.CloseConnection,
-						outboundData:  ev.net.NetVars.OutboundSegments.Send,
+						close:         ev.net.CloseConnection,
+						outboundData:  ev.net.OutboundSegments.Send,
 					},
 				}
 
@@ -55,7 +55,9 @@ func (z *zone) playerSession() {
 					ev.err <- fmt.Errorf("map with id %v not available", ev.mapID)
 					return
 				}
+				m.entities.players.Lock()
 				p, ok := m.entities.players.active[ev.handle]
+				m.entities.players.Unlock()
 				if !ok {
 					ev.err <- fmt.Errorf("map with id %v not available", ev.mapID)
 				}
@@ -95,39 +97,6 @@ func (z *zone) playerSession() {
 					return
 				}
 			}()
-		}
-	}
-}
-
-func playerLogout(cancel, conclude <-chan event, m * zoneMap, p * player) {
-	t := time.NewTicker(15 * time.Second)
-
-	finish := func() {
-		select {
-		case p.conn.close <- true:
-			//m.send[playerDisappeared] <- &playerDisappearedEvent{}
-			return
-		default:
-			log.Error("unexpected error occurred while closing connection")
-			return
-		}
-	}
-
-	for {
-		select {
-		case _, ok := <-cancel:
-			if !ok {
-				log.Error("failed to receive event")
-			}
-			return
-		case _, ok := <-conclude:
-			if !ok {
-				log.Error("failed to receive event")
-				return
-			}
-			finish()
-		case <- t.C:
-			finish()
 		}
 	}
 }

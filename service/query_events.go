@@ -11,12 +11,3 @@ type queryPlayerEvent struct {
 	p  chan *player
 	err chan error
 }
-
-func (e *queryMapEvent) erroneous() <-chan error {
-	return e.err
-}
-
-
-func (e *queryPlayerEvent) erroneous() <-chan error {
-	return e.err
-}

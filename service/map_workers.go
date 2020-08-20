@@ -75,7 +75,7 @@ func (zm *zoneMap) playerActivity() {
 					return
 				}
 				zm.entities.players.Lock()
-				player := zm.entities.players.active[ev.playerHandle]
+				player := zm.entities.players.active[ev.handle]
 				zm.entities.players.Unlock()
 				go player.heartbeat()
 				go newPlayer(player, &zm.entities.players)

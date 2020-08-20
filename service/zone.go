@@ -87,7 +87,6 @@ func (z *zone) load() {
 	z.recv = make(recvEvents)
 	z.send = make(sendEvents)
 
-
 	for _, index := range zEvents {
 		c := make(chan event, 5)
 		z.recv[index] = c
