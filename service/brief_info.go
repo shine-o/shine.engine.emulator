@@ -13,7 +13,7 @@ func ncBriefInfoLoginCharacterCmd(p *player, nc * structs.NcBriefInfoLoginCharac
 		},
 		NcStruct: &nc,
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 // NC_BRIEFINFO_CHARACTER_CMD
@@ -24,5 +24,5 @@ func ncBriefInfoCharacterCmd(p *player, nc *structs.NcBriefInfoCharacterCmd) {
 		},
 		NcStruct: nc,
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }

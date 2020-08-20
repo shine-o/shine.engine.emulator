@@ -77,9 +77,7 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	sv := ctx.Value(networking.ShineSession)
-
-	session, ok := sv.(*session)
+	session, ok := np.Session.(*session)
 
 	if !ok {
 		log.Errorf("no session available for player %v", p.view.name)
@@ -159,7 +157,7 @@ func ncCharClientBaseCmd(p *player) {
 			},
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_SHAPE_CMD
@@ -170,7 +168,7 @@ func ncCharClientShapeCmd(p *player) {
 		},
 		NcStruct: p.view.protoAvatarShapeInfo(),
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_ITEM_CMD
@@ -181,7 +179,7 @@ func ncCharClientItemCmd(p *player, nc structs.NcCharClientItemCmd) {
 		},
 		NcStruct: &nc,
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_MAP_LOGIN_ACK
@@ -203,7 +201,7 @@ func ncMapLoginAck(p *player) {
 			},
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_QUEST_READ_CMD
@@ -219,7 +217,7 @@ func ncCharClientQuestReadCmd(p *player) {
 			NumOfReadQuests: 0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_QUEST_DOING_CMD
@@ -236,7 +234,7 @@ func ncCharClientQuestDoingCmd(p *player) {
 			NumOfDoingQuest: 0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_QUEST_DONE_CMD
@@ -255,7 +253,7 @@ func ncCharClientQuestDoneCmd(p *player) {
 			Index:              0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_QUEST_REPEAT_CMD
@@ -271,7 +269,7 @@ func ncCharClientQuestRepeatCmd(p *player) {
 			Count:  0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_PASSIVE_CMD
@@ -286,7 +284,7 @@ func ncCharClientPassiveCmd(p *player) {
 			Number: 0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_SKILL_CMD
@@ -309,7 +307,7 @@ func ncCharClientSkillCmd(p *player) {
 			},
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_CHARTITLE_CMD
@@ -327,7 +325,7 @@ func ncCharClientCharTitleCmd(p *player) {
 			NumOfTitle:          0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_GAME_CMD
@@ -343,7 +341,7 @@ func ncCharClientGameCmd(p *player) {
 			Filler1: 65535,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_CHARGEDBUFF_CMD
@@ -357,7 +355,7 @@ func ncCharClientChargedBuffCmd(p *player) {
 			Count: 0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_COININFO_CMD
@@ -373,7 +371,7 @@ func ncCharClientCoinInfoCmd(p *player) {
 			ExchangedCoin: 100000,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_QUEST_RESET_TIME_CLIENT_CMD
@@ -391,7 +389,7 @@ func ncQuestResetTimeClientCmd(p *player) {
 			ResetDay:   1587279600,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 // NC_MAP_LOGINCOMPLETE_CMD
@@ -403,9 +401,7 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 		pae playerAppearedEvent
 	)
 
-	sv := ctx.Value(networking.ShineSession)
-
-	session, ok := sv.(*session)
+	session, ok := np.Session.(*session)
 
 	if !ok {
 		log.Error("no session available")
@@ -430,8 +426,7 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 	}
 
 	pae = playerAppearedEvent{
-		playerHandle: session.handle,
-		mapID:        session.mapID,
+		handle: session.handle,
 		err:          make(chan error),
 	}
 
@@ -452,9 +447,7 @@ func ncCharLogoutCancelCmd(ctx context.Context, np *networking.Parameters)  {
 		plce playerLogoutCancelEvent
 	)
 
-	sv := ctx.Value(networking.ShineSession)
-
-	session, ok := sv.(*session)
+	session, ok := np.Session.(*session)
 
 	if !ok {
 		log.Error("no session available")
@@ -480,9 +473,7 @@ func ncCharLogoutReadyCmd(ctx context.Context, np *networking.Parameters) {
 		plse playerLogoutStartEvent
 	)
 
-	sv := ctx.Value(networking.ShineSession)
-
-	session, ok := sv.(*session)
+	session, ok := np.Session.(*session)
 
 	if !ok {
 		log.Error("no session available")

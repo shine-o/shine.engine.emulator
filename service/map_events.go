@@ -6,7 +6,3 @@ type playerHandleEvent struct {
 	done chan bool
 	err     chan error
 }
-
-func (e *playerHandleEvent) erroneous() <-chan error {
-	return e.err
-}

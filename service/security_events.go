@@ -17,9 +17,6 @@ type playerSHNEvent struct {
 	err       chan error
 }
 
-func (e *playerSHNEvent) erroneous() <-chan error {
-	return e.err
-}
 
 var errBadSHN = securityEventError{
 	code:    0,
