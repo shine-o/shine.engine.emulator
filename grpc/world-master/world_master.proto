@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package wm;
+
+service Master {
+    rpc RegisterWorld(WorldDetails) returns (WorldRegistered) {};
+    rpc GetWorlds(Empty) returns (Worlds) {};
+}
+
+message Empty {};
+
+message ConnectionInfo {
+    string IP = 1;
+    int32  Port = 2;
+};
+
+message WorldDetails {
+    int32 ID = 1;
+    string Name = 2;
+    ConnectionInfo Conn = 3;
+}
+
+message WorldRegistered {
+    bool Success = 1;
+}
+
+message Worlds {
+    repeated WorldDetails list = 1;
+}

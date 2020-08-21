@@ -49,26 +49,45 @@ type Network struct {
 	Conn            net.Conn
 	Reader          *bufio.Reader
 	Writer          *bufio.Writer
+	Session         Session
+}
+
+// Settings for decoding the packets detected by this library
+type Settings struct {
+	// xor hex table used to encrypt data on the client side, we use it here to decrypt data sent by the client
+	XorKey []byte
+	// xor hex table has a limit, when that limit is reached, while decrypting, we start from offset 0 of the xor hex table
+	XorLimit uint16
+	// operation codes are the result of bit operation on the Department (category) and Command (category item) values on the client side
+	// each Department has a DN and each Command has a a FQDN
+	// the FQDN of a Command is used to give useful info about a detected packet
+	CommandsFilePath string
+	LogWorkers     int
+	CommandWorkers int
 }
 
 const (
 	// XorOffset indicates what offset in the xor hex table to use to start decrypting client data
 	XorOffset ContextKey = iota
-	// ShineSession if used, shine service can access session data within their handler's context
-	ShineSession
-	// OutboundStream is a utility struct which contains the tcp connection object and a mutex
-	// it is used to write data to the client from any shine service handler
-	NetworkVariables
 )
 
 var logInboundPackets  chan <- * Command
 var logOutboundPackets chan <- * Command
 
 
+// Set Settings specified by the shine service
+func (s *Settings) Set() {
+	err := InitCommandList(s.CommandsFilePath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	xorKey = s.XorKey
+	xorLimit = s.XorLimit
+}
+
 // Listen on TPC socket for connection on given port
 func (ss *ShineService) Listen(ctx context.Context, port string) {
 	ss.Settings.Set()
-
 
 	in :=  make(chan * Command, 4096)
 	out :=  make(chan * Command, 4096)
@@ -76,31 +95,40 @@ func (ss *ShineService) Listen(ctx context.Context, port string) {
 	logInboundPackets  = in
 	logOutboundPackets = out
 
-	go logPackets(ctx, in, out)
-	go logPackets(ctx, in, out)
-	go logPackets(ctx, in, out)
-	go logPackets(ctx, in, out)
+	for i := 0; i < 6; i++ {
+		go logPackets(ctx, in, out)
+	}
 
-	if l, err := net.Listen("tcp4", fmt.Sprintf(":%v", port)); err == nil {
-		log.Infof("listening for TCP connections on: %v", l.Addr())
-		defer l.Close()
-		var src cryptoSource
-		rnd := rand.New(src)
-		rand.Seed(rnd.Int63n(time.Now().Unix()))
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			default:
-				if c, err := l.Accept(); err == nil {
-					go ss.handleConnection(c)
-				} else {
-					log.Error(err)
-				}
+	l, err := net.Listen("tcp4", fmt.Sprintf(":%v", port));
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Infof("listening for TCP connections on: %v", l.Addr())
+	defer l.Close()
+	var src cryptoSource
+	rnd := rand.New(src)
+
+	rand.Seed(rnd.Int63n(time.Now().Unix()))
+
+	t1 := time.Tick(time.Duration(int64(RandomIntBetween(0,15))) * time.Second)
+	t2 := time.Tick(time.Duration(int64(RandomIntBetween(0,60))) * time.Second)
+
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <- t1:
+			rand.Seed(rnd.Int63n(time.Now().UTC().UnixNano()))
+		case <- t2:
+			rand.Seed(rnd.Int63n(time.Now().UnixNano()))
+		default:
+			if c, err := l.Accept(); err == nil {
+				go ss.handleConnection(c)
+			} else {
+				log.Error(err)
 			}
 		}
-	} else {
-		log.Error(err)
 	}
 }
 
@@ -136,16 +164,15 @@ func (ss *ShineService) handleConnection(conn net.Conn) {
 			},
 			CloseConnection: make(chan bool),
 			Conn:            conn,
+			Session: 		 ss.SessionFactory.New(),
 			Reader:          bufio.NewReader(conn),
 			Writer:          bufio.NewWriter(conn),
 		}
 	)
 
-	ctx = context.WithValue(ctx, ShineSession, ss.SessionFactory.New())
-	ctx = context.WithValue(ctx, NetworkVariables, n)
-
 	go ss.handleInboundSegments(ctx, n)
 	go ss.handleOutboundSegments(ctx, n)
+
 	go waitForClose(n)
 
 	for {
@@ -164,37 +191,7 @@ func (ss *ShineService) handleConnection(conn net.Conn) {
 	}
 }
 
-func waitForClose(n *Network) {
-	for {
-		select {
-		case <-n.CloseConnection:
-			err := n.Conn.Close()
-			if err != nil {
-				log.Error(err)
-			}
-			return
-		}
-	}
-}
-
-// Send bytes to the client
-func (pc *Command) Send(ctx context.Context) {
-	nv := ctx.Value(NetworkVariables)
-	n := nv.(*Network)
-
-	if pc.NcStruct != nil {
-		data, err := structs.Pack(pc.NcStruct)
-		if err != nil {
-			log.Error(err)
-			return
-		}
-		pc.Base.Data = data
-	}
-	n.OutboundSegments.Send <- pc.Base.RawData()
-	logOutboundPackets <- pc
-}
-
-func (pc * Command) SendDirectly(outboundStream chan<- []byte) {
+func (pc * Command) Send(outboundStream chan<- []byte) {
 	if pc.NcStruct != nil {
 		data, err := structs.Pack(pc.NcStruct)
 		if err != nil {
@@ -206,7 +203,6 @@ func (pc * Command) SendDirectly(outboundStream chan<- []byte) {
 	outboundStream <- pc.Base.RawData()
 	logOutboundPackets <- pc
 }
-
 
 func logPackets(ctx context.Context, in <- chan* Command, out <-chan *Command) {
 	for {
@@ -224,7 +220,7 @@ func logPackets(ctx context.Context, in <- chan* Command, out <-chan *Command) {
 func logDirection(pc * Command, direction string) {
 	pc.RLock()
 	defer pc.RUnlock()
-	cn :=  commandName(pc)
+	cn :=  CommandName(pc)
 	log.Infof("%v %v packet metadata: %v", direction, cn, pc.Base.String())
 	if pc.NcStruct != nil {
 		sd, err := json.Marshal(pc.NcStruct)
@@ -236,7 +232,7 @@ func logDirection(pc * Command, direction string) {
 	}
 }
 
-func commandName(pc *Command) string {
+func CommandName(pc *Command) string {
 	commandList.mu.Lock()
 	defer 		commandList.mu.Unlock()
 	if (&PCList{}) != commandList {// should be commented out on production to increase performance
@@ -250,4 +246,18 @@ func commandName(pc *Command) string {
 		}
 	}
 	return ""
+}
+
+
+func waitForClose(n *Network) {
+	for {
+		select {
+		case <-n.CloseConnection:
+			err := n.Conn.Close()
+			if err != nil {
+				log.Error(err)
+			}
+			return
+		}
+	}
 }

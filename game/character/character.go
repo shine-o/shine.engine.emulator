@@ -9,7 +9,6 @@ import (
 	"github.com/shine-o/shine.engine.core/structs"
 	"io/ioutil"
 	"regexp"
-	"strings"
 	"time"
 )
 
@@ -213,7 +212,7 @@ var ErrInvalidClassGender = &ErrCharacter{
 }
 
 // Validate checks data sent by the client is valid
-func Validate(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) error {
+func Validate(db *pg.DB, userID uint64, req * structs.NcAvatarCreateReq) error {
 
 	if req.SlotNum > 5 {
 		return ErrInvalidSlot
@@ -258,27 +257,27 @@ func Validate(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) error {
 }
 
 // New creates character for the User with userID and returns data the client can understand
-func New(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) (structs.AvatarInformation, error) {
+func New(db *pg.DB, userID uint64, req * structs.NcAvatarCreateReq) (*Character, error) {
+	var char * Character
 	newTx, err := db.Begin()
 
 	if err != nil {
-		return structs.AvatarInformation{}, err
+		return char, err
 	}
 
 	defer newTx.Close()
 
-	name := strings.TrimRight(string(req.Name.Name[:]), "\x00")
-	char := Character{
+	char = &Character{
 		UserID:     userID,
 		AdminLevel: 0,
-		Name:       name,
+		Name:       req.Name.Name,
 		Slot:       req.SlotNum,
 	}
 
-	_, err = newTx.Model(&char).Returning("*").Insert()
+	_, err = newTx.Model(char).Returning("*").Insert()
 
 	if err != nil {
-		return structs.AvatarInformation{}, &ErrCharacter{
+		return char, &ErrCharacter{
 			Code:    7,
 			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
 		}
@@ -292,40 +291,40 @@ func New(db *pg.DB, userID uint64, req structs.NcAvatarCreateReq) (structs.Avata
 		initialEquippedItems()
 
 	if _, err = newTx.Model(char.Appearance).Returning("*").Insert(); err != nil {
-		return structs.AvatarInformation{}, &ErrCharacter{
+		return char, &ErrCharacter{
 			Code:    7,
 			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
 		}
 	}
 
 	if _, err = newTx.Model(char.Attributes).Returning("*").Insert(); err != nil {
-		return structs.AvatarInformation{}, &ErrCharacter{
+		return char, &ErrCharacter{
 			Code:    7,
 			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
 		}
 	}
 
 	if _, err = newTx.Model(char.Location).Returning("*").Insert(); err != nil {
-		return structs.AvatarInformation{}, &ErrCharacter{
+		return char, &ErrCharacter{
 			Code:    7,
 			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
 		}
 	}
 
 	if _, err = newTx.Model(char.Options).Returning("*").Insert(); err != nil {
-		return structs.AvatarInformation{}, &ErrCharacter{
+		return char, &ErrCharacter{
 			Code:    7,
 			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
 		}
 	}
 
 	if _, err = newTx.Model(char.EquippedItems).Returning("*").Insert(); err != nil {
-		return structs.AvatarInformation{}, &ErrCharacter{
+		return char, &ErrCharacter{
 			Code:    7,
 			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
 		}
 	}
-	return char.NcRepresentation(), newTx.Commit()
+	return char, newTx.Commit()
 }
 
 func Get(db *pg.DB, characterID uint64) (Character, error) {
@@ -351,17 +350,29 @@ func GetByName(db *pg.DB, name string) (Character, error) {
 	return c, err
 }
 
+func GetBySlot(db *pg.DB, slot byte, userID uint64) (Character, error) {
+	var c Character
+	err := db.Model(&c).
+		Relation("Location").
+		Relation("Options").
+		Where("user_id = ?", userID).
+		Where("slot = ?", slot).Select()
+	return c, err
+}
+
 // Delete character for User with userID
 // soft deletion is performed
-func Delete(db *pg.DB, userID uint64, req structs.NcAvatarEraseReq) error {
+func Delete(db *pg.DB, userID uint64, req * structs.NcAvatarEraseReq) error {
 	deleteTx, err := db.Begin()
-	defer deleteTx.Close()
 	if err != nil {
 		return &ErrCharacter{
 			Code:    1,
 			Message: fmt.Sprintf("database error, could not start transaction: %v", err),
 		}
 	}
+
+	defer deleteTx.Close()
+
 	var char Character
 	err = deleteTx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", req.Slot).Select()
 
@@ -627,4 +638,31 @@ func (ca *Appearance) NcRepresentation() structs.ProtoAvatarShapeInfo {
 		HairColor: ca.HairColor,
 		FaceShape: ca.FaceType,
 	}
+}
+
+func NcGameOptions(data []byte) (structs.NcCharOptionImproveGetGameOptionCmd, error) {
+	nc := structs.NcCharOptionImproveGetGameOptionCmd{}
+	err := structs.Unpack(data, &nc)
+	if err != nil {
+		return nc, err
+	}
+	return nc, nil
+}
+
+func NcKeyMap(data []byte) (structs.NcCharGetKeyMapCmd, error) {
+	nc := structs.NcCharGetKeyMapCmd{}
+	err := structs.Unpack(data, &nc)
+	if err != nil {
+		return nc, err
+	}
+	return nc, nil
+}
+
+func NcShortcutData(data []byte) (structs.NcCharGetShortcutDataCmd , error){
+	nc := structs.NcCharGetShortcutDataCmd{}
+	err := structs.Unpack(data, &nc)
+	if err != nil {
+		return nc, err
+	}
+	return nc, nil
 }

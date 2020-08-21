@@ -28,6 +28,12 @@ func RandomUint16Between(min, max uint16) uint16 {
 	return uint16(rnd.Intn(int(max-min)) + int(min))
 }
 
+func RandomIntBetween(min, max int) int {
+	var src cryptoSource
+	rnd := rand.New(src)
+	return rnd.Intn(max-min) + min
+}
+
 // RandomXorKey generate a random number between 0 and the defined xorLimit
 func RandomXorKey(xorLimit uint16) uint16 {
 	return RandomUint16Between(0, xorLimit)
