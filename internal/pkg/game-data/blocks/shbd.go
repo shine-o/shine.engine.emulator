@@ -18,7 +18,7 @@ type SHBD struct {
 }
 
 func LoadSHBDFile(filePath string) (*SHBD, error) {
-	var s * SHBD
+	var s *SHBD
 
 	data, err := ioutil.ReadFile(filePath)
 	if err != nil {

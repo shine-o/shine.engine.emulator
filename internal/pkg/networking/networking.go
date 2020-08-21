@@ -71,8 +71,8 @@ const (
 	XorOffset ContextKey = iota
 )
 
-var logInboundPackets  chan <- * Command
-var logOutboundPackets chan <- * Command
+var logInboundPackets  chan <- *Command
+var logOutboundPackets chan <- *Command
 
 
 // Set Settings specified by the shine service
@@ -89,10 +89,10 @@ func (s *Settings) Set() {
 func (ss *ShineService) Listen(ctx context.Context, port string) {
 	ss.Settings.Set()
 
-	in :=  make(chan * Command, 4096)
-	out :=  make(chan * Command, 4096)
+	in :=  make(chan *Command, 4096)
+	out :=  make(chan *Command, 4096)
 
-	logInboundPackets  = in
+	logInboundPackets = in
 	logOutboundPackets = out
 
 	for i := 0; i < 6; i++ {
@@ -191,7 +191,7 @@ func (ss *ShineService) handleConnection(conn net.Conn) {
 	}
 }
 
-func (pc * Command) Send(outboundStream chan<- []byte) {
+func (pc *Command) Send(outboundStream chan<- []byte) {
 	if pc.NcStruct != nil {
 		data, err := structs.Pack(pc.NcStruct)
 		if err != nil {
@@ -204,7 +204,7 @@ func (pc * Command) Send(outboundStream chan<- []byte) {
 	logOutboundPackets <- pc
 }
 
-func logPackets(ctx context.Context, in <- chan* Command, out <-chan *Command) {
+func logPackets(ctx context.Context, in <- chan*Command, out <-chan *Command) {
 	for {
 		select {
 		case <- ctx.Done():
@@ -217,7 +217,7 @@ func logPackets(ctx context.Context, in <- chan* Command, out <-chan *Command) {
 	}
 }
 
-func logDirection(pc * Command, direction string) {
+func logDirection(pc *Command, direction string) {
 	pc.RLock()
 	defer pc.RUnlock()
 	cn :=  CommandName(pc)
@@ -235,7 +235,7 @@ func logDirection(pc * Command, direction string) {
 func CommandName(pc *Command) string {
 	commandList.mu.Lock()
 	defer 		commandList.mu.Unlock()
-	if (&PCList{}) != commandList {// should be commented out on production to increase performance
+	if (&PCList{}) != commandList { // should be commented out on production to increase performance
 		opCode := pc.Base.OperationCode
 		department := opCode >> 10
 		command := opCode &1023

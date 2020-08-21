@@ -5,8 +5,8 @@ type ShineChargedEffect struct {
 	RowsCount   uint32
 	FieldSize   uint32
 	ColumnCount uint32
-	Columns     []ShineColumn `struct:"sizefrom=ColumnCount"`
-	ShineRow    []ChargedEffect    `struct:"sizefrom=RowsCount"`
+	Columns     []ShineColumn   `struct:"sizefrom=ColumnCount"`
+	ShineRow    []ChargedEffect `struct:"sizefrom=RowsCount"`
 }
 
 //enum EffectEnumerate
@@ -112,11 +112,11 @@ const (
 //};
 
 type ChargedEffect struct {
-	_ uint16
-	Handle uint16
-	ItemIndex string `struct:"[32]byte"`
+	_            uint16
+	Handle       uint16
+	ItemIndex    string `struct:"[32]byte"`
 	KeepTimeHour uint16
-	EffectEnum EffectEnumerate
-	EffectValue uint16
-	StaStrength byte
+	EffectEnum   EffectEnumerate
+	EffectValue  uint16
+	StaStrength  byte
 }
