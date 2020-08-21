@@ -7,11 +7,7 @@ type queryMapEvent struct {
 }
 
 type queryPlayerEvent struct {
-	id  int
-	zm  chan *player
+	handle  uint16
+	p  chan *player
 	err chan error
-}
-
-func (e *queryMapEvent) erroneous() <-chan error {
-	return e.err
 }

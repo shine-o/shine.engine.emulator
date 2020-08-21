@@ -68,11 +68,9 @@ func Start(cmd *cobra.Command, args []string) {
 			6145: ncMapLoginReq,
 			6147: ncMapLoginCompleteCmd,
 			4209: ncCharLogoutReadyCmd,
+			4210: ncCharLogoutCancelCmd,
 		},
-		SessionFactory: sessionFactory{},
-		// here I should add maps loaded in this zone
-		// that way when a command comes in, i can send events to the map the player is situated in
-		// the map logic routines will handle the received event
+		SessionFactory:  sessionFactory{},
 	}
 
 	ss.Listen(ctx, zonePort)

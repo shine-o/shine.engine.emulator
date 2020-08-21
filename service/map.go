@@ -19,8 +19,9 @@ type zoneMap struct {
 	walkableX *roaring.Bitmap
 	walkableY *roaring.Bitmap
 	entities  entities
-	send      sendEvents
-	recv      recvEvents
+	//send      sendEvents
+	//recv      recvEvents
+	events
 }
 
 type entities struct {
@@ -120,8 +121,10 @@ func loadMaps() []zoneMap {
 					active:  make(map[uint16]*monster),
 				},
 			},
-			send: make(sendEvents),
-			recv: make(recvEvents),
+			events : events{
+				send: make(sendEvents),
+				recv: make(recvEvents),
+			},
 		}
 		zoneMaps = append(zoneMaps, zm)
 	}
