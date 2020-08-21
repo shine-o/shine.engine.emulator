@@ -9,11 +9,11 @@ import (
 // NC_MAP_LOGIN_REQ
 func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	var (
-		nc   structs.NcMapLoginReq
-		cse  clientSHNEvent
-		cde  playerDataEvent
-		mqe  queryMapEvent
-		rphe registerPlayerHandleEvent
+		nc  structs.NcMapLoginReq
+		pse playerSHNEvent
+		pde playerDataEvent
+		qme queryMapEvent
+		phe playerHandleEvent
 	)
 
 	err := structs.Unpack(np.Command.Base.Data, &nc)
@@ -22,27 +22,27 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	cse = clientSHNEvent{
+	pse = playerSHNEvent{
 		inboundNC: nc,
 		ok:        make(chan bool),
 		err:       make(chan error),
 	}
 
-	zoneEvents[clientSHN] <- &cse
+	zoneEvents[playerSHN] <- &pse
 
-	cde = playerDataEvent{
+	pde = playerDataEvent{
 		player:     make(chan *player),
 		net:        np,
 		playerName: nc.CharData.CharID.Name,
 		err:        make(chan error),
 	}
 
-	zoneEvents[loadPlayerData] <- &cde
+	zoneEvents[playerData] <- &pde
 
 	select {
-	case <-cse.ok:
+	case <-pse.ok:
 		break
-	case err := <-cse.err:
+	case err := <-pse.err:
 		log.Error(err)
 		// fail ack with failure code
 		// drop connection
@@ -51,57 +51,55 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 
 	var p *player
 	select {
-	case p = <-cde.player:
+	case p = <-pde.player:
 		break
-	case err := <-cde.err:
+	case err := <-pde.err:
 		log.Error(err)
 		// fail ack with failure code
 		// drop connection
 		return
 	}
 
-	mqe = queryMapEvent{
+	qme = queryMapEvent{
 		id:  p.location.mapID,
 		zm:  make(chan *zoneMap),
 		err: make(chan error),
 	}
 
-	zoneEvents[queryMap] <- &mqe
+	zoneEvents[queryMap] <- &qme
 
 	var zm *zoneMap
 	select {
-	case zm = <-mqe.zm:
+	case zm = <-qme.zm:
 		break
-	case err := <-mqe.err:
+	case err := <-qme.err:
 		log.Error(err)
 		return
 	}
 
-	sv := ctx.Value(networking.ShineSession)
-
-	session, ok := sv.(*session)
+	session, ok := np.Session.(*session)
 
 	if !ok {
 		log.Errorf("no session available for player %v", p.view.name)
 		return
 	}
 
-	rphe = registerPlayerHandleEvent{
+	phe = playerHandleEvent{
 		player:  p,
 		session: session,
 		done:    make(chan bool),
 		err:     make(chan error),
 	}
 
-	zm.send[registerPlayerHandle] <- &rphe
+	zm.send[playerHandle] <- &phe
 
 	select {
-	case <-rphe.done:
+	case <-phe.done:
 		ncCharClientBaseCmd(p)
 		ncCharClientShapeCmd(p)
 		// weird bug sometimes the client stucks in character select
 		ncMapLoginAck(p)
-	case err := <-rphe.err:
+	case err := <-phe.err:
 		log.Error(err)
 	}
 }
@@ -159,7 +157,7 @@ func ncCharClientBaseCmd(p *player) {
 			},
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_SHAPE_CMD
@@ -170,7 +168,7 @@ func ncCharClientShapeCmd(p *player) {
 		},
 		NcStruct: p.view.protoAvatarShapeInfo(),
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_ITEM_CMD
@@ -181,7 +179,7 @@ func ncCharClientItemCmd(p *player, nc structs.NcCharClientItemCmd) {
 		},
 		NcStruct: &nc,
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_MAP_LOGIN_ACK
@@ -203,7 +201,7 @@ func ncMapLoginAck(p *player) {
 			},
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_QUEST_READ_CMD
@@ -219,7 +217,7 @@ func ncCharClientQuestReadCmd(p *player) {
 			NumOfReadQuests: 0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_QUEST_DOING_CMD
@@ -236,7 +234,7 @@ func ncCharClientQuestDoingCmd(p *player) {
 			NumOfDoingQuest: 0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_QUEST_DONE_CMD
@@ -255,7 +253,7 @@ func ncCharClientQuestDoneCmd(p *player) {
 			Index:              0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_QUEST_REPEAT_CMD
@@ -271,7 +269,7 @@ func ncCharClientQuestRepeatCmd(p *player) {
 			Count:  0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_PASSIVE_CMD
@@ -286,7 +284,7 @@ func ncCharClientPassiveCmd(p *player) {
 			Number: 0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_SKILL_CMD
@@ -309,7 +307,7 @@ func ncCharClientSkillCmd(p *player) {
 			},
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_CHARTITLE_CMD
@@ -327,7 +325,7 @@ func ncCharClientCharTitleCmd(p *player) {
 			NumOfTitle:          0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_GAME_CMD
@@ -343,7 +341,7 @@ func ncCharClientGameCmd(p *player) {
 			Filler1: 65535,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_CHARGEDBUFF_CMD
@@ -357,7 +355,7 @@ func ncCharClientChargedBuffCmd(p *player) {
 			Count: 0,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_CHAR_CLIENT_COININFO_CMD
@@ -373,7 +371,7 @@ func ncCharClientCoinInfoCmd(p *player) {
 			ExchangedCoin: 100000,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 //NC_QUEST_RESET_TIME_CLIENT_CMD
@@ -391,7 +389,7 @@ func ncQuestResetTimeClientCmd(p *player) {
 			ResetDay:   1587279600,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 // NC_MAP_LOGINCOMPLETE_CMD
@@ -403,9 +401,7 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 		pae playerAppearedEvent
 	)
 
-	sv := ctx.Value(networking.ShineSession)
-
-	session, ok := sv.(*session)
+	session, ok := np.Session.(*session)
 
 	if !ok {
 		log.Error("no session available")
@@ -430,8 +426,7 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 	}
 
 	pae = playerAppearedEvent{
-		playerHandle: session.handle,
-		mapID:        session.mapID,
+		handle: session.handle,
 		err:          make(chan error),
 	}
 
@@ -446,9 +441,77 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 	// to all surrounding players, send info about this player
 }
 
+//4210
+func ncCharLogoutCancelCmd(ctx context.Context, np *networking.Parameters)  {
+	var (
+		plce playerLogoutCancelEvent
+	)
+
+	session, ok := np.Session.(*session)
+
+	if !ok {
+		log.Error("no session available")
+		return
+	}
+
+	plce = playerLogoutCancelEvent{
+		sessionID: session.id,
+		err:       make(chan error),
+	}
+
+	zoneEvents[playerLogoutCancel] <- &plce
+
+	select {
+	case e:= <- plce.err:
+		log.Error(e)
+	}
+}
+
 //NC_CHAR_LOGOUTREADY_CMD
 func ncCharLogoutReadyCmd(ctx context.Context, np *networking.Parameters) {
-	// start a ticker that in 10 seconds will close the connection
-	// another packet can be received which will cancel that ticker
-	np.NetVars.CloseConnection <- true
+	var (
+		plse playerLogoutStartEvent
+	)
+
+	session, ok := np.Session.(*session)
+
+	if !ok {
+		log.Error("no session available")
+		return
+	}
+
+	plse = playerLogoutStartEvent{
+		sessionID: session.id,
+		mapID:     session.mapID,
+		handle:    session.handle,
+		err:       make(chan error),
+	}
+
+	zoneEvents[playerLogoutStart] <- &plse
+
+	select {
+	case e:= <- plse.err:
+		log.Error(e)
+	}
+	//pqe = queryPlayerEvent{
+	//	handle:  session.handle,
+	//	p:  make(chan * player),
+	//	err: make(chan error),
+	//}
+	//
+	//var p * player
+	//select {
+	//case p = <-pqe.p:
+	//	break
+	//case e := <-pqe.err:
+	//	log.Error(e)
+	//	return
+	//}
+	//
+	//p.send[playerLogoutStart] <- &emptyEvent{}
+	//
+
+	// player attempts logout event
+
+	//np.NetVars.CloseConnection <- true
 }

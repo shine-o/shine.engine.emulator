@@ -2,6 +2,8 @@ package service
 
 import (
 	"github.com/shine-o/shine.engine.core/networking"
+	"github.com/shine-o/shine.engine.core/structs"
+
 )
 
 // set player data, send it to the client and return the player through the channel
@@ -13,15 +15,21 @@ type playerDataEvent struct {
 }
 
 type playerAppearedEvent struct {
-	playerHandle uint16
-	mapID 		 int
+	handle 		uint16
 	err        	 chan error
 }
 
-func (e *playerDataEvent) erroneous() <-chan error {
-	return e.err
+type playerDisappearedEvent struct {
+	handle uint16
+	err        	 chan error
 }
 
-func (e *playerAppearedEvent) erroneous() <-chan error {
-	return e.err
+
+// 	playerRuns
+// 	playerWalks
+//	playerStopped
+//	playerJumped
+type playerRunsEvent struct {
+	handle uint16
+	nc     *structs.NcActMoveRunCmd
 }

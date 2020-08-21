@@ -5,7 +5,7 @@ import (
 )
 
 // notify every player in proximity about player that logged in
-func newPlayer(p *player, nearbyPlayers * players) {
+	func newPlayer(p *player, nearbyPlayers * players) {
 	nearbyPlayers.Lock()
 	for _, np := range nearbyPlayers.active {
 		if p.handle == np.handle {

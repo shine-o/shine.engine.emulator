@@ -22,7 +22,7 @@ func ncMiscSeedAck(ctx context.Context, np *networking.Parameters) {
 
 	np.Command.NcStruct = &nc
 
-	np.Command.Send(ctx)
+	np.Command.Send(np.OutboundSegments.Send)
 
 	xc <- xorOffset
 }
@@ -34,7 +34,7 @@ func ncMiscHeartBeatReq(p *player) {
 			OperationCode: 2052,
 		},
 	}
-	pc.SendDirectly(p.conn.outboundData)
+	pc.Send(p.conn.outboundData)
 }
 
 // for the zone service it is the client that makes use of this handler
@@ -44,8 +44,7 @@ func ncMiscHeartBeatAck(ctx context.Context, np *networking.Parameters) {
 		eventErr = make(chan error)
 	)
 
-	sv := ctx.Value(networking.ShineSession)
-	session, ok := sv.(*session)
+	session, ok := np.Session.(*session)
 
 	if !ok {
 		log.Error("no session available")

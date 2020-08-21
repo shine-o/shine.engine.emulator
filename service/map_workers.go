@@ -11,7 +11,7 @@ func (zm *zoneMap) mapHandles() {
 	log.Infof("[map_worker] mapHandles worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
-		case <-zm.recv[handleCleanUp]:
+		case <-zm.recv[playerHandleMaintenance]:
 			go func() {
 				zm.entities.players.Lock()
 				for i, p := range zm.entities.players.active {
@@ -36,11 +36,11 @@ func (zm *zoneMap) mapHandles() {
 				zm.entities.players.Unlock()
 			}()
 
-		case e := <-zm.recv[registerPlayerHandle]:
+		case e := <-zm.recv[playerHandle]:
 			go func() {
-				ev, ok := e.(*registerPlayerHandleEvent)
+				ev, ok := e.(*playerHandleEvent)
 				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&registerPlayerHandleEvent{}).String(), reflect.TypeOf(ev).String())
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerHandleEvent{}).String(), reflect.TypeOf(ev).String())
 					return
 				}
 				zm.entities.players.Lock()
@@ -74,21 +74,58 @@ func (zm *zoneMap) playerActivity() {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
 					return
 				}
-				zm.entities.players.Lock()
-				player := zm.entities.players.active[ev.playerHandle]
+				zm.entities.players.Lock() // TODO: check if its necessary
+				player, ok := zm.entities.players.active[ev.handle]
+				if !ok {
+					return
+				}
 				zm.entities.players.Unlock()
-				//player.RLock()
 				go player.heartbeat()
 				go newPlayer(player, &zm.entities.players)
 				go nearbyPlayers(player, &zm.entities.players)
-				//player.RUnlock()
 			}()
 
 		case e := <-zm.recv[playerDisappeared]:
 			log.Info(e)
-		case e := <-zm.recv[playerMoved]:
+		case e := <-zm.recv[playerRuns]:
+			log.Info(e)
+
+			// player has a fifo queue for the last 30 movements
+			// for every movement
+			//		verify collision
+			//			if fails, return to previous movement
+			// 		verify speed ( default 30 for unmounted/unbuffed player)
+			//			if fails return to position 1 in queue
+			//		broadcast to players within range
+			// 		add to movements array
+			go func() {
+				ev, ok := e.(*playerRunsEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				// find player
+				//ev.nc.
+				//player, ok := zm.entities.players.active[ev.handle]
+				//ev.nc.From
+			}()
+		case e := <-zm.recv[playerWalks]:
+			// player has a fifo queue for the last 30 movements
+			// for every movement
+			//		verify collision
+			//			if fails, return to previous movement
+			// 		verify speed ( default 30 for unmounted/unbuffed player)
+			//			if fails return to position 1 in queue
+			//		broadcast to players within range
+
 			log.Info(e)
 		case e := <-zm.recv[playerStopped]:
+			// movements triggered by keys inmediately send a STOP packet to the server
+			// movements triggered by mouse do not send a STOP packet
+			// for every stop
+			//		verify collision
+			//		broadcast to players within range
+
 			log.Info(e)
 		case e := <-zm.recv[playerJumped]:
 			log.Info(e)
@@ -100,8 +137,12 @@ func (zm *zoneMap) playerQueries() {
 	log.Infof("[map_worker] playerQueries worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
-		case eq := <-zm.recv[queryPlayer]:
-			log.Info(eq)
+		case e := <-zm.recv[queryPlayer]:
+			ev, ok := e.(*queryPlayerEvent)
+			if !ok {
+				log.Errorf("expected event type %v but got %v", reflect.TypeOf(queryPlayerEvent{}).String(), reflect.TypeOf(ev).String())
+				return
+			}
 		}
 	}
 }
@@ -110,8 +151,8 @@ func (zm *zoneMap) monsterQueries() {
 	log.Infof("[map_worker] monsterQueries worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
-		case eq := <-zm.recv[queryMonster]:
-			log.Info(eq)
+		case e := <-zm.recv[queryMonster]:
+			log.Info(e)
 		}
 	}
 }

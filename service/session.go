@@ -16,6 +16,7 @@ type session struct {
 	id            string
 	characterID   uint64
 	characterName string
+	// TODO: check if its viable to add directly the pointers to map, player objects to increase performance
 	mapID int
 	mapName int
 	handle uint16
