@@ -2,7 +2,6 @@ package blocks
 
 import (
 	"bytes"
-	"github.com/disintegration/imaging"
 	"github.com/shine-o/shine.engine.core/structs"
 	"golang.org/x/image/bmp"
 	"image"
@@ -34,10 +33,10 @@ func LoadSHBDFile(filePath string) (*SHBD, error) {
 	return s, nil
 }
 
-func SHBDToImage(s *SHBD) (*image.NRGBA, error) {
+func SHBDToImage(s *SHBD) (*image.RGBA, error) {
 	r := bytes.NewReader(s.Data)
 
-	img := image.NewNRGBA(image.Rectangle{
+	img := image.NewRGBA(image.Rectangle{
 		Min: image.Point{
 			X: 0,
 			Y: 0,
@@ -48,7 +47,9 @@ func SHBDToImage(s *SHBD) (*image.NRGBA, error) {
 		},
 	})
 
-	for y := s.Y; y != 0; y-- {
+	//for y := s.Y; y != 0; y-- {
+	//	for x := 0; x < s.X; x++ {
+	for y := 0; y < s.Y; y++ {
 		for x := 0; x < s.X; x++ {
 			b, err := r.ReadByte()
 			if err != nil {
@@ -75,8 +76,8 @@ func SHBDToImage(s *SHBD) (*image.NRGBA, error) {
 	return img, nil
 }
 
-func ImageToSHBD(img *image.NRGBA) SHBD {
-	img = imaging.FlipV(img)
+func ImageToSHBD(img *image.RGBA) SHBD {
+	//img = imaging.FlipV(img)
 
 	bounds := img.Bounds()
 

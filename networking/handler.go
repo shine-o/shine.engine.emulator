@@ -10,7 +10,7 @@ type ContextKey int
 // ShineParameters is used by the Shine services to give extra parameters to their handlers
 type Parameters struct {
 	Command *Command
-	NetVars *Network
+	*Network
 	// anything that the Shine service wants to be sent to all handles, an alternative to using global variables
 	ServiceParams interface{}
 }
@@ -19,12 +19,12 @@ type Parameters struct {
 type ShineHandler map[uint16]func(context.Context, *Parameters)
 
 // Read packet data from segments
-func (ss *ShineService) 	handleInboundSegments(ctx context.Context, n *Network) {
+func (ss *ShineService) handleInboundSegments(ctx context.Context, n *Network) {
 	var (
-		data      []byte
-		offset    int
-		xorOffset uint16
-		randomXorOffset =  make(chan uint16)
+		data            []byte
+		offset          int
+		xorOffset       uint16
+		randomXorOffset = make(chan uint16)
 	)
 
 	ctx = context.WithValue(ctx, XorOffset, randomXorOffset)
@@ -33,7 +33,7 @@ func (ss *ShineService) 	handleInboundSegments(ctx context.Context, n *Network) 
 
 	go func() {
 		for i := 0; i < 10; i++ { // todo: number of routines to be put in config
-			go ss.handlerWorker(ctx, n)
+			go ss.commandWorker(ctx, n)
 		}
 
 		n.Commands.Send <- &Command{
@@ -46,15 +46,16 @@ func (ss *ShineService) 	handleInboundSegments(ctx context.Context, n *Network) 
 	offset = 0
 
 	select {
-		case xorOffset = <- randomXorOffset:
-			break
+	case xorOffset = <-randomXorOffset:
+		break
 	}
 
 	for {
 		select {
+		// probably not needed as nothing will be received if the connection drops and this routine will get collected
 		case <-ctx.Done():
 			return
-		case b := <- n.InboundSegments.Recv:
+		case b := <-n.InboundSegments.Recv:
 			data = append(data, b...)
 
 			if offset >= len(data) {
@@ -103,7 +104,7 @@ func (ss *ShineService) handleOutboundSegments(ctx context.Context, n *Network) 
 		case <-ctx.Done():
 			log.Warning("handleOutboundSegments context canceled")
 			return
-		case data := <- n.OutboundSegments.Recv:
+		case data := <-n.OutboundSegments.Recv:
 			if _, err := n.Writer.Write(data); err != nil {
 				log.Error(err)
 			} else {
@@ -115,20 +116,22 @@ func (ss *ShineService) handleOutboundSegments(ctx context.Context, n *Network) 
 	}
 }
 
-func (ss ShineService) handlerWorker(ctx context.Context, n *Network) {
+func (ss ShineService) commandWorker(ctx context.Context, n *Network) {
 	for {
 		select {
 		case <-ctx.Done():
+			log.Warning("commandWorker context canceled")
 			return
-		case c := <- n.Commands.Recv:
+		case c := <-n.Commands.Recv:
 			if callback, ok := ss.ShineHandler[c.Base.OperationCode]; ok {
 				go callback(ctx, &Parameters{
 					Command:       c,
-					NetVars:       n,
+					Network:       n,
 					ServiceParams: ss.ExtraParameters,
 				})
 			} else {
-				log.Errorf("non existent handler for operation code  %v", c.Base.OperationCode)
+				name := CommandName(c)
+				log.Errorf("non existent handler for operation code  %v %v", c.Base.OperationCode, name)
 			}
 		}
 	}

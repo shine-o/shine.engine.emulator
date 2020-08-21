@@ -178,3 +178,13 @@ type NcActSomeoneWalkCmd struct {
 
 //NC_ACT_SOMEONEMOVERUN_CMD
 type NcActSomeoneMoveRunCmd NcActSomeoneWalkCmd
+
+//struct PROTO_NC_ACT_MOVEWALK_CMD
+//{
+//  SHINE_XY_TYPE from;
+//  SHINE_XY_TYPE to;
+//};
+type NcActMoveWalkCmd struct {
+	From ShineXYType
+	To ShineXYType
+}

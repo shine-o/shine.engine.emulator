@@ -65,7 +65,7 @@ func createDummyCharacters() {
 				FaceShape: 0,
 			},
 		}
-		_, err := New(db, 1, c)
+		_, err := New(db, 1, &c)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -83,7 +83,7 @@ func TestValidateCharacterRequest(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		err = Validate(db, 1, nc)
+		err = Validate(db, 1, &nc)
 		if err != nil {
 			t.Error(err)
 		}
@@ -102,7 +102,7 @@ func TestCreateCharacter(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		_, err = New(db, 1, nc)
+		_, err = New(db, 1, &nc)
 		if err != nil {
 			t.Error(err)
 		}
@@ -119,7 +119,7 @@ func TestDeleteCharacter(t *testing.T) {
 		Slot: 0,
 	}
 
-	err := Delete(db, 1, nc)
+	err := Delete(db, 1, &nc)
 
 	if err != nil {
 		log.Error(err)
@@ -157,7 +157,7 @@ func TestCharacterNameInUseError(t *testing.T) {
 			FaceShape: 0,
 		},
 	}
-	err := Validate(db, 1, c)
+	err := Validate(db, 1, &c)
 	if err == nil {
 		log.Error(err)
 	}
@@ -190,7 +190,7 @@ func TestNoSlotAvailableError(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate(db, 1, nc)
+		err = Validate(db, 1, &nc)
 		if err != nil {
 			if err.Error() != "no slot available" {
 				t.Errorf("unexpected error message %v", err.Error())
@@ -212,7 +212,7 @@ func TestInvalidSlotError(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate(db, 1, nc)
+		err = Validate(db, 1, &nc)
 		if err != nil {
 			if err.Error() != "invalid slot" {
 				t.Errorf("unexpected error message %v", err.Error())
@@ -236,7 +236,7 @@ func TestInvalidNameError(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate(db, 1, nc)
+		err = Validate(db, 1, &nc)
 		if err != nil {
 			if err.Error() != "invalid name" {
 				t.Errorf("unexpected error message: %v", err.Error())
@@ -262,7 +262,7 @@ func TestInvalidGenderClassBinaryOperation(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate(db, 1, nc)
+		err = Validate(db, 1, &nc)
 		if err != nil {
 			errChar, ok := err.(*ErrCharacter)
 			if !ok {
