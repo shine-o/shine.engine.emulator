@@ -89,7 +89,7 @@ func TestCheckClientVersion(t *testing.T) {
 		t.Error(err)
 	} else {
 
-		if pc, err := networking.DecodePacket("small", 66, data[1:]); err != nil { // from index 1, as previous bytes are length info for this packet
+		if pc, err := networking.DecodePacket(data[1:]); err != nil { // from index 1, as previous bytes are length info for this packet
 			t.Error(err)
 		} else {
 			nc := structs.NcUserClientVersionCheckReq{}
@@ -98,7 +98,7 @@ func TestCheckClientVersion(t *testing.T) {
 				t.Error(err)
 			} else {
 				pc.NcStruct = &nc
-				if _, err := checkClientVersion(ctx, nc); err != nil {
+				if _, err := checkClientVersion(nc); err != nil {
 					t.Error(err)
 				}
 			}
@@ -145,15 +145,15 @@ func TestLoginByCode(t *testing.T) {
 		if data, err := hex.DecodeString("22370c7445474d6f684d534e626f43636c5948474958554f47484b5a544b636a4c6672"); err != nil {
 			t.Error(err)
 		} else {
-			if pc, err := networking.DecodePacket("small", 34, data[1:]); err != nil { // from index 1, as previous bytes are length info for this packet
+			if pc, err := networking.DecodePacket(data[1:]); err != nil { // from index 1, as previous bytes are length info for this packet
 				t.Error(err)
 			} else {
 				nc := structs.NcUserLoginWithOtpReq{}
-				if err := networking.ReadBinary(pc.Base.Data, &nc); err != nil {
+				if err := structs.Unpack(pc.Base.Data, &nc); err != nil {
 					t.Error(err)
 				} else {
 					pc.NcStruct = &nc
-					if err := loginByCode(ctx, nc); err != nil {
+					if err := loginByCode(nc); err != nil {
 						t.Error(err)
 					}
 				}

@@ -33,7 +33,7 @@ func Start(cmd *cobra.Command, args []string) {
 	defer db.Close()
 	defer cancel()
 
-	s := &networking.Settings{}
+	s := networking.Settings{}
 
 	if xk, err := hex.DecodeString(viper.GetString("crypt.xorKey")); err != nil {
 		log.Error(err)
@@ -50,21 +50,26 @@ func Start(cmd *cobra.Command, args []string) {
 		s.CommandsFilePath = path
 	}
 
+	l := login{}
+	l.load()
+
+
 	// note: use factory
-	ch := &networking.CommandHandlers{
-		3173: NcUserClientVersionCheckReq,
-		3162: NcUserUsLoginReq,
-		3076: NcUserXtrapReq,
-		3099: NcUserWorldStatusReq,
-		3083: NcUserWorldSelectReq,
-		3096: NcUserNormalLogoutCmd,
-		3127: NcUserLoginWithOtpReq,
+
+	ss := networking.ShineService{
+		Settings: s,
+		ShineHandler: networking.ShineHandler{
+			2055: ncMiscSeedAck,
+			3173: ncUserClientVersionCheckReq,
+			3162: ncUserUsLoginReq,
+			3076: ncUserXtrapReq,
+			3099: ncUserWorldStatusReq,
+			3083: ncUserWorldSelectReq,
+			3096: ncUserNormalLogoutCmd,
+			3127: ncUserLoginWithOtpReq,
+		},
+		SessionFactory: sessionFactory{},
 	}
 
-	hw := networking.NewHandlerWarden(ch)
-
-	ss := networking.NewShineService(s, hw)
-	wsf := &sessionFactory{}
-	ss.UseSessionFactory(wsf)
 	ss.Listen(ctx, viper.GetString("serve.port"))
 }

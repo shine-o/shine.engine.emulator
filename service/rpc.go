@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/shine-o/shine.engine.core/grpc/login"
+	l "github.com/shine-o/shine.engine.core/grpc/login"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -13,18 +13,18 @@ import (
 )
 
 type server struct {
-	login.UnimplementedLoginServer
+	l.UnimplementedLoginServer
 }
 
 var errBadRPCClient = errors.New("gRPC client is not present in the config file")
 
-func (s *server) AccountInfo(ctx context.Context, req *login.User) (*login.UserInfo, error) {
+func (s *server) AccountInfo(ctx context.Context, req *l.User) (*l.UserInfo, error) {
 	var userID uint64
 	err := db.Model((*User)(nil)).Column("id").Where("user_name = ?", req.UserName).Limit(1).Select(&userID)
 	if err != nil {
-		return &login.UserInfo{}, status.Errorf(codes.FailedPrecondition, "failed to fetch user record %v", err)
+		return &l.UserInfo{}, status.Errorf(codes.FailedPrecondition, "failed to fetch user record %v", err)
 	}
-	return &login.UserInfo{
+	return &l.UserInfo{
 		UserID: userID,
 	}, nil
 }
@@ -55,10 +55,10 @@ func newRPCServer(name string) {
 		address := fmt.Sprintf(":%v", port)
 		lis, err := net.Listen("tcp", address)
 		if err != nil {
-			log.Errorf("could listen on port %v for service %v : %v", name, port, err)
+			log.Errorf("could listen on port %v for service %v : %v", port, name,  err)
 		}
 		s := grpc.NewServer()
-		login.RegisterLoginServer(s, &server{})
+		l.RegisterLoginServer(s, &server{})
 
 		log.Infof("loading gRPC server connection %v@::%v", name, port)
 		if err := s.Serve(lis); err != nil {
