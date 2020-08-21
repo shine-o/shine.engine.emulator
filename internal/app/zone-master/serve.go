@@ -1,9 +1,9 @@
-package service
+package zone_master
 
 import (
 	"fmt"
 	"github.com/google/logger"
-	zm "github.com/shine-o/shine.engine.core/grpc/zone-master"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
@@ -28,6 +28,7 @@ func Start(cmd *cobra.Command, args []string) {
 		log.Errorf("could listen on port %v: %v", port, err)
 	}
 	s := grpc.NewServer()
+
 	zm.RegisterMasterServer(s, &server{})
 
 	log.Infof("Loading gRPC server connection master@::%v", port)

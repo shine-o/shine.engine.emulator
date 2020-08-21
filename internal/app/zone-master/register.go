@@ -1,4 +1,4 @@
-package service
+package zone_master
 
 type ZoneInfo struct {
 	IP string
