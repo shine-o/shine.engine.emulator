@@ -1,4 +1,4 @@
-package service
+package world_master
 
 type WorldInfo struct {
 	ID int

@@ -1,9 +1,9 @@
-package service
+package world_master
 
 import (
 	"fmt"
 	"github.com/google/logger"
-	wm "github.com/shine-o/shine.engine.core/grpc/world-master"
+	wm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world-master"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
