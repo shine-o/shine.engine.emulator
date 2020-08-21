@@ -6,7 +6,7 @@ type ShineMiniHouse struct {
 	FieldSize   uint32
 	ColumnCount uint32
 	Columns     []ShineColumn `struct:"sizefrom=ColumnCount"`
-	ShineRow    []MiniHouse    `struct:"sizefrom=RowsCount"`
+	ShineRow    []MiniHouse   `struct:"sizefrom=RowsCount"`
 }
 
 //struct MiniHouse

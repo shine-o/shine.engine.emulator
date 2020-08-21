@@ -133,7 +133,7 @@ const (
 type ShineDataMode uint32
 
 const (
-	DataModeNormal   ShineDataMode  = iota
+	DataModeNormal ShineDataMode = iota
 	DataModeEncryption
 )
 

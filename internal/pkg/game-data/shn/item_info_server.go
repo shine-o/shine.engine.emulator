@@ -5,8 +5,8 @@ type ShineItemInfoServer struct {
 	RowsCount   uint32
 	FieldSize   uint32
 	ColumnCount uint32
-	Columns     []ShineColumn `struct:"sizefrom=ColumnCount"`
-	ShineRow    []ItemInfoServer    `struct:"sizefrom=RowsCount"`
+	Columns     []ShineColumn    `struct:"sizefrom=ColumnCount"`
+	ShineRow    []ItemInfoServer `struct:"sizefrom=RowsCount"`
 }
 
 //struct __unaligned __declspec(align(2)) ItemInfoServer
@@ -32,22 +32,22 @@ type ShineItemInfoServer struct {
 type ItemInfoServer struct {
 	_ uint16
 	ID uint32
-	InxName string `struct:"[32]byte"`
-	MarketIndex string `struct:"[20]byte"`
-	City byte
-	DropGroupA string `struct:"[40]byte"`
-	DropGroupB string `struct:"[40]byte"`
-	RandomOptionDropGroup string `struct:"[33]byte"`
-	Vanish uint32
-	Looting uint32
-	DropRateKilledByMob uint16
+	InxName                string `struct:"[32]byte"`
+	MarketIndex            string `struct:"[20]byte"`
+	City                   byte
+	DropGroupA             string `struct:"[40]byte"`
+	DropGroupB             string `struct:"[40]byte"`
+	RandomOptionDropGroup  string `struct:"[33]byte"`
+	Vanish                 uint32
+	Looting                uint32
+	DropRateKilledByMob    uint16
 	DropRateKilledByPlayer uint16
-	ISETIndex ISEType
-	ItemSortIndex string `struct:"[32]byte"`
-	KQITem byte
-	PkKqUse byte
-	KqItemDrop byte
-	PreventAttack byte
+	ISETIndex              ISEType
+	ItemSortIndex          string `struct:"[32]byte"`
+	KQITem                 byte
+	PkKqUse                byte
+	KqItemDrop             byte
+	PreventAttack          byte
 }
 
 //enum ISEType

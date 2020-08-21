@@ -3,7 +3,6 @@ package character
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/go-pg/pg/v9"
 	"github.com/google/logger"
 	"github.com/google/uuid"
 	"github.com/shine-o/shine.engine.core/structs"
@@ -258,7 +257,7 @@ func Validate(db *pg.DB, userID uint64, req * structs.NcAvatarCreateReq) error {
 
 // New creates character for the User with userID and returns data the client can understand
 func New(db *pg.DB, userID uint64, req * structs.NcAvatarCreateReq) (*Character, error) {
-	var char * Character
+	var char *Character
 	newTx, err := db.Begin()
 
 	if err != nil {

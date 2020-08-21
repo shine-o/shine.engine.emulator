@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/go-pg/pg/v9"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.core/database"
 	"github.com/shine-o/shine.engine.core/structs"
