@@ -85,7 +85,7 @@ type CharBriefInfoCamp struct {
 //  STREETBOOTH_SIGNBOARD signboard;
 //};
 type CharBriefInfoBooth struct {
-	Camp CharBriefInfoCamp
+	Camp      CharBriefInfoCamp
 	IsSelling byte
 	SignBoard StreetBoothSignBoard
 }
@@ -104,7 +104,7 @@ type CharBriefInfoRideInfo struct {
 //  CHARBRIEFINFO_RIDE::RideInfo rideinfo;
 //};
 type CharBriefInfoRide struct {
-	Equip ProtoEquipment
+	Equip    ProtoEquipment
 	RideInfo CharBriefInfoRideInfo
 }
 
