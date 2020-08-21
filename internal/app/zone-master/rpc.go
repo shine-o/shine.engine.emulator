@@ -1,11 +1,11 @@
-package service
+package zone_master
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/shine-o/shine.engine.core/grpc/zone-master"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"net"
