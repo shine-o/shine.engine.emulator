@@ -1,4 +1,4 @@
-package service
+package world_master
 
 import (
 	"encoding/json"

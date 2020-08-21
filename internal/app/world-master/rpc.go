@@ -1,11 +1,11 @@
-package service
+package world_master
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	wm "github.com/shine-o/shine.engine.core/grpc/world-master"
+	wm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world-master"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"net"
@@ -47,7 +47,7 @@ func (s *server) RegisterWorld(ctx context.Context, wd *wm.WorldDetails) (*wm.Wo
 	}, nil
 }
 
-func (s * server) GetWorlds(ctx context.Context, wd *wm.Empty) (*wm.Worlds, error)  {
+func (s *server) GetWorlds(ctx context.Context, wd *wm.Empty) (*wm.Worlds, error)  {
 	rw := make(registeredWorlds)
 	worlds := &wm.Worlds{}
 
