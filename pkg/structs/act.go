@@ -169,10 +169,10 @@ type NcActMoveRunCmd NcActWalkReq
 //  PROTO_NC_ACT_SOMEONEMOVEWALK_CMD::<unnamed-type-moveattr> moveattr;
 //};
 type NcActSomeoneWalkCmd struct {
-	Handle uint16
-	From   ShineXYType
-	To     ShineXYType
-	Speed uint16 // not sure
+	Handle   uint16
+	From     ShineXYType
+	To       ShineXYType
+	Speed    uint16 // not sure
 	MoveAttr uint16
 }
 
@@ -186,5 +186,5 @@ type NcActSomeoneMoveRunCmd NcActSomeoneWalkCmd
 //};
 type NcActMoveWalkCmd struct {
 	From ShineXYType
-	To ShineXYType
+	To   ShineXYType
 }
