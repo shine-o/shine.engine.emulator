@@ -68,7 +68,8 @@ const (
 	playerHandle
 	playerAppeared
 	playerDisappeared
-	playerMoved
+	playerRuns
+	playerWalks
 	playerStopped
 	playerJumped
 	queryPlayer

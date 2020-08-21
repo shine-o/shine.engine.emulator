@@ -16,6 +16,11 @@ type location struct {
 	mapName string
 	x, y    uint32
 	d       uint8
+	movements [15]movement
+}
+
+type movement struct {
+	x, y uint32
 }
 
 type baseEntity struct {
