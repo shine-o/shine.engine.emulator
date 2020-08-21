@@ -74,8 +74,11 @@ func (zm *zoneMap) playerActivity() {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
 					return
 				}
-				zm.entities.players.Lock()
-				player := zm.entities.players.active[ev.handle]
+				zm.entities.players.Lock() // TODO: check if its necessary
+				player, ok := zm.entities.players.active[ev.handle]
+				if !ok {
+					return
+				}
 				zm.entities.players.Unlock()
 				go player.heartbeat()
 				go newPlayer(player, &zm.entities.players)
@@ -84,9 +87,45 @@ func (zm *zoneMap) playerActivity() {
 
 		case e := <-zm.recv[playerDisappeared]:
 			log.Info(e)
-		case e := <-zm.recv[playerMoved]:
+		case e := <-zm.recv[playerRuns]:
+			log.Info(e)
+
+			// player has a fifo queue for the last 30 movements
+			// for every movement
+			//		verify collision
+			//			if fails, return to previous movement
+			// 		verify speed ( default 30 for unmounted/unbuffed player)
+			//			if fails return to position 1 in queue
+			//		broadcast to players within range
+			// 		add to movements array
+			go func() {
+				ev, ok := e.(*playerRunsEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				// find player
+				//ev.nc.
+				//player, ok := zm.entities.players.active[ev.handle]
+				//ev.nc.From
+			}()
+		case e := <-zm.recv[playerWalks]:
+			// player has a fifo queue for the last 30 movements
+			// for every movement
+			//		verify collision
+			//			if fails, return to previous movement
+			// 		verify speed ( default 30 for unmounted/unbuffed player)
+			//			if fails return to position 1 in queue
+			//		broadcast to players within range
+
 			log.Info(e)
 		case e := <-zm.recv[playerStopped]:
+			// movements triggered by keys inmediately send a STOP packet to the server
+			// movements triggered by mouse do not send a STOP packet
+			// for every stop
+			//		verify collision
+			//		broadcast to players within range
+
 			log.Info(e)
 		case e := <-zm.recv[playerJumped]:
 			log.Info(e)

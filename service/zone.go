@@ -63,7 +63,7 @@ func (z *zone) load() {
 			playerHandle,
 			playerHandleMaintenance,
 			queryPlayer, queryMonster,
-			playerAppeared, playerDisappeared, playerJumped, playerMoved, playerStopped,
+			playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
 		}
 
 		for _, index := range events {
