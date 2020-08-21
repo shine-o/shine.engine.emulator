@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package login;
+
+service Login {
+    rpc AccountInfo(User) returns (UserInfo) {};
+}
+
+message User {
+    string UserName = 1;
+}
+
+message UserInfo {
+    uint64 UserID = 1;
+}
