@@ -1,4 +1,4 @@
-![](shine.png)
+![](../tools/packet-sniffer/shine.png)
 # Shine Online Packet Sniffer
 
 > Tool that captures all packets between the client and services and show them in real time.
@@ -11,7 +11,7 @@
 #### Requirements
 
 - Install [NMAP](https://nmap.org/download.html)
-- Adjust the **config/.sniffer.yml** file to your needs
+- Adjust the **configs/packet-sniffer-client.yml** file to your needs
 
 
 ## build

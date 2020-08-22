@@ -1,4 +1,4 @@
-package service
+package packet_sniffer
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/google/gopacket/reassembly"
 	"github.com/google/logger"
 	"github.com/google/uuid"
-	"github.com/shine-o/shine.engine.core/networking"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/viper"
 	"os"
 	"path/filepath"
@@ -19,6 +19,20 @@ import (
 )
 
 func init() {
+	dir, err := filepath.Abs("./output/")
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err = os.Mkdir(dir, 0700)
+
+		if err != nil {
+			log.Error(err)
+		}
+	} else {
+		err = os.RemoveAll(dir)
+		if err != nil {
+			log.Error(err)
+		}
+	}
+
 	lf, err := os.OpenFile("output/streams.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
 	if err != nil {
 		logger.Fatalf("Failed to open log file: %v", err)
@@ -53,22 +67,6 @@ var (
 )
 
 func config() {
-	dir, err := filepath.Abs("output/")
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-
-	} else {
-		err = os.RemoveAll(dir)
-		if err != nil {
-			log.Error(err)
-		}
-	}
-
-	err = os.Mkdir(dir, 0700)
-
-	if err != nil {
-		log.Error(err)
-	}
-
 	iface = viper.GetString("network.interface")
 	serverSideCapture = viper.GetBool("network.serverSideCapture")
 	snaplen = viper.GetInt("network.snaplen")

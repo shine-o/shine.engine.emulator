@@ -1,11 +1,11 @@
-package service
+package packet_sniffer
 
 import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/shine-o/shine.engine.core/structs"
-	"gopkg.in/restruct.v1"
+	"github.com/go-restruct/restruct"
+	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"io/ioutil"
 	"os"
 	"path/filepath"

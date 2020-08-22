@@ -12,14 +12,18 @@ require (
 	github.com/go-redis/redis/v7 v7.4.0
 	github.com/go-restruct/restruct v1.2.0-alpha
 	github.com/golang/protobuf v1.4.2
+	github.com/google/gopacket v1.1.18
 	github.com/google/logger v1.1.0
 	github.com/google/uuid v1.1.1
+	github.com/gorilla/websocket v1.4.2
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/segmentio/encoding v0.1.15 // indirect
+	github.com/segmentio/ksuid v1.0.3
+	github.com/shine-o/shine.engine.core v0.0.3
 	github.com/spf13/afero v1.3.4 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.0.0
