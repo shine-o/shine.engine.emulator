@@ -69,6 +69,8 @@ func Start(cmd *cobra.Command, args []string) {
 			6147: ncMapLoginCompleteCmd,
 			4209: ncCharLogoutReadyCmd,
 			4210: ncCharLogoutCancelCmd,
+			8217: ncActMoveRunCmd,
+			8210: ncActStopReq,
 		},
 		SessionFactory: sessionFactory{},
 	}

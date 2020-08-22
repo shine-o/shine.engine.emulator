@@ -37,7 +37,7 @@ func (b baseEntity) getLocation() (uint32, uint32) {
 	return b.location.x, b.location.y
 }
 
-func (b baseEntity) move(m *zoneMap, x, y int) error {
+func (b baseEntity) move(m *zoneMap, x,y uint32) error {
 	if canWalk(m.walkableX, m.walkableY, x, y) {
 		return nil
 	}

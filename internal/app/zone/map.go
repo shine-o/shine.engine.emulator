@@ -143,8 +143,8 @@ func loadMaps() []zoneMap {
 }
 
 // CanWalk translates in game coordinates to SHBD coordinates
-func canWalk(x, y *roaring.Bitmap, rX, rY int) bool {
-	if x.ContainsInt(rX) && y.ContainsInt(rY) {
+func canWalk(x, y *roaring.Bitmap, rX, rY uint32) bool {
+	if x.ContainsInt(int(rX)) && y.ContainsInt(int(rY)) {
 		return true
 	}
 	return false

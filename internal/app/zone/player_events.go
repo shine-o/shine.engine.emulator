@@ -31,3 +31,8 @@ type playerRunsEvent struct {
 	handle uint16
 	nc     *structs.NcActMoveRunCmd
 }
+
+type playerStoppedEvent struct {
+	handle uint16
+	nc     *structs.NcActStopReq
+}

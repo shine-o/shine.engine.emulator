@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
 	"time"
 )
@@ -88,8 +89,6 @@ func (zm *zoneMap) playerActivity() {
 		case e := <-zm.recv[playerDisappeared]:
 			log.Info(e)
 		case e := <-zm.recv[playerRuns]:
-			log.Info(e)
-
 			// player has a fifo queue for the last 30 movements
 			// for every movement
 			//		verify collision
@@ -105,9 +104,29 @@ func (zm *zoneMap) playerActivity() {
 					return
 				}
 				// find player
-				//ev.nc.
-				//player, ok := zm.entities.players.active[ev.handle]
+				zm.entities.players.RLock()
+				player, ok := zm.entities.players.active[ev.handle]
+				zm.entities.players.RUnlock()
+
 				//ev.nc.From
+				rX := (ev.nc.To.X * 8) / 50
+				rY := (ev.nc.To.X * 8) / 50
+
+				err := player.move(zm, rX, rY)
+				if  err != nil {
+					// store player position
+					log.Error(err)
+					return
+				}
+				for i, _ := range zm.entities.players.active {
+					nc := structs.NcActSomeoneMoveRunCmd{
+						Handle:   player.handle,
+						From:     ev.nc.From,
+						To:       ev.nc.To,
+						Speed:    120,
+					}
+					go ncActSomeoneMoveRunCmd(zm.entities.players.active[i], &nc)
+				}
 			}()
 		case e := <-zm.recv[playerWalks]:
 			// player has a fifo queue for the last 30 movements
@@ -125,7 +144,34 @@ func (zm *zoneMap) playerActivity() {
 			// for every stop
 			//		verify collision
 			//		broadcast to players within range
+			go func() {
+				ev, ok := e.(*playerStoppedEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerStoppedEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				zm.entities.players.RLock()
+				player, ok := zm.entities.players.active[ev.handle]
+				zm.entities.players.RUnlock()
 
+				//ev.nc.From
+				rX := (ev.nc.Location.X * 8) / 50
+				rY := (ev.nc.Location.Y * 8) / 50
+
+				err := player.move(zm, rX, rY)
+				if  err != nil {
+					// store player position
+					log.Error(err)
+					return
+				}
+				for i, _ := range zm.entities.players.active {
+					nc := structs.NcActSomeoneStopCmd{
+						Handle:   player.handle,
+						Location: ev.nc.Location,
+					}
+					go ncActSomeoneStopCmd(zm.entities.players.active[i], &nc)
+				}
+			}()
 			log.Info(e)
 		case e := <-zm.recv[playerJumped]:
 			log.Info(e)
