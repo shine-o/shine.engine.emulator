@@ -1,4 +1,4 @@
-package service
+package packet_sniffer
 
 import (
 	"bytes"
@@ -7,7 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/segmentio/ksuid"
-	"github.com/shine-o/shine.engine.core/networking"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/viper"
 	"time"
 )

@@ -2,7 +2,7 @@
 package cmd
 
 import (
-	"github.com/shine-o/shine.engine.packet-sniffer/service"
+	ps "github.com/shine-o/shine.engine.emulator/internal/app/packet-sniffer"
 	"github.com/spf13/cobra"
 )
 
@@ -10,7 +10,7 @@ import (
 var decodeCmd = &cobra.Command{
 	Use:   "decode",
 	Short: "Decode file with packet data",
-	Run:   service.Capture,
+	Run:   ps.Capture,
 }
 
 func init() {

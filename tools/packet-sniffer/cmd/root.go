@@ -31,7 +31,7 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.sniffer.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/packet-sniffer-client.yml)")
 
 	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
@@ -52,7 +52,7 @@ func initConfig() {
 		// Search config in home directory with name ".shine.engine.psniffer" (without extension).
 		viper.AddConfigPath(home)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".sniffer")
+		viper.SetConfigName("packet-sniffer-client")
 	}
 
 	// If a config file is found, read it in.

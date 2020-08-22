@@ -1,11 +1,11 @@
-package service
+package packet_sniffer
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
-	networking "github.com/shine-o/shine.engine.core/networking"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/viper"
 	"net/http"
 	"sync"

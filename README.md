@@ -1,4 +1,4 @@
-![](shine.png)
+![](assets/shine.png)
 # Shine Engine Emulator
 
 ---

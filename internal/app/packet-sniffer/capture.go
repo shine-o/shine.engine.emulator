@@ -1,4 +1,4 @@
-package service
+package packet_sniffer
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/reassembly"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"os"
 	"os/signal"
 	"runtime"
@@ -41,7 +42,9 @@ func Capture(cmd *cobra.Command, args []string) {
 	sp := reassembly.NewStreamPool(sf)
 	a := reassembly.NewAssembler(sp)
 
-	go startUI(ctx)
+	if viper.GetBool("webstocket.active") {
+		go startUI(ctx)
+	}
 	go capturePackets(ctx, a)
 
 	em.Entities = make(map[uint16][]Movement)
@@ -57,7 +60,6 @@ func Capture(cmd *cobra.Command, args []string) {
 		}
 	}
 }
-
 
 func capturePackets(ctx context.Context, a *reassembly.Assembler) {
 	defer a.FlushAll()

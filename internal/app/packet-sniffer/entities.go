@@ -1,8 +1,8 @@
-package service
+package packet_sniffer
 
 import (
 	"encoding/json"
-	"github.com/shine-o/shine.engine.core/structs"
+	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"os"
 	"path/filepath"
 	"sync"

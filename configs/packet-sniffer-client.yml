@@ -42,7 +42,7 @@ protocol:
     verbose: true
     client: true
     server: true
-  commands: "config/commands.yml"
+  commands: "configs/network-commands.yml"
 
 # captured packets are streamed through this socket
 websocket:
