@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/google/uuid"
-	"github.com/shine-o/shine.engine.core/structs"
+	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"io/ioutil"
 	"regexp"
 	"time"

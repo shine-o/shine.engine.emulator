@@ -6,7 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/shine-o/shine.engine.core/structs"
+	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"strconv"
