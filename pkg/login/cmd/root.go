@@ -36,10 +36,6 @@ func init() {
 	log = logger.Init("InitLogger", true, false, ioutil.Discard)
 	log.Info("root init()")
 	cobra.OnInitialize(initConfig)
-	err := doc.GenMarkdownTree(rootCmd, "docs")
-	if err != nil {
-		log.Fatal(err)
-	}
 
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.login.yaml)")
 

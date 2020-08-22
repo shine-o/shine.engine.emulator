@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	w "github.com/shine-o/shine.engine.core/grpc/world"
+	w "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"net"

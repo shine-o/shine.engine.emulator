@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.core/database"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

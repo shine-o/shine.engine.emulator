@@ -3,7 +3,7 @@ package zone
 import (
 	"errors"
 	"fmt"
-	z "github.com/shine-o/shine.engine.core/grpc/zone"
+	z "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"net"
