@@ -7,6 +7,7 @@ import (
 )
 
 // NC_ACT_MOVERUN_CMD
+// 8217
 // run
 func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 	var (
@@ -24,6 +25,12 @@ func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 	pre = playerRunsEvent{
 		nc:     &structs.NcActMoveRunCmd{},
 		handle: session.handle,
+	}
+
+	err := structs.Unpack(np.Command.Base.Data, pre.nc)
+	if err != nil {
+		log.Error(err)
+		return
 	}
 
 	mqe = queryMapEvent{
@@ -47,27 +54,95 @@ func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 }
 
 // NC_ACT_MOVEWALK_CMD
+// 8215
 // walk
 func ncActMoveWalkCmd(ctx context.Context, np *networking.Parameters) {}
 
 // NC_ACT_STOP_REQ
+// 8210
 // stop walk/run, a.k.a last known position of entity
-func ncActStopReq(ctx context.Context, np *networking.Parameters) {}
+func ncActStopReq(ctx context.Context, np *networking.Parameters) {
+	var (
+		pse playerStoppedEvent
+		mqe queryMapEvent
+	)
+
+	session, ok := np.Session.(*session)
+
+	if !ok {
+		log.Error("no session available")
+		return
+	}
+
+	pse = playerStoppedEvent{
+		nc:     &structs.NcActStopReq{},
+		handle: session.handle,
+	}
+
+	err := structs.Unpack(np.Command.Base.Data, pse.nc)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	mqe = queryMapEvent{
+		id:  session.mapID,
+		zm:  make(chan *zoneMap),
+		err: make(chan error),
+	}
+
+	zoneEvents[queryMap] <- &mqe
+
+	var zm *zoneMap
+	select {
+	case zm = <-mqe.zm:
+		break
+	case e := <-mqe.err:
+		log.Error(e)
+		return
+	}
+
+	zm.send[playerStopped] <- &pse
+}
 
 // NC_ACT_JUMP_CMD
+// 8228
 // jump
 func ncActJumpCmd(ctx context.Context, np *networking.Parameters) {
 
 }
 
 // NC_ACT_SOMEONEMOVEWALK_CMD
+// 8216
 // someone walked
 func ncActSomeoneMoveWalkCmd(np *networking.Parameters, nc *structs.NcActSomeoneMoveWalkCmd) {}
 
 // NC_ACT_SOMEONEMOVERUN_CMD
+// 8218
 // someone has run
-func ncActSomeoneMoveRunCmd(np *networking.Parameters, nc *structs.NcActSomeoneMoveWalkCmd) {}
+func ncActSomeoneMoveRunCmd(p * player, nc *structs.NcActSomeoneMoveRunCmd) {
+	p.Lock()
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 8218,
+		},
+		NcStruct: nc,
+	}
+	pc.Send(p.conn.outboundData)
+	p.Unlock()
+}
 
 // NC_ACT_SOMEONESTOP_CMD
+// 8211
 // someone stopped
-func ncActSomeoneStopCmd(np *networking.Parameters, nc *structs.NcActSomeoneStopCmd) {}
+func ncActSomeoneStopCmd(p * player, nc *structs.NcActSomeoneStopCmd) {
+	p.Lock()
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 8211,
+		},
+		NcStruct: nc,
+	}
+	pc.Send(p.conn.outboundData)
+	p.Unlock()
+}
