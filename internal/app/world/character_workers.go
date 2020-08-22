@@ -3,8 +3,8 @@ package world
 import (
 	"context"
 	"fmt"
-	"github.com/shine-o/shine.engine.core/game/character"
-	zm "github.com/shine-o/shine.engine.core/grpc/zone-master"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
+	zm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
 )

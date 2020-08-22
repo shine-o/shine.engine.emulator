@@ -3,7 +3,7 @@ package zone
 import (
 	"context"
 	"errors"
-	zm "github.com/shine-o/shine.engine.core/grpc/zone-master"
+	zm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	"github.com/spf13/viper"
 )
 

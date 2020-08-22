@@ -16,9 +16,5 @@ var migrateCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(migrateCmd)
-	err := doc.GenMarkdownTree(migrateCmd, "docs")
-	if err != nil {
-		log.Fatal(err)
-	}
 	migrateCmd.Flags().Bool("fixtures", false, "load dummy data. WARNING: it wil purge the database")
 }

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"github.com/go-pg/pg"
 	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.core/database"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"io/ioutil"
 	"os"
