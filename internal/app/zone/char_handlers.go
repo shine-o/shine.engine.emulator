@@ -427,7 +427,7 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 
 	pae = playerAppearedEvent{
 		handle: session.handle,
-		err:          make(chan error),
+		err:    make(chan error),
 	}
 
 	zm.send[playerAppeared] <- &pae
@@ -442,7 +442,7 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 }
 
 //4210
-func ncCharLogoutCancelCmd(ctx context.Context, np *networking.Parameters)  {
+func ncCharLogoutCancelCmd(ctx context.Context, np *networking.Parameters) {
 	var (
 		plce playerLogoutCancelEvent
 	)
@@ -462,7 +462,7 @@ func ncCharLogoutCancelCmd(ctx context.Context, np *networking.Parameters)  {
 	zoneEvents[playerLogoutCancel] <- &plce
 
 	select {
-	case e:= <- plce.err:
+	case e := <-plce.err:
 		log.Error(e)
 	}
 }
@@ -490,7 +490,7 @@ func ncCharLogoutReadyCmd(ctx context.Context, np *networking.Parameters) {
 	zoneEvents[playerLogoutStart] <- &plse
 
 	select {
-	case e:= <- plse.err:
+	case e := <-plse.err:
 		log.Error(e)
 	}
 	//pqe = queryPlayerEvent{

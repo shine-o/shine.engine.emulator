@@ -61,7 +61,7 @@ func SHBDToImage(s *SHBD) (*image.RGBA, error) {
 					c      color.Color
 				)
 
-				rX = x * 8 + i
+				rX = x*8 + i
 				rY = y
 
 				if b&byte(math.Pow(2, float64(i))) == 0 {

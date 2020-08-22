@@ -7,7 +7,7 @@ type queryMapEvent struct {
 }
 
 type queryPlayerEvent struct {
-	handle  uint16
-	p  chan *player
-	err chan error
+	handle uint16
+	p      chan *player
+	err    chan error
 }

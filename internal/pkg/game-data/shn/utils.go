@@ -31,7 +31,7 @@ func loadRawData(filePath string) ([]byte, error) {
 		return srf.Data, err
 	}
 
-	decryptSHN(srf.Data, int(srf.FileSize) - 36)
+	decryptSHN(srf.Data, int(srf.FileSize)-36)
 
 	return srf.Data, err
 }

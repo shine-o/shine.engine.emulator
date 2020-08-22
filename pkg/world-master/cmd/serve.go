@@ -11,7 +11,7 @@ var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Listen for world connections to the master",
 	Long:  `The purpose of the world master service is to coordinate the registered worlds.`,
-	Run:  wm.Start,
+	Run:   wm.Start,
 }
 
 func init() {

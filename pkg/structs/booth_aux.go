@@ -1,6 +1,5 @@
 package structs
 
-
 //struct STREETBOOTH_SIGNBOARD
 //{
 //  char signboard[30];

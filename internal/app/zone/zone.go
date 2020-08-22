@@ -18,7 +18,6 @@ type zone struct {
 	dynamic
 }
 
-
 // instead of accessing global variables for data
 // fire a query event struct, which will be populated with the requested data by a worker (event receiver)
 var zoneEvents sendEvents
@@ -95,8 +94,8 @@ func (z *zone) load() {
 
 	zoneEvents = z.send
 
-	z.dynamic= dynamic{
-		events:  make(map[string]events),
+	z.dynamic = dynamic{
+		events: make(map[string]events),
 	}
 
 	err := registerZone(registerMaps)

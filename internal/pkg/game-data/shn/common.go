@@ -55,8 +55,6 @@ package shn
 //  SHN_MaxCnt = 0x32,
 //};
 
-
-
 //enum CDataReader::TYPE_LIST
 //{
 //  TYPE_LIST_END = 0x0,

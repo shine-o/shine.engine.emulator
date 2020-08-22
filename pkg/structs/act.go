@@ -10,7 +10,7 @@ type NcActChatReq struct {
 	ItemLinkDataCount byte
 	Length            byte
 	Content           []byte `struct:"sizefrom=Length"`
-	ItemMetadata []byte `struct-while:"!_eof"`
+	ItemMetadata      []byte `struct-while:"!_eof"`
 }
 
 //struct PROTO_NC_ACT_STOP_REQ

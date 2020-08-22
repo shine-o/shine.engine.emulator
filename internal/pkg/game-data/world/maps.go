@@ -444,4 +444,3 @@ func mapAttributeFields(fields []string) (MapAttributes, error) {
 	}
 	return ma, nil
 }
-

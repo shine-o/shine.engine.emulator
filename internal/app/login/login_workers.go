@@ -7,40 +7,40 @@ import (
 	"reflect"
 )
 
-func (l *login) authentication ()  {
+func (l *login) authentication() {
 	for {
 		select {
-			case e := <- l.events.recv[clientVersion]:
-				go func() {
-					ev, ok := e.(*clientVersionEvent)
-					if !ok {
-						log.Errorf("expected event type %v but got %v", reflect.TypeOf(&clientVersionEvent{}).String(), reflect.TypeOf(ev).String())
-						return
-					}
-					 err := checkClientVersion(ev.nc)
-					if err != nil {
-						log.Error(e)
-						ncUserClientWrongVersionCheckAck(ev.np)
-						return
-					}
-					ncUserClientRightVersionCheckAck(ev.np)
-				}()
+		case e := <-l.events.recv[clientVersion]:
+			go func() {
+				ev, ok := e.(*clientVersionEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&clientVersionEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				err := checkClientVersion(ev.nc)
+				if err != nil {
+					log.Error(e)
+					ncUserClientWrongVersionCheckAck(ev.np)
+					return
+				}
+				ncUserClientRightVersionCheckAck(ev.np)
+			}()
 
-			case e := <- l.events.recv[credentialsLogin]:
-				go func() {
-					ev, ok := e.(*credentialsLoginEvent)
-					if !ok {
-						log.Errorf("expected event type %v but got %v", reflect.TypeOf(&credentialsLoginEvent{}).String(), reflect.TypeOf(ev).String())
-						return
-					}
-					err := checkCredentials(ev.nc)
-					if err != nil {
-						log.Error(e)
-						ncUserLoginFailAck(ev.np, 69)
-						return
-					}
-					loginSuccessful(l, ev.np)
-				}()
+		case e := <-l.events.recv[credentialsLogin]:
+			go func() {
+				ev, ok := e.(*credentialsLoginEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&credentialsLoginEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				err := checkCredentials(ev.nc)
+				if err != nil {
+					log.Error(e)
+					ncUserLoginFailAck(ev.np, 69)
+					return
+				}
+				loginSuccessful(l, ev.np)
+			}()
 		case e := <-l.events.recv[worldManagerStatus]:
 			go func() {
 				ev, ok := e.(*worldManagerStatusEvent)

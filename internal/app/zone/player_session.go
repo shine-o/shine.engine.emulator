@@ -31,10 +31,9 @@ func playerLogout(cancel, conclude <-chan event, m *zoneMap, p *player) {
 			}
 			finish()
 			return
-		case <- t.C:
+		case <-t.C:
 			finish()
 			return
 		}
 	}
 }
-

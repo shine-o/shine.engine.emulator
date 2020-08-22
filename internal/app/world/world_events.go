@@ -6,18 +6,18 @@ import (
 )
 
 type serverTimeEvent struct {
-	np *networking.Parameters
+	np  *networking.Parameters
 	err chan error
 }
 
 type serverSelectEvent struct {
-	nc *structs.NcUserLoginWorldReq
-	np *networking.Parameters
+	nc  *structs.NcUserLoginWorldReq
+	np  *networking.Parameters
 	err chan error
 }
 
 type serverSelectTokenEvent struct {
-	np *networking.Parameters
+	np  *networking.Parameters
 	err chan error
 }
 
@@ -32,4 +32,3 @@ func (s serverSelectEvent) erroneous() <-chan error {
 func (s serverSelectTokenEvent) erroneous() <-chan error {
 	return s.err
 }
-

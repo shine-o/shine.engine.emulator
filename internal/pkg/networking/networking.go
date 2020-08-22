@@ -62,8 +62,8 @@ type Settings struct {
 	// each Department has a DN and each Command has a a FQDN
 	// the FQDN of a Command is used to give useful info about a detected packet
 	CommandsFilePath string
-	LogWorkers     int
-	CommandWorkers int
+	LogWorkers       int
+	CommandWorkers   int
 }
 
 const (
@@ -71,9 +71,8 @@ const (
 	XorOffset ContextKey = iota
 )
 
-var logInboundPackets  chan <- *Command
-var logOutboundPackets chan <- *Command
-
+var logInboundPackets chan<- *Command
+var logOutboundPackets chan<- *Command
 
 // Set Settings specified by the shine service
 func (s *Settings) Set() {
@@ -89,8 +88,8 @@ func (s *Settings) Set() {
 func (ss *ShineService) Listen(ctx context.Context, port string) {
 	ss.Settings.Set()
 
-	in :=  make(chan *Command, 4096)
-	out :=  make(chan *Command, 4096)
+	in := make(chan *Command, 4096)
+	out := make(chan *Command, 4096)
 
 	logInboundPackets = in
 	logOutboundPackets = out
@@ -99,7 +98,7 @@ func (ss *ShineService) Listen(ctx context.Context, port string) {
 		go logPackets(ctx, in, out)
 	}
 
-	l, err := net.Listen("tcp4", fmt.Sprintf(":%v", port));
+	l, err := net.Listen("tcp4", fmt.Sprintf(":%v", port))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -111,16 +110,16 @@ func (ss *ShineService) Listen(ctx context.Context, port string) {
 
 	rand.Seed(rnd.Int63n(time.Now().Unix()))
 
-	t1 := time.Tick(time.Duration(int64(RandomIntBetween(0,15))) * time.Second)
-	t2 := time.Tick(time.Duration(int64(RandomIntBetween(0,60))) * time.Second)
+	t1 := time.Tick(time.Duration(int64(RandomIntBetween(0, 15))) * time.Second)
+	t2 := time.Tick(time.Duration(int64(RandomIntBetween(0, 60))) * time.Second)
 
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <- t1:
+		case <-t1:
 			rand.Seed(rnd.Int63n(time.Now().UTC().UnixNano()))
-		case <- t2:
+		case <-t2:
 			rand.Seed(rnd.Int63n(time.Now().UnixNano()))
 		default:
 			if c, err := l.Accept(); err == nil {
@@ -164,7 +163,7 @@ func (ss *ShineService) handleConnection(conn net.Conn) {
 			},
 			CloseConnection: make(chan bool),
 			Conn:            conn,
-			Session: 		 ss.SessionFactory.New(),
+			Session:         ss.SessionFactory.New(),
 			Reader:          bufio.NewReader(conn),
 			Writer:          bufio.NewWriter(conn),
 		}
@@ -204,14 +203,14 @@ func (pc *Command) Send(outboundStream chan<- []byte) {
 	logOutboundPackets <- pc
 }
 
-func logPackets(ctx context.Context, in <- chan*Command, out <-chan *Command) {
+func logPackets(ctx context.Context, in <-chan *Command, out <-chan *Command) {
 	for {
 		select {
-		case <- ctx.Done():
+		case <-ctx.Done():
 			return
-		case ipc := <- in:
+		case ipc := <-in:
 			logDirection(ipc, "inbound")
-		case opc := <- out:
+		case opc := <-out:
 			logDirection(opc, "outbound")
 		}
 	}
@@ -220,7 +219,7 @@ func logPackets(ctx context.Context, in <- chan*Command, out <-chan *Command) {
 func logDirection(pc *Command, direction string) {
 	pc.RLock()
 	defer pc.RUnlock()
-	cn :=  CommandName(pc)
+	cn := CommandName(pc)
 	log.Infof("%v %v packet metadata: %v", direction, cn, pc.Base.String())
 	if pc.NcStruct != nil {
 		sd, err := json.Marshal(pc.NcStruct)
@@ -234,20 +233,19 @@ func logDirection(pc *Command, direction string) {
 
 func CommandName(pc *Command) string {
 	commandList.mu.Lock()
-	defer 		commandList.mu.Unlock()
+	defer commandList.mu.Unlock()
 	if (&PCList{}) != commandList { // should be commented out on production to increase performance
 		opCode := pc.Base.OperationCode
 		department := opCode >> 10
-		command := opCode &1023
+		command := opCode & 1023
 		if dpt, ok := commandList.Departments[uint8(department)]; ok {
-			return  dpt.ProcessedCommands[fmt.Sprintf("%X", command)]
+			return dpt.ProcessedCommands[fmt.Sprintf("%X", command)]
 		} else {
 			log.Warningf("Missing friendly name for command with: operationCode %v,  department %v, command %v, ", opCode, department, fmt.Sprintf("%X", command))
 		}
 	}
 	return ""
 }
-
 
 func waitForClose(n *Network) {
 	for {

@@ -138,7 +138,7 @@ func verifyUser(ws *session, req *structs.NcUserLoginWorldReq) error {
 	return nil
 }
 
-func userCharacters(db * pg.DB, ws *session) (structs.NcUserLoginWorldAck, error) {
+func userCharacters(db *pg.DB, ws *session) (structs.NcUserLoginWorldAck, error) {
 	worldID := viper.GetInt("service.id")
 
 	var avatars []structs.AvatarInformation

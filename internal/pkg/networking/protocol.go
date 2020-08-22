@@ -14,7 +14,6 @@ import (
 	"sync"
 )
 
-
 // PCList protocol command list
 // friendly names for each Department and Commands within a Department
 type PCList struct {
@@ -168,10 +167,8 @@ func (pcb *CommandBase) JSON() ExportedPcb {
 	return ePcb
 }
 
-
-
 // InitCommandList from protocol commands file
-func InitCommandList(filePath string)  error {
+func InitCommandList(filePath string) error {
 	pcl := PCList{
 		Departments: make(map[uint8]Department),
 	}
@@ -180,14 +177,14 @@ func InitCommandList(filePath string)  error {
 
 	if err != nil {
 		log.Error(err)
-		return  err
+		return err
 	}
 
 	rPcl := &RawPCList{}
 
 	if err = yaml.Unmarshal(d, rPcl); err != nil {
 		log.Error(err)
-		return  err
+		return err
 	}
 
 	for _, d := range rPcl.Departments {

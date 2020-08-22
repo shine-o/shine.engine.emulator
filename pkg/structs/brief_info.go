@@ -205,7 +205,7 @@ type NcBriefInfoLoginCharacterCmd struct {
 	MoverSlot       byte
 	KQTeamType      byte
 	UsingMinipet    byte
-	Unk byte
+	Unk             byte
 }
 
 //struct PROTO_NC_BRIEFINFO_CHANGEWEAPON_CMD

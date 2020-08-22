@@ -9,7 +9,7 @@ import (
 
 // NcAvatarCreateReq handles character creation request
 // NC_AVATAR_CREATE_REQ
-func ncAvatarCreateReq(ctx context.Context, np * networking.Parameters) {
+func ncAvatarCreateReq(ctx context.Context, np *networking.Parameters) {
 	var (
 		nc  structs.NcAvatarCreateReq
 		cce createCharacterEvent
@@ -22,24 +22,24 @@ func ncAvatarCreateReq(ctx context.Context, np * networking.Parameters) {
 	}
 
 	cce = createCharacterEvent{
-		nc:  &nc,
-		np:  np,
-		char: make(chan * character.Character),
-		err: make(chan error),
+		nc:   &nc,
+		np:   np,
+		char: make(chan *character.Character),
+		err:  make(chan error),
 	}
 
 	worldEvents[createCharacter] <- &cce
 
-	var char * character.Character
+	var char *character.Character
 	select {
-	case char = <- cce.char:
+	case char = <-cce.char:
 		nc := structs.NcAvatarCreateSuccAck{
 			NumOfAvatar: 1,
-			Avatar:     char.NcRepresentation(),
+			Avatar:      char.NcRepresentation(),
 		}
 		go ncAvatarCreateSuccAck(np, &nc)
 		return
-	case err := <- cce.err:
+	case err := <-cce.err:
 		log.Error(err)
 		go createCharErr(np, err)
 		return
@@ -48,7 +48,7 @@ func ncAvatarCreateReq(ctx context.Context, np * networking.Parameters) {
 
 // NcAvatarCreateSuccAck notifies the character was created and sends the character info
 // NC_AVATAR_CREATESUCC_ACK
-func ncAvatarCreateSuccAck(np * networking.Parameters, nc * structs.NcAvatarCreateSuccAck) {
+func ncAvatarCreateSuccAck(np *networking.Parameters, nc *structs.NcAvatarCreateSuccAck) {
 	pc := &networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 5126,
@@ -74,7 +74,7 @@ func ncAvatarCreateFailAck(np *networking.Parameters, errCode uint16) {
 
 // NcAvatarEraseReq handles a petition to delete a character
 // NC_AVATAR_ERASE_REQ
-func ncAvatarEraseReq(ctx context.Context, np * networking.Parameters) {
+func ncAvatarEraseReq(ctx context.Context, np *networking.Parameters) {
 	var (
 		nc  structs.NcAvatarEraseReq
 		dce deleteCharacterEvent
@@ -87,20 +87,20 @@ func ncAvatarEraseReq(ctx context.Context, np * networking.Parameters) {
 	}
 
 	dce = deleteCharacterEvent{
-		nc:  &nc,
-		np:  np,
+		nc:   &nc,
+		np:   np,
 		done: make(chan bool),
-		err: make(chan error),
+		err:  make(chan error),
 	}
 
 	worldEvents[deleteCharacter] <- &dce
 
 	select {
-	case <- dce.done:
+	case <-dce.done:
 		go avatarEraseSuccAck(np, &structs.NcAvatarEraseSuccAck{
 			Slot: nc.Slot,
 		})
-	case err := <- dce.err:
+	case err := <-dce.err:
 		log.Error(err)
 		return
 	}
@@ -108,7 +108,7 @@ func ncAvatarEraseReq(ctx context.Context, np * networking.Parameters) {
 
 // AvatarEraseSuccAck notifies the client that the character was deleted successfully
 // AVATAR_ERASESUCC_ACK
-func avatarEraseSuccAck(np *networking.Parameters, nc * structs.NcAvatarEraseSuccAck) {
+func avatarEraseSuccAck(np *networking.Parameters, nc *structs.NcAvatarEraseSuccAck) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 5132,
@@ -119,7 +119,7 @@ func avatarEraseSuccAck(np *networking.Parameters, nc * structs.NcAvatarEraseSuc
 }
 
 func createCharErr(np *networking.Parameters, err error) {
-		errChar, ok := err.(*character.ErrCharacter)
+	errChar, ok := err.(*character.ErrCharacter)
 	if !ok {
 		return
 	}

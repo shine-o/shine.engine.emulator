@@ -87,6 +87,6 @@ const (
 	dLogoutConclude
 )
 
-func (e *emptyEvent) erroneous() <-chan error  {
+func (e *emptyEvent) erroneous() <-chan error {
 	return e.err
 }

@@ -32,13 +32,13 @@ type entities struct {
 
 type players struct {
 	handleIndex uint16
-	active  map[uint16]*player
+	active      map[uint16]*player
 	sync.RWMutex
 }
 
 type monsters struct {
 	handleIndex uint16
-	active  map[uint16]*monster
+	active      map[uint16]*monster
 	sync.RWMutex
 }
 
@@ -46,9 +46,9 @@ const playerHandleMin uint16 = 8000
 const playerHandleMax uint16 = 12000
 const playerAttemptsMax uint16 = 50
 
-const monsterHandleMin uint16= 17000
-const monsterHandleMax uint16= 27000
-const monsterAttemptsMax uint16= 50
+const monsterHandleMin uint16 = 17000
+const monsterHandleMax uint16 = 27000
+const monsterAttemptsMax uint16 = 50
 
 func (zm *zoneMap) run() {
 	// load NPCs for this map
@@ -131,7 +131,7 @@ func loadMaps() []zoneMap {
 					active:      make(map[uint16]*monster),
 				},
 			},
-			events : events{
+			events: events{
 				send: make(sendEvents),
 				recv: make(recvEvents),
 			},

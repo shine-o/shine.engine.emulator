@@ -30,8 +30,8 @@ type ShineItemInfoServer struct {
 //  char PreventAttack;
 //};
 type ItemInfoServer struct {
-	_ uint16
-	ID uint32
+	_                      uint16
+	ID                     uint32
 	InxName                string `struct:"[32]byte"`
 	MarketIndex            string `struct:"[20]byte"`
 	City                   byte

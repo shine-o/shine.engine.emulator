@@ -22,7 +22,7 @@ func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 	}
 
 	pre = playerRunsEvent{
-		nc: &structs.NcActMoveRunCmd{},
+		nc:     &structs.NcActMoveRunCmd{},
 		handle: session.handle,
 	}
 
@@ -60,16 +60,14 @@ func ncActJumpCmd(ctx context.Context, np *networking.Parameters) {
 
 }
 
-
 // NC_ACT_SOMEONEMOVEWALK_CMD
 // someone walked
-func ncActSomeoneMoveWalkCmd(np *networking.Parameters, nc * structs.NcActSomeoneMoveWalkCmd) {}
+func ncActSomeoneMoveWalkCmd(np *networking.Parameters, nc *structs.NcActSomeoneMoveWalkCmd) {}
 
 // NC_ACT_SOMEONEMOVERUN_CMD
 // someone has run
-func ncActSomeoneMoveRunCmd(np *networking.Parameters, nc * structs.NcActSomeoneMoveWalkCmd) {}
-
+func ncActSomeoneMoveRunCmd(np *networking.Parameters, nc *structs.NcActSomeoneMoveWalkCmd) {}
 
 // NC_ACT_SOMEONESTOP_CMD
 // someone stopped
-func ncActSomeoneStopCmd(np *networking.Parameters, nc * structs.NcActSomeoneStopCmd) {}
+func ncActSomeoneStopCmd(np *networking.Parameters, nc *structs.NcActSomeoneStopCmd) {}

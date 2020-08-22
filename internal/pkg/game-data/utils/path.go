@@ -17,4 +17,3 @@ func ValidPath(path string) (string, error) {
 	}
 	return absPath, nil
 }
-

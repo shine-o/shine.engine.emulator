@@ -12,7 +12,6 @@ import (
 	"time"
 )
 
-
 var log *logger.Logger
 
 func init() {
@@ -176,9 +175,9 @@ type Items struct {
 }
 
 const (
-	startLevel 	 = 1
+	startLevel   = 1
 	startMapID   = 1
-	startMapName   = "Rou"
+	startMapName = "Rou"
 )
 
 // ErrInvalidSlot happens if the client tries to bypass client side verification
@@ -212,7 +211,7 @@ var ErrInvalidClassGender = &ErrCharacter{
 }
 
 // Validate checks data sent by the client is valid
-func Validate(db *pg.DB, userID uint64, req * structs.NcAvatarCreateReq) error {
+func Validate(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) error {
 
 	if req.SlotNum > 5 {
 		return ErrInvalidSlot
@@ -239,7 +238,6 @@ func Validate(db *pg.DB, userID uint64, req * structs.NcAvatarCreateReq) error {
 		return ErrInvalidName
 	}
 
-
 	// todo: missing validation: default hair, color, face values
 	// todo: missing validation: default starter class values ( mage, cleric, archer, fighter)
 	isMale := (req.Shape.BF >> 7) & 1
@@ -257,7 +255,7 @@ func Validate(db *pg.DB, userID uint64, req * structs.NcAvatarCreateReq) error {
 }
 
 // New creates character for the User with userID and returns data the client can understand
-func New(db *pg.DB, userID uint64, req * structs.NcAvatarCreateReq) (*Character, error) {
+func New(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
 	var char *Character
 	newTx, err := db.Begin()
 
@@ -362,7 +360,7 @@ func GetBySlot(db *pg.DB, slot byte, userID uint64) (Character, error) {
 
 // Delete character for User with userID
 // soft deletion is performed
-func Delete(db *pg.DB, userID uint64, req * structs.NcAvatarEraseReq) error {
+func Delete(db *pg.DB, userID uint64, req *structs.NcAvatarEraseReq) error {
 	deleteTx, err := db.Begin()
 	if err != nil {
 		return &ErrCharacter{
@@ -572,7 +570,7 @@ func (c *Character) getItemsByInventory(db *pg.DB, inventoryType uint8) *structs
 		nc.Flag.BF0 = 243
 		break
 	}
-	
+
 	if err != nil {
 		return nc
 	}
@@ -658,7 +656,7 @@ func NcKeyMap(data []byte) (structs.NcCharGetKeyMapCmd, error) {
 	return nc, nil
 }
 
-func NcShortcutData(data []byte) (structs.NcCharGetShortcutDataCmd , error){
+func NcShortcutData(data []byte) (structs.NcCharGetShortcutDataCmd, error) {
 	nc := structs.NcCharGetShortcutDataCmd{}
 	err := structs.Unpack(data, &nc)
 	if err != nil {

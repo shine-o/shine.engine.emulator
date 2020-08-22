@@ -58,7 +58,6 @@ func TestStreamPacketBoundary(t *testing.T) {
 
 		pLen, skipBytes = PacketBoundary(offset, data)
 
-
 		nextOffset := offset + skipBytes + int(pLen)
 
 		if nextOffset > len(data) {
@@ -109,7 +108,6 @@ func TestDecodeOutboundStream(t *testing.T) {
 
 		pLen, skipBytes = PacketBoundary(offset, data)
 
-
 		nextOffset := offset + skipBytes + int(pLen)
 
 		if nextOffset > len(data) {
@@ -118,7 +116,6 @@ func TestDecodeOutboundStream(t *testing.T) {
 
 		pd = append(pd, data[offset+skipBytes:nextOffset]...)
 		offset += skipBytes + int(pLen)
-
 
 		if pc, err := DecodePacket(pd); err != nil {
 			t.Fatal(err)
@@ -158,7 +155,6 @@ func TestDecodeInboundStream(t *testing.T) {
 		var pd []byte
 
 		pLen, skipBytes = PacketBoundary(offset, data)
-
 
 		nextOffset := offset + skipBytes + int(pLen)
 
