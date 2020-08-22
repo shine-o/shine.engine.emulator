@@ -68,10 +68,10 @@ const (
 	playerHandle
 	playerAppeared
 	playerDisappeared
-	playerRuns
 	playerWalks
-	playerStopped
+	playerRuns
 	playerJumped
+	playerStopped
 	queryPlayer
 	queryMonster
 
