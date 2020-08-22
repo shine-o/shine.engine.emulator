@@ -1,3 +1,10 @@
 .idea
 /configs/game-data.db
 /output/
+
+build/package/login/login*
+build/package/world/world*
+build/package/world-master/world-master*
+build/package/zone/zone*
+build/package/zone-master/zone-master*
+deployments/databases

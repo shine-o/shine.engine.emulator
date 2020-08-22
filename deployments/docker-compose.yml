@@ -1,4 +1,4 @@
-version: '3'
+version: '3.8'
 
 networks:
   intranet:
@@ -12,8 +12,9 @@ services:
   #######################################
   ############## POSTGRES ###############
   #######################################
-  postgresql:
+  postgres:
     image: postgres:${POSTGRES_VERSION}
+    container_name: shine-o_postgres
     volumes:
       #- ./multiple-databases.sh:/docker-entrypoint-initdb.d/multiple-databases.sh
       - ${DATA_PATH_HOST}/data:/var/lib/postgresql/data
@@ -29,5 +30,25 @@ services:
   #######################################    
   redis:
     image: redis:${REDIS_VERSION}
+    container_name: shine-o_redis
     ports:
       - "6379:6379"
+
+  #######################################
+  ############## LOGIN ##################
+  #######################################
+#  login:
+#    image: shine-o/login:${BUILD_VERSION}
+#    container_name: shine-o_login
+#    depends_on:
+#      - postgres
+#      - redis
+#    build:
+#      context: ../../build/package/login
+#    volumes:
+#      - ./../../configs/login.yml:/go/src/app/login.yml
+#    networks:
+#      - intranet
+#    ports:
+#      - "9010:9010"
+#    command: ["serve", "--config", "/go/src/app/login.yml"]

@@ -16,6 +16,7 @@ require (
 	github.com/google/logger v1.1.0
 	github.com/google/uuid v1.1.1
 	github.com/gorilla/websocket v1.4.2
+	github.com/magefile/mage v1.10.0
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
