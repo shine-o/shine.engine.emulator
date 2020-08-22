@@ -47,7 +47,7 @@ func (s *server) RegisterWorld(ctx context.Context, wd *wm.WorldDetails) (*wm.Wo
 	}, nil
 }
 
-func (s *server) GetWorlds(ctx context.Context, wd *wm.Empty) (*wm.Worlds, error)  {
+func (s *server) GetWorlds(ctx context.Context, wd *wm.Empty) (*wm.Worlds, error) {
 	rw := make(registeredWorlds)
 	worlds := &wm.Worlds{}
 
@@ -64,11 +64,11 @@ func (s *server) GetWorlds(ctx context.Context, wd *wm.Empty) (*wm.Worlds, error
 
 	for _, w := range rw {
 		worlds.List = append(worlds.List, &wm.WorldDetails{
-			ID:                  int32( w.ID),
-			Name:                 w.Name,
-			Conn:                 &wm.ConnectionInfo{
-				IP:                   w.IP,
-				Port:                 w.Port,
+			ID:   int32(w.ID),
+			Name: w.Name,
+			Conn: &wm.ConnectionInfo{
+				IP:   w.IP,
+				Port: w.Port,
 			},
 		})
 	}

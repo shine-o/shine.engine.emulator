@@ -24,17 +24,16 @@ type ShineMiniHouse struct {
 //  char Slot;
 //};
 type MiniHouse struct {
-	_ uint16
-	Handle uint16
-	ItemID string `struct:"[32]byte"`
-	DummyType string `struct:"[32]byte"`
-	BackImage string `struct:"[32]byte"`
+	_            uint16
+	Handle       uint16
+	ItemID       string `struct:"[32]byte"`
+	DummyType    string `struct:"[32]byte"`
+	BackImage    string `struct:"[32]byte"`
 	KeepTimeHour uint16
-	HPTick uint16
-	SPTick uint16
-	HPRecovery uint16
-	SPRecovery uint16
-	Casting uint16
-	Slot byte
+	HPTick       uint16
+	SPTick       uint16
+	HPRecovery   uint16
+	SPRecovery   uint16
+	Casting      uint16
+	Slot         byte
 }
-

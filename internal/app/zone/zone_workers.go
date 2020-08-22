@@ -63,7 +63,7 @@ func (z *zone) playerSession() {
 				}
 				cancel := z.dynamic.add(ev.sessionID, dLogoutCancel)
 				conclude := z.dynamic.add(ev.sessionID, dLogoutConclude)
-				go playerLogout(cancel,conclude, m, p)
+				go playerLogout(cancel, conclude, m, p)
 			}()
 		case e := <-z.recv[playerLogoutCancel]:
 			go func() {

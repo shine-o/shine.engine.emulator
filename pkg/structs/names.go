@@ -71,6 +71,7 @@ type Name5 struct {
 type Name8 struct {
 	Name string `struct:"[32]byte"`
 }
+
 //
 //func (n *Name8) String() string {
 //	b := n.Name[:]
@@ -91,6 +92,7 @@ type Name8 struct {
 type Name256Byte struct {
 	Name string `struct:"[256]byte"`
 }
+
 //func (n *Name256Byte) String() string {
 //	b := n.Name[:]
 //	return strings.TrimRight(string(b), "\x00")

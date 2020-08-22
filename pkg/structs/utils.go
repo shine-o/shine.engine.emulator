@@ -10,7 +10,6 @@ import (
 )
 
 type NC interface {
-
 }
 
 var log *logger.Logger

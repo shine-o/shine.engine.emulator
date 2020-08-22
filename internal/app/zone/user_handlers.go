@@ -27,7 +27,7 @@ func ncUserNormalLogoutCmd(ctx context.Context, np *networking.Parameters) {
 	zoneEvents[playerLogoutConclude] <- &plce
 
 	select {
-	case e:= <- plce.err:
+	case e := <-plce.err:
 		log.Error(e)
 	}
 }

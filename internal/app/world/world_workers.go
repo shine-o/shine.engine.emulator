@@ -5,11 +5,11 @@ import (
 	"reflect"
 )
 
-func (w *world) session()  {
+func (w *world) session() {
 	log.Info("[world_worker] session worker")
 	for {
 		select {
-		case e := <- w.recv[serverTime]:
+		case e := <-w.recv[serverTime]:
 			go func() {
 				ev, ok := e.(*serverTimeEvent)
 				if !ok {
@@ -19,7 +19,7 @@ func (w *world) session()  {
 				nc := worldTime()
 				NcMiscGameTimeAck(ev.np, &nc)
 			}()
-		case e := <- w.recv[serverSelect]:
+		case e := <-w.recv[serverSelect]:
 			go func() {
 				ev, ok := e.(*serverSelectEvent)
 				if !ok {
@@ -43,7 +43,7 @@ func (w *world) session()  {
 				}
 				ncUserLoginWorldAck(ev.np, &nc)
 			}()
-		case e := <- w.recv[serverSelectToken]:
+		case e := <-w.recv[serverSelectToken]:
 			go func() {
 				ev, ok := e.(*serverSelectTokenEvent)
 				if !ok {

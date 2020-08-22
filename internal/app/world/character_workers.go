@@ -13,7 +13,7 @@ func (w *world) characterCRUD() {
 	log.Info("[character_worker] characterCRUD worker")
 	for {
 		select {
-		case e := <- w.recv[createCharacter]:
+		case e := <-w.recv[createCharacter]:
 			go func() {
 				ev, ok := e.(*createCharacterEvent)
 				if !ok {
@@ -36,7 +36,7 @@ func (w *world) characterCRUD() {
 				}
 				ev.char <- char
 			}()
-		case e := <- w.recv[deleteCharacter]:
+		case e := <-w.recv[deleteCharacter]:
 			go func() {
 				ev, ok := e.(*deleteCharacterEvent)
 				if !ok {
@@ -62,7 +62,7 @@ func (w *world) characterSession() {
 	log.Info("[character_worker] characterSession worker")
 	for {
 		select {
-		case e := <- w.recv[characterLogin]:
+		case e := <-w.recv[characterLogin]:
 			go func() {
 				var cs characterSettingsEvent
 				ev, ok := e.(*characterLoginEvent)

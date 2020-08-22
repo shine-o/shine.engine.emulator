@@ -1,9 +1,9 @@
 package world_master
 
 type WorldInfo struct {
-	ID int
+	ID   int
 	Name string
-	IP string
+	IP   string
 	Port int32
 }
 

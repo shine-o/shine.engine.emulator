@@ -84,12 +84,12 @@ func Start(cmd *cobra.Command, args []string) {
 	}
 
 	ss := networking.ShineService{
-		Settings:        s,
-		ShineHandler:    sh,
-		SessionFactory:  sessionFactory{
+		Settings:     s,
+		ShineHandler: sh,
+		SessionFactory: sessionFactory{
 			worldID: viper.GetInt("world.id"),
 		},
 	}
-	
+
 	ss.Listen(ctx, worldPort)
 }

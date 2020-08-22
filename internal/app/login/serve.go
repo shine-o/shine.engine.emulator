@@ -53,7 +53,6 @@ func Start(cmd *cobra.Command, args []string) {
 	l := login{}
 	l.load()
 
-
 	// note: use factory
 
 	ss := networking.ShineService{

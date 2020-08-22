@@ -8,7 +8,7 @@ import (
 
 // NcCharLoginReq handles a petition to login to the zone where the character's location map is running
 // NC_CHAR_LOGIN_REQ
-func ncCharLoginReq(ctx context.Context, np * networking.Parameters) {
+func ncCharLoginReq(ctx context.Context, np *networking.Parameters) {
 	var (
 		nc structs.NcCharLoginReq
 		cl characterLoginEvent
@@ -20,19 +20,19 @@ func ncCharLoginReq(ctx context.Context, np * networking.Parameters) {
 	}
 
 	cl = characterLoginEvent{
-		nc: &nc,
-		np: np,
-		zoneInfo: make(chan * structs.NcCharLoginAck),
-		err: make(chan error),
+		nc:       &nc,
+		np:       np,
+		zoneInfo: make(chan *structs.NcCharLoginAck),
+		err:      make(chan error),
 	}
 
 	worldEvents[characterLogin] <- &cl
 
 	select {
-	case nc := <- cl.zoneInfo:
+	case nc := <-cl.zoneInfo:
 		ncCharLoginAck(np, nc)
 		break
-	case err := <- cl.err:
+	case err := <-cl.err:
 		log.Error(err)
 		return
 	}
@@ -41,7 +41,7 @@ func ncCharLoginReq(ctx context.Context, np * networking.Parameters) {
 
 // NcCharLoginAck sends zone connection info to the client
 // NC_CHAR_LOGIN_ACK
-func ncCharLoginAck(np * networking.Parameters, nc *structs.NcCharLoginAck) {
+func ncCharLoginAck(np *networking.Parameters, nc *structs.NcCharLoginAck) {
 	// query the zone master for connection info for the map
 	// send it to the client
 	pc := networking.Command{

@@ -22,7 +22,7 @@ func ncUserClientVersionCheckReq(ctx context.Context, np *networking.Parameters)
 	}
 
 	cve = clientVersionEvent{
-		nc:  &nc,
+		nc: &nc,
 		np: np,
 	}
 
@@ -64,7 +64,7 @@ func ncUserUsLoginReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	cle = credentialsLoginEvent{
-		nc:  &nc,
+		nc: &nc,
 		np: np,
 	}
 
@@ -105,7 +105,7 @@ func ncUserXtrapReq(ctx context.Context, np *networking.Parameters) {}
 // NC_USER_WORLD_STATUS_REQ
 func ncUserWorldStatusReq(ctx context.Context, np *networking.Parameters) {
 	loginEvents[worldManagerStatus] <- &worldManagerStatusEvent{
-		np:np,
+		np: np,
 	}
 }
 
@@ -114,7 +114,7 @@ func ncUserWorldStatusReq(ctx context.Context, np *networking.Parameters) {
 // NC_USER_WORLD_STATUS_ACK
 func ncUserWorldStatusAck(np *networking.Parameters) {
 	pc := networking.Command{
-		Base:  networking.CommandBase{
+		Base: networking.CommandBase{
 			OperationCode: 3100,
 		},
 	}
@@ -133,7 +133,7 @@ func ncUserWorldSelectReq(ctx context.Context, np *networking.Parameters) {
 	nc := structs.NcUserWorldSelectReq{}
 	err := structs.Unpack(np.Command.Base.Data, &nc)
 
-	if  err != nil {
+	if err != nil {
 		log.Error(err)
 		unexpectedFailure()
 		return

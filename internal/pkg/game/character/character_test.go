@@ -55,7 +55,7 @@ func createDummyCharacters() {
 		name := fmt.Sprintf("mob%v", i+1)
 		c := structs.NcAvatarCreateReq{
 			SlotNum: byte(i),
-			Name:    structs.Name5{
+			Name: structs.Name5{
 				Name: name,
 			},
 			Shape: structs.ProtoAvatarShapeInfo{
@@ -143,11 +143,11 @@ func TestCharacterNameInUseError(t *testing.T) {
 	defer cleanDB()
 
 	createDummyCharacters()
-	
+
 	name := fmt.Sprintf("mob%v", 1)
 	c := structs.NcAvatarCreateReq{
 		SlotNum: byte(0),
-		Name:    structs.Name5{
+		Name: structs.Name5{
 			Name: name,
 		},
 		Shape: structs.ProtoAvatarShapeInfo{

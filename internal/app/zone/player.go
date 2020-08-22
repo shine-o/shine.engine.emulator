@@ -25,8 +25,8 @@ type player struct {
 
 type playerConnection struct {
 	lastHeartBeat time.Time
-	close        chan<- bool
-	outboundData chan<- []byte
+	close         chan<- bool
+	outboundData  chan<- []byte
 }
 
 type playerView struct {

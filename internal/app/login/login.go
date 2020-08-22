@@ -19,9 +19,9 @@ type login struct {
 }
 
 type world struct {
-	id int
+	id   int
 	name string
-	ip string
+	ip   string
 	port int
 }
 
@@ -41,7 +41,6 @@ var ErrBC = errors.New("bad credentials")
 
 // ErrDBE database exception
 var ErrDBE = errors.New("database exception")
-
 
 func (l *login) load() {
 	indexes := []eventIndex{
@@ -67,13 +66,13 @@ func (l *login) load() {
 	loginEvents = l.send
 
 	err := l.availableWorlds()
-	if err != nil{
+	if err != nil {
 		log.Fatal(err)
 	}
 	go l.startWorkers()
 }
 
-func (l*login) startWorkers()  {
+func (l *login) startWorkers() {
 	go l.authentication()
 }
 
@@ -111,8 +110,8 @@ func (l *login) availableWorlds() error {
 			ip:   wd.Conn.IP,
 			port: int(wd.Conn.Port),
 		}
- 	}
-	return  nil
+	}
+	return nil
 }
 
 // check that the client version is correct
@@ -145,7 +144,7 @@ func checkCredentials(req *structs.NcUserUsLoginReq) error {
 }
 
 // verify the token matches the one stored [on redis] by the world service
-func loginByCode(req * structs.NcUserLoginWithOtpReq) error {
+func loginByCode(req *structs.NcUserLoginWithOtpReq) error {
 	b := make([]byte, len(req.Otp.Name))
 	copy(b, req.Otp.Name[:])
 	if _, err := redisClient.Get(string(b)).Result(); err != nil {

@@ -30,7 +30,7 @@ type characterLoginEvent struct {
 type characterSettingsEvent struct {
 	char *character.Character
 	np   *networking.Parameters
-	err      chan error
+	err  chan error
 }
 
 func (e createCharacterEvent) erroneous() <-chan error {

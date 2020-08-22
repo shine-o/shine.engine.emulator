@@ -17,7 +17,7 @@ var serveCmd = &cobra.Command{
 	Use:   "serve",
 	Short: "Listen for zone connections to the master",
 	Long:  `The purpose of the zone master service is to coordinate the registered zones.`,
-	Run:  zm.Start,
+	Run:   zm.Start,
 }
 
 func init() {

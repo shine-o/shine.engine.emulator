@@ -81,7 +81,7 @@ type NcItemCellChangeCmd struct {
 type NcItemRewardInventoryOpenAck struct {
 	Count byte
 	Items []ItemPacketInfo `struct:"sizefrom=Count"`
-	Unk byte               // grrr
+	Unk   byte             // grrr
 }
 
 //struct PROTO_NC_ITEM_CHARGEDINVENOPEN_REQ

@@ -61,12 +61,12 @@ func (s *server) WhereIsMap(ctx context.Context, zd *zm.MapQuery) (*zm.Connectio
 
 	ci, ok := rm[zd.ID]
 	if !ok {
-		return &zm.ConnectionInfo{}, fmt.Errorf("no ConnectionInfofor map %v: %v",zd.ID, err)
+		return &zm.ConnectionInfo{}, fmt.Errorf("no ConnectionInfofor map %v: %v", zd.ID, err)
 	}
 
 	return &zm.ConnectionInfo{
-		IP:                   ci.IP,
-		Port:                 ci.Port,
+		IP:   ci.IP,
+		Port: ci.Port,
 	}, nil
 }
 

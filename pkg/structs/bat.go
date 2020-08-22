@@ -166,7 +166,7 @@ type NcBatSkillBashHitObjStartCmd struct {
 	Skill     uint16
 	TargetObj uint16
 	Index     uint16
-	Unk uint32
+	Unk       uint32
 }
 
 //struct PROTO_NC_BAT_SKILLBASH_HIT_BLAST_CMD

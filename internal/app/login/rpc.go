@@ -55,7 +55,7 @@ func newRPCServer(name string) {
 		address := fmt.Sprintf(":%v", port)
 		lis, err := net.Listen("tcp", address)
 		if err != nil {
-			log.Errorf("could listen on port %v for service %v : %v", port, name,  err)
+			log.Errorf("could listen on port %v for service %v : %v", port, name, err)
 		}
 		s := grpc.NewServer()
 		l.RegisterLoginServer(s, &server{})

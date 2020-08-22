@@ -17,7 +17,6 @@ type playerSHNEvent struct {
 	err       chan error
 }
 
-
 var errBadSHN = securityEventError{
 	code:    0,
 	message: "client and server SHN files do not match",
