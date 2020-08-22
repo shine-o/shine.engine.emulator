@@ -2,7 +2,7 @@ package blocks
 
 import (
 	"bytes"
-	"github.com/shine-o/shine.engine.core/structs"
+	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"golang.org/x/image/bmp"
 	"image"
 	"image/color"
