@@ -3,6 +3,7 @@ package character
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/go-pg/pg/v9"
 	"github.com/google/logger"
 	"github.com/google/uuid"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"

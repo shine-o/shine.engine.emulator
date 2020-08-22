@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/viper"
 	bolt "go.etcd.io/bbolt"
 	"math"
+	"os"
 	"sync"
 )
 
@@ -62,8 +63,17 @@ func (zm *zoneMap) run() {
 
 // load maps
 func loadMaps() []zoneMap {
-	reload := viper.GetBool("game_data.reload")
+	var reload bool
+
 	dbPath := viper.GetString("game_data.database")
+
+	_, err := os.Stat(dbPath)
+	if os.IsNotExist(err) {
+		reload = true
+	} else {
+		reload = viper.GetBool("game_data.reload")
+	}
+
 	shinePath := viper.GetString("shine_folder")
 	normalMaps := viper.GetIntSlice("normal_maps")
 

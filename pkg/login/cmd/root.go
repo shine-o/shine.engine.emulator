@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/spf13/cobra"
-	"github.com/spf13/cobra/doc"
 	"io/ioutil"
 	"os"
 

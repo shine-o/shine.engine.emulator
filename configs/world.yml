@@ -9,7 +9,7 @@ crypt:
   xorLimit: 499
 
 protocol:
-  commands: "config/.commands.yml"
+  commands: "configs/network-commands.yml"
 
 gRPC:
   servers:

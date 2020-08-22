@@ -20,12 +20,12 @@ crypt:
   xorLimit: 499
 
 protocol:
-  commands: 'config/.commands.yml'
+  commands: "configs/network-commands.yml"
 
 game_data:
   # if changes were made to the files, load them again
   reload: false
-  database: 'config/game-data.db'
+  database: 'configs/game-data.db'
 
 shine_folder: 'C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files'
 

@@ -3,7 +3,7 @@ package world
 import (
 	"context"
 	"errors"
-	"github.com/go-pg/pg"
+	"github.com/go-pg/pg/v9"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/login"
 	wm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world-master"
@@ -23,6 +23,7 @@ var worldEvents sendEvents
 func (w *world) load() {
 	// register to world-master
 	err := registerWorld()
+
 	if err != nil {
 		log.Fatal(err)
 	}

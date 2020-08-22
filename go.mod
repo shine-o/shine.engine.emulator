@@ -1,14 +1,14 @@
 module github.com/shine-o/shine.engine.emulator
 
-go 1.13
+go 1.15
 
 require (
 	github.com/RoaringBitmap/roaring v0.5.1
+	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
 	github.com/go-pg/pg v8.0.7+incompatible
 	github.com/go-pg/pg/v9 v9.1.7
 	github.com/go-pg/urlstruct v0.5.1 // indirect
-	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-redis/redis/v7 v7.4.0
 	github.com/go-restruct/restruct v1.2.0-alpha
 	github.com/golang/protobuf v1.4.2
@@ -20,7 +20,6 @@ require (
 	github.com/pelletier/go-toml v1.8.0 // indirect
 	github.com/pkg/errors v0.9.1
 	github.com/segmentio/encoding v0.1.15 // indirect
-	github.com/shine-o/shine.engine.core v0.0.3
 	github.com/spf13/afero v1.3.4 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.0.0
