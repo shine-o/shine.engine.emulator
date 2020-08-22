@@ -23,6 +23,12 @@ type playerDisappearedEvent struct {
 	err    chan error
 }
 
+
+type playerWalksEvent struct {
+	handle uint16
+	nc     *structs.NcActMoveRunCmd
+}
+
 // 	playerRuns
 // 	playerWalks
 //	playerStopped
@@ -30,6 +36,10 @@ type playerDisappearedEvent struct {
 type playerRunsEvent struct {
 	handle uint16
 	nc     *structs.NcActMoveRunCmd
+}
+
+type playerJumpedEvent struct {
+	handle uint16
 }
 
 type playerStoppedEvent struct {

@@ -88,6 +88,45 @@ func (zm *zoneMap) playerActivity() {
 
 		case e := <-zm.recv[playerDisappeared]:
 			log.Info(e)
+		case e := <-zm.recv[playerWalks]:
+			// player has a fifo queue for the last 30 movements
+			// for every movement
+			//		verify collision
+			//			if fails, return to previous movement
+			// 		verify speed ( default 30 for unmounted/unbuffed player)
+			//			if fails return to position 1 in queue
+			//		broadcast to players within range
+			go func() {
+				ev, ok := e.(*playerWalksEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+
+				rX := (ev.nc.To.X * 8) / 50
+				rY := (ev.nc.To.X * 8) / 50
+
+				zm.entities.players.RLock()
+				defer zm.entities.players.RUnlock()
+				player, ok := zm.entities.players.active[ev.handle]
+
+				err := player.move(zm, rX, rY)
+				if  err != nil {
+					// store player position
+					log.Error(err)
+					return
+				}
+
+				nc := structs.NcActSomeoneMoveWalkCmd{
+					Handle:   player.handle,
+					From:     ev.nc.From,
+					To:       ev.nc.To,
+					Speed:    60,
+				}
+				for i, _ := range zm.entities.players.active {
+					go ncActSomeoneMoveWalkCmd(zm.entities.players.active[i], &nc)
+				}
+			}()
 		case e := <-zm.recv[playerRuns]:
 			// player has a fifo queue for the last 30 movements
 			// for every movement
@@ -103,41 +142,33 @@ func (zm *zoneMap) playerActivity() {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
 					return
 				}
-				// find player
-				zm.entities.players.RLock()
-				player, ok := zm.entities.players.active[ev.handle]
-				zm.entities.players.RUnlock()
 
-				//ev.nc.From
 				rX := (ev.nc.To.X * 8) / 50
 				rY := (ev.nc.To.X * 8) / 50
+
+				zm.entities.players.RLock()
+				player, ok := zm.entities.players.active[ev.handle]
 
 				err := player.move(zm, rX, rY)
 				if  err != nil {
 					// store player position
 					log.Error(err)
+					zm.entities.players.RUnlock()
 					return
 				}
+
+				nc := structs.NcActSomeoneMoveRunCmd{
+					Handle:   player.handle,
+					From:     ev.nc.From,
+					To:       ev.nc.To,
+					Speed:    120,
+				}
 				for i, _ := range zm.entities.players.active {
-					nc := structs.NcActSomeoneMoveRunCmd{
-						Handle:   player.handle,
-						From:     ev.nc.From,
-						To:       ev.nc.To,
-						Speed:    120,
-					}
 					go ncActSomeoneMoveRunCmd(zm.entities.players.active[i], &nc)
 				}
-			}()
-		case e := <-zm.recv[playerWalks]:
-			// player has a fifo queue for the last 30 movements
-			// for every movement
-			//		verify collision
-			//			if fails, return to previous movement
-			// 		verify speed ( default 30 for unmounted/unbuffed player)
-			//			if fails return to position 1 in queue
-			//		broadcast to players within range
+				zm.entities.players.RUnlock()
 
-			log.Info(e)
+			}()
 		case e := <-zm.recv[playerStopped]:
 			// movements triggered by keys inmediately send a STOP packet to the server
 			// movements triggered by mouse do not send a STOP packet
@@ -150,31 +181,46 @@ func (zm *zoneMap) playerActivity() {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerStoppedEvent{}).String(), reflect.TypeOf(ev).String())
 					return
 				}
-				zm.entities.players.RLock()
-				player, ok := zm.entities.players.active[ev.handle]
-				zm.entities.players.RUnlock()
-
-				//ev.nc.From
 				rX := (ev.nc.Location.X * 8) / 50
 				rY := (ev.nc.Location.Y * 8) / 50
+
+				zm.entities.players.RLock()
+				player, ok := zm.entities.players.active[ev.handle]
 
 				err := player.move(zm, rX, rY)
 				if  err != nil {
 					// store player position
 					log.Error(err)
+					zm.entities.players.RUnlock()
 					return
 				}
+				nc := structs.NcActSomeoneStopCmd{
+					Handle:   player.handle,
+					Location: ev.nc.Location,
+				}
 				for i, _ := range zm.entities.players.active {
-					nc := structs.NcActSomeoneStopCmd{
-						Handle:   player.handle,
-						Location: ev.nc.Location,
-					}
 					go ncActSomeoneStopCmd(zm.entities.players.active[i], &nc)
 				}
+				zm.entities.players.RUnlock()
+
 			}()
 			log.Info(e)
 		case e := <-zm.recv[playerJumped]:
-			log.Info(e)
+			go func() {
+				ev, ok := e.(*playerJumpedEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerJumpedEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				zm.entities.players.RLock()
+				nc := structs.NcActSomeoneJumpCmd{
+					Handle:   ev.handle,
+				}
+				for i, _ := range zm.entities.players.active {
+					go ncActSomeoneJumpCmd(zm.entities.players.active[i], &nc)
+				}
+				zm.entities.players.RUnlock()
+			}()
 		}
 	}
 }
