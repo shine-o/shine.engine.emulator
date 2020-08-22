@@ -4,7 +4,6 @@ package cmd
 import (
 	"github.com/shine-o/shine.engine.emulator/internal/app/login"
 	"github.com/spf13/cobra"
-	"github.com/spf13/cobra/doc"
 )
 
 // migrateCmd represents the migrate command

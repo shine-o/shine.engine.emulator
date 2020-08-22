@@ -3,7 +3,7 @@ package zone
 import (
 	"context"
 	"encoding/hex"
-	"github.com/go-pg/pg"
+	"github.com/go-pg/pg/v9"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
