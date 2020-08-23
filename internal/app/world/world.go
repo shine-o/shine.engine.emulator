@@ -37,6 +37,7 @@ func (w *world) load() {
 		serverSelect, serverSelectToken, serverTime,
 		createCharacter, deleteCharacter,
 		characterLogin, characterSettings,
+		updateShortcuts, updateGameSettings, updateKeymap,
 	}
 
 	for _, index := range events {
@@ -66,7 +67,8 @@ func registerWorld() error {
 		return err
 	}
 	c := wm.NewMasterClient(conn)
-	rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
+	rpcCtx, cancel := context.WithTimeout(context.Background(), gRPCTimeout)
+	defer cancel()
 
 	wr, err := c.RegisterWorld(rpcCtx, &wm.WorldDetails{
 		ID:   id,
@@ -84,6 +86,7 @@ func registerWorld() error {
 	if !wr.Success {
 		return errors.New("failed to register against the world master")
 	}
+
 	return nil
 }
 
@@ -117,7 +120,8 @@ func verifyUser(ws *session, req *structs.NcUserLoginWorldReq) error {
 
 	c := login.NewLoginClient(conn)
 
-	rpcCtx, _ := context.WithTimeout(context.Background(), gRPCTimeout)
+	rpcCtx, cancel := context.WithTimeout(context.Background(), gRPCTimeout)
+	defer cancel()
 
 	ui, err := c.AccountInfo(rpcCtx, &login.User{
 		UserName: req.User.Name,
