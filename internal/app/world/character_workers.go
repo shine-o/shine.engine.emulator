@@ -87,12 +87,15 @@ func (w *world) characterSession() {
 					ev.err <- err
 					return
 				}
+
 				cs = characterSettingsEvent{
 					char: &char,
 					np:   ev.np,
 				}
+
 				ev.zoneInfo <- &nc
 				worldEvents[characterSettings] <- &cs
+
 			}()
 		case e := <-w.recv[characterSettings]:
 			go func() {
@@ -102,23 +105,30 @@ func (w *world) characterSession() {
 					return
 				}
 				gameOptions, err := character.NcGameOptions(ev.char.Options.GameOptions)
+
 				if err != nil {
 					log.Error(err)
 					return
 				}
+
 				keyMap, err := character.NcKeyMap(ev.char.Options.Keymap)
+
 				if err != nil {
 					log.Error(err)
 					return
 				}
+
 				shortcuts, err := character.NcShortcutData(ev.char.Options.Shortcuts)
+
 				if err != nil {
 					log.Error(err)
 					return
 				}
+
 				ncCharOptionImproveGetGameOptionCmd(ev.np, &gameOptions)
 				ncCharOptionImproveGetKeymapCmd(ev.np, &keyMap)
 				ncCharOptionImproveGetShortcutDataCmd(ev.np, &shortcuts)
+
 			}()
 		}
 	}
