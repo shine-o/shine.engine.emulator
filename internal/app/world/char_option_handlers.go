@@ -99,3 +99,9 @@ func ncCharOptionGetWindowPosAck(np *networking.Parameters) {
 	}
 	pc.Send(np.OutboundSegments.Send)
 }
+
+// NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_REQ
+// 28727
+func ncCharOptionImproveSetShortcutDataReq() {
+
+}

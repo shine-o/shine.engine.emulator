@@ -24,26 +24,9 @@ func ncAvatarCreateReq(ctx context.Context, np *networking.Parameters) {
 	cce = createCharacterEvent{
 		nc:   &nc,
 		np:   np,
-		char: make(chan *character.Character),
-		err:  make(chan error),
 	}
 
 	worldEvents[createCharacter] <- &cce
-
-	var char *character.Character
-	select {
-	case char = <-cce.char:
-		nc := structs.NcAvatarCreateSuccAck{
-			NumOfAvatar: 1,
-			Avatar:      char.NcRepresentation(),
-		}
-		go ncAvatarCreateSuccAck(np, &nc)
-		return
-	case err := <-cce.err:
-		log.Error(err)
-		go createCharErr(np, err)
-		return
-	}
 }
 
 // NcAvatarCreateSuccAck notifies the character was created and sends the character info
@@ -95,15 +78,7 @@ func ncAvatarEraseReq(ctx context.Context, np *networking.Parameters) {
 
 	worldEvents[deleteCharacter] <- &dce
 
-	select {
-	case <-dce.done:
-		go avatarEraseSuccAck(np, &structs.NcAvatarEraseSuccAck{
-			Slot: nc.Slot,
-		})
-	case err := <-dce.err:
-		log.Error(err)
-		return
-	}
+
 }
 
 // AvatarEraseSuccAck notifies the client that the character was deleted successfully
@@ -125,7 +100,7 @@ func createCharErr(np *networking.Parameters, err error) {
 	}
 	switch errChar.Code {
 	case 1:
-		go ncAvatarCreateFailAck(np, 385)
+		ncAvatarCreateFailAck(np, 385)
 		return
 	}
 }
