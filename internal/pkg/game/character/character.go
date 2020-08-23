@@ -489,6 +489,8 @@ func (c *Character) initialClientOptions() *Character {
 	// shortcuts: 040000040000000000010400010000000a0100ac0d00000b0100b10d0000
 	scData, _ := hex.DecodeString("040000040000000000010400010000000a0100ac0d00000b0100b10d0000")
 
+
+
 	c.Options = &ClientOptions{
 		CharacterID: c.ID,
 		GameOptions: goData, // hardcoded byte slice

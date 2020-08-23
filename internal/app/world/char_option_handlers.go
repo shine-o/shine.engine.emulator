@@ -46,15 +46,14 @@ func ncCharOptionImproveGetShortcutDataCmd(np *networking.Parameters, nc *struct
 // NcCharOptionGetShortcutSizeReq
 // NC_CHAR_OPTION_GET_SHORTCUTSIZE_REQ
 func ncCharOptionGetShortcutSizeReq(ctx context.Context, np *networking.Parameters) {
-	// gotta  this
-	go ncCharOptionGetShortcutSizeAck(np)
+	ncCharOptionGetShortcutSizeAck(np)
 }
 
 // NcCharOptionGetShortcutSizeAck
 // NC_CHAR_OPTION_GET_SHORTCUTSIZE_ACK
 func ncCharOptionGetShortcutSizeAck(np *networking.Parameters) {
 	// not sure what this data is
-	hd, err := hex.DecodeString("0105000318000005041000000c01000c02000c03000c040000")
+	hd, err := hex.DecodeString("0105000318000005000c00000c01000c02000c03000c040000")
 	if err != nil {
 		log.Error(err)
 		return
@@ -76,7 +75,7 @@ func ncCharOptionGetShortcutSizeAck(np *networking.Parameters) {
 // NcCharOptionGetWindowPosReq
 // NC_CHAR_OPTION_GET_WINDOWPOS_REQ
 func ncCharOptionGetWindowPosReq(ctx context.Context, np *networking.Parameters) {
-	go ncCharOptionGetWindowPosAck(np)
+	ncCharOptionGetWindowPosAck(np)
 }
 
 // NcCharOptionGetWindowPosAck
