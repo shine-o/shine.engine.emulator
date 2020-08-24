@@ -71,7 +71,3 @@ const (
 	updateGameSettings
 	updateKeymap
 )
-
-func (e *emptyEvent) erroneous() <-chan error {
-	return e.err
-}

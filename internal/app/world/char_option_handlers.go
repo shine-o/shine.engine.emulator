@@ -102,6 +102,42 @@ func ncCharOptionGetWindowPosAck(np *networking.Parameters) {
 
 // NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_REQ
 // 28727
-func ncCharOptionImproveSetShortcutDataReq() {
+func ncCharOptionImproveSetShortcutDataReq(ctx context.Context, np *networking.Parameters) {
+	var nc structs.NcCharOptionSetShortcutDataReq
+	var use updateShortcutsEvent
+	session, ok := np.Session.(*session)
 
+	if !ok {
+		log.Error("no session available")
+		return
+	}
+
+	err := structs.Unpack(np.Command.Base.Data, &nc)
+	if err != nil {
+		return
+	}
+
+	use = updateShortcutsEvent{
+		np: np,
+		nc : nc,
+		characterID: session.characterID,
+	}
+
+	worldEvents[updateShortcuts] <- &use
+	// take the data
+	// store it as the new shortcut data for this character
+	// send the ack with uint16 code 8448
+
+}
+
+// NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_ACK
+// 28728
+func ncCharOptionImproveSetShortcutDataAck(np *networking.Parameters, nc * structs.NcCharOptionImproveShortcutDataAck) {
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 28728,
+		},
+		NcStruct: &nc,
+	}
+	pc.Send(np.OutboundSegments.Send)
 }
