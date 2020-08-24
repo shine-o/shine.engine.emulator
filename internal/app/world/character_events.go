@@ -28,3 +28,13 @@ type characterSettingsEvent struct {
 	np   *networking.Parameters
 	err  chan error
 }
+
+//	updateShortcuts
+//	updateGameSettings
+//	updateKeymap
+
+type updateShortcutsEvent struct {
+	np          *networking.Parameters
+	nc          structs.NcCharOptionSetShortcutDataReq
+	characterID uint64
+}

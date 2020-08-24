@@ -76,43 +76,15 @@ func (w *world) characterSession() {
 	for {
 		select {
 		case e := <-w.recv[characterLogin]:
-			go func() {
-				var cs characterSettingsEvent
-				ev, ok := e.(*characterLoginEvent)
+			ev, ok := e.(*characterLoginEvent)
 
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&characterLoginEvent{}).String(), reflect.TypeOf(ev).String())
-					return
-				}
+			if !ok {
+				log.Errorf("expected event type %v but got %v", reflect.TypeOf(&characterLoginEvent{}).String(), reflect.TypeOf(ev).String())
+				return
+			}
 
-				s, ok := ev.np.Session.(*session)
-				if !ok {
-					log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
-					return
-				}
+			go handleCharacterLogin(ev, w)
 
-				char, err := character.GetBySlot(w.db, ev.nc.Slot, s.UserID)
-				if err != nil {
-					log.Error(err)
-					return
-				}
-
-				nc, err := zoneConnectionInfo(char)
-				if err != nil {
-					log.Error(err)
-					return
-				}
-
-				ncCharLoginAck(ev.np, &nc)
-
-				cs = characterSettingsEvent{
-					char: &char,
-					np:   ev.np,
-				}
-
-				worldEvents[characterSettings] <- &cs
-
-			}()
 		case e := <-w.recv[characterSettings]:
 			go func() {
 				ev, ok := e.(*characterSettingsEvent)
@@ -146,8 +118,89 @@ func (w *world) characterSession() {
 				ncCharOptionImproveGetShortcutDataCmd(ev.np, &shortcuts)
 
 			}()
+		case e := <-w.recv[updateShortcuts]:
+			go func() {
+				ev, ok := e.(*updateShortcutsEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&updateShortcutsEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				c, err := character.Get(w.db, ev.characterID)
+				if err != nil {
+					log.Error(err)
+					return
+				}
+
+				// first load the existing data into a  structs.NcCharGetShortcutDataCmd struct
+
+				// iterate over the shortcuts
+
+				storageNC := structs.NcCharGetShortcutDataCmd{ // we need this struct for storage, since the client needs this struct for logging the character
+					Count:     uint16(ev.nc.Count),
+					Shortcuts: ev.nc.Shortcuts,
+				}
+
+				data, err := structs.Pack(&storageNC)
+				if err != nil {
+					log.Error(err)
+					return
+				}
+
+				c.Options.Shortcuts = data
+
+				err = character.Update(w.db, &c)
+				if err != nil {
+					log.Error(err)
+					return
+				}
+
+				nc := structs.NcCharOptionImproveShortcutDataAck{ErrCode: 8448}
+				ncCharOptionImproveSetShortcutDataAck(ev.np, &nc)
+
+			}()
+		//case e := <-w.recv[updateGameSettings]:
+		//case e := <-w.recv[updateKeymap]:
+
 		}
 	}
+}
+
+func handleCharacterLogin(ev *characterLoginEvent, w *world) {
+	s, ok := ev.np.Session.(*session)
+	if !ok {
+		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
+		return
+	}
+
+	char, err := character.GetBySlot(w.db, ev.nc.Slot, s.UserID)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	nc, err := zoneConnectionInfo(char)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	ncCharLoginAck(ev.np, &nc)
+
+	session, ok := ev.np.Session.(*session)
+
+	if !ok {
+		log.Error("no session available")
+		return
+	}
+
+	session.characterID = char.ID
+
+	cs := characterSettingsEvent{
+		char: &char,
+		np:   ev.np,
+	}
+
+	worldEvents[characterSettings] <- &cs
 }
 
 func zoneConnectionInfo(char character.Character) (structs.NcCharLoginAck, error) {

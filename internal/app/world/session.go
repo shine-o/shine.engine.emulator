@@ -14,10 +14,11 @@ type sessionFactory struct {
 }
 
 type session struct {
-	ID       string `json:"id"`
-	WorldID  int
-	UserID   uint64 `json:"user_id"`
-	UserName string `json:"user_name"`
+	ID          string `json:"id"`
+	WorldID     int
+	UserID      uint64 `json:"user_id"`
+	UserName    string `json:"user_name"`
+	characterID uint64
 }
 
 func (s sessionFactory) New() networking.Session {
