@@ -131,16 +131,36 @@ func (w *world) characterSession() {
 					return
 				}
 
-				// first load the existing data into a  structs.NcCharGetShortcutDataCmd struct
+				storedShortcuts := structs.NcCharGetShortcutDataCmd{}
 
-				// iterate over the shortcuts
-
-				storageNC := structs.NcCharGetShortcutDataCmd{ // we need this struct for storage, since the client needs this struct for logging the character
-					Count:     uint16(ev.nc.Count),
-					Shortcuts: ev.nc.Shortcuts,
+				err = structs.Unpack(c.Options.Shortcuts, &storedShortcuts)
+				if err != nil {
+					log.Error(err)
+					return
 				}
 
-				data, err := structs.Pack(&storageNC)
+				var newShortcuts []structs.ShortCutData
+
+				for _, s1 := range ev.nc.Shortcuts {
+					exists := false
+					for j, s2 := range storedShortcuts.Shortcuts {
+						if s2.SlotNo == s1.SlotNo {
+							storedShortcuts.Shortcuts[j].CodeNo = s1.CodeNo
+							storedShortcuts.Shortcuts[j].Value = s1.Value
+							exists = true
+						}
+					}
+					if !exists {
+						newShortcuts = append(newShortcuts, s1)
+					}
+				}
+
+				storedShortcuts.Shortcuts = append(storedShortcuts.Shortcuts, newShortcuts...)
+
+				storedShortcuts.Count = uint16(len(storedShortcuts.Shortcuts))
+
+				data, err := structs.Pack(&storedShortcuts)
+
 				if err != nil {
 					log.Error(err)
 					return

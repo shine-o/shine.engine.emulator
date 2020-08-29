@@ -332,6 +332,7 @@ func Get(db *pg.DB, characterID uint64) (Character, error) {
 		WherePK().
 		Relation("Appearance").
 		Relation("Attributes").
+		Relation("Options").
 		Relation("Location").
 		Select()
 	return c, err
@@ -356,6 +357,23 @@ func GetBySlot(db *pg.DB, slot byte, userID uint64) (Character, error) {
 		Where("user_id = ?", userID).
 		Where("slot = ?", slot).Select()
 	return c, err
+}
+
+func Update(db *pg.DB, c * Character) error  {
+	updateTx, err := db.Begin()
+	if err != nil {
+		updateTx.Rollback()
+		return err
+	}
+	defer updateTx.Close()
+
+	_, err = updateTx.Model(c.Options).
+	WherePK().Update()
+	if err != nil {
+		updateTx.Rollback()
+		return err
+	}
+	return updateTx.Commit()
 }
 
 // Delete character for User with userID
@@ -430,6 +448,23 @@ func Delete(db *pg.DB, userID uint64, req *structs.NcAvatarEraseReq) error {
 	return deleteTx.Commit()
 }
 
+
+func (c *Character) AllEquippedItems(db *pg.DB) *structs.NcCharClientItemCmd {
+	return c.getItemsByInventory(db, 8)
+}
+
+func (c *Character) InventoryItems(db *pg.DB) *structs.NcCharClientItemCmd {
+	return c.getItemsByInventory(db, 9)
+}
+
+func (c *Character) MiniHouseItems(db *pg.DB) *structs.NcCharClientItemCmd {
+	return c.getItemsByInventory(db, 12)
+}
+
+func (c *Character) PremiumActionItems(db *pg.DB) *structs.NcCharClientItemCmd {
+	return c.getItemsByInventory(db, 15)
+}
+
 func (c *Character) initialAppearance(shape structs.ProtoAvatarShapeInfo) *Character {
 	isMale := (shape.BF >> 7) & 1
 	class := (shape.BF >> 2) & 31
@@ -489,8 +524,6 @@ func (c *Character) initialClientOptions() *Character {
 	// shortcuts: 040000040000000000010400010000000a0100ac0d00000b0100b10d0000
 	scData, _ := hex.DecodeString("040000040000000000010400010000000a0100ac0d00000b0100b10d0000")
 
-
-
 	c.Options = &ClientOptions{
 		CharacterID: c.ID,
 		GameOptions: goData, // hardcoded byte slice
@@ -526,22 +559,6 @@ func (c *Character) initialEquippedItems() *Character {
 		ApparelShield:    65535,
 	}
 	return c
-}
-
-func (c *Character) AllEquippedItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(db, 8)
-}
-
-func (c *Character) InventoryItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(db, 9)
-}
-
-func (c *Character) MiniHouseItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(db, 12)
-}
-
-func (c *Character) PremiumActionItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(db, 15)
 }
 
 // if not 65535, add item to the list
