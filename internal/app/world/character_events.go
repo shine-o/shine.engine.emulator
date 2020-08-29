@@ -29,9 +29,6 @@ type characterSettingsEvent struct {
 	err  chan error
 }
 
-//	updateShortcuts
-//	updateGameSettings
-//	updateKeymap
 
 type updateShortcutsEvent struct {
 	np          *networking.Parameters
