@@ -187,11 +187,10 @@ func ncActStopReq(ctx context.Context, np *networking.Parameters) {
 	zm.send[playerStopped] <- &pse
 }
 
-
 // NC_ACT_SOMEONEMOVEWALK_CMD
 // 8216
 // someone walked
-func ncActSomeoneMoveWalkCmd(p * player, nc *structs.NcActSomeoneMoveWalkCmd) {
+func ncActSomeoneMoveWalkCmd(p *player, nc *structs.NcActSomeoneMoveWalkCmd) {
 	p.Lock()
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -206,7 +205,7 @@ func ncActSomeoneMoveWalkCmd(p * player, nc *structs.NcActSomeoneMoveWalkCmd) {
 // NC_ACT_SOMEONEMOVERUN_CMD
 // 8218
 // someone has run
-func ncActSomeoneMoveRunCmd(p * player, nc *structs.NcActSomeoneMoveRunCmd) {
+func ncActSomeoneMoveRunCmd(p *player, nc *structs.NcActSomeoneMoveRunCmd) {
 	p.Lock()
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -220,7 +219,7 @@ func ncActSomeoneMoveRunCmd(p * player, nc *structs.NcActSomeoneMoveRunCmd) {
 
 // NC_ACT_SOMEONEJUMP_CMD
 // 8229
-func ncActSomeoneJumpCmd(p * player, nc * structs.NcActSomeoneJumpCmd)  {
+func ncActSomeoneJumpCmd(p *player, nc *structs.NcActSomeoneJumpCmd) {
 	p.Lock()
 	pc := networking.Command{
 		Base: networking.CommandBase{
@@ -235,7 +234,7 @@ func ncActSomeoneJumpCmd(p * player, nc * structs.NcActSomeoneJumpCmd)  {
 // NC_ACT_SOMEONESTOP_CMD
 // 8211
 // someone stopped
-func ncActSomeoneStopCmd(p * player, nc *structs.NcActSomeoneStopCmd) {
+func ncActSomeoneStopCmd(p *player, nc *structs.NcActSomeoneStopCmd) {
 	p.Lock()
 	pc := networking.Command{
 		Base: networking.CommandBase{
