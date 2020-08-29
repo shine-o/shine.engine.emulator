@@ -46,15 +46,14 @@ func ncCharOptionImproveGetShortcutDataCmd(np *networking.Parameters, nc *struct
 // NcCharOptionGetShortcutSizeReq
 // NC_CHAR_OPTION_GET_SHORTCUTSIZE_REQ
 func ncCharOptionGetShortcutSizeReq(ctx context.Context, np *networking.Parameters) {
-	// gotta  this
-	go ncCharOptionGetShortcutSizeAck(np)
+	ncCharOptionGetShortcutSizeAck(np)
 }
 
 // NcCharOptionGetShortcutSizeAck
 // NC_CHAR_OPTION_GET_SHORTCUTSIZE_ACK
 func ncCharOptionGetShortcutSizeAck(np *networking.Parameters) {
 	// not sure what this data is
-	hd, err := hex.DecodeString("0105000318000005041000000c01000c02000c03000c040000")
+	hd, err := hex.DecodeString("0105000318000005000c00000c01000c02000c03000c040000")
 	if err != nil {
 		log.Error(err)
 		return
@@ -76,7 +75,7 @@ func ncCharOptionGetShortcutSizeAck(np *networking.Parameters) {
 // NcCharOptionGetWindowPosReq
 // NC_CHAR_OPTION_GET_WINDOWPOS_REQ
 func ncCharOptionGetWindowPosReq(ctx context.Context, np *networking.Parameters) {
-	go ncCharOptionGetWindowPosAck(np)
+	ncCharOptionGetWindowPosAck(np)
 }
 
 // NcCharOptionGetWindowPosAck
@@ -95,6 +94,48 @@ func ncCharOptionGetWindowPosAck(np *networking.Parameters) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 28685,
+		},
+		NcStruct: &nc,
+	}
+	pc.Send(np.OutboundSegments.Send)
+}
+
+// NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_REQ
+// 28727
+func ncCharOptionImproveSetShortcutDataReq(ctx context.Context, np *networking.Parameters) {
+	var nc structs.NcCharOptionSetShortcutDataReq
+	var use updateShortcutsEvent
+	session, ok := np.Session.(*session)
+
+	if !ok {
+		log.Error("no session available")
+		return
+	}
+
+	err := structs.Unpack(np.Command.Base.Data, &nc)
+	if err != nil {
+		return
+	}
+
+	use = updateShortcutsEvent{
+		np: np,
+		nc : nc,
+		characterID: session.characterID,
+	}
+
+	worldEvents[updateShortcuts] <- &use
+	// take the data
+	// store it as the new shortcut data for this character
+	// send the ack with uint16 code 8448
+
+}
+
+// NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_ACK
+// 28728
+func ncCharOptionImproveSetShortcutDataAck(np *networking.Parameters, nc * structs.NcCharOptionImproveShortcutDataAck) {
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 28728,
 		},
 		NcStruct: &nc,
 	}

@@ -32,7 +32,7 @@ func Migrate(cmd *cobra.Command, args []string) {
 	}
 
 	defer db.Close()
-	if yes, err := cmd.Flags().GetBool("fixtures"); err != nil {
+	if yes, err := cmd.Flags().GetBool("purge"); err != nil {
 		log.Error(err)
 	} else {
 		if yes {

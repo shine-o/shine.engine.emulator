@@ -20,7 +20,7 @@ type shineSegment struct {
 
 type decodedPacket struct {
 	seen      time.Time
-	packet   * networking.Command
+	packet    *networking.Command
 	direction string
 }
 
@@ -241,7 +241,7 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 	if viper.GetBool("protocol.log.verbose") {
 		log.Infof("\n%v\n%v\n%v\n%v\n%v\nunpacked data: %v \n%v", dp.packet.Base.ClientStructName, dp.seen, tPorts, dp.direction, dp.packet.Base.String(), pv.NcRepresentation.UnpackedData, hex.Dump(dp.packet.Base.Data))
 	} else {
-		log.Infof("%v %v %v %v %v", dp.seen, tPorts, dp.direction,dp.packet.Base.ClientStructName, dp.packet.Base.String())
+		log.Infof("%v %v %v %v %v", dp.seen, tPorts, dp.direction, dp.packet.Base.ClientStructName, dp.packet.Base.String())
 	}
 
 	pv.ConnectionKey = fmt.Sprintf("%v %v", ss.net.String(), ss.transport.String())

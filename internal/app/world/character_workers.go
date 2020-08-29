@@ -2,7 +2,6 @@ package world
 
 import (
 	"context"
-	"fmt"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
 	zm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
@@ -22,19 +21,28 @@ func (w *world) characterCRUD() {
 				}
 				s, ok := ev.np.Session.(*session)
 				if !ok {
-					ev.err <- fmt.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
+					log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
 				}
 				err := character.Validate(w.db, s.UserID, ev.nc)
 				if err != nil {
-					ev.err <- err
+					log.Error(err)
+					createCharErr(ev.np, err)
 					return
 				}
+
 				char, err := character.New(w.db, s.UserID, ev.nc)
+
 				if err != nil {
-					ev.err <- err
+					log.Error(err)
+					createCharErr(ev.np, err)
 					return
 				}
-				ev.char <- char
+
+				nc := structs.NcAvatarCreateSuccAck{
+					NumOfAvatar: 1,
+					Avatar:      char.NcRepresentation(),
+				}
+				ncAvatarCreateSuccAck(ev.np, &nc)
 			}()
 		case e := <-w.recv[deleteCharacter]:
 			go func() {
@@ -43,16 +51,21 @@ func (w *world) characterCRUD() {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&deleteCharacterEvent{}).String(), reflect.TypeOf(ev).String())
 					return
 				}
+
 				s, ok := ev.np.Session.(*session)
 				if !ok {
-					ev.err <- fmt.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
+					log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
 				}
+
 				err := character.Delete(w.db, s.UserID, ev.nc)
 				if err != nil {
-					ev.err <- err
+					log.Error(err)
 					return
 				}
-				ev.done <- true
+
+				avatarEraseSuccAck(ev.np, &structs.NcAvatarEraseSuccAck{
+					Slot: ev.nc.Slot,
+				})
 			}()
 		}
 	}
@@ -63,37 +76,15 @@ func (w *world) characterSession() {
 	for {
 		select {
 		case e := <-w.recv[characterLogin]:
-			go func() {
-				var cs characterSettingsEvent
-				ev, ok := e.(*characterLoginEvent)
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&characterLoginEvent{}).String(), reflect.TypeOf(ev).String())
-					return
-				}
-				s, ok := ev.np.Session.(*session)
-				if !ok {
-					ev.err <- fmt.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
-				}
+			ev, ok := e.(*characterLoginEvent)
 
-				char, err := character.GetBySlot(w.db, ev.nc.Slot, s.UserID)
+			if !ok {
+				log.Errorf("expected event type %v but got %v", reflect.TypeOf(&characterLoginEvent{}).String(), reflect.TypeOf(ev).String())
+				return
+			}
 
-				if err != nil {
-					ev.err <- err
-					return
-				}
+			go handleCharacterLogin(ev, w)
 
-				nc, err := zoneConnectionInfo(err, ev, char)
-				if err != nil {
-					ev.err <- err
-					return
-				}
-				cs = characterSettingsEvent{
-					char: &char,
-					np:   ev.np,
-				}
-				ev.zoneInfo <- &nc
-				worldEvents[characterSettings] <- &cs
-			}()
 		case e := <-w.recv[characterSettings]:
 			go func() {
 				ev, ok := e.(*characterSettingsEvent)
@@ -102,29 +93,88 @@ func (w *world) characterSession() {
 					return
 				}
 				gameOptions, err := character.NcGameOptions(ev.char.Options.GameOptions)
+
 				if err != nil {
 					log.Error(err)
 					return
 				}
+
 				keyMap, err := character.NcKeyMap(ev.char.Options.Keymap)
+
 				if err != nil {
 					log.Error(err)
 					return
 				}
+
 				shortcuts, err := character.NcShortcutData(ev.char.Options.Shortcuts)
+
 				if err != nil {
 					log.Error(err)
 					return
 				}
+
 				ncCharOptionImproveGetGameOptionCmd(ev.np, &gameOptions)
 				ncCharOptionImproveGetKeymapCmd(ev.np, &keyMap)
 				ncCharOptionImproveGetShortcutDataCmd(ev.np, &shortcuts)
+
 			}()
+		case e := <-w.recv[updateShortcuts]:
+			go func() {
+				ev, ok := e.(*updateShortcutsEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&updateShortcutsEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				updateShortcutsLogic(w, ev)
+			}()
+			//case e := <-w.recv[updateGameSettings]:
+			//case e := <-w.recv[updateKeymap]:
+
 		}
 	}
 }
 
-func zoneConnectionInfo(err error, ev *characterLoginEvent, char character.Character) (structs.NcCharLoginAck, error) {
+
+
+func handleCharacterLogin(ev *characterLoginEvent, w *world) {
+	s, ok := ev.np.Session.(*session)
+	if !ok {
+		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
+		return
+	}
+
+	char, err := character.GetBySlot(w.db, ev.nc.Slot, s.UserID)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	nc, err := zoneConnectionInfo(char)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	ncCharLoginAck(ev.np, &nc)
+
+	session, ok := ev.np.Session.(*session)
+
+	if !ok {
+		log.Error("no session available")
+		return
+	}
+
+	session.characterID = char.ID
+
+	cs := characterSettingsEvent{
+		char: &char,
+		np:   ev.np,
+	}
+
+	worldEvents[characterSettings] <- &cs
+}
+
+func zoneConnectionInfo(char character.Character) (structs.NcCharLoginAck, error) {
 	var nc structs.NcCharLoginAck
 	conn, err := newRPCClient("zone_master")
 	if err != nil {
@@ -140,7 +190,6 @@ func zoneConnectionInfo(err error, ev *characterLoginEvent, char character.Chara
 	})
 
 	if err != nil {
-		ev.err <- err
 		return nc, err
 	}
 

@@ -23,7 +23,6 @@ type playerDisappearedEvent struct {
 	err    chan error
 }
 
-
 type playerWalksEvent struct {
 	handle uint16
 	nc     *structs.NcActMoveRunCmd

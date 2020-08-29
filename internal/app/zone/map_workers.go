@@ -111,17 +111,17 @@ func (zm *zoneMap) playerActivity() {
 				player, ok := zm.entities.players.active[ev.handle]
 
 				err := player.move(zm, rX, rY)
-				if  err != nil {
+				if err != nil {
 					// store player position
 					log.Error(err)
 					return
 				}
 
 				nc := structs.NcActSomeoneMoveWalkCmd{
-					Handle:   player.handle,
-					From:     ev.nc.From,
-					To:       ev.nc.To,
-					Speed:    60,
+					Handle: player.handle,
+					From:   ev.nc.From,
+					To:     ev.nc.To,
+					Speed:  60,
 				}
 				for i, _ := range zm.entities.players.active {
 					go ncActSomeoneMoveWalkCmd(zm.entities.players.active[i], &nc)
@@ -150,7 +150,7 @@ func (zm *zoneMap) playerActivity() {
 				player, ok := zm.entities.players.active[ev.handle]
 
 				err := player.move(zm, rX, rY)
-				if  err != nil {
+				if err != nil {
 					// store player position
 					log.Error(err)
 					zm.entities.players.RUnlock()
@@ -158,10 +158,10 @@ func (zm *zoneMap) playerActivity() {
 				}
 
 				nc := structs.NcActSomeoneMoveRunCmd{
-					Handle:   player.handle,
-					From:     ev.nc.From,
-					To:       ev.nc.To,
-					Speed:    120,
+					Handle: player.handle,
+					From:   ev.nc.From,
+					To:     ev.nc.To,
+					Speed:  120,
 				}
 				for i, _ := range zm.entities.players.active {
 					go ncActSomeoneMoveRunCmd(zm.entities.players.active[i], &nc)
@@ -188,7 +188,7 @@ func (zm *zoneMap) playerActivity() {
 				player, ok := zm.entities.players.active[ev.handle]
 
 				err := player.move(zm, rX, rY)
-				if  err != nil {
+				if err != nil {
 					// store player position
 					log.Error(err)
 					zm.entities.players.RUnlock()
@@ -214,7 +214,7 @@ func (zm *zoneMap) playerActivity() {
 				}
 				zm.entities.players.RLock()
 				nc := structs.NcActSomeoneJumpCmd{
-					Handle:   ev.handle,
+					Handle: ev.handle,
 				}
 				for i, _ := range zm.entities.players.active {
 					go ncActSomeoneJumpCmd(zm.entities.players.active[i], &nc)

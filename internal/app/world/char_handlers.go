@@ -22,21 +22,9 @@ func ncCharLoginReq(ctx context.Context, np *networking.Parameters) {
 	cl = characterLoginEvent{
 		nc:       &nc,
 		np:       np,
-		zoneInfo: make(chan *structs.NcCharLoginAck),
-		err:      make(chan error),
 	}
 
 	worldEvents[characterLogin] <- &cl
-
-	select {
-	case nc := <-cl.zoneInfo:
-		ncCharLoginAck(np, nc)
-		break
-	case err := <-cl.err:
-		log.Error(err)
-		return
-	}
-
 }
 
 // NcCharLoginAck sends zone connection info to the client

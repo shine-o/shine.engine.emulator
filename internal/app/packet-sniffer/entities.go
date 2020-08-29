@@ -12,14 +12,15 @@ import (
 var em EntitiesMovements
 
 type EntitiesMovements struct {
-	Entities  map[uint16][]Movement
+	Entities map[uint16][]Movement
 	sync.Mutex
 }
 
 type Movement struct {
 	Timestamp time.Time
-	X, Y uint32
+	X, Y      uint32
 }
+
 // store info of packets that contain coordinates
 func persistMovement(dp decodedPacket) {
 	switch dp.packet.Base.OperationCode {
@@ -156,9 +157,8 @@ func exportEntitiesMovements() {
 	if err != nil {
 		log.Error(err)
 	}
-	_,  _ = f.Write(b)
+	_, _ = f.Write(b)
 	em.Unlock()
 
 	f.Close()
 }
-
