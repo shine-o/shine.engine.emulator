@@ -81,6 +81,7 @@ func Start(cmd *cobra.Command, args []string) {
 		28684: ncCharOptionGetWindowPosReq,
 		28676: ncCharOptionGetShortcutSizeReq,
 		31750: ncPrisonGetReq,
+		28727: ncCharOptionImproveSetShortcutDataReq,
 	}
 
 	ss := networking.ShineService{

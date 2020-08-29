@@ -9,7 +9,6 @@ import "sync"
 type event interface {
 	// notify the caller about an error while processing event
 	// the process triggering the event should handle next steps in case of error
-	erroneous() <-chan error
 }
 
 type eventIndex uint32
@@ -67,8 +66,11 @@ const (
 	characterSettings
 	characterKeymap
 	characterShortcuts
-)
 
-func (e *emptyEvent) erroneous() <-chan error {
-	return e.err
-}
+	// items that the player adds or removes from the quick access bars
+	updateShortcuts
+	// Features that the player can activate / deactivate at Esc > Options > Game Settings
+	updateGameSettings
+	// keyboard keys that the player can map to game functions
+	updateKeymap
+)

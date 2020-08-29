@@ -250,7 +250,10 @@ type GuildAcademyClient struct {
 //};
 type ShortCutData struct {
 	SlotNo byte
+	// 0 = remove item
+	// 4 = add item
 	CodeNo uint16
+	// action index
 	Value  int32
 }
 
