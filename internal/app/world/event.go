@@ -67,7 +67,10 @@ const (
 	characterKeymap
 	characterShortcuts
 
+	// items that the player adds or removes from the quick access bars
 	updateShortcuts
+	// Features that the player can activate / deactivate at Esc > Options > Game Settings
 	updateGameSettings
+	// keyboard keys that the player can map to game functions
 	updateKeymap
 )
