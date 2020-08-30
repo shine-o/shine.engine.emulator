@@ -26,8 +26,8 @@ type zoneMap struct {
 }
 
 type entities struct {
-	players
-	monsters
+	*players
+	*monsters
 }
 
 type players struct {
@@ -122,11 +122,11 @@ func loadMaps() []zoneMap {
 			walkableX: walkableX,
 			walkableY: walkableY,
 			entities: entities{
-				players: players{
+				players: &players{
 					handleIndex: playerHandleMin,
 					active:      make(map[uint16]*player),
 				},
-				monsters: monsters{
+				monsters: &monsters{
 					handleIndex: playerHandleMin,
 					active:      make(map[uint16]*monster),
 				},

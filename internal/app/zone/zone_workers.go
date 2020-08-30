@@ -31,7 +31,7 @@ func (z *zone) playerSession() {
 				p.send = make(sendEvents)
 
 				for _, index := range events {
-					c := make(chan event, 2)
+					c := make(chan event, 5)
 					p.recv[index] = c
 					p.send[index] = c
 				}

@@ -70,3 +70,11 @@ type NcMapTownPortalAck struct {
 
 //NC_MAP_LOGIN_ACK
 type NcMapLoginAck NcCharMapLoginAck
+
+// struct PROTO_NC_MAP_LOGOUT_CMD
+//{
+//  unsigned __int16 handle;
+//};
+type NcMapLogoutCmd struct {
+	Handle uint16
+}

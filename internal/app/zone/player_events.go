@@ -20,7 +20,6 @@ type playerAppearedEvent struct {
 
 type playerDisappearedEvent struct {
 	handle uint16
-	err    chan error
 }
 
 type playerWalksEvent struct {
