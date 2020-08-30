@@ -11,11 +11,8 @@ type runningMaps map[int]*zoneMap
 
 type zone struct {
 	rm runningMaps
-	// static events, i should add a wrapper type for these
-	//send    sendEvents
-	//recv    recvEvents
 	events
-	dynamic
+	*dynamicEvents
 }
 
 // instead of accessing global variables for data
@@ -94,7 +91,7 @@ func (z *zone) load() {
 
 	zoneEvents = z.send
 
-	z.dynamic = dynamic{
+	z.dynamicEvents = &dynamicEvents{
 		events: make(map[string]events),
 	}
 

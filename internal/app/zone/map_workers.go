@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const playerHeartbeatLimit = 30
+const playerHeartbeatLimit = 10
 
 func (zm *zoneMap) mapHandles() {
 	log.Infof("[map_worker] mapHandles worker for map %v", zm.data.Info.MapName)
@@ -14,25 +14,45 @@ func (zm *zoneMap) mapHandles() {
 		select {
 		case <-zm.recv[playerHandleMaintenance]:
 			go func() {
+
 				zm.entities.players.Lock()
-				for i, p := range zm.entities.players.active {
+
+				for i, _ := range zm.entities.players.active {
+
+					p := zm.entities.players.active[i]
+
 					p.Lock()
-					if time.Since(p.conn.lastHeartBeat).Seconds() < playerHeartbeatLimit {
+
+					lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()
+					if lastHeartBeat < playerHeartbeatLimit {
 						p.Unlock()
 						continue
 					}
-					p.Unlock()
+
 					select {
-					case zm.entities.players.active[i].send[heartbeatStop] <- &emptyEvent{}:
-						time.Sleep(500 * time.Millisecond)
-						p.Lock()
-						delete(zm.entities.players.active, i)
-						p.Unlock()
-						// send event that notifies all players about the logout
+					case p.send[heartbeatStop] <- &emptyEvent{}:
+						break
 					default:
 						log.Error("failed to stop heartbeat")
 						break
 					}
+
+					pde := &playerDisappearedEvent{
+						handle: p.handle,
+					}
+
+					select {
+					case zm.events.send[playerDisappeared] <- pde:
+						break
+					default:
+						log.Error("failed to stop heartbeat")
+						break
+					}
+
+					p.Unlock()
+
+					delete(zm.entities.players.active, i)
+
 				}
 				zm.entities.players.Unlock()
 			}()
@@ -45,19 +65,21 @@ func (zm *zoneMap) mapHandles() {
 					return
 				}
 				zm.entities.players.Lock()
+				defer zm.entities.players.Unlock()
+
 				handle, err := zm.entities.players.newHandle()
 				if err != nil {
-					zm.entities.players.Unlock()
 					ev.err <- err
 					return
 				}
+
 				ev.player.Lock()
+				defer ev.player.Unlock()
+
 				zm.entities.players.active[handle] = ev.player
-				zm.entities.players.Unlock()
 				ev.player.handle = handle
 				ev.session.handle = handle
 				ev.session.mapID = ev.player.mapID
-				ev.player.Unlock()
 				ev.done <- true
 			}()
 		}
@@ -70,24 +92,33 @@ func (zm *zoneMap) playerActivity() {
 		select {
 		case e := <-zm.recv[playerAppeared]:
 			go func() {
+				zm.entities.players.Lock() // TODO: check if its necessary
+				defer zm.entities.players.Unlock()
+
 				ev, ok := e.(*playerAppearedEvent)
 				if !ok {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
 					return
 				}
-				zm.entities.players.Lock() // TODO: check if its necessary
+
 				player, ok := zm.entities.players.active[ev.handle]
 				if !ok {
 					return
 				}
-				zm.entities.players.Unlock()
 				go player.heartbeat()
-				go newPlayer(player, &zm.entities.players)
-				go nearbyPlayers(player, &zm.entities.players)
+				go newPlayer(player, zm.entities.players)
+				go nearbyPlayers(player, zm.entities.players)
 			}()
 
 		case e := <-zm.recv[playerDisappeared]:
-			log.Info(e)
+			go func() {
+				ev, ok := e.(*playerDisappearedEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerDisappearedEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				playerDisappearedLogic(zm, ev)
+			}()
 		case e := <-zm.recv[playerWalks]:
 			// player has a fifo queue for the last 30 movements
 			// for every movement
@@ -147,13 +178,14 @@ func (zm *zoneMap) playerActivity() {
 				rY := (ev.nc.To.X * 8) / 50
 
 				zm.entities.players.RLock()
+				defer zm.entities.players.RUnlock()
+
 				player, ok := zm.entities.players.active[ev.handle]
 
 				err := player.move(zm, rX, rY)
 				if err != nil {
 					// store player position
 					log.Error(err)
-					zm.entities.players.RUnlock()
 					return
 				}
 
@@ -166,7 +198,6 @@ func (zm *zoneMap) playerActivity() {
 				for i, _ := range zm.entities.players.active {
 					go ncActSomeoneMoveRunCmd(zm.entities.players.active[i], &nc)
 				}
-				zm.entities.players.RUnlock()
 
 			}()
 		case e := <-zm.recv[playerStopped]:
@@ -185,13 +216,14 @@ func (zm *zoneMap) playerActivity() {
 				rY := (ev.nc.Location.Y * 8) / 50
 
 				zm.entities.players.RLock()
+				defer zm.entities.players.RUnlock()
+
 				player, ok := zm.entities.players.active[ev.handle]
 
 				err := player.move(zm, rX, rY)
 				if err != nil {
 					// store player position
 					log.Error(err)
-					zm.entities.players.RUnlock()
 					return
 				}
 				nc := structs.NcActSomeoneStopCmd{
@@ -201,10 +233,7 @@ func (zm *zoneMap) playerActivity() {
 				for i, _ := range zm.entities.players.active {
 					go ncActSomeoneStopCmd(zm.entities.players.active[i], &nc)
 				}
-				zm.entities.players.RUnlock()
-
 			}()
-			log.Info(e)
 		case e := <-zm.recv[playerJumped]:
 			go func() {
 				ev, ok := e.(*playerJumpedEvent)
@@ -212,14 +241,16 @@ func (zm *zoneMap) playerActivity() {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerJumpedEvent{}).String(), reflect.TypeOf(ev).String())
 					return
 				}
+
 				zm.entities.players.RLock()
+				defer zm.entities.players.RUnlock()
+
 				nc := structs.NcActSomeoneJumpCmd{
 					Handle: ev.handle,
 				}
 				for i, _ := range zm.entities.players.active {
 					go ncActSomeoneJumpCmd(zm.entities.players.active[i], &nc)
 				}
-				zm.entities.players.RUnlock()
 			}()
 		}
 	}

@@ -4,11 +4,17 @@ import "time"
 
 func (zm *zoneMap) removeInactiveHandles() {
 	log.Infof("[map_ticks] heartbeat ticker/worker for map %v", zm.data.Info.MapName)
-	tick := time.Tick(2 * time.Second)
+	tick := time.Tick(30 * time.Second)
 	for {
 		select {
 		case <-tick:
-			zm.send[playerHandleMaintenance] <- &emptyEvent{}
+			select {
+				case zm.send[playerHandleMaintenance] <- &emptyEvent{}:
+					log.Info("executing playerHandleMaintenance")
+					break
+				default:
+					log.Info("failed executing playerHandleMaintenance")
+			}
 		}
 	}
 }
