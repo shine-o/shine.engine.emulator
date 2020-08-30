@@ -30,7 +30,7 @@ func ncMiscSeedAck(ctx context.Context, np *networking.Parameters) {
 // NC_MISC_GAMETIME_REQ
 func ncMiscGameTimeReq(ctx context.Context, np *networking.Parameters) {
 	ste := serverTimeEvent{
-		np:  np,
+		np: np,
 	}
 
 	worldEvents[serverTime] <- &ste

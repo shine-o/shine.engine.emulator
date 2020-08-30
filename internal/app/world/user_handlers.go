@@ -20,8 +20,8 @@ func ncUserLoginWorldReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	sse = serverSelectEvent{
-		nc:  &nc,
-		np:  np,
+		nc: &nc,
+		np: np,
 	}
 
 	worldEvents[serverSelect] <- &sse
