@@ -15,4 +15,3 @@ func playerDisappearedLogic(zm *zoneMap, ev *playerDisappearedEvent) {
 		})
 	}
 }
-

@@ -359,7 +359,7 @@ func GetBySlot(db *pg.DB, slot byte, userID uint64) (Character, error) {
 	return c, err
 }
 
-func Update(db *pg.DB, c * Character) error  {
+func Update(db *pg.DB, c *Character) error {
 	updateTx, err := db.Begin()
 	if err != nil {
 		updateTx.Rollback()
@@ -368,7 +368,7 @@ func Update(db *pg.DB, c * Character) error  {
 	defer updateTx.Close()
 
 	_, err = updateTx.Model(c.Options).
-	WherePK().Update()
+		WherePK().Update()
 	if err != nil {
 		updateTx.Rollback()
 		return err
@@ -447,7 +447,6 @@ func Delete(db *pg.DB, userID uint64, req *structs.NcAvatarEraseReq) error {
 
 	return deleteTx.Commit()
 }
-
 
 func (c *Character) AllEquippedItems(db *pg.DB) *structs.NcCharClientItemCmd {
 	return c.getItemsByInventory(db, 8)

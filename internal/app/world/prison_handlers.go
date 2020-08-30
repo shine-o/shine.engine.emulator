@@ -9,7 +9,7 @@ import (
 // NcPrisonGetReq client asks for how much time in prison ô_o
 // NC_PRISON_GET_REQ
 func ncPrisonGetReq(ctx context.Context, np *networking.Parameters) {
-	go ncPrisonGetAck(np)
+	ncPrisonGetAck(np)
 }
 
 // NcPrisonGetAck sends how much time the player spends in prison

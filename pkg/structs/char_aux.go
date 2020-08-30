@@ -254,7 +254,7 @@ type ShortCutData struct {
 	// 4 = add item
 	CodeNo uint16
 	// action index
-	Value  int32
+	Value int32
 }
 
 //struct KEY_MAP_DATA
