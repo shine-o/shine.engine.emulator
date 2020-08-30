@@ -29,18 +29,11 @@ func ncMiscSeedAck(ctx context.Context, np *networking.Parameters) {
 // NcMiscGameTimeReq requests the server time
 // NC_MISC_GAMETIME_REQ
 func ncMiscGameTimeReq(ctx context.Context, np *networking.Parameters) {
-	var ste serverTimeEvent
-
-	ste = serverTimeEvent{
+	ste := serverTimeEvent{
 		np:  np,
-		err: make(chan error),
 	}
 
 	worldEvents[serverTime] <- &ste
-	select {
-	case e := <-ste.err:
-		log.Error(e)
-	}
 }
 
 // NcMiscGameTimeAck sends the current server time

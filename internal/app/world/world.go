@@ -94,19 +94,6 @@ var errCC = errors.New("context was canceled")
 
 var errAccountInfo = errors.New("failed to fetch account info")
 
-func worldTime() structs.NcMiscGameTimeAck {
-	t := time.Now()
-	hour := byte(t.Hour())
-	minute := byte(t.Minute())
-	second := byte(t.Second())
-
-	return structs.NcMiscGameTimeAck{
-		Hour:   hour,
-		Minute: minute,
-		Second: second,
-	}
-}
-
 // user wants to log to given service
 // check if service is okay
 // take user name, persist to redis

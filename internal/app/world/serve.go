@@ -9,7 +9,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 )
 
@@ -27,7 +26,9 @@ func init() {
 func Start(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
+
 	defer cancel()
+
 	initRedis()
 
 	w := world{}
@@ -46,29 +47,34 @@ func Start(cmd *cobra.Command, args []string) {
 	})
 
 	defer db.Close()
+
 	w.db = db
 
 	worldName := viper.GetString("world.name")
 	worldPort := viper.GetString("world.port")
+	xorKey := viper.GetString("crypt.xorKey")
 
 	log.Infof(" [%v] starting the service on port: %v", worldName, worldPort)
 
 	s := networking.Settings{}
 
-	if xk, err := hex.DecodeString(viper.GetString("crypt.xorKey")); err != nil {
-		log.Error(err)
-		os.Exit(1)
-	} else {
-		s.XorKey = xk
+	xk, err := hex.DecodeString(xorKey)
+
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	s.XorKey = xk
 
 	s.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
 
-	if path, err := filepath.Abs(viper.GetString("protocol.commands")); err != nil {
-		log.Error(err)
-	} else {
-		s.CommandsFilePath = path
+	path, err := filepath.Abs(viper.GetString("protocol.commands"))
+
+	if  err != nil {
+		log.Fatal(err)
 	}
+
+	s.CommandsFilePath = path
 
 	sh := networking.ShineHandler{
 		2055:  ncMiscSeedAck,
