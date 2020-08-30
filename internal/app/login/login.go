@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 
 	wm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world-master"
@@ -111,6 +110,7 @@ func (l *login) availableWorlds() error {
 			port: int(wd.Conn.Port),
 		}
 	}
+
 	return nil
 }
 
@@ -141,29 +141,4 @@ func checkCredentials(req *structs.NcUserUsLoginReq) error {
 	}
 
 	return ErrBC
-}
-
-// verify the token matches the one stored [on redis] by the world service
-func loginByCode(req *structs.NcUserLoginWithOtpReq) error {
-	b := make([]byte, len(req.Otp.Name))
-	copy(b, req.Otp.Name[:])
-	if _, err := redisClient.Get(string(b)).Result(); err != nil {
-		return err
-	}
-	return nil
-}
-
-func loginSuccessful(l *login, np *networking.Parameters) {
-	nc := structs.NcUserLoginAck{}
-	for _, w := range l.worlds {
-		nc.Worlds = append(nc.Worlds, structs.WorldInfo{
-			WorldNumber: byte(w.id),
-			WorldName: structs.Name4{
-				Name: w.name,
-			},
-			WorldStatus: 6,
-		})
-	}
-	nc.NumOfWorld = byte(len(l.worlds))
-	ncUserLoginAck(np, nc)
 }

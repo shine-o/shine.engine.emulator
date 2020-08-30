@@ -70,7 +70,7 @@ func Start(cmd *cobra.Command, args []string) {
 
 	path, err := filepath.Abs(viper.GetString("protocol.commands"))
 
-	if  err != nil {
+	if err != nil {
 		log.Fatal(err)
 	}
 

@@ -54,10 +54,11 @@ func ncUserClientWrongVersionCheckAck(np *networking.Parameters) {
 // NcUserUsLoginReq handles account login
 // NC_USER_US_LOGIN_REQ
 func ncUserUsLoginReq(ctx context.Context, np *networking.Parameters) {
-	//np.Command.Lock()
-	//defer np.Command.Unlock()
+
 	var cle credentialsLoginEvent
+
 	nc := structs.NcUserUsLoginReq{}
+
 	if err := structs.Unpack(np.Command.Base.Data, &nc); err != nil {
 		ncUserLoginFailAck(np, 69)
 		return

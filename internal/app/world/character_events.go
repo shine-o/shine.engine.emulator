@@ -12,8 +12,8 @@ type createCharacterEvent struct {
 }
 
 type deleteCharacterEvent struct {
-	nc   *structs.NcAvatarEraseReq
-	np   *networking.Parameters
+	nc *structs.NcAvatarEraseReq
+	np *networking.Parameters
 }
 
 type characterLoginEvent struct {
