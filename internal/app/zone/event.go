@@ -27,31 +27,27 @@ type events struct {
 // this will allow to launch routines which can be revisited from another event,
 // e.g playerLogoutStart event starts a routine that will automatically close the connection in 10 seconds
 // but the client can send a cancel signal, therefore we need to notify the routine to abort the countdown
-type dynamic struct {
+type dynamicEvents struct {
 	sync.RWMutex
 	events map[string]events
 }
 
-func (d *dynamic) add(sid string, i eventIndex) chan event {
-	d.Lock()
-	_, ok := d.events[sid]
+func (de *dynamicEvents) add(sid string, i eventIndex) chan event {
+	_, ok := de.events[sid]
 	if !ok {
-		d.events[sid] = events{
+		de.events[sid] = events{
 			send: make(sendEvents),
 			recv: make(recvEvents),
 		}
 	}
 	c := make(chan event)
-	d.events[sid].send[i] = c
-	d.events[sid].recv[i] = c
-	d.Unlock()
+	de.events[sid].send[i] = c
+	de.events[sid].recv[i] = c
 	return c
 }
 
 // to use when no particular data is needed
-type emptyEvent struct {
-	err chan error
-}
+type emptyEvent struct {}
 
 // todo: separate with different iotas, for now its simpler to have it like this, but in the future we'll have hundreds of events
 const (
@@ -78,15 +74,9 @@ const (
 	// player events
 	heartbeatUpdate
 	heartbeatStop
-)
 
-// dynamically registered events
-// events that are defined at run time
-const (
-	dLogoutCancel eventIndex = iota << 15
+	// dynamically registered events
+	// events that are defined at run time
+	dLogoutCancel
 	dLogoutConclude
 )
-
-func (e *emptyEvent) erroneous() <-chan error {
-	return e.err
-}

@@ -456,15 +456,9 @@ func ncCharLogoutCancelCmd(ctx context.Context, np *networking.Parameters) {
 
 	plce = playerLogoutCancelEvent{
 		sessionID: session.id,
-		err:       make(chan error),
 	}
 
 	zoneEvents[playerLogoutCancel] <- &plce
-
-	select {
-	case e := <-plce.err:
-		log.Error(e)
-	}
 }
 
 //NC_CHAR_LOGOUTREADY_CMD
@@ -484,34 +478,8 @@ func ncCharLogoutReadyCmd(ctx context.Context, np *networking.Parameters) {
 		sessionID: session.id,
 		mapID:     session.mapID,
 		handle:    session.handle,
-		err:       make(chan error),
 	}
 
 	zoneEvents[playerLogoutStart] <- &plse
 
-	select {
-	case e := <-plse.err:
-		log.Error(e)
-	}
-	//pqe = queryPlayerEvent{
-	//	handle:  session.handle,
-	//	p:  make(chan * player),
-	//	err: make(chan error),
-	//}
-	//
-	//var p * player
-	//select {
-	//case p = <-pqe.p:
-	//	break
-	//case e := <-pqe.err:
-	//	log.Error(e)
-	//	return
-	//}
-	//
-	//p.send[playerLogoutStart] <- &emptyEvent{}
-	//
-
-	// player attempts logout event
-
-	//np.NetVars.CloseConnection <- true
 }

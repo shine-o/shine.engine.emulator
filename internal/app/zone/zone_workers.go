@@ -49,53 +49,28 @@ func (z *zone) playerSession() {
 				ev, ok := e.(*playerLogoutStartEvent)
 				if !ok {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerLogoutStartEvent{}).String(), reflect.TypeOf(ev).String())
-				}
-				m, ok := z.rm[ev.mapID]
-				if !ok {
-					ev.err <- fmt.Errorf("map with id %v not available", ev.mapID)
 					return
 				}
-				m.entities.players.Lock()
-				p, ok := m.entities.players.active[ev.handle]
-				m.entities.players.Unlock()
-				if !ok {
-					ev.err <- fmt.Errorf("map with id %v not available", ev.mapID)
-				}
-				cancel := z.dynamic.add(ev.sessionID, dLogoutCancel)
-				conclude := z.dynamic.add(ev.sessionID, dLogoutConclude)
-				go playerLogout(cancel, conclude, m, p)
+				playerLogoutStartLogic(z, ev)
 			}()
 		case e := <-z.recv[playerLogoutCancel]:
 			go func() {
 				ev, ok := e.(*playerLogoutCancelEvent)
 				if !ok {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerLogoutCancelEvent{}).String(), reflect.TypeOf(ev).String())
-				}
-				z.dynamic.Lock()
-				defer z.dynamic.Unlock()
-				select {
-				case z.dynamic.events[ev.sessionID].send[dLogoutCancel] <- &emptyEvent{}:
-					return
-				default:
-					log.Error("failed to send event")
 					return
 				}
+
+				playerLogoutCancelLogic(z, ev)
 			}()
 		case e := <-z.recv[playerLogoutConclude]:
 			go func() {
 				ev, ok := e.(*playerLogoutConcludeEvent)
 				if !ok {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerLogoutConcludeEvent{}).String(), reflect.TypeOf(ev).String())
-				}
-				z.dynamic.Lock()
-				defer z.dynamic.Unlock()
-				select {
-				case z.dynamic.events[ev.sessionID].send[dLogoutConclude] <- &emptyEvent{}:
-					return
-				default:
-					log.Error("failed to send event")
 					return
 				}
+				playerLogoutConcludeLogic(z, ev)
 			}()
 		}
 	}

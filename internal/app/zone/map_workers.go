@@ -117,18 +117,7 @@ func (zm *zoneMap) playerActivity() {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerDisappearedEvent{}).String(), reflect.TypeOf(ev).String())
 					return
 				}
-
-				zm.entities.players.Lock() // TODO: check if its necessary
-				defer zm.entities.players.Unlock()
-
-				for _, p := range zm.entities.players.active {
-					if p.handle == ev.handle {
-						continue
-					}
-					go ncMapLogoutCmd(p, &structs.NcMapLogoutCmd{
-						Handle: ev.handle,
-					})
-				}
+				playerDisappearedLogic(zm, ev)
 			}()
 		case e := <-zm.recv[playerWalks]:
 			// player has a fifo queue for the last 30 movements
