@@ -8,3 +8,4 @@ build/package/world-master/world-master*
 build/package/zone/zone*
 build/package/zone-master/zone-master*
 deployments/databases
+/deployments/.env
