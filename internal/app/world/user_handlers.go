@@ -20,18 +20,11 @@ func ncUserLoginWorldReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	sse = serverSelectEvent{
-		nc:  &nc,
-		np:  np,
-		err: make(chan error),
+		nc: &nc,
+		np: np,
 	}
 
 	worldEvents[serverSelect] <- &sse
-
-	select {
-	case err := <-sse.err:
-		log.Error(err)
-		return
-	}
 }
 
 // NcUserLoginWorldAck acknowledges the player's attempt to login, returning player character information
@@ -52,20 +45,10 @@ func ncUserLoginWorldAck(np *networking.Parameters, nc *structs.NcUserLoginWorld
 // NcUserWillWorldSelectReq handles a petition to return to server select
 // NC_USER_WILL_WORLD_SELECT_REQ
 func ncUserWillWorldSelectReq(ctx context.Context, np *networking.Parameters) {
-	var sste serverSelectTokenEvent
-
-	sste = serverSelectTokenEvent{
-		np:  np,
-		err: make(chan error),
+	sste := serverSelectTokenEvent{
+		np: np,
 	}
-
 	worldEvents[serverSelectToken] <- &sste
-
-	select {
-	case err := <-sste.err:
-		log.Error(err)
-		return
-	}
 }
 
 // NcUserWillWorldSelectAck acknowledges a petition to return to server select

@@ -9,11 +9,8 @@ import (
 // NC_MAP_LOGIN_REQ
 func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	var (
-		nc  structs.NcMapLoginReq
-		pse playerSHNEvent
-		pde playerDataEvent
-		qme queryMapEvent
-		phe playerHandleEvent
+		nc   structs.NcMapLoginReq
+		pmle playerMapLoginEvent
 	)
 
 	err := structs.Unpack(np.Command.Base.Data, &nc)
@@ -22,86 +19,12 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	pse = playerSHNEvent{
-		inboundNC: nc,
-		ok:        make(chan bool),
-		err:       make(chan error),
+	pmle = playerMapLoginEvent{
+		nc: nc,
+		np: np,
 	}
 
-	zoneEvents[playerSHN] <- &pse
-
-	pde = playerDataEvent{
-		player:     make(chan *player),
-		net:        np,
-		playerName: nc.CharData.CharID.Name,
-		err:        make(chan error),
-	}
-
-	zoneEvents[playerData] <- &pde
-
-	select {
-	case <-pse.ok:
-		break
-	case err := <-pse.err:
-		log.Error(err)
-		// fail ack with failure code
-		// drop connection
-		return
-	}
-
-	var p *player
-	select {
-	case p = <-pde.player:
-		break
-	case err := <-pde.err:
-		log.Error(err)
-		// fail ack with failure code
-		// drop connection
-		return
-	}
-
-	qme = queryMapEvent{
-		id:  p.location.mapID,
-		zm:  make(chan *zoneMap),
-		err: make(chan error),
-	}
-
-	zoneEvents[queryMap] <- &qme
-
-	var zm *zoneMap
-	select {
-	case zm = <-qme.zm:
-		break
-	case err := <-qme.err:
-		log.Error(err)
-		return
-	}
-
-	session, ok := np.Session.(*session)
-
-	if !ok {
-		log.Errorf("no session available for player %v", p.view.name)
-		return
-	}
-
-	phe = playerHandleEvent{
-		player:  p,
-		session: session,
-		done:    make(chan bool),
-		err:     make(chan error),
-	}
-
-	zm.send[playerHandle] <- &phe
-
-	select {
-	case <-phe.done:
-		ncCharClientBaseCmd(p)
-		ncCharClientShapeCmd(p)
-		// weird bug sometimes the client stucks in character select
-		ncMapLoginAck(p)
-	case err := <-phe.err:
-		log.Error(err)
-	}
+	zoneEvents[playerMapLogin] <- &pmle
 }
 
 //NC_CHAR_CLIENT_BASE_CMD
@@ -481,5 +404,4 @@ func ncCharLogoutReadyCmd(ctx context.Context, np *networking.Parameters) {
 	}
 
 	zoneEvents[playerLogoutStart] <- &plse
-
 }
