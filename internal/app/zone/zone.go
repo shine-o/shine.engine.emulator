@@ -74,6 +74,7 @@ func (z *zone) load() {
 	}
 
 	zEvents := []eventIndex{
+		playerMapLogin,
 		playerSHN,
 		playerData,
 		queryMap,
