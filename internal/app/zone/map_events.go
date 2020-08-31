@@ -6,8 +6,8 @@ import (
 )
 
 type playerMapLoginEvent struct {
-	nc  structs.NcMapLoginReq
-	np * networking.Parameters
+	nc structs.NcMapLoginReq
+	np *networking.Parameters
 }
 
 type playerHandleEvent struct {

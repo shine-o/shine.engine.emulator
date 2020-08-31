@@ -21,4 +21,3 @@ func playerSHNLogic(e event) {
 	// u.u'
 	ev.ok <- true
 }
-

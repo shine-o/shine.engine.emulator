@@ -9,7 +9,7 @@ import (
 // NC_MAP_LOGIN_REQ
 func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	var (
-		nc  structs.NcMapLoginReq
+		nc   structs.NcMapLoginReq
 		pmle playerMapLoginEvent
 	)
 
