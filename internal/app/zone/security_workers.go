@@ -7,12 +7,18 @@ func (z *zone) security() {
 	for {
 		select {
 		case e := <-z.recv[playerSHN]:
-			ev, ok := e.(*playerSHNEvent)
-			if !ok {
-				log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerSHNEvent{}).String(), reflect.TypeOf(ev).String())
-				break
-			}
-			ev.ok <- true
+			go playerSHNLogic(e)
 		}
 	}
 }
+
+func playerSHNLogic(e event) {
+	ev, ok := e.(*playerSHNEvent)
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerSHNEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+	// u.u'
+	ev.ok <- true
+}
+
