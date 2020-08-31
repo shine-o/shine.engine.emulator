@@ -1,7 +1,9 @@
 package world
 
 import (
+	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
+	"time"
 )
 
 func (w *world) session() {
@@ -22,27 +24,72 @@ func (w *world) session() {
 				NcMiscGameTimeAck(ev.np, &nc)
 			}()
 		case e := <-w.recv[serverSelect]:
-			go func() {
-				ev, ok := e.(*serverSelectEvent)
-
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&serverSelectEvent{}).String(), reflect.TypeOf(ev).String())
-					return
-				}
-
-				serverSelectLogic(ev, w)
-			}()
+			go serverSelectLogic(e, w)
 		case e := <-w.recv[serverSelectToken]:
-			go func() {
-				ev, ok := e.(*serverSelectTokenEvent)
-
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&serverSelectTokenEvent{}).String(), reflect.TypeOf(ev).String())
-					return
-				}
-
-				serverSelectTokenLogic(ev)
-			}()
+			go serverSelectTokenLogic(e)
 		}
 	}
+}
+
+func worldTime() structs.NcMiscGameTimeAck {
+	t := time.Now()
+	hour := byte(t.Hour())
+	minute := byte(t.Minute())
+	second := byte(t.Second())
+
+	return structs.NcMiscGameTimeAck{
+		Hour:   hour,
+		Minute: minute,
+		Second: second,
+	}
+}
+
+func serverSelectLogic(e event, w *world) {
+	ev, ok := e.(*serverSelectEvent)
+
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&serverSelectEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
+	s, ok := ev.np.Session.(*session)
+
+	if !ok {
+		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
+		return
+	}
+
+	err := verifyUser(s, ev.nc)
+
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	nc, err := userCharacters(w.db, s)
+
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	ncUserLoginWorldAck(ev.np, &nc)
+}
+
+func serverSelectTokenLogic(e event) {
+	ev, ok := e.(*serverSelectTokenEvent)
+
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&serverSelectTokenEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
+	nc, err := returnToServerSelect()
+
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	ncUserWillWorldSelectAck(ev.np, &nc)
 }
