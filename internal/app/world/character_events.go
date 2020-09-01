@@ -7,28 +7,24 @@ import (
 )
 
 type createCharacterEvent struct {
-	nc   *structs.NcAvatarCreateReq
-	np   *networking.Parameters
+	nc *structs.NcAvatarCreateReq
+	np *networking.Parameters
 }
 
 type deleteCharacterEvent struct {
-	nc   *structs.NcAvatarEraseReq
-	np   *networking.Parameters
-	done chan bool
-	err  chan error
+	nc *structs.NcAvatarEraseReq
+	np *networking.Parameters
 }
 
 type characterLoginEvent struct {
-	nc       *structs.NcCharLoginReq
-	np       *networking.Parameters
+	nc *structs.NcCharLoginReq
+	np *networking.Parameters
 }
 
 type characterSettingsEvent struct {
 	char *character.Character
 	np   *networking.Parameters
-	err  chan error
 }
-
 
 type updateShortcutsEvent struct {
 	np          *networking.Parameters

@@ -47,13 +47,14 @@ func (de *dynamicEvents) add(sid string, i eventIndex) chan event {
 }
 
 // to use when no particular data is needed
-type emptyEvent struct {}
+type emptyEvent struct{}
 
 // todo: separate with different iotas, for now its simpler to have it like this, but in the future we'll have hundreds of events
 const (
 	// zone events
-	playerData eventIndex = iota
+	playerMapLogin eventIndex = iota
 	playerSHN
+	playerData
 	playerLogoutStart
 	playerLogoutCancel
 	playerLogoutConclude
