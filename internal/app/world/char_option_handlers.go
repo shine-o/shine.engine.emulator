@@ -118,8 +118,8 @@ func ncCharOptionImproveSetShortcutDataReq(ctx context.Context, np *networking.P
 	}
 
 	use = updateShortcutsEvent{
-		np: np,
-		nc : nc,
+		np:          np,
+		nc:          nc,
 		characterID: session.characterID,
 	}
 
@@ -132,7 +132,7 @@ func ncCharOptionImproveSetShortcutDataReq(ctx context.Context, np *networking.P
 
 // NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_ACK
 // 28728
-func ncCharOptionImproveSetShortcutDataAck(np *networking.Parameters, nc * structs.NcCharOptionImproveShortcutDataAck) {
+func ncCharOptionImproveSetShortcutDataAck(np *networking.Parameters, nc *structs.NcCharOptionImproveShortcutDataAck) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 28728,

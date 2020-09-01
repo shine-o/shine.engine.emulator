@@ -53,7 +53,7 @@ func ncMiscHeartBeatAck(ctx context.Context, np *networking.Parameters) {
 
 	var (
 		mapResult = make(chan *zoneMap)
-		zm        * zoneMap
+		zm        *zoneMap
 	)
 
 	mqe = queryMapEvent{

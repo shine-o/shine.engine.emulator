@@ -20,8 +20,8 @@ func ncCharLoginReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	cl = characterLoginEvent{
-		nc:       &nc,
-		np:       np,
+		nc: &nc,
+		np: np,
 	}
 
 	worldEvents[characterLogin] <- &cl

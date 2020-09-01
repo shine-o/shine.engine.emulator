@@ -10,10 +10,6 @@ type clientVersionEvent struct {
 	np *networking.Parameters
 }
 
-//	credentialsLogin
-//	serverList
-//	serverSelect
-//	tokenLogin
 type credentialsLoginEvent struct {
 	nc *structs.NcUserUsLoginReq
 	np *networking.Parameters

@@ -7,7 +7,7 @@ func (p *player) heartbeat() {
 	tick := time.NewTicker(5 * time.Second)
 	for {
 		select {
-		case <- p.recv[heartbeatUpdate]:
+		case <-p.recv[heartbeatUpdate]:
 			p.Lock()
 			p.conn.lastHeartBeat = time.Now()
 			log.Infof("updating heartbeat for player %v", p.view.name)
@@ -28,8 +28,8 @@ func (p *player) heartbeat() {
 				return
 			}
 			ncMiscHeartBeatReq(p)
-		//default:
-		//	continue
+			//default:
+			//	continue
 		}
 	}
 }

@@ -22,8 +22,8 @@ func ncAvatarCreateReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	cce = createCharacterEvent{
-		nc:   &nc,
-		np:   np,
+		nc: &nc,
+		np: np,
 	}
 
 	worldEvents[createCharacter] <- &cce
@@ -70,14 +70,11 @@ func ncAvatarEraseReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	dce = deleteCharacterEvent{
-		nc:   &nc,
-		np:   np,
-		done: make(chan bool),
-		err:  make(chan error),
+		nc: &nc,
+		np: np,
 	}
 
 	worldEvents[deleteCharacter] <- &dce
-
 
 }
 
