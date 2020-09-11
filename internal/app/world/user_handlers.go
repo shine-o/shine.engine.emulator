@@ -76,3 +76,21 @@ func ncUserNormalLogoutCmd(ctx context.Context, np *networking.Parameters) {
 //
 //	}
 //}
+
+// NC_USER_AVATAR_LIST_REQ
+// 3103
+func ncUserAvatarListReq(ctx context.Context, np *networking.Parameters) {
+	session, ok := np.Session.(*session)
+
+	if !ok {
+		log.Error("no session available")
+		return
+	}
+
+	cs := characterSelectEvent{
+		np:          np,
+		session: session,
+	}
+
+	worldEvents[characterSelect] <- &cs
+}

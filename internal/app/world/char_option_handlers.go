@@ -105,6 +105,7 @@ func ncCharOptionGetWindowPosAck(np *networking.Parameters) {
 func ncCharOptionImproveSetShortcutDataReq(ctx context.Context, np *networking.Parameters) {
 	var nc structs.NcCharOptionSetShortcutDataReq
 	var use updateShortcutsEvent
+
 	session, ok := np.Session.(*session)
 
 	if !ok {
