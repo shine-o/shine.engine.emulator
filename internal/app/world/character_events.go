@@ -31,3 +31,8 @@ type updateShortcutsEvent struct {
 	nc          structs.NcCharOptionSetShortcutDataReq
 	characterID uint64
 }
+
+type characterSelectEvent struct {
+	np          *networking.Parameters
+	session *session
+}
