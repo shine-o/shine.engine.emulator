@@ -73,4 +73,7 @@ const (
 	updateGameSettings
 	// keyboard keys that the player can map to game functions
 	updateKeymap
+
+	// when the player wants to return to the character select screen
+	characterSelect
 )
