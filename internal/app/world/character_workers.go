@@ -34,8 +34,26 @@ func (w *world) characterSession() {
 			log.Info(e)
 		case e := <-w.recv[updateKeymap]:
 			log.Info(e)
+		case e := <-w.recv[characterSelect]:
+			go characterSelectLogic(e, w)
 		}
 	}
+}
+
+func characterSelectLogic(e event, w *world) {
+	ev, ok := e.(*characterSelectEvent)
+
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&characterSelectEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
+	nc, err := userCharacters(w.db, ev.session)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	ncUserLoginWorldAck(ev.np, &nc)
 }
 
 func characterLoginLogic(e event, w *world) {

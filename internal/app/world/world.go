@@ -37,7 +37,7 @@ func (w *world) load() {
 		serverSelect, serverSelectToken, serverTime,
 		createCharacter, deleteCharacter,
 		characterLogin, characterSettings,
-		updateShortcuts, updateGameSettings, updateKeymap,
+		updateShortcuts, updateGameSettings, updateKeymap,characterSelect,
 	}
 
 	for _, index := range events {
