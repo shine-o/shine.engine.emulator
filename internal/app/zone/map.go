@@ -20,8 +20,6 @@ type zoneMap struct {
 	walkableX *roaring.Bitmap
 	walkableY *roaring.Bitmap
 	entities  entities
-	//send      sendEvents
-	//recv      recvEvents
 	events
 }
 

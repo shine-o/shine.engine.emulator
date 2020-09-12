@@ -142,7 +142,7 @@ func hearbeatUpdateLogic(e event) {
 
 	p.Lock()
 	p.conn.lastHeartBeat = time.Now()
-	log.Infof("updating heartbeatTicker for player %v", p.view.name)
+	log.Infof("updating heartbeat for player %v", p.view.name)
 	p.Unlock()
 }
 

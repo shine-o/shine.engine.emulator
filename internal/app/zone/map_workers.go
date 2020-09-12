@@ -86,7 +86,7 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 		case zm.events.send[playerDisappeared] <- pde:
 			break
 		default:
-			log.Error("failed to stop heartbeatTicker")
+			log.Error("failed to stop heartbeat")
 			break
 		}
 
@@ -142,11 +142,55 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	go player.heartbeatTicker()
-	go player.persistPositionTicker()
+	go player.heartbeat()
+	go player.persistPosition()
 	go newPlayer(player, zm.entities.players)
 	go nearbyPlayers(player, zm.entities.players)
 }
+
+// notify every player in proximity about player that logged in
+func newPlayer(p *player, nearbyPlayers *players) {
+	nearbyPlayers.Lock()
+	for i, _ := range nearbyPlayers.active {
+		np := nearbyPlayers.active[i]
+
+		if p.handle == np.handle {
+			continue
+		}
+
+		np.Lock()
+		if !inRange(&np.baseEntity, &p.baseEntity) {
+			continue
+		}
+		np.Unlock()
+
+		nc := p.ncBriefInfoLoginCharacterCmd()
+
+		ncBriefInfoLoginCharacterCmd(np, &nc)
+	}
+	nearbyPlayers.Unlock()
+}
+
+// send info to player about nearby players
+func nearbyPlayers(p *player, nearbyPlayers *players) {
+	nearbyPlayers.Lock()
+	var characters []structs.NcBriefInfoLoginCharacterCmd
+	for _, np := range nearbyPlayers.active {
+		if np.handle == p.handle {
+			continue
+		}
+		p.Lock()
+		nc := np.ncBriefInfoLoginCharacterCmd()
+		p.Unlock()
+		characters = append(characters, nc)
+	}
+	ncBriefInfoCharacterCmd(p, &structs.NcBriefInfoCharacterCmd{
+		Number:     byte(len(characters)),
+		Characters: characters,
+	})
+	nearbyPlayers.Unlock()
+}
+
 
 func playerDisappearedLogic(e event, zm *zoneMap) {
 	ev, ok := e.(*playerDisappearedEvent)
