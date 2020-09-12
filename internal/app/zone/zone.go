@@ -104,8 +104,8 @@ func (z *zone) load() {
 	err := registerZone(registerMaps)
 	if err != nil {
 		// close all event channels
-		for i, _ := range zoneMaps {
-			for j, _ := range zoneMaps[i].send {
+		for i := range zoneMaps {
+			for j := range zoneMaps[i].send {
 				close(zoneMaps[i].send[j])
 			}
 		}

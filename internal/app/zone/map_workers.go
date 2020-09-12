@@ -66,7 +66,7 @@ func (zm *zoneMap) monsterQueries() {
 
 func playerHandleMaintenanceLogic(zm *zoneMap) {
 	zm.entities.players.Lock()
-	for i, _ := range zm.entities.players.active {
+	for i := range zm.entities.players.active {
 
 		p := zm.entities.players.active[i]
 
@@ -209,7 +209,7 @@ func playerWalksLogic(e event, zm *zoneMap) {
 		Speed:  60,
 	}
 
-	for i, _ := range zm.entities.players.active {
+	for i := range zm.entities.players.active {
 		go ncActSomeoneMoveWalkCmd(zm.entities.players.active[i], &nc)
 	}
 }
@@ -256,7 +256,7 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		To:     ev.nc.To,
 		Speed:  120,
 	}
-	for i, _ := range zm.entities.players.active {
+	for i := range zm.entities.players.active {
 		go ncActSomeoneMoveRunCmd(zm.entities.players.active[i], &nc)
 	}
 }
@@ -281,6 +281,11 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 
 	player, ok := zm.entities.players.active[ev.handle]
 
+	if !ok {
+		log.Error("player not found during playerStoppedLogic")
+		return
+	}
+
 	player.Lock()
 	defer player.Unlock()
 
@@ -300,7 +305,7 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 		Location: ev.nc.Location,
 	}
 
-	for i, _ := range zm.entities.players.active {
+	for i := range zm.entities.players.active {
 		go ncActSomeoneStopCmd(zm.entities.players.active[i], &nc)
 	}
 }
@@ -318,7 +323,7 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 	nc := structs.NcActSomeoneJumpCmd{
 		Handle: ev.handle,
 	}
-	for i, _ := range zm.entities.players.active {
+	for i := range zm.entities.players.active {
 		go ncActSomeoneJumpCmd(zm.entities.players.active[i], &nc)
 	}
 }

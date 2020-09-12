@@ -33,6 +33,8 @@ type dynamicEvents struct {
 }
 
 func (de *dynamicEvents) add(sid string, i eventIndex) chan event {
+	de.Lock()
+	defer de.Unlock()
 	_, ok := de.events[sid]
 	if !ok {
 		de.events[sid] = events{
