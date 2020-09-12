@@ -10,7 +10,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
-	"os"
 	"path/filepath"
 )
 
@@ -24,6 +23,7 @@ func init() {
 	log = logger.Init("zone master logger", true, false, ioutil.Discard)
 }
 
+// Start initializes the TCP server and all the needed services and configuration for the zone
 func Start(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 
@@ -34,6 +34,7 @@ func Start(cmd *cobra.Command, args []string) {
 	log.Infof("starting the service on port: %v", zonePort)
 
 	z := zone{}
+
 	z.load()
 
 	db = database.Connection(ctx, database.ConnectionParams{
@@ -45,20 +46,29 @@ func Start(cmd *cobra.Command, args []string) {
 		Schema:   viper.GetString("world_database.schema"),
 	})
 
+	defer db.Close()
+
+	z.worldDB = db
+
 	s := networking.Settings{}
-	if xk, err := hex.DecodeString(viper.GetString("crypt.xorKey")); err != nil {
-		log.Error(err)
-		os.Exit(1)
-	} else {
-		s.XorKey = xk
+
+	xk, err := hex.DecodeString(viper.GetString("crypt.xorKey"))
+
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	s.XorKey = xk
+
 	s.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
 
-	if path, err := filepath.Abs(viper.GetString("protocol.commands")); err != nil {
-		log.Error(err)
-	} else {
-		s.CommandsFilePath = path
+	path, err := filepath.Abs(viper.GetString("protocol.commands"))
+
+	if err != nil {
+		log.Fatal(err)
 	}
+
+	s.CommandsFilePath = path
 
 	ss := networking.ShineService{
 		Settings: s,

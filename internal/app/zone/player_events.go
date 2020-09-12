@@ -27,10 +27,6 @@ type playerWalksEvent struct {
 	nc     *structs.NcActMoveRunCmd
 }
 
-// 	playerRuns
-// 	playerWalks
-//	playerStopped
-//	playerJumped
 type playerRunsEvent struct {
 	handle uint16
 	nc     *structs.NcActMoveRunCmd

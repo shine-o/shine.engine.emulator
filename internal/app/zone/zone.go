@@ -3,6 +3,7 @@ package zone
 import (
 	"context"
 	"errors"
+	"github.com/go-pg/pg/v9"
 	zm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	"github.com/spf13/viper"
 )
@@ -13,6 +14,7 @@ type zone struct {
 	rm runningMaps
 	events
 	*dynamicEvents
+	worldDB *pg.DB
 }
 
 // instead of accessing global variables for data
@@ -52,6 +54,7 @@ func registerZone(mapIDs []int32) error {
 func (z *zone) load() {
 	var registerMaps []int32
 	rm := make(runningMaps)
+
 	zoneMaps := loadMaps()
 	for i, m := range zoneMaps {
 		registerMaps = append(registerMaps, int32(m.data.ID))
@@ -77,8 +80,10 @@ func (z *zone) load() {
 		playerMapLogin,
 		playerSHN,
 		playerData,
+		heartbeatUpdate,
 		queryMap,
 		playerLogoutStart, playerLogoutCancel, playerLogoutConclude,
+		persistPlayerPosition,
 	}
 
 	z.recv = make(recvEvents)
@@ -99,8 +104,8 @@ func (z *zone) load() {
 	err := registerZone(registerMaps)
 	if err != nil {
 		// close all event channels
-		for i, _ := range zoneMaps {
-			for j, _ := range zoneMaps[i].send {
+		for i := range zoneMaps {
+			for j := range zoneMaps[i].send {
 				close(zoneMaps[i].send[j])
 			}
 		}
@@ -118,4 +123,5 @@ func (z *zone) run() {
 	go z.mapQueries()
 	go z.security()
 	go z.playerSession()
+	go z.playerGameData()
 }

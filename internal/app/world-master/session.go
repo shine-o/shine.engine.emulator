@@ -1,4 +1,4 @@
-package world_master
+package worldmaster
 
 import (
 	"encoding/json"

@@ -88,7 +88,7 @@ func ncUserAvatarListReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	cs := characterSelectEvent{
-		np:          np,
+		np:      np,
 		session: session,
 	}
 

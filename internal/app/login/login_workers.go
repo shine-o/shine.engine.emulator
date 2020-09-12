@@ -65,7 +65,7 @@ func worldManagerStatusLogic(e event) {
 	ncUserWorldStatusAck(ev.np)
 }
 
-func credentialsLoginLogic(e event,  l *login) {
+func credentialsLoginLogic(e event, l *login) {
 	ev, ok := e.(*credentialsLoginEvent)
 
 	if !ok {

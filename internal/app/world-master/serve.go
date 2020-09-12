@@ -1,4 +1,4 @@
-package world_master
+package worldmaster
 
 import (
 	"fmt"
@@ -19,6 +19,7 @@ func init() {
 	log = logger.Init("zone master logger", true, false, ioutil.Discard)
 }
 
+// Start initializes an intermediary service for the diverse world services to connect to and acknowledge their status
 func Start(cmd *cobra.Command, args []string) {
 	initRedis()
 	port := viper.GetString("serve.port")

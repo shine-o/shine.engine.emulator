@@ -33,6 +33,6 @@ type updateShortcutsEvent struct {
 }
 
 type characterSelectEvent struct {
-	np          *networking.Parameters
+	np      *networking.Parameters
 	session *session
 }

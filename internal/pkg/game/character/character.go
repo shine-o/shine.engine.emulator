@@ -341,11 +341,21 @@ func Get(db *pg.DB, characterID uint64) (Character, error) {
 func GetByName(db *pg.DB, name string) (Character, error) {
 	var c Character
 	err := db.Model(&c).
-		Relation("Appearance").
-		Relation("Attributes").
-		Relation("Location").
+		//Relation("Appearance").
+		//Relation("Attributes").
+		//Relation("Options").
+		//Relation("Location").
 		Where("name = ?", name).
 		Select() // query the world for a character with name
+
+	err = db.Model(&c).
+		WherePK().
+		Relation("Appearance").
+		Relation("Attributes").
+		Relation("Options").
+		Relation("Location").
+		Select() // query the world for a character with name
+
 	return c, err
 }
 
@@ -367,12 +377,26 @@ func Update(db *pg.DB, c *Character) error {
 	}
 	defer updateTx.Close()
 
+	_, err = updateTx.Model(c).
+		WherePK().Returning("*").Update()
+
+	_, err = updateTx.Model(c.Appearance).
+		WherePK().Returning("*").Update()
+
+	_, err = updateTx.Model(c.Attributes).
+		WherePK().Returning("*").Update()
+
+	_, err = updateTx.Model(c.Location).
+		WherePK().Returning("*").Update()
+
 	_, err = updateTx.Model(c.Options).
-		WherePK().Update()
+		WherePK().Returning("*").Update()
+
 	if err != nil {
 		updateTx.Rollback()
 		return err
 	}
+
 	return updateTx.Commit()
 }
 

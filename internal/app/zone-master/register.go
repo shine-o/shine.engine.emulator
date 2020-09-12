@@ -1,8 +1,8 @@
-package zone_master
+package zonemaster
 
-type ZoneInfo struct {
+type zoneInfo struct {
 	IP   string
 	Port int32
 }
 
-type registeredMaps map[int32]ZoneInfo
+type registeredMaps map[int32]zoneInfo

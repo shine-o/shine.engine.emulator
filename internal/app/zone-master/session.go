@@ -1,4 +1,4 @@
-package zone_master
+package zonemaster
 
 import (
 	"encoding/json"
