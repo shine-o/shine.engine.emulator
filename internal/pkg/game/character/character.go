@@ -389,6 +389,9 @@ func Update(db *pg.DB, c *Character) error {
 	_, err = updateTx.Model(c.Location).
 		WherePK().Returning("*").Update()
 
+	_, err = updateTx.Model(c.Options).
+		WherePK().Returning("*").Update()
+
 	if err != nil {
 		updateTx.Rollback()
 		return err

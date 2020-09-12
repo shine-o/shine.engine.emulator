@@ -23,6 +23,7 @@ func init() {
 	log = logger.Init("zone master logger", true, false, ioutil.Discard)
 }
 
+// Start initializes the TCP server and all the needed services and configuration for the zone
 func Start(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 
