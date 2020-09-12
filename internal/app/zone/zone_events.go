@@ -1,5 +1,9 @@
 package zone
 
+type heartbeatUpdateEvent struct {
+	*session
+}
+
 type playerLogoutStartEvent struct {
 	sessionID string
 	mapID     int
@@ -16,3 +20,8 @@ type playerLogoutConcludeEvent struct {
 	sessionID string
 	err       chan error
 }
+
+type persistPlayerPositionEvent struct {
+	p *player
+}
+

@@ -2,34 +2,46 @@ package zone
 
 import "time"
 
-func (p *player) heartbeat() {
-	log.Infof("[player_ticks] heartbeat ticker/worker for player %v", p.view.name)
+func (p *player) heartbeatTicker() {
+	log.Infof("[player_ticks] heartbeatTicker  for player %v", p.view.name)
 	tick := time.NewTicker(5 * time.Second)
+	p.Lock()
+	p.tickers = append(p.tickers, tick)
+	p.Unlock()
+	defer tick.Stop()
+
 	for {
 		select {
-		case <-p.recv[heartbeatUpdate]:
-			p.Lock()
-			p.conn.lastHeartBeat = time.Now()
-			log.Infof("updating heartbeat for player %v", p.view.name)
-			p.Unlock()
-		case <-p.recv[heartbeatStop]:
-			select {
-			case p.conn.close <- true:
-				tick.Stop()
-				return
-			default:
-				tick.Stop()
-				return
-			}
 		case <-tick.C:
-			log.Infof("sending heartbeat for player %v", p.view.name)
 			if p == nil {
-				tick.Stop()
 				return
 			}
+			log.Infof("sending heartbeat for player %v", p.view.name)
 			ncMiscHeartBeatReq(p)
-			//default:
-			//	continue
+		}
+	}
+}
+
+func (p *player) persistPositionTicker() {
+	log.Infof("[player_ticks] heartbeatTicker for player %v", p.view.name)
+	tick := time.NewTicker(4 * time.Second)
+
+	p.Lock()
+	p.tickers = append(p.tickers, tick)
+	p.Unlock()
+	defer tick.Stop()
+
+	for {
+		select {
+		case <-tick.C:
+			if p == nil {
+				return
+			}
+			log.Infof("persisting position for player %v", p.view.name)
+			pppe := persistPlayerPositionEvent{
+				p: p,
+			}
+			zoneEvents[persistPlayerPosition] <- &pppe
 		}
 	}
 }

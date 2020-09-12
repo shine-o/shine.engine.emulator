@@ -2,7 +2,7 @@ package zone
 
 import (
 	"fmt"
-	"github.com/pkg/errors"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
 	"reflect"
 	"time"
 )
@@ -15,12 +15,108 @@ func (z *zone) playerSession() {
 			go playerMapLoginLogic(e)
 		case e := <-z.recv[playerData]:
 			go playerDataLogic(e)
+		case e := <-z.recv[heartbeatUpdate]:
+			go func() {
+				ev, ok := e.(*heartbeatUpdateEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(heartbeatUpdateEvent{}).String(), reflect.TypeOf(ev).String())
+				}
+
+				var (
+					mqe      queryMapEvent
+					eventErr = make(chan error)
+				)
+
+				var (
+					mapResult = make(chan *zoneMap)
+					zm        *zoneMap
+				)
+
+				mqe = queryMapEvent{
+					id:  ev.session.mapID,
+					zm:  mapResult,
+					err: eventErr,
+				}
+
+				zoneEvents[queryMap] <- &mqe
+
+				select {
+				case zm = <-mapResult:
+					break
+				case e := <-eventErr:
+					log.Error(e)
+					return
+				}
+
+				zm.entities.players.Lock()
+				p, ok := zm.entities.players.active[ev.session.handle]
+				zm.entities.players.Unlock()
+
+				p.Lock()
+				p.conn.lastHeartBeat = time.Now()
+				log.Infof("updating heartbeatTicker for player %v", p.view.name)
+				p.Unlock()
+			}()
+
 		case e := <-z.recv[playerLogoutStart]:
 			go playerLogoutStartLogic(z, e)
 		case e := <-z.recv[playerLogoutCancel]:
 			go playerLogoutCancelLogic(z, e)
 		case e := <-z.recv[playerLogoutConclude]:
 			go playerLogoutConcludeLogic(z, e)
+		}
+	}
+}
+
+func (z *zone) playerGameData() {
+	log.Infof("[zone_worker] playerGameData worker")
+	for {
+		select {
+		case e := <-z.recv[persistPlayerPosition]:
+			go func() {
+				ev, ok := e.(*persistPlayerPositionEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(persistPlayerPositionEvent{}).String(), reflect.TypeOf(ev).String())
+				}
+				ev.p.Lock()
+				c := ev.p.char
+				c.Location.MapID = uint32(ev.p.mapID)
+				c.Location.MapName = ev.p.mapName
+				c.Location.X = ev.p.x
+				c.Location.Y = ev.p.y
+				c.Location.D = ev.p.d
+				c.Location.IsKQ = false
+				ev.p.Unlock()
+
+				err := character.Update(z.worldDB, c)
+
+				if err != nil {
+					log.Error(err)
+					return
+				}
+
+				// character.UpdateCharacterLocation()
+			}()
+		}
+	}
+}
+
+func (z *zone) mapQueries() {
+	log.Infof("[zone_worker] mapQueries worker")
+	for {
+		select {
+		case e := <-z.recv[queryMap]:
+			go func() {
+				ev, ok := e.(*queryMapEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(queryMapEvent{}).String(), reflect.TypeOf(ev).String())
+				}
+				zm, ok := z.rm[ev.id]
+				if !ok {
+					ev.err <- fmt.Errorf("map with id %v is not running on this zone", ev.id)
+				}
+				ev.zm <- zm
+			}()
 		}
 	}
 }
@@ -120,26 +216,6 @@ func playerMapLoginLogic(e event) {
 	}
 }
 
-func (z *zone) mapQueries() {
-	log.Infof("[zone_worker] mapQueries worker")
-	for {
-		select {
-		case e := <-z.recv[queryMap]:
-			go func() {
-				ev, ok := e.(*queryMapEvent)
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(queryMapEvent{}).String(), reflect.TypeOf(ev).String())
-				}
-				zm, ok := z.rm[ev.id]
-				if !ok {
-					ev.err <- errors.New(fmt.Sprintf("map with id %v is not running on this zone", ev.id))
-				}
-				ev.zm <- zm
-			}()
-		}
-	}
-}
-
 func playerDataLogic(e event) {
 	ev, ok := e.(*playerDataEvent)
 	if !ok {
@@ -152,16 +228,6 @@ func playerDataLogic(e event) {
 			close:         ev.net.CloseConnection,
 			outboundData:  ev.net.OutboundSegments.Send,
 		},
-	}
-
-	events := []eventIndex{heartbeatUpdate, heartbeatStop}
-	p.recv = make(recvEvents)
-	p.send = make(sendEvents)
-
-	for _, index := range events {
-		c := make(chan event, 5)
-		p.recv[index] = c
-		p.send[index] = c
 	}
 
 	err := p.load(ev.playerName)

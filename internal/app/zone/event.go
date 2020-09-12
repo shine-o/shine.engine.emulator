@@ -55,9 +55,11 @@ const (
 	playerMapLogin eventIndex = iota
 	playerSHN
 	playerData
+	heartbeatUpdate
 	playerLogoutStart
 	playerLogoutCancel
 	playerLogoutConclude
+	persistPlayerPosition
 	queryMap
 
 	// map events
@@ -71,10 +73,6 @@ const (
 	playerStopped
 	queryPlayer
 	queryMonster
-
-	// player events
-	heartbeatUpdate
-	heartbeatStop
 
 	// dynamically registered events
 	// events that are defined at run time
