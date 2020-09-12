@@ -1,4 +1,4 @@
-package zone_master
+package zonemaster
 
 import (
 	"context"
@@ -30,7 +30,7 @@ func (s *server) RegisterZone(ctx context.Context, zd *zm.ZoneDetails) (*zm.Zone
 	}
 
 	for _, m := range zd.Maps {
-		rm[m] = ZoneInfo{
+		rm[m] = zoneInfo{
 			IP:   zd.Conn.IP,
 			Port: zd.Conn.Port,
 		}

@@ -33,6 +33,8 @@ type dynamicEvents struct {
 }
 
 func (de *dynamicEvents) add(sid string, i eventIndex) chan event {
+	de.Lock()
+	defer de.Unlock()
 	_, ok := de.events[sid]
 	if !ok {
 		de.events[sid] = events{
@@ -55,9 +57,11 @@ const (
 	playerMapLogin eventIndex = iota
 	playerSHN
 	playerData
+	heartbeatUpdate
 	playerLogoutStart
 	playerLogoutCancel
 	playerLogoutConclude
+	persistPlayerPosition
 	queryMap
 
 	// map events
@@ -71,10 +75,6 @@ const (
 	playerStopped
 	queryPlayer
 	queryMonster
-
-	// player events
-	heartbeatUpdate
-	heartbeatStop
 
 	// dynamically registered events
 	// events that are defined at run time

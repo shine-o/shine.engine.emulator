@@ -1,4 +1,4 @@
-package world_master
+package worldmaster
 
 type WorldInfo struct {
 	ID   int

@@ -39,11 +39,6 @@ func ncMiscHeartBeatReq(p *player) {
 
 // for the zone service it is the client that makes use of this handler
 func ncMiscHeartBeatAck(ctx context.Context, np *networking.Parameters) {
-	var (
-		mqe      queryMapEvent
-		eventErr = make(chan error)
-	)
-
 	session, ok := np.Session.(*session)
 
 	if !ok {
@@ -51,33 +46,7 @@ func ncMiscHeartBeatAck(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	var (
-		mapResult = make(chan *zoneMap)
-		zm        *zoneMap
-	)
-
-	mqe = queryMapEvent{
-		id:  session.mapID,
-		zm:  mapResult,
-		err: eventErr,
+	zoneEvents[heartbeatUpdate] <- &heartbeatUpdateEvent{
+		session: session,
 	}
-
-	zoneEvents[queryMap] <- &mqe
-
-	select {
-	case zm = <-mapResult:
-		break
-	case e := <-eventErr:
-		log.Error(e)
-		return
-	}
-
-	zm.entities.players.Lock()
-	p, ok := zm.entities.players.active[session.handle]
-	zm.entities.players.Unlock()
-	if !ok {
-		log.Error("player handle not available for character %v on map %v", session.characterName, zm.data.Info.MapName)
-	}
-
-	p.send[heartbeatUpdate] <- &emptyEvent{}
 }

@@ -66,7 +66,7 @@ func (zm *zoneMap) monsterQueries() {
 
 func playerHandleMaintenanceLogic(zm *zoneMap) {
 	zm.entities.players.Lock()
-	for i, _ := range zm.entities.players.active {
+	for i := range zm.entities.players.active {
 
 		p := zm.entities.players.active[i]
 
@@ -78,14 +78,6 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 			continue
 		}
 
-		select {
-		case p.send[heartbeatStop] <- &emptyEvent{}:
-			break
-		default:
-			log.Error("failed to stop heartbeat")
-			break
-		}
-
 		pde := &playerDisappearedEvent{
 			handle: p.handle,
 		}
@@ -94,8 +86,12 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 		case zm.events.send[playerDisappeared] <- pde:
 			break
 		default:
-			log.Error("failed to stop heartbeat")
+			log.Error("failed to stop heartbeatTicker")
 			break
+		}
+
+		for _, t := range p.tickers {
+			t.Stop()
 		}
 
 		p.Unlock()
@@ -145,7 +141,9 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 	if !ok {
 		return
 	}
-	go player.heartbeat()
+
+	go player.heartbeatTicker()
+	go player.persistPositionTicker()
 	go newPlayer(player, zm.entities.players)
 	go nearbyPlayers(player, zm.entities.players)
 }
@@ -193,10 +191,16 @@ func playerWalksLogic(e event, zm *zoneMap) {
 
 	err := player.move(zm, rX, rY)
 	if err != nil {
-		// store player position
+		// extra validation steps to avoid speed hacks
 		log.Error(err)
 		return
 	}
+	//
+
+	player.Lock()
+	player.x = ev.nc.To.X
+	player.y = ev.nc.To.Y
+	player.Unlock()
 
 	nc := structs.NcActSomeoneMoveWalkCmd{
 		Handle: player.handle,
@@ -204,7 +208,8 @@ func playerWalksLogic(e event, zm *zoneMap) {
 		To:     ev.nc.To,
 		Speed:  60,
 	}
-	for i, _ := range zm.entities.players.active {
+
+	for i := range zm.entities.players.active {
 		go ncActSomeoneMoveWalkCmd(zm.entities.players.active[i], &nc)
 	}
 }
@@ -235,10 +240,15 @@ func playerRunsLogic(e event, zm *zoneMap) {
 
 	err := player.move(zm, rX, rY)
 	if err != nil {
-		// store player position
+		// extra validation steps to avoid speed hacks
 		log.Error(err)
 		return
 	}
+
+	player.Lock()
+	player.x = ev.nc.To.X
+	player.y = ev.nc.To.Y
+	player.Unlock()
 
 	nc := structs.NcActSomeoneMoveRunCmd{
 		Handle: player.handle,
@@ -246,7 +256,7 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		To:     ev.nc.To,
 		Speed:  120,
 	}
-	for i, _ := range zm.entities.players.active {
+	for i := range zm.entities.players.active {
 		go ncActSomeoneMoveRunCmd(zm.entities.players.active[i], &nc)
 	}
 }
@@ -262,6 +272,7 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerStoppedEvent{}).String(), reflect.TypeOf(ev).String())
 		return
 	}
+
 	rX := (ev.nc.Location.X * 8) / 50
 	rY := (ev.nc.Location.Y * 8) / 50
 
@@ -270,17 +281,31 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 
 	player, ok := zm.entities.players.active[ev.handle]
 
+	if !ok {
+		log.Error("player not found during playerStoppedLogic")
+		return
+	}
+
+	player.Lock()
+	defer player.Unlock()
+
 	err := player.move(zm, rX, rY)
+
 	if err != nil {
-		// store player position
+		// extra validation steps to avoid speed hacks
 		log.Error(err)
 		return
 	}
+
+	player.x = ev.nc.Location.X
+	player.y = ev.nc.Location.Y
+
 	nc := structs.NcActSomeoneStopCmd{
 		Handle:   player.handle,
 		Location: ev.nc.Location,
 	}
-	for i, _ := range zm.entities.players.active {
+
+	for i := range zm.entities.players.active {
 		go ncActSomeoneStopCmd(zm.entities.players.active[i], &nc)
 	}
 }
@@ -298,7 +323,7 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 	nc := structs.NcActSomeoneJumpCmd{
 		Handle: ev.handle,
 	}
-	for i, _ := range zm.entities.players.active {
+	for i := range zm.entities.players.active {
 		go ncActSomeoneJumpCmd(zm.entities.players.active[i], &nc)
 	}
 }
