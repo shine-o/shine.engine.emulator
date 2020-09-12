@@ -21,6 +21,7 @@ type player struct {
 	skills   []skill
 	passives []passive
 	sync.RWMutex
+	tickers []*time.Ticker
 }
 
 type playerConnection struct {
