@@ -177,6 +177,8 @@ func (p *player) load(name string) error {
 	p.location.y = char.Location.Y
 	p.location.d = char.Location.D
 
+	p.baseEntity.nearbyEntities = make(map[uint16]*baseEntity)
+
 	view := make(chan playerView)
 	state := make(chan playerState)
 	stats := make(chan playerStats)

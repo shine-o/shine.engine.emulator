@@ -231,3 +231,11 @@ type NcBriefInfoInformCmd struct {
 	ReceiveNetCommand NetCommand
 	Handle            uint16
 }
+
+//struct PROTO_NC_BRIEFINFO_BRIEFINFODELETE_CMD
+//{
+//  unsigned __int16 hnd;
+//};
+type NcBriefInfoDeleteHandleCmd struct {
+	Handle uint16
+}

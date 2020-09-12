@@ -144,6 +144,8 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 
 	go player.heartbeat()
 	go player.persistPosition()
+	go player.nearbyEntities()
+
 	go newPlayer(player, zm.entities.players)
 	go nearbyPlayers(player, zm.entities.players)
 }
@@ -151,21 +153,18 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 // notify every player in proximity about player that logged in
 func newPlayer(p *player, nearbyPlayers *players) {
 	nearbyPlayers.Lock()
-	for i, _ := range nearbyPlayers.active {
+	for i := range nearbyPlayers.active {
 		np := nearbyPlayers.active[i]
 
 		if p.handle == np.handle {
 			continue
 		}
 
-		np.Lock()
 		if !inRange(&np.baseEntity, &p.baseEntity) {
 			continue
 		}
-		np.Unlock()
 
 		nc := p.ncBriefInfoLoginCharacterCmd()
-
 		ncBriefInfoLoginCharacterCmd(np, &nc)
 	}
 	nearbyPlayers.Unlock()
@@ -175,10 +174,17 @@ func newPlayer(p *player, nearbyPlayers *players) {
 func nearbyPlayers(p *player, nearbyPlayers *players) {
 	nearbyPlayers.Lock()
 	var characters []structs.NcBriefInfoLoginCharacterCmd
-	for _, np := range nearbyPlayers.active {
+	for i := range nearbyPlayers.active {
+		np := nearbyPlayers.active[i]
+
 		if np.handle == p.handle {
 			continue
 		}
+
+		if !inRange(&p.baseEntity, &np.baseEntity) {
+			continue
+		}
+
 		p.Lock()
 		nc := np.ncBriefInfoLoginCharacterCmd()
 		p.Unlock()
@@ -227,7 +233,7 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	}
 
 	rX := (ev.nc.To.X * 8) / 50
-	rY := (ev.nc.To.X * 8) / 50
+	rY := (ev.nc.To.Y * 8) / 50
 
 	zm.entities.players.RLock()
 	defer zm.entities.players.RUnlock()
@@ -254,7 +260,17 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	}
 
 	for i := range zm.entities.players.active {
-		go ncActSomeoneMoveWalkCmd(zm.entities.players.active[i], &nc)
+		p := zm.entities.players.active[i]
+
+		if p.handle == player.handle {
+			continue
+		}
+
+		if !inRange(&player.baseEntity, &p.baseEntity) {
+			continue
+		}
+
+		go ncActSomeoneMoveWalkCmd(p, &nc)
 	}
 }
 
@@ -267,7 +283,6 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	//			if fails return to position 1 in queue
 	//		broadcast to players within range
 	// 		add to movements array
-
 	ev, ok := e.(*playerRunsEvent)
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
@@ -275,10 +290,10 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	}
 
 	rX := (ev.nc.To.X * 8) / 50
-	rY := (ev.nc.To.X * 8) / 50
+	rY := (ev.nc.To.Y * 8) / 50
 
-	zm.entities.players.RLock()
-	defer zm.entities.players.RUnlock()
+	zm.entities.players.Lock()
+	defer zm.entities.players.Unlock()
 
 	player, ok := zm.entities.players.active[ev.handle]
 
@@ -290,9 +305,10 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	}
 
 	player.Lock()
+	defer player.Unlock()
+
 	player.x = ev.nc.To.X
 	player.y = ev.nc.To.Y
-	player.Unlock()
 
 	nc := structs.NcActSomeoneMoveRunCmd{
 		Handle: player.handle,
@@ -300,8 +316,19 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		To:     ev.nc.To,
 		Speed:  120,
 	}
+
 	for i := range zm.entities.players.active {
-		go ncActSomeoneMoveRunCmd(zm.entities.players.active[i], &nc)
+		p := zm.entities.players.active[i]
+
+		if p.handle == player.handle {
+			continue
+		}
+
+		if !inRange(&player.baseEntity, &p.baseEntity) {
+			continue
+		}
+
+		go ncActSomeoneMoveRunCmd(p, &nc)
 	}
 }
 
@@ -320,8 +347,8 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	rX := (ev.nc.Location.X * 8) / 50
 	rY := (ev.nc.Location.Y * 8) / 50
 
-	zm.entities.players.RLock()
-	defer zm.entities.players.RUnlock()
+	zm.entities.players.Lock()
+	defer zm.entities.players.Unlock()
 
 	player, ok := zm.entities.players.active[ev.handle]
 
@@ -350,6 +377,17 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	}
 
 	for i := range zm.entities.players.active {
+		p := zm.entities.players.active[i]
+
+		if p.handle == player.handle {
+			continue
+		}
+
+		log.Info("asdadsdasda")
+		if !inRange(&player.baseEntity, &p.baseEntity) {
+			continue
+		}
+
 		go ncActSomeoneStopCmd(zm.entities.players.active[i], &nc)
 	}
 }
@@ -364,10 +402,27 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 	zm.entities.players.RLock()
 	defer zm.entities.players.RUnlock()
 
+	player, ok := zm.entities.players.active[ev.handle]
+
+	if !ok {
+		log.Error("player not found during playerStoppedLogic")
+		return
+	}
+
+	player.Lock()
+	defer player.Unlock()
+
 	nc := structs.NcActSomeoneJumpCmd{
 		Handle: ev.handle,
 	}
+
 	for i := range zm.entities.players.active {
-		go ncActSomeoneJumpCmd(zm.entities.players.active[i], &nc)
+		p := zm.entities.players.active[i]
+
+		if !inRange(&p.baseEntity, &player.baseEntity) {
+			continue
+		}
+
+		go ncActSomeoneJumpCmd(p, &nc)
 	}
 }

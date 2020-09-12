@@ -35,21 +35,29 @@ type baseEntity struct {
 }
 
 const (
-	lengthX = 250
-	lengthY = 250
+	lengthX = 100
+	lengthY = 100
 )
 
 func inRange(viewer, target *baseEntity) bool {
 
-	vertical := target.y <= viewer.y+lengthY && target.y > viewer.y || target.y >= (viewer.y-lengthY) && target.y < viewer.y
-	horizontal := target.x <= (viewer.x+lengthX) && target.x > viewer.x || target.x >= (viewer.x-lengthX) && target.x < viewer.x
+	targetX := (target.x * 8) / 50
+	targetY := (target.y * 8) / 50
+
+	viewerX := (viewer.x * 8) / 50
+	viewerY := (viewer.y * 8) / 50
+
+	vertical :=  targetY <= viewerY+lengthY && targetY > viewerY || targetY >= (viewerY - lengthY) && targetY < viewerY
+	horizontal := targetX <= (viewerX+lengthX) && targetX > viewerX || targetX >= (viewerX - lengthX) && targetX < viewerX
 
 	if vertical && horizontal {
-		viewer.Lock()
 		viewer.nearbyEntities[target.handle] = target
-		viewer.Unlock()
+		log.Infof("%v is in range of %v", target.handle, viewer.handle)
 		return true
 	}
+
+	log.Infof("%v is in not in range of %v", target.handle, viewer.handle)
+
 	return false
 }
 

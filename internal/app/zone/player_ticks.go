@@ -1,6 +1,9 @@
 package zone
 
-import "time"
+import (
+	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"time"
+)
 
 func (p *player) heartbeat() {
 	log.Infof("[player_ticks] heartbeat for player %v", p.view.name)
@@ -46,7 +49,7 @@ func (p *player) persistPosition() {
 	}
 }
 
-
+// remove entities that are outside the view range of the player
 func (p *player) nearbyEntities() {
 	log.Infof("[player_ticks] nearbyEntities for player %v", p.view.name)
 	tick := time.NewTicker(2 * time.Second)
@@ -62,12 +65,18 @@ func (p *player) nearbyEntities() {
 			if p == nil {
 				return
 			}
-			log.Infof("[player_ticks] persisting position for player %v", p.view.name)
+			log.Infof("[player_ticks] removing out of range entities for player %v", p.view.name)
 			p.Lock()
-			for handle, _ := range p.baseEntity.nearbyEntities {
-				e := p.baseEntity.nearbyEntities[handle]
+			for i := range p.baseEntity.nearbyEntities {
+				e := p.baseEntity.nearbyEntities[i]
 				if !inRange(&p.baseEntity, e) {
-					// send NC_BRIEFINFO_BRIEFINFODELETE_CMD
+					nc := structs.NcBriefInfoDeleteHandleCmd{
+						Handle: e.handle,
+					}
+
+					ncBriefInfoDeleteHandleCmd(p, &nc)
+
+					delete(p.baseEntity.nearbyEntities, i)
 				}
 			}
 			p.Unlock()
