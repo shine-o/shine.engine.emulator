@@ -26,3 +26,15 @@ func ncBriefInfoCharacterCmd(p *player, nc *structs.NcBriefInfoCharacterCmd) {
 	}
 	pc.Send(p.conn.outboundData)
 }
+
+// NC_BRIEFINFO_BRIEFINFODELETE_CMD
+// 7182
+func ncBriefInfoDeleteHandleCmd(p * player, nc * structs.NcBriefInfoDeleteHandleCmd)  {
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 7182,
+		},
+		NcStruct: nc,
+	}
+	pc.Send(p.conn.outboundData)
+}
