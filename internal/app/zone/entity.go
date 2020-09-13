@@ -50,7 +50,11 @@ func playerInRange(viewer, target *player) bool {
 	horizontal := targetX <= (viewerX+lengthX) && targetX > viewerX || targetX >= (viewerX-lengthX) && targetX < viewerX
 
 	if vertical && horizontal {
+
+		viewer.Lock()
 		viewer.knownNearbyPlayers[target.handle] = target
+		viewer.Unlock()
+
 		log.Infof("%v is in range of %v", target.handle, viewer.handle)
 		return true
 	}

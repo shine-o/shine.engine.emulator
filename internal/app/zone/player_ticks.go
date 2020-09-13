@@ -20,33 +20,33 @@ func (p *player) heartbeat() {
 				return
 			}
 			log.Infof("[player_ticks] sending heartbeat for player %v", p.view.name)
-			ncMiscHeartBeatReq(p)
+			go ncMiscHeartBeatReq(p)
 		}
 	}
 }
 
 func (p *player) persistPosition() {
-	//log.Infof("[player_ticks] persistPosition for handle %v", p.handle)
-	//tick := time.NewTicker(4 * time.Second)
-	//
-	//p.Lock()
-	//p.tickers = append(p.tickers, tick)
-	//p.Unlock()
-	//defer tick.Stop()
-	//
-	//for {
-	//	select {
-	//	case <-tick.C:
-	//		if p == nil {
-	//			return
-	//		}
-	//		log.Infof("[player_ticks] persisting position for handle %v", p.handle)
-	//		pppe := persistPlayerPositionEvent{
-	//			p: p,
-	//		}
-	//		zoneEvents[persistPlayerPosition] <- &pppe
-	//	}
-	//}
+	log.Infof("[player_ticks] persistPosition for handle %v", p.handle)
+	tick := time.NewTicker(4 * time.Second)
+
+	p.Lock()
+	p.tickers = append(p.tickers, tick)
+	p.Unlock()
+	defer tick.Stop()
+
+	for {
+		select {
+		case <-tick.C:
+			if p == nil {
+				return
+			}
+			log.Infof("[player_ticks] persisting position for handle %v", p.handle)
+			pppe := persistPlayerPositionEvent{
+				p: p,
+			}
+			zoneEvents[persistPlayerPosition] <- &pppe
+		}
+	}
 }
 
 // remove entities that are outside the view range of the player
@@ -67,29 +67,26 @@ func (p *player) nearbyPlayers(zm *zoneMap) {
 			}
 
 			// also send data to the player that is running about nearby players
+			zm.entities.players.RLock()
 			for i := range zm.entities.players.active {
 				foreignPlayer := zm.entities.players.active[i]
-				foreignPlayer.Lock()
-				if foreignPlayer.handle == p.handle {
-					foreignPlayer.Unlock()
-					continue
-				}
+				if foreignPlayer.handle != p.handle {
+					if playerInRange(p, foreignPlayer) {
 
-				if playerInRange(p, foreignPlayer) {
-					nc := foreignPlayer.ncBriefInfoLoginCharacterCmd()
-					_, ok := p.knownNearbyPlayers[foreignPlayer.handle]
-					if ok {
-						foreignPlayer.Unlock()
-						continue
+						nc := foreignPlayer.ncBriefInfoLoginCharacterCmd()
+
+						_, exists := p.knownNearbyPlayers[foreignPlayer.handle]
+
+						if !exists {
+							go ncBriefInfoLoginCharacterCmd(p, &nc)
+						}
 					}
-					go ncBriefInfoLoginCharacterCmd(p, &nc)
 				}
-
-				foreignPlayer.Unlock()
 			}
 
+			zm.entities.players.RUnlock()
+
 			log.Infof("[player_ticks] removing out of range entities for handle %v", p.handle)
-			p.Lock()
 			for i := range p.knownNearbyPlayers {
 				foreignPlayer := p.knownNearbyPlayers[i]
 
@@ -106,10 +103,11 @@ func (p *player) nearbyPlayers(zm *zoneMap) {
 
 					go ncBriefInfoDeleteHandleCmd(p, &nc)
 
+					p.Lock()
 					delete(p.knownNearbyPlayers, i)
+					p.Unlock()
 				}
 			}
-			p.Unlock()
 		}
 	}
 }

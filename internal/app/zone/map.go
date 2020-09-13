@@ -31,13 +31,13 @@ type entities struct {
 type players struct {
 	handleIndex uint16
 	active      map[uint16]*player
-	sync.Mutex
+	sync.RWMutex
 }
 
 type monsters struct {
 	handleIndex uint16
 	active      map[uint16]*monster
-	sync.Mutex
+	sync.RWMutex
 }
 
 const playerHandleMin uint16 = 8000
@@ -230,7 +230,9 @@ func (p *players) newHandle() (uint16, error) {
 			index = min
 		}
 
+		p.Lock()
 		p.handleIndex = index
+		p.Unlock()
 
 		if _, used := p.active[index]; used {
 			attempts++
