@@ -171,6 +171,8 @@ func (p *player) load(name string, worldDB *pg.DB) error {
 	if err != nil {
 		return err
 	}
+	p.Lock()
+	defer 	p.Unlock()
 
 	p.char = &char
 
@@ -181,6 +183,7 @@ func (p *player) load(name string, worldDB *pg.DB) error {
 	p.location.d = char.Location.D
 
 	p.knownNearbyPlayers = make(map[uint16]*player)
+
 
 	view := make(chan playerView)
 	state := make(chan playerState)

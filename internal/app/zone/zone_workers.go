@@ -234,8 +234,9 @@ func hearbeatUpdateLogic(e event) {
 
 	p.Lock()
 	p.conn.lastHeartBeat = time.Now()
-	log.Infof("updating heartbeat for player %v", p.view.name)
 	p.Unlock()
+
+	log.Infof("updating heartbeat for player %v", p.view.name)
 }
 
 func playerLogoutStartLogic(z *zone, e event) {
@@ -316,6 +317,7 @@ func persistPLayerPositionLogic(e event, z *zone) {
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(persistPlayerPositionEvent{}).String(), reflect.TypeOf(ev).String())
 	}
+
 	ev.p.Lock()
 	c := ev.p.char
 	c.Location.MapID = uint32(ev.p.mapID)
