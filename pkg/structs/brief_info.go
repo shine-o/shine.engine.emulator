@@ -220,22 +220,23 @@ type NcBriefInfoChangeWeaponCmd struct {
 	CurrentKillLevel byte
 }
 
-//struct PROTO_NC_BRIEFINFO_INFORM_CMD
-//{
-//  unsigned __int16 nMyHnd;
-//  NETCOMMAND ReceiveNetCommand;
-//  unsigned __int16 hnd;
-//};
-type NcBriefInfoInformCmd struct {
-	MyHandle          uint16
-	ReceiveNetCommand NetCommand
-	Handle            uint16
-}
-
 //struct PROTO_NC_BRIEFINFO_BRIEFINFODELETE_CMD
 //{
 //  unsigned __int16 hnd;
 //};
 type NcBriefInfoDeleteHandleCmd struct {
 	Handle uint16
+}
+
+//struct PROTO_NC_BRIEFINFO_INFORM_CMD
+//{
+//  unsigned __int16 nMyHnd;
+//  NETCOMMAND ReceiveNetCommand;
+//  unsigned __int16 hnd;
+//};
+// nMyHnd is the affected client that received a server command involving hnd that was previously tagged as out of range.
+type NcBriefInfoInformCmd struct {
+	AffectedHandle  uint16
+	ReceivedCommand NetCommand
+	ForeignHandle   uint16
 }

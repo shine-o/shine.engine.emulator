@@ -30,8 +30,7 @@ type baseEntity struct {
 	handle uint16
 	location
 	events
-	nearbyEntities map[uint16]*baseEntity
-	sync.RWMutex
+	sync.Mutex
 }
 
 const (
@@ -39,7 +38,7 @@ const (
 	lengthY = 100
 )
 
-func inRange(viewer, target *baseEntity) bool {
+func playerInRange(viewer, target *player) bool {
 
 	targetX := (target.x * 8) / 50
 	targetY := (target.y * 8) / 50
@@ -47,11 +46,11 @@ func inRange(viewer, target *baseEntity) bool {
 	viewerX := (viewer.x * 8) / 50
 	viewerY := (viewer.y * 8) / 50
 
-	vertical :=  targetY <= viewerY+lengthY && targetY > viewerY || targetY >= (viewerY - lengthY) && targetY < viewerY
-	horizontal := targetX <= (viewerX+lengthX) && targetX > viewerX || targetX >= (viewerX - lengthX) && targetX < viewerX
+	vertical := targetY <= viewerY+lengthY && targetY > viewerY || targetY >= (viewerY-lengthY) && targetY < viewerY
+	horizontal := targetX <= (viewerX+lengthX) && targetX > viewerX || targetX >= (viewerX-lengthX) && targetX < viewerX
 
 	if vertical && horizontal {
-		viewer.nearbyEntities[target.handle] = target
+		viewer.knownNearbyPlayers[target.handle] = target
 		log.Infof("%v is in range of %v", target.handle, viewer.handle)
 		return true
 	}

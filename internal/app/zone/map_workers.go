@@ -36,6 +36,52 @@ func (zm *zoneMap) playerActivity() {
 			go playerStoppedLogic(e, zm)
 		case e := <-zm.recv[playerJumped]:
 			go playerJumpedLogic(e, zm)
+		case e := <-zm.recv[unknownHandle]:
+			log.Info(e)
+			go func() {
+				ev, ok := e.(*unknownHandleEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&unknownHandleEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+
+				if ev.handle != ev.nc.AffectedHandle {
+					log.Errorf("mismatched handles %v %v", ev.handle, ev.nc.AffectedHandle)
+					return
+				}
+
+				zm.entities.players.Lock() // TODO: check if its necessary
+				defer zm.entities.players.Unlock()
+
+				player, ok := zm.entities.players.active[ev.handle]
+
+				if !ok {
+					log.Errorf("player with handle %v not found", ev.handle)
+					return
+				}
+
+				player.Lock()
+				defer player.Unlock()
+
+				//TODO: could also be NPC, Item on the ground or a Monster
+				foreignPlayer, ok := zm.entities.players.active[ev.nc.ForeignHandle]
+
+				if !ok {
+					log.Errorf("player with handle %v not found", ev.handle)
+					return
+				}
+
+				foreignPlayer.Lock()
+				defer foreignPlayer.Unlock()
+
+				if playerInRange(player, foreignPlayer) {
+					nc1 := foreignPlayer.ncBriefInfoLoginCharacterCmd()
+					nc2 := player.ncBriefInfoLoginCharacterCmd()
+
+					go ncBriefInfoLoginCharacterCmd(player, &nc1)
+					go ncBriefInfoLoginCharacterCmd(foreignPlayer, &nc2)
+				}
+			}()
 		}
 	}
 }
@@ -109,21 +155,25 @@ func playerHandleLogic(e event, zm *zoneMap) {
 		return
 	}
 	zm.entities.players.Lock()
-	defer zm.entities.players.Unlock()
 
 	handle, err := zm.entities.players.newHandle()
+
 	if err != nil {
+		zm.entities.players.Unlock()
 		ev.err <- err
 		return
 	}
 
 	ev.player.Lock()
-	defer ev.player.Unlock()
 
 	zm.entities.players.active[handle] = ev.player
 	ev.player.handle = handle
 	ev.session.handle = handle
 	ev.session.mapID = ev.player.mapID
+
+	ev.player.Unlock()
+	zm.entities.players.Unlock()
+
 	ev.done <- true
 }
 
@@ -139,64 +189,17 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 
 	player, ok := zm.entities.players.active[ev.handle]
 	if !ok {
+		log.Error("player not found during playerAppearedLogic")
 		return
 	}
 
 	go player.heartbeat()
 	go player.persistPosition()
-	go player.nearbyEntities()
+	go player.nearbyPlayers(zm)
 
 	go newPlayer(player, zm.entities.players)
 	go nearbyPlayers(player, zm.entities.players)
 }
-
-// notify every player in proximity about player that logged in
-func newPlayer(p *player, nearbyPlayers *players) {
-	nearbyPlayers.Lock()
-	for i := range nearbyPlayers.active {
-		np := nearbyPlayers.active[i]
-
-		if p.handle == np.handle {
-			continue
-		}
-
-		if !inRange(&np.baseEntity, &p.baseEntity) {
-			continue
-		}
-
-		nc := p.ncBriefInfoLoginCharacterCmd()
-		ncBriefInfoLoginCharacterCmd(np, &nc)
-	}
-	nearbyPlayers.Unlock()
-}
-
-// send info to player about nearby players
-func nearbyPlayers(p *player, nearbyPlayers *players) {
-	nearbyPlayers.Lock()
-	var characters []structs.NcBriefInfoLoginCharacterCmd
-	for i := range nearbyPlayers.active {
-		np := nearbyPlayers.active[i]
-
-		if np.handle == p.handle {
-			continue
-		}
-
-		if !inRange(&p.baseEntity, &np.baseEntity) {
-			continue
-		}
-
-		p.Lock()
-		nc := np.ncBriefInfoLoginCharacterCmd()
-		p.Unlock()
-		characters = append(characters, nc)
-	}
-	ncBriefInfoCharacterCmd(p, &structs.NcBriefInfoCharacterCmd{
-		Number:     byte(len(characters)),
-		Characters: characters,
-	})
-	nearbyPlayers.Unlock()
-}
-
 
 func playerDisappearedLogic(e event, zm *zoneMap) {
 	ev, ok := e.(*playerDisappearedEvent)
@@ -235,22 +238,28 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	rX := (ev.nc.To.X * 8) / 50
 	rY := (ev.nc.To.Y * 8) / 50
 
-	zm.entities.players.RLock()
-	defer zm.entities.players.RUnlock()
+	zm.entities.players.Lock()
+	defer zm.entities.players.Unlock()
 	player, ok := zm.entities.players.active[ev.handle]
 
+	if !ok {
+		log.Error("player not found during playerStoppedLogic")
+		return
+	}
+
+	player.Lock()
+	defer player.Unlock()
+
 	err := player.move(zm, rX, rY)
+
 	if err != nil {
 		// extra validation steps to avoid speed hacks
 		log.Error(err)
 		return
 	}
-	//
 
-	player.Lock()
 	player.x = ev.nc.To.X
 	player.y = ev.nc.To.Y
-	player.Unlock()
 
 	nc := structs.NcActSomeoneMoveWalkCmd{
 		Handle: player.handle,
@@ -260,17 +269,17 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	}
 
 	for i := range zm.entities.players.active {
-		p := zm.entities.players.active[i]
+		foreignPlayer := zm.entities.players.active[i]
 
-		if p.handle == player.handle {
+		if foreignPlayer.handle == player.handle {
 			continue
 		}
 
-		if !inRange(&player.baseEntity, &p.baseEntity) {
+		if !playerInRange(foreignPlayer, player) {
 			continue
 		}
 
-		go ncActSomeoneMoveWalkCmd(p, &nc)
+		go ncActSomeoneMoveWalkCmd(foreignPlayer, &nc)
 	}
 }
 
@@ -297,6 +306,14 @@ func playerRunsLogic(e event, zm *zoneMap) {
 
 	player, ok := zm.entities.players.active[ev.handle]
 
+	if !ok {
+		log.Error("player not found during playerStoppedLogic")
+		return
+	}
+
+	player.Lock()
+	defer player.Unlock()
+
 	err := player.move(zm, rX, rY)
 	if err != nil {
 		// extra validation steps to avoid speed hacks
@@ -304,11 +321,8 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	player.Lock()
-	defer player.Unlock()
-
-	player.x = ev.nc.To.X
-	player.y = ev.nc.To.Y
+	player.baseEntity.location.x = ev.nc.To.X
+	player.baseEntity.location.y = ev.nc.To.Y
 
 	nc := structs.NcActSomeoneMoveRunCmd{
 		Handle: player.handle,
@@ -318,18 +332,19 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	}
 
 	for i := range zm.entities.players.active {
-		p := zm.entities.players.active[i]
+		foreignPlayer := zm.entities.players.active[i]
 
-		if p.handle == player.handle {
+		if foreignPlayer.handle == player.handle {
 			continue
 		}
 
-		if !inRange(&player.baseEntity, &p.baseEntity) {
+		if !playerInRange(foreignPlayer, player) {
 			continue
 		}
 
-		go ncActSomeoneMoveRunCmd(p, &nc)
+		go ncActSomeoneMoveRunCmd(foreignPlayer, &nc)
 	}
+
 }
 
 func playerStoppedLogic(e event, zm *zoneMap) {
@@ -377,18 +392,17 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	}
 
 	for i := range zm.entities.players.active {
-		p := zm.entities.players.active[i]
+		foreignPlayer := zm.entities.players.active[i]
 
-		if p.handle == player.handle {
+		if foreignPlayer.handle == player.handle {
 			continue
 		}
 
-		log.Info("asdadsdasda")
-		if !inRange(&player.baseEntity, &p.baseEntity) {
+		if !playerInRange(foreignPlayer, player) {
 			continue
 		}
 
-		go ncActSomeoneStopCmd(zm.entities.players.active[i], &nc)
+		go ncActSomeoneStopCmd(foreignPlayer, &nc)
 	}
 }
 
@@ -399,8 +413,8 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	zm.entities.players.RLock()
-	defer zm.entities.players.RUnlock()
+	zm.entities.players.Lock()
+	defer zm.entities.players.Unlock()
 
 	player, ok := zm.entities.players.active[ev.handle]
 
@@ -417,12 +431,59 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 	}
 
 	for i := range zm.entities.players.active {
-		p := zm.entities.players.active[i]
+		foreignPlayer := zm.entities.players.active[i]
 
-		if !inRange(&p.baseEntity, &player.baseEntity) {
+		if !playerInRange(foreignPlayer, player) {
 			continue
 		}
 
-		go ncActSomeoneJumpCmd(p, &nc)
+		go ncActSomeoneJumpCmd(foreignPlayer, &nc)
 	}
+}
+
+// notify every player in proximity about player that logged in
+func newPlayer(p *player, nearbyPlayers *players) {
+	nearbyPlayers.Lock()
+	for i := range nearbyPlayers.active {
+		foreignPlayer := nearbyPlayers.active[i]
+
+		if p.handle == foreignPlayer.handle {
+			continue
+		}
+
+		if !playerInRange(foreignPlayer, p) {
+			continue
+		}
+
+		nc := p.ncBriefInfoLoginCharacterCmd()
+		ncBriefInfoLoginCharacterCmd(foreignPlayer, &nc)
+	}
+	nearbyPlayers.Unlock()
+}
+
+// send info to player about nearby players
+func nearbyPlayers(p *player, nearbyPlayers *players) {
+	nearbyPlayers.Lock()
+	var characters []structs.NcBriefInfoLoginCharacterCmd
+	for i := range nearbyPlayers.active {
+		foreignPlayer := nearbyPlayers.active[i]
+
+		if p.handle == foreignPlayer.handle {
+			continue
+		}
+
+		if !playerInRange(foreignPlayer, p) {
+			continue
+		}
+
+		nc := foreignPlayer.ncBriefInfoLoginCharacterCmd()
+		characters = append(characters, nc)
+	}
+
+	ncBriefInfoCharacterCmd(p, &structs.NcBriefInfoCharacterCmd{
+		Number:     byte(len(characters)),
+		Characters: characters,
+	})
+
+	nearbyPlayers.Unlock()
 }

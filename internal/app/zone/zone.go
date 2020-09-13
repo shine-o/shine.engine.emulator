@@ -63,10 +63,11 @@ func (z *zone) load() {
 			playerHandleMaintenance,
 			queryPlayer, queryMonster,
 			playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
+			unknownHandle,
 		}
 
 		for _, index := range events {
-			c := make(chan event, 5)
+			c := make(chan event, 500)
 			zoneMaps[i].recv[index] = c
 			zoneMaps[i].send[index] = c
 		}
@@ -120,8 +121,11 @@ func (z *zone) load() {
 
 func (z *zone) run() {
 	// run query workers
-	go z.mapQueries()
-	go z.security()
-	go z.playerSession()
-	go z.playerGameData()
+	num := viper.GetInt("workers.num_zone_workers")
+	for i := 0; i <= num; i++ {
+		go z.mapQueries()
+		go z.security()
+		go z.playerSession()
+		go z.playerGameData()
+	}
 }
