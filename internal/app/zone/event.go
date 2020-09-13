@@ -28,7 +28,7 @@ type events struct {
 // e.g playerLogoutStart event starts a routine that will automatically close the connection in 10 seconds
 // but the client can send a cancel signal, therefore we need to notify the routine to abort the countdown
 type dynamicEvents struct {
-	sync.RWMutex
+	sync.Mutex
 	events map[string]events
 }
 
@@ -73,6 +73,7 @@ const (
 	playerRuns
 	playerJumped
 	playerStopped
+	unknownHandle
 	queryPlayer
 	queryMonster
 

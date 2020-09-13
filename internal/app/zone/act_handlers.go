@@ -191,7 +191,6 @@ func ncActStopReq(ctx context.Context, np *networking.Parameters) {
 // 8216
 // someone walked
 func ncActSomeoneMoveWalkCmd(p *player, nc *structs.NcActSomeoneMoveWalkCmd) {
-	p.Lock()
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 8216,
@@ -199,14 +198,12 @@ func ncActSomeoneMoveWalkCmd(p *player, nc *structs.NcActSomeoneMoveWalkCmd) {
 		NcStruct: nc,
 	}
 	pc.Send(p.conn.outboundData)
-	p.Unlock()
 }
 
 // NC_ACT_SOMEONEMOVERUN_CMD
 // 8218
 // someone has run
 func ncActSomeoneMoveRunCmd(p *player, nc *structs.NcActSomeoneMoveRunCmd) {
-	p.Lock()
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 8218,
@@ -214,13 +211,11 @@ func ncActSomeoneMoveRunCmd(p *player, nc *structs.NcActSomeoneMoveRunCmd) {
 		NcStruct: nc,
 	}
 	pc.Send(p.conn.outboundData)
-	p.Unlock()
 }
 
 // NC_ACT_SOMEONEJUMP_CMD
 // 8229
 func ncActSomeoneJumpCmd(p *player, nc *structs.NcActSomeoneJumpCmd) {
-	p.Lock()
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 8229,
@@ -228,14 +223,12 @@ func ncActSomeoneJumpCmd(p *player, nc *structs.NcActSomeoneJumpCmd) {
 		NcStruct: nc,
 	}
 	pc.Send(p.conn.outboundData)
-	p.Unlock()
 }
 
 // NC_ACT_SOMEONESTOP_CMD
 // 8211
 // someone stopped
 func ncActSomeoneStopCmd(p *player, nc *structs.NcActSomeoneStopCmd) {
-	p.Lock()
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 8211,
@@ -243,5 +236,4 @@ func ncActSomeoneStopCmd(p *player, nc *structs.NcActSomeoneStopCmd) {
 		NcStruct: nc,
 	}
 	pc.Send(p.conn.outboundData)
-	p.Unlock()
 }

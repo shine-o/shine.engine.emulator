@@ -31,13 +31,13 @@ type entities struct {
 type players struct {
 	handleIndex uint16
 	active      map[uint16]*player
-	sync.RWMutex
+	sync.Mutex
 }
 
 type monsters struct {
 	handleIndex uint16
 	active      map[uint16]*monster
-	sync.RWMutex
+	sync.Mutex
 }
 
 const playerHandleMin uint16 = 8000
@@ -52,11 +52,16 @@ func (zm *zoneMap) run() {
 	// load NPCs for this map
 	// run logic routines
 	// as many workers as needed can be launched
-	go zm.mapHandles()
+	num := viper.GetInt("workers.num_zone_workers")
+
 	go zm.removeInactiveHandles()
-	go zm.playerActivity()
-	go zm.playerQueries()
-	go zm.monsterQueries()
+
+	for i := 0; i <= num; i++ {
+		go zm.mapHandles()
+		go zm.playerActivity()
+		go zm.playerQueries()
+		go zm.monsterQueries()
+	}
 }
 
 // load maps
