@@ -20,8 +20,6 @@ type zoneMap struct {
 	walkableX *roaring.Bitmap
 	walkableY *roaring.Bitmap
 	entities  entities
-	//send      sendEvents
-	//recv      recvEvents
 	events
 }
 
@@ -54,11 +52,16 @@ func (zm *zoneMap) run() {
 	// load NPCs for this map
 	// run logic routines
 	// as many workers as needed can be launched
-	go zm.mapHandles()
+	num := viper.GetInt("workers.num_zone_workers")
+
 	go zm.removeInactiveHandles()
-	go zm.playerActivity()
-	go zm.playerQueries()
-	go zm.monsterQueries()
+
+	for i := 0; i <= num; i++ {
+		go zm.mapHandles()
+		go zm.playerActivity()
+		go zm.playerQueries()
+		go zm.monsterQueries()
+	}
 }
 
 // load maps
@@ -214,7 +217,9 @@ func (p *players) newHandle() (uint16, error) {
 	max := playerHandleMax
 	maxAttempts := playerAttemptsMax
 
+	p.RLock()
 	index := p.handleIndex
+	p.RUnlock()
 
 	for {
 		if attempts == maxAttempts {
@@ -227,12 +232,16 @@ func (p *players) newHandle() (uint16, error) {
 			index = min
 		}
 
+		p.Lock()
 		p.handleIndex = index
+		p.Unlock()
 
+		p.RLock()
 		if _, used := p.active[index]; used {
 			attempts++
 			continue
 		}
+		p.RUnlock()
 
 		return index, nil
 	}

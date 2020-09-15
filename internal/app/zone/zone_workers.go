@@ -2,10 +2,21 @@ package zone
 
 import (
 	"fmt"
+	"github.com/go-pg/pg/v9"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
 	"reflect"
 	"time"
 )
+
+func (z *zone) security() {
+	log.Infof("[worker] security worker")
+	for {
+		select {
+		case e := <-z.recv[playerSHN]:
+			go playerSHNLogic(e)
+		}
+	}
+}
 
 func (z *zone) playerSession() {
 	log.Infof("[zone_worker] playerSession worker")
@@ -14,7 +25,7 @@ func (z *zone) playerSession() {
 		case e := <-z.recv[playerMapLogin]:
 			go playerMapLoginLogic(e)
 		case e := <-z.recv[playerData]:
-			go playerDataLogic(e)
+			go playerDataLogic(e, z.worldDB)
 		case e := <-z.recv[heartbeatUpdate]:
 			go hearbeatUpdateLogic(e)
 		case e := <-z.recv[playerLogoutStart]:
@@ -57,93 +68,14 @@ func (z *zone) mapQueries() {
 	}
 }
 
-// secondary workers that may be executed at runtime
-func playerLogout(z *zone, zm *zoneMap, p *player, sid string) {
-	t := time.NewTicker(15 * time.Second)
-	defer t.Stop()
-	finish := func() {
-		t.Stop()
-		select {
-		case p.conn.close <- true:
-			pde := &playerDisappearedEvent{
-				handle: p.handle,
-			}
-
-			select {
-			case zm.send[playerDisappeared] <- pde:
-				break
-			default:
-				log.Error("unexpected error occurred while sending playerDisappeared event")
-				break
-			}
-
-			break
-
-		default:
-			log.Error("unexpected error occurred while closing connection")
-			return
-		}
-	}
-
-	for {
-		z.dynamicEvents.RLock()
-		select {
-		case <-z.dynamicEvents.events[sid].recv[dLogoutCancel]:
-			z.dynamicEvents.RUnlock()
-			return
-		case <-z.dynamicEvents.events[sid].recv[dLogoutConclude]:
-			z.dynamicEvents.RUnlock()
-			finish()
-			return
-		case <-t.C:
-			z.dynamicEvents.RUnlock()
-			finish()
-			return
-
-		}
-	}
-}
-
-func hearbeatUpdateLogic(e event) {
-	ev, ok := e.(*heartbeatUpdateEvent)
+func playerSHNLogic(e event) {
+	ev, ok := e.(*playerSHNEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(heartbeatUpdateEvent{}).String(), reflect.TypeOf(ev).String())
-	}
-
-	var (
-		mqe      queryMapEvent
-		eventErr = make(chan error)
-	)
-
-	var (
-		mapResult = make(chan *zoneMap)
-		zm        *zoneMap
-	)
-
-	mqe = queryMapEvent{
-		id:  ev.session.mapID,
-		zm:  mapResult,
-		err: eventErr,
-	}
-
-	zoneEvents[queryMap] <- &mqe
-
-	select {
-	case zm = <-mapResult:
-		break
-	case e := <-eventErr:
-		log.Error(e)
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerSHNEvent{}).String(), reflect.TypeOf(ev).String())
 		return
 	}
-
-	zm.entities.players.Lock()
-	p, ok := zm.entities.players.active[ev.session.handle]
-	zm.entities.players.Unlock()
-
-	p.Lock()
-	p.conn.lastHeartBeat = time.Now()
-	log.Infof("updating heartbeatTicker for player %v", p.view.name)
-	p.Unlock()
+	// u.u'
+	ev.ok <- true
 }
 
 func playerMapLoginLogic(e event) {
@@ -241,7 +173,7 @@ func playerMapLoginLogic(e event) {
 	}
 }
 
-func playerDataLogic(e event) {
+func playerDataLogic(e event, db *pg.DB) {
 	ev, ok := e.(*playerDataEvent)
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerDataEvent{}).String(), reflect.TypeOf(ev).String())
@@ -255,13 +187,56 @@ func playerDataLogic(e event) {
 		},
 	}
 
-	err := p.load(ev.playerName)
+	err := p.load(ev.playerName, db)
 
 	if err != nil {
 		log.Error(err)
 		ev.err <- err
 	}
 	ev.player <- p
+}
+
+func hearbeatUpdateLogic(e event) {
+	ev, ok := e.(*heartbeatUpdateEvent)
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(heartbeatUpdateEvent{}).String(), reflect.TypeOf(ev).String())
+	}
+
+	var (
+		mqe      queryMapEvent
+		eventErr = make(chan error)
+	)
+
+	var (
+		mapResult = make(chan *zoneMap)
+		zm        *zoneMap
+	)
+
+	mqe = queryMapEvent{
+		id:  ev.session.mapID,
+		zm:  mapResult,
+		err: eventErr,
+	}
+
+	zoneEvents[queryMap] <- &mqe
+
+	select {
+	case zm = <-mapResult:
+		break
+	case e := <-eventErr:
+		log.Error(e)
+		return
+	}
+
+	zm.entities.players.Lock()
+	p, ok := zm.entities.players.active[ev.session.handle]
+	zm.entities.players.Unlock()
+
+	p.Lock()
+	p.conn.lastHeartBeat = time.Now()
+	p.Unlock()
+
+	log.Infof("updating heartbeat for player %v", p.view.name)
 }
 
 func playerLogoutStartLogic(z *zone, e event) {
@@ -342,6 +317,7 @@ func persistPLayerPositionLogic(e event, z *zone) {
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(persistPlayerPositionEvent{}).String(), reflect.TypeOf(ev).String())
 	}
+
 	ev.p.Lock()
 	c := ev.p.char
 	c.Location.MapID = uint32(ev.p.mapID)
@@ -357,5 +333,51 @@ func persistPLayerPositionLogic(e event, z *zone) {
 	if err != nil {
 		log.Error(err)
 		return
+	}
+}
+
+// secondary workers that may be executed at runtime
+func playerLogout(z *zone, zm *zoneMap, p *player, sid string) {
+	t := time.NewTicker(15 * time.Second)
+	defer t.Stop()
+	finish := func() {
+		t.Stop()
+		select {
+		case p.conn.close <- true:
+			pde := &playerDisappearedEvent{
+				handle: p.handle,
+			}
+
+			select {
+			case zm.send[playerDisappeared] <- pde:
+				break
+			default:
+				log.Error("unexpected error occurred while sending playerDisappeared event")
+				break
+			}
+
+			break
+
+		default:
+			log.Error("unexpected error occurred while closing connection")
+			return
+		}
+	}
+
+	for {
+		z.dynamicEvents.Lock()
+		select {
+		case <-z.dynamicEvents.events[sid].recv[dLogoutCancel]:
+			z.dynamicEvents.Unlock()
+			return
+		case <-z.dynamicEvents.events[sid].recv[dLogoutConclude]:
+			z.dynamicEvents.Unlock()
+			finish()
+			return
+		case <-t.C:
+			z.dynamicEvents.Unlock()
+			finish()
+			return
+		}
 	}
 }

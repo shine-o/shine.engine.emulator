@@ -13,7 +13,6 @@ Videos showcase:
 - [Zone  - entity interaction range](https://www.youtube.com/watch?v=cSnldVbl2wA&feature=youtu.be)
 
 
-
 ##Event logic for login, world, zone services
 
 From tcp connection to network command to logic handler

@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"github.com/go-pg/pg/v9"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"sync"
@@ -9,17 +10,18 @@ import (
 
 type player struct {
 	baseEntity
-	char     *character.Character
-	conn     playerConnection
-	view     playerView
-	stats    playerStats
-	state    playerState
-	items    playerItems
-	money    playerMoney
-	titles   playerTitles
-	quests   playerQuests
-	skills   []skill
-	passives []passive
+	knownNearbyPlayers map[uint16]*player
+	char               *character.Character
+	conn               playerConnection
+	view               playerView
+	stats              playerStats
+	state              playerState
+	items              playerItems
+	money              playerMoney
+	titles             playerTitles
+	quests             playerQuests
+	skills             []skill
+	passives           []passive
 	sync.RWMutex
 	tickers []*time.Ticker
 }
@@ -162,12 +164,15 @@ type stat struct {
 	withExtras uint32
 }
 
-func (p *player) load(name string) error {
-	char, err := character.GetByName(db, name)
+func (p *player) load(name string, worldDB *pg.DB) error {
+
+	char, err := character.GetByName(worldDB, name)
 
 	if err != nil {
 		return err
 	}
+	p.Lock()
+	defer 	p.Unlock()
 
 	p.char = &char
 
@@ -176,6 +181,9 @@ func (p *player) load(name string) error {
 	p.location.x = char.Location.X
 	p.location.y = char.Location.Y
 	p.location.d = char.Location.D
+
+	p.knownNearbyPlayers = make(map[uint16]*player)
+
 
 	view := make(chan playerView)
 	state := make(chan playerState)

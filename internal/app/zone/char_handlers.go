@@ -357,7 +357,7 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 
 	// there's the mapID, handle ID
 
-	// start the heartbeatTicker for this player
+	// start the heartbeat for this player
 
 	// send info about surrounding mobs, players to this player
 
