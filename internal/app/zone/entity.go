@@ -40,11 +40,17 @@ const (
 
 func playerInRange(viewer, target *player) bool {
 
+	target.RLock()
 	targetX := (target.x * 8) / 50
 	targetY := (target.y * 8) / 50
+	targetHandle := target.handle
+	target.RUnlock()
 
+	viewer.RLock()
 	viewerX := (viewer.x * 8) / 50
 	viewerY := (viewer.y * 8) / 50
+	viewerHandle := viewer.handle
+	viewer.RUnlock()
 
 	vertical := targetY <= viewerY+lengthY && targetY > viewerY || targetY >= (viewerY-lengthY) && targetY < viewerY
 	horizontal := targetX <= (viewerX+lengthX) && targetX > viewerX || targetX >= (viewerX-lengthX) && targetX < viewerX
@@ -55,11 +61,11 @@ func playerInRange(viewer, target *player) bool {
 		viewer.knownNearbyPlayers[target.handle] = target
 		viewer.Unlock()
 
-		log.Infof("%v is in range of %v", target.handle, viewer.handle)
+		log.Infof("%v is in range of %v", targetHandle, viewerHandle)
 		return true
 	}
 
-	log.Infof("%v is in not in range of %v", target.handle, viewer.handle)
+	log.Infof("%v is in not in range of %v", targetHandle, viewerHandle)
 
 	return false
 }

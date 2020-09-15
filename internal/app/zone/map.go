@@ -217,7 +217,9 @@ func (p *players) newHandle() (uint16, error) {
 	max := playerHandleMax
 	maxAttempts := playerAttemptsMax
 
+	p.RLock()
 	index := p.handleIndex
+	p.RUnlock()
 
 	for {
 		if attempts == maxAttempts {
@@ -234,10 +236,12 @@ func (p *players) newHandle() (uint16, error) {
 		p.handleIndex = index
 		p.Unlock()
 
+		p.RLock()
 		if _, used := p.active[index]; used {
 			attempts++
 			continue
 		}
+		p.RUnlock()
 
 		return index, nil
 	}

@@ -3,7 +3,6 @@ package zone
 import (
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
-	"sync"
 	"time"
 )
 
@@ -38,51 +37,7 @@ func (zm *zoneMap) playerActivity() {
 		case e := <-zm.recv[playerJumped]:
 			go playerJumpedLogic(e, zm)
 		case e := <-zm.recv[unknownHandle]:
-			log.Info(e)
-			go func() {
-				ev, ok := e.(*unknownHandleEvent)
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&unknownHandleEvent{}).String(), reflect.TypeOf(ev).String())
-					return
-				}
-
-				if ev.handle != ev.nc.AffectedHandle {
-					log.Errorf("mismatched handles %v %v", ev.handle, ev.nc.AffectedHandle)
-					return
-				}
-
-				//zm.entities.players.Lock() // TODO: check if its necessary
-				//defer zm.entities.players.Unlock()
-
-				player, ok := zm.entities.players.active[ev.handle]
-
-				if !ok {
-					log.Errorf("player with handle %v not found", ev.handle)
-					return
-				}
-
-				//player.Lock()
-				//defer player.Unlock()
-
-				//TODO: could also be NPC, Item on the ground or a Monster
-				foreignPlayer, ok := zm.entities.players.active[ev.nc.ForeignHandle]
-
-				if !ok {
-					log.Errorf("player with handle %v not found", ev.handle)
-					return
-				}
-
-				//foreignPlayer.Lock()
-				//defer foreignPlayer.Unlock()
-
-				if playerInRange(player, foreignPlayer) {
-					nc1 := foreignPlayer.ncBriefInfoLoginCharacterCmd()
-					nc2 := player.ncBriefInfoLoginCharacterCmd()
-
-					go ncBriefInfoLoginCharacterCmd(player, &nc1)
-					go ncBriefInfoLoginCharacterCmd(foreignPlayer, &nc2)
-				}
-			}()
+			go unknownHandleLogic(e, zm)
 		}
 	}
 }
@@ -115,10 +70,18 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 	zm.entities.players.RLock()
 	for i := range zm.entities.players.active {
 
+		var deleteHandle = func(mapInx uint16, zm * zoneMap) {
+			zm.entities.players.Lock()
+			delete(zm.entities.players.active, mapInx)
+			zm.entities.players.Unlock()
+		}
+
 		p := zm.entities.players.active[i]
+
 		p.RLock()
 
 		lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()
+
 		if lastHeartBeat < playerHeartbeatLimit {
 			p.RUnlock()
 			continue
@@ -140,11 +103,9 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 			t.Stop()
 		}
 		p.RUnlock()
-
-		zm.entities.players.Lock()
-		delete(zm.entities.players.active, i)
-		zm.entities.players.Unlock()
+		go deleteHandle(i, zm)
 	}
+	zm.entities.players.RUnlock()
 }
 
 func playerHandleLogic(e event, zm *zoneMap) {
@@ -182,13 +143,15 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 		return
 	}
 
+	zm.entities.players.RLock()
 	player, ok := zm.entities.players.active[ev.handle]
+	zm.entities.players.RUnlock()
 
 	if !ok {
 		log.Error("player not found during playerAppearedLogic")
 		return
 	}
-	sync.Map{}
+
 	go player.heartbeat()
 	go player.persistPosition()
 	go player.nearbyPlayers(zm)
@@ -204,6 +167,8 @@ func playerDisappearedLogic(e event, zm *zoneMap) {
 		return
 	}
 
+	zm.entities.players.RLock()
+
 	for _, p := range zm.entities.players.active {
 		if p.handle == ev.handle {
 			continue
@@ -213,6 +178,8 @@ func playerDisappearedLogic(e event, zm *zoneMap) {
 			Handle: ev.handle,
 		})
 	}
+
+	zm.entities.players.RUnlock()
 }
 
 func playerWalksLogic(e event, zm *zoneMap) {
@@ -232,7 +199,9 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	rX := (ev.nc.To.X * 8) / 50
 	rY := (ev.nc.To.Y * 8) / 50
 
+	zm.entities.players.RLock()
 	player, ok := zm.entities.players.active[ev.handle]
+	zm.entities.players.RUnlock()
 
 	if !ok {
 		log.Error("player not found during playerStoppedLogic")
@@ -258,7 +227,7 @@ func playerWalksLogic(e event, zm *zoneMap) {
 		To:     ev.nc.To,
 		Speed:  60,
 	}
-
+	zm.entities.players.RLock()
 	for i := range zm.entities.players.active {
 		foreignPlayer := zm.entities.players.active[i]
 
@@ -268,6 +237,8 @@ func playerWalksLogic(e event, zm *zoneMap) {
 			}
 		}
 	}
+	zm.entities.players.RUnlock()
+
 }
 
 func playerRunsLogic(e event, zm *zoneMap) {
@@ -288,7 +259,9 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	rX := (ev.nc.To.X * 8) / 50
 	rY := (ev.nc.To.Y * 8) / 50
 
+	zm.entities.players.RLock()
 	player, ok := zm.entities.players.active[ev.handle]
+	zm.entities.players.RUnlock()
 
 	if !ok {
 		log.Error("player not found during playerStoppedLogic")
@@ -314,6 +287,7 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		Speed:  120,
 	}
 
+	zm.entities.players.RLock()
 	for i := range zm.entities.players.active {
 		foreignPlayer := zm.entities.players.active[i]
 
@@ -323,6 +297,7 @@ func playerRunsLogic(e event, zm *zoneMap) {
 			}
 		}
 	}
+	zm.entities.players.RUnlock()
 }
 
 func playerStoppedLogic(e event, zm *zoneMap) {
@@ -340,7 +315,9 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	rX := (ev.nc.Location.X * 8) / 50
 	rY := (ev.nc.Location.Y * 8) / 50
 
+	zm.entities.players.RLock()
 	player, ok := zm.entities.players.active[ev.handle]
+	zm.entities.players.RUnlock()
 
 	if !ok {
 		log.Error("player not found during playerStoppedLogic")
@@ -359,6 +336,7 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 		Location: ev.nc.Location,
 	}
 
+	zm.entities.players.RLock()
 	for i := range zm.entities.players.active {
 		foreignPlayer := zm.entities.players.active[i]
 
@@ -368,6 +346,7 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 			}
 		}
 	}
+	zm.entities.players.RUnlock()
 }
 
 func playerJumpedLogic(e event, zm *zoneMap) {
@@ -377,7 +356,9 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 		return
 	}
 
+	zm.entities.players.RLock()
 	player, ok := zm.entities.players.active[ev.handle]
+	zm.entities.players.RUnlock()
 
 	if !ok {
 		log.Error("player not found during playerStoppedLogic")
@@ -388,6 +369,8 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 		Handle: ev.handle,
 	}
 
+	zm.entities.players.RLock()
+
 	for i := range zm.entities.players.active {
 		foreignPlayer := zm.entities.players.active[i]
 		if foreignPlayer.handle != player.handle {
@@ -396,10 +379,58 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 			}
 		}
 	}
+	zm.entities.players.RUnlock()
+}
+
+func unknownHandleLogic(e event, zm *zoneMap) {
+	ev, ok := e.(*unknownHandleEvent)
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&unknownHandleEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
+	if ev.handle != ev.nc.AffectedHandle {
+		log.Errorf("mismatched handles %v %v", ev.handle, ev.nc.AffectedHandle)
+		return
+	}
+
+	zm.entities.players.RLock()
+	player, ok := zm.entities.players.active[ev.handle]
+	zm.entities.players.RUnlock()
+
+	if !ok {
+		log.Errorf("player with handle %v not found", ev.handle)
+		return
+	}
+
+	//TODO: could also be NPC, Item on the ground or a Monster
+	zm.entities.players.RLock()
+	foreignPlayer, ok := zm.entities.players.active[ev.nc.ForeignHandle]
+	zm.entities.players.RUnlock()
+
+	if !ok {
+		log.Errorf("player with handle %v not found", ev.handle)
+		return
+	}
+
+	if playerInRange(player, foreignPlayer) {
+
+		foreignPlayer.RLock()
+		nc1 := foreignPlayer.ncBriefInfoLoginCharacterCmd()
+		foreignPlayer.RUnlock()
+
+		player.RLock()
+		nc2 := player.ncBriefInfoLoginCharacterCmd()
+		player.RUnlock()
+
+		go ncBriefInfoLoginCharacterCmd(player, &nc1)
+		go ncBriefInfoLoginCharacterCmd(foreignPlayer, &nc2)
+	}
 }
 
 // notify every player in proximity about player that logged in
 func newPlayer(p *player, nearbyPlayers *players) {
+	nearbyPlayers.RLock()
 	for i := range nearbyPlayers.active {
 		foreignPlayer := nearbyPlayers.active[i]
 
@@ -410,11 +441,14 @@ func newPlayer(p *player, nearbyPlayers *players) {
 			}
 		}
 	}
+	nearbyPlayers.RUnlock()
 }
 
 // send info to player about nearby players
 func nearbyPlayers(p *player, nearbyPlayers *players) {
 	var characters []structs.NcBriefInfoLoginCharacterCmd
+
+	nearbyPlayers.RLock()
 
 	for i := range nearbyPlayers.active {
 		foreignPlayer := nearbyPlayers.active[i]
@@ -427,6 +461,9 @@ func nearbyPlayers(p *player, nearbyPlayers *players) {
 		}
 
 	}
+
+	nearbyPlayers.RUnlock()
+
 	ncBriefInfoCharacterCmd(p, &structs.NcBriefInfoCharacterCmd{
 		Number:     byte(len(characters)),
 		Characters: characters,
