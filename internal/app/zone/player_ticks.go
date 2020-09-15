@@ -69,45 +69,73 @@ func (p *player) nearbyPlayers(zm *zoneMap) {
 			// also send data to the player that is running about nearby players
 			zm.entities.players.RLock()
 			for i := range zm.entities.players.active {
+
 				foreignPlayer := zm.entities.players.active[i]
-				if foreignPlayer.handle != p.handle {
-					if playerInRange(p, foreignPlayer) {
 
-						nc := foreignPlayer.ncBriefInfoLoginCharacterCmd()
+				foreignPlayer.RLock()
+				p.RLock()
+				fH := foreignPlayer.handle
+				pH := p.handle
+				foreignPlayer.RUnlock()
+				p.RUnlock()
 
-						_, exists := p.knownNearbyPlayers[foreignPlayer.handle]
+				if fH == pH {
+					continue
+				}
 
-						if !exists {
-							go ncBriefInfoLoginCharacterCmd(p, &nc)
-						}
+				if playerInRange(p, foreignPlayer) {
+
+					nc := foreignPlayer.ncBriefInfoLoginCharacterCmd()
+
+					p.RLock()
+					_, exists := p.knownNearbyPlayers[fH]
+					p.RUnlock()
+
+					if !exists {
+						go ncBriefInfoLoginCharacterCmd(p, &nc)
 					}
+
 				}
 			}
 
 			zm.entities.players.RUnlock()
 
+			p.RLock()
+
 			log.Infof("[player_ticks] removing out of range entities for handle %v", p.handle)
+
 			for i := range p.knownNearbyPlayers {
-				foreignPlayer := p.knownNearbyPlayers[i]
 
-				lastHeartBeat := time.Since(foreignPlayer.conn.lastHeartBeat).Seconds()
-				if lastHeartBeat > playerHeartbeatLimit {
-					delete(p.knownNearbyPlayers, i)
-					continue
-				}
+				go func(pHandle uint16) {
 
-				if !playerInRange(p, foreignPlayer) {
-					nc := structs.NcBriefInfoDeleteHandleCmd{
-						Handle: foreignPlayer.handle,
+					var removePlayer = func(pHandle uint16, vp * player) {
+						vp.Lock()
+						delete(vp.knownNearbyPlayers, pHandle)
+						vp.Unlock()
 					}
 
-					go ncBriefInfoDeleteHandleCmd(p, &nc)
+					foreignPlayer := p.knownNearbyPlayers[pHandle]
 
-					p.Lock()
-					delete(p.knownNearbyPlayers, i)
-					p.Unlock()
-				}
+					foreignPlayer.RLock()
+					lastHeartBeat := time.Since(foreignPlayer.conn.lastHeartBeat).Seconds()
+					foreignPlayer.RUnlock()
+
+					if lastHeartBeat > playerHeartbeatLimit {
+						go removePlayer(pHandle, p)
+						return
+					}
+
+					if !playerInRange(p, foreignPlayer) {
+						nc := structs.NcBriefInfoDeleteHandleCmd{
+							Handle: foreignPlayer.handle,
+						}
+						go ncBriefInfoDeleteHandleCmd(p, &nc)
+						go removePlayer(pHandle, p)
+					}
+				}(i)
+
 			}
+			p.RUnlock()
 		}
 	}
 }
