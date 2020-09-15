@@ -3,7 +3,6 @@ package zone
 import (
 	"context"
 	"encoding/hex"
-	"github.com/go-pg/pg/v9"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
@@ -13,11 +12,7 @@ import (
 	"path/filepath"
 )
 
-var (
-	// grr todo: move these to the zone object, as all logic operations will have access to that object in some form
-	log *logger.Logger
-	db  *pg.DB
-)
+var log *logger.Logger
 
 func init() {
 	log = logger.Init("zone master logger", true, false, ioutil.Discard)
@@ -37,7 +32,7 @@ func Start(cmd *cobra.Command, args []string) {
 
 	z.load()
 
-	db = database.Connection(ctx, database.ConnectionParams{
+	db := database.Connection(ctx, database.ConnectionParams{
 		User:     viper.GetString("world_database.db_user"),
 		Password: viper.GetString("world_database.db_password"),
 		Host:     viper.GetString("world_database.host"),
@@ -83,6 +78,7 @@ func Start(cmd *cobra.Command, args []string) {
 			8217: ncActMoveRunCmd,
 			8228: ncActJumpCmd,
 			8210: ncActStopReq,
+			7169: ncBriefInfoInformCmd,
 		},
 		SessionFactory: sessionFactory{},
 	}
