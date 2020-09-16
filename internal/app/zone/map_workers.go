@@ -342,6 +342,7 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	}
 
 	zm.entities.players.RLock()
+
 	for i := range zm.entities.players.active {
 		foreignPlayer := zm.entities.players.active[i]
 
@@ -351,6 +352,7 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 			}
 		}
 	}
+
 	zm.entities.players.RUnlock()
 }
 

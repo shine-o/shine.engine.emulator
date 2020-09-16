@@ -96,9 +96,9 @@ func (p *player) nearbyPlayers(zm *zoneMap) {
 						if !exists {
 							go ncBriefInfoLoginCharacterCmd(vp, &nc)
 						}
+
 					}
 				}(p, foreignPlayer)
-
 			}
 
 			zm.entities.players.RUnlock()
