@@ -316,6 +316,7 @@ func persistPLayerPositionLogic(e event, z *zone) {
 	ev, ok := e.(*persistPlayerPositionEvent)
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(persistPlayerPositionEvent{}).String(), reflect.TypeOf(ev).String())
+		return
 	}
 
 	ev.p.Lock()

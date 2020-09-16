@@ -9,7 +9,6 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/utils"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	bolt "go.etcd.io/bbolt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"sync"
@@ -18,8 +17,14 @@ import (
 var log *logger.Logger
 
 func init() {
-	log = logger.Init("maps logger", true, false, ioutil.Discard)
-	log.Info("maps logger init()")
+	log = logger.Init("maps logger", true, false, os.Stdout)
+}
+
+type MapData struct {
+	ID         int `struct:"int32"`
+	Attributes MapAttributes
+	Info       shn.MapInfo
+	SHBD       blocks.SHBD
 }
 
 type Map struct {
@@ -62,13 +67,6 @@ type MapAttributes struct {
 	PartyType        int    `struct:"int8"`
 	MobExpPenalty    int    `struct:"int32"`
 	PlayerExpPenalty int    `struct:"int32"`
-}
-
-type MapData struct {
-	ID         int `struct:"int32"`
-	Attributes MapAttributes
-	Info       shn.MapInfo
-	SHBD       blocks.SHBD
 }
 
 type mapData struct {

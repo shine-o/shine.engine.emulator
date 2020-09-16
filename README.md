@@ -11,6 +11,7 @@ Videos showcase:
 - [World - character creation](https://www.youtube.com/watch?v=GF7cUkPe6BI&t=16s)
 - [Zone  - player movements](https://www.youtube.com/watch?v=WPR9IcppmkI)
 - [Zone  - entity interaction range](https://www.youtube.com/watch?v=cSnldVbl2wA&feature=youtu.be)
+- [Zone  - entity interaction range 2](https://www.youtube.com/watch?v=roSZNHxg7o4)
 
 
 ##Event logic for login, world, zone services
