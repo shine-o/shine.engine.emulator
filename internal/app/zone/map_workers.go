@@ -331,6 +331,11 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 		return
 	}
 
+	player.Lock()
+	player.x = ev.nc.Location.X
+	player.y = ev.nc.Location.Y
+	player.Unlock()
+
 	nc := structs.NcActSomeoneStopCmd{
 		Handle:   player.handle,
 		Location: ev.nc.Location,

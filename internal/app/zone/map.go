@@ -12,11 +12,11 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"math"
 	"os"
-	"sync"
 )
 
 type zoneMap struct {
 	data      world.MapData
+	mobRegens interface{}
 	walkableX *roaring.Bitmap
 	walkableY *roaring.Bitmap
 	entities  entities
@@ -27,26 +27,6 @@ type entities struct {
 	*players
 	*monsters
 }
-
-type players struct {
-	handleIndex uint16
-	active      map[uint16]*player
-	sync.RWMutex
-}
-
-type monsters struct {
-	handleIndex uint16
-	active      map[uint16]*monster
-	sync.RWMutex
-}
-
-const playerHandleMin uint16 = 8000
-const playerHandleMax uint16 = 12000
-const playerAttemptsMax uint16 = 50
-
-const monsterHandleMin uint16 = 17000
-const monsterHandleMax uint16 = 27000
-const monsterAttemptsMax uint16 = 50
 
 func (zm *zoneMap) run() {
 	// load NPCs for this map
@@ -178,71 +158,4 @@ func walkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) 
 	}
 
 	return walkableX, walkableY, nil
-}
-
-func (m *monsters) newHandle() (uint16, error) {
-	var attempts uint16 = 0
-	min := monsterHandleMin
-	max := monsterHandleMax
-	maxAttempts := monsterAttemptsMax
-
-	index := m.handleIndex
-
-	for {
-
-		if attempts == maxAttempts {
-			return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
-		}
-
-		index++
-
-		if index == max {
-			index = min
-		}
-
-		m.handleIndex = index
-
-		if _, used := m.active[index]; used {
-			attempts++
-			continue
-		}
-
-		return index, nil
-	}
-}
-
-func (p *players) newHandle() (uint16, error) {
-	var attempts uint16 = 0
-	min := playerHandleMin
-	max := playerHandleMax
-	maxAttempts := playerAttemptsMax
-
-	p.RLock()
-	index := p.handleIndex
-	p.RUnlock()
-
-	for {
-		if attempts == maxAttempts {
-			return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
-		}
-
-		index++
-
-		if index == max {
-			index = min
-		}
-
-		p.Lock()
-		p.handleIndex = index
-		p.Unlock()
-
-		p.RLock()
-		if _, used := p.active[index]; used {
-			attempts++
-			continue
-		}
-		p.RUnlock()
-
-		return index, nil
-	}
 }

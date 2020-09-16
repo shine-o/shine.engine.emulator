@@ -426,6 +426,7 @@ func (p *player) passiveData(passives chan<- []passive, c *character.Character, 
 }
 
 func (p *player) ncBriefInfoLoginCharacterCmd() structs.NcBriefInfoLoginCharacterCmd {
+
 	nc := structs.NcBriefInfoLoginCharacterCmd{
 		Handle: p.getHandle(),
 		CharID: structs.Name5{
@@ -460,16 +461,6 @@ func (p *player) ncBriefInfoLoginCharacterCmd() structs.NcBriefInfoLoginCharacte
 	}
 	return nc
 }
-
-func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
-	return &structs.ProtoAvatarShapeInfo{
-		BF:        1 | pv.class<<2 | pv.gender<<7,
-		HairType:  pv.hairType,
-		HairColor: pv.hairColour,
-		FaceShape: pv.faceType,
-	}
-}
-
 func (p *player) charParameterData() structs.CharParameterData {
 	return structs.CharParameterData{
 		PrevExp: p.state.prevExp,
@@ -575,6 +566,15 @@ func (p *player) charParameterData() structs.CharParameterData {
 	}
 }
 
+func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
+	return &structs.ProtoAvatarShapeInfo{
+		BF:        1 | pv.class<<2 | pv.gender<<7,
+		HairType:  pv.hairType,
+		HairColor: pv.hairColour,
+		FaceShape: pv.faceType,
+	}
+}
+
 func (pi *playerItems) ncCharClientItemCmd() []structs.NcCharClientItemCmd {
 	var ncs []structs.NcCharClientItemCmd
 	// for now empty, later on process each box type item
@@ -610,3 +610,4 @@ func (pi *playerItems) ncCharClientItemCmd() []structs.NcCharClientItemCmd {
 	}
 	return ncs
 }
+
