@@ -74,8 +74,14 @@ const (
 	playerJumped
 	playerStopped
 	unknownHandle
+	monsterAppeared
+	monsterDisappeared
+	monsterWalks
+	monsterRuns
+	monsterIdle
 	queryPlayer
 	queryMonster
+
 
 	// dynamically registered events
 	// events that are defined at run time

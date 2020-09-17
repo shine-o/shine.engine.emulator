@@ -42,6 +42,22 @@ func (zm *zoneMap) playerActivity() {
 	}
 }
 
+func (zm *zoneMap) monsterActivity() {
+	log.Infof("[map_worker] monsterActivity worker for map %v", zm.data.Info.MapName)
+	for {
+		select {
+		case e := <-zm.recv[monsterAppeared]:
+			log.Info(e)
+		case e := <-zm.recv[monsterDisappeared]:
+			log.Info(e)
+		case e := <-zm.recv[monsterWalks]:
+			log.Info(e)
+		case e := <-zm.recv[monsterRuns]:
+			log.Info(e)
+		}
+	}
+}
+
 func (zm *zoneMap) playerQueries() {
 	log.Infof("[map_worker] playerQueries worker for map %v", zm.data.Info.MapName)
 	for {
@@ -49,7 +65,7 @@ func (zm *zoneMap) playerQueries() {
 		case e := <-zm.recv[queryPlayer]:
 			ev, ok := e.(*queryPlayerEvent)
 			if !ok {
-				log.Errorf("expected event type %v but got %v", reflect.TypeOf(queryPlayerEvent{}).String(), reflect.TypeOf(ev).String())
+				log.Errorf("expected event type %v but got %v", reflect.TypeOf(&queryPlayerEvent{}).String(), reflect.TypeOf(ev).String())
 				return
 			}
 		}

@@ -9,16 +9,12 @@ const monsterHandleMin uint16 = 17000
 const monsterHandleMax uint16 = 27000
 const monsterAttemptsMax uint16 = 50
 
-type monstersData struct {
-	mobInfo interface{}
-	mobInfoServer interface{}
-}
-
 type monsters struct {
 	handleIndex uint16
 	active      map[uint16]*monster
 	sync.RWMutex
 }
+
 
 // a monster can have many routines linked to it
 
@@ -27,7 +23,6 @@ type monsters struct {
 
 // when a monster dies, it should respawn again in a random number of seconds between RegMin and RegMax
 // a monster should spawn at the defined random coordinates product of  X,Y, Width, Height
-
 
 func (m *monsters) newHandle() (uint16, error) {
 	var attempts uint16 = 0
