@@ -58,7 +58,6 @@ func (p *player) nearbyPlayers(zm *zoneMap) {
 	p.tickers = append(p.tickers, tick)
 	p.Unlock()
 	defer tick.Stop()
-
 	for {
 		select {
 		case <-tick.C:

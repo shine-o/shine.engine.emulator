@@ -2,21 +2,15 @@ package zone
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/RoaringBitmap/roaring"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/blocks"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/utils"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/world"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"github.com/spf13/viper"
-	bolt "go.etcd.io/bbolt"
 	"math"
-	"os"
 )
 
 type zoneMap struct {
-	data      world.MapData
-	mobRegens interface{}
+	data      * world.Map
 	walkableX *roaring.Bitmap
 	walkableY *roaring.Bitmap
 	entities  entities
@@ -28,102 +22,92 @@ type entities struct {
 	*monsters
 }
 
-func (zm *zoneMap) run() {
-	// load NPCs for this map
-	// run logic routines
-	// as many workers as needed can be launched
-	num := viper.GetInt("workers.num_zone_workers")
+func (z * zone) addMap(mapId int) {
 
-	go zm.removeInactiveHandles()
+	md, ok := mapData[mapId]
 
-	for i := 0; i <= num; i++ {
-		go zm.mapHandles()
-		go zm.playerActivity()
-		go zm.playerQueries()
-		go zm.monsterQueries()
-	}
-}
-
-// load maps
-func loadMaps() []zoneMap {
-	var reload bool
-
-	dbPath := viper.GetString("game_data.database")
-
-	_, err := os.Stat(dbPath)
-	if os.IsNotExist(err) {
-		reload = true
-	} else {
-		reload = viper.GetBool("game_data.reload")
+	if !ok {
+		log.Fatalf("no map data for map with id %v", mapId)
 	}
 
-	shinePath := viper.GetString("shine_folder")
-	normalMaps := viper.GetIntSlice("normal_maps")
-
-	db, err := bolt.Open(dbPath, 0600, nil)
+	walkableX, walkableY, err := walkingPositions(md.SHBD)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if reload {
-		shineAbsPath, err := utils.ValidPath(shinePath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = world.LoadMapData(shineAbsPath, db)
-		if err != nil {
-			log.Fatal(err)
-		}
+	m := &zoneMap{
+		data:      md,
+		walkableX: walkableX,
+		walkableY: walkableY,
+		entities: entities{
+			players: &players{
+				handleIndex: playerHandleMin,
+				active:      make(map[uint16]*player),
+			},
+			monsters: &monsters{
+				handleIndex: playerHandleMin,
+				active:      make(map[uint16]*monster),
+			},
+		},
+		events: events{
+			send: make(sendEvents),
+			recv: make(recvEvents),
+		},
 	}
 
-	// zones defined in the service, load them and register the loaded ones to the master
-	var zoneMaps []zoneMap
-	for _, id := range normalMaps {
-		var md world.MapData
-
-		err = db.View(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte("maps"))
-			data := b.Get([]byte(fmt.Sprintf("%v", id)))
-			err = structs.Unpack(data, &md)
-			if err != nil {
-				return err
-			}
-			return nil
-		})
-
-		if err != nil {
-			log.Fatalf("failed to get stored map data with id %v %v", id, err)
-		}
-
-		walkableX, walkableY, err := walkingPositions(&md.SHBD)
-		if err != nil {
-			log.Fatal(err)
-		}
-		zm := zoneMap{
-			data:      md,
-			walkableX: walkableX,
-			walkableY: walkableY,
-			entities: entities{
-				players: &players{
-					handleIndex: playerHandleMin,
-					active:      make(map[uint16]*player),
-				},
-				monsters: &monsters{
-					handleIndex: playerHandleMin,
-					active:      make(map[uint16]*monster),
-				},
-			},
-			events: events{
-				send: make(sendEvents),
-				recv: make(recvEvents),
-			},
-		}
-		zoneMaps = append(zoneMaps, zm)
+	events := []eventIndex{
+		playerHandle,
+		playerHandleMaintenance,
+		queryPlayer, queryMonster,
+		playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
+		unknownHandle, 	monsterAppeared, monsterDisappeared, monsterWalks,monsterRuns,
 	}
 
-	return zoneMaps
+	for _, index := range events {
+		c := make(chan event, 500)
+		m.recv[index] = c
+		m.send[index] = c
+	}
+
+	z.Lock()
+	z.rm[m.data.ID] = m
+	z.Unlock()
+
+	go m.run()
+
 }
+
+func (zm *zoneMap) run() {
+	// load NPCs for this map
+	// run logic routines
+	// as many workers as needed can be launched
+	num := viper.GetInt("workers.num_map_workers")
+
+	// load mobs
+
+	//zm.entities.monsters
+
+	monsters, ok := monsterData.MapRegens[zm.data.MapInfoIndex]
+
+	if !ok {
+		log.Warningf("No mobs available for map %v", zm.data.MapInfoIndex)
+	}
+
+
+	go zm.removeInactiveHandles()
+
+	for i := 0; i <= num; i++ {
+		go zm.mapHandles()
+
+		go zm.playerActivity()
+		go zm.monsterActivity()
+
+		go zm.playerQueries()
+		go zm.monsterQueries()
+	}
+}
+
 
 // CanWalk translates in game coordinates to SHBD coordinates
 func canWalk(x, y *roaring.Bitmap, rX, rY uint32) bool {
@@ -156,6 +140,5 @@ func walkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) 
 			}
 		}
 	}
-
 	return walkableX, walkableY, nil
 }

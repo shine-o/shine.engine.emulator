@@ -2,7 +2,7 @@
 ### DEFAULT VALUES ARE SHOWN ###
 ################################
 network:
-  interface: "\\Device\\NPF_{B062F2C5-D78B-400C-9E1F-1D743261A6F1}"
+  interface: "\\Device\\NPF_{E01ABFE4-F676-4228-A361-2FD9D6545134}"
 #  interface: "\\Device\\NPF_{0C0F3035-51CB-4486-B8B1-5D3442D92897}"
   # if sniffing for traffic between backend services, which may not be encrypted
   # interface should be the local lo0 device (nmap --iflist to see which one)
