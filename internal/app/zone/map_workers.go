@@ -163,10 +163,14 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 
 	go p1.heartbeat()
 	go p1.persistPosition()
-	go p1.nearbyPlayers(zm)
 
 	go newPlayer(p1, zm)
 	go nearbyPlayers(p1, zm)
+
+	go p1.nearbyPlayersMaintenance(zm)
+	go p1.nearbyPlayersMaintenance(zm)
+	go p1.nearbyPlayersMaintenance(zm)
+	go adjacentMonstersInform(p1, zm)
 }
 
 func playerDisappearedLogic(e event, zm *zoneMap) {
@@ -302,6 +306,10 @@ func playerRunsLogic(e event, zm *zoneMap) {
 			}
 		}(ap)
 	}
+
+	go adjacentMonstersInform(p1, zm)
+
+
 }
 
 func playerStoppedLogic(e event, zm *zoneMap) {
