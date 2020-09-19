@@ -126,34 +126,7 @@ func (zm *zoneMap) run() {
 func spawnMobGroup(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 	defer wg.Done()
 
-	var (
-		x, y     int
-		maxTries = 20
-		spawn    = false
-	)
 
-	for maxTries != 0 {
-
-		if re.Width == 0 {
-			x = re.X
-		} else {
-			x = networking.RandomIntBetween(re.X, re.X+re.Width)
-		}
-
-		if re.Height == 0 {
-			y = re.Y
-		} else {
-			y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
-		}
-
-		rX, rY := igCoordToBitmap(x, y)
-
-		if canWalk(zm.walkableX, zm.walkableY, uint32(rX), uint32(rY)) {
-			spawn = true
-		}
-
-		maxTries--
-	}
 
 	var (
 		mi  *shn.MobInfo
@@ -182,37 +155,69 @@ func spawnMobGroup(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 		return
 	}
 
-	if spawn {
-		h, err := zm.entities.monsters.newHandle()
-		if err != nil {
-			log.Error(err)
-			return
+	for i := re.MobNum; i != 0; i-- {
+		var (
+			x, y     int
+			maxTries = 20
+			spawn    = false
+		)
+
+		for maxTries != 0 {
+
+			if re.Width == 0 {
+				x = re.X
+			} else {
+				x = networking.RandomIntBetween(re.X, re.X+re.Width)
+			}
+
+			if re.Height == 0 {
+				y = re.Y
+			} else {
+				y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
+			}
+
+			rX, rY := igCoordToBitmap(x, y)
+
+			if canWalk(zm.walkableX, zm.walkableY, uint32(rX), uint32(rY)) {
+				spawn = true
+			}
+
+			maxTries--
 		}
 
-		monster := &monster{
-			baseEntity: baseEntity{
-				handle: h,
-				location: location{
-					mapID:     zm.data.ID,
-					mapName:   zm.data.MapInfoIndex,
-					x:         uint32(x),
-					y:         uint32(y),
-					d:         0,
-					movements: [15]movement{},
+		if spawn {
+			h, err := zm.entities.monsters.newHandle()
+			if err != nil {
+				log.Error(err)
+				return
+			}
+
+			monster := &monster{
+				baseEntity: baseEntity{
+					handle: h,
+					location: location{
+						mapID:     zm.data.ID,
+						mapName:   zm.data.MapInfoIndex,
+						x:         uint32(x),
+						y:         uint32(y),
+						d:         0,
+						movements: [15]movement{},
+					},
+					events: events{},
 				},
-				events: events{},
-			},
-			hp:            mi.MaxHP,
-			sp:            uint32(mis.MaxSP),
-			mobInfo:       mi,
-			mobInfoServer: mis,
-			regenData:     re,
-		}
+				hp:            mi.MaxHP,
+				sp:            uint32(mis.MaxSP),
+				mobInfo:       mi,
+				mobInfoServer: mis,
+				regenData:     re,
+			}
 
-		zm.entities.monsters.Lock()
-		zm.entities.monsters.active[h] = monster
-		zm.entities.monsters.Unlock()
+			zm.entities.monsters.Lock()
+			zm.entities.monsters.active[h] = monster
+			zm.entities.monsters.Unlock()
+		}
 	}
+
 }
 
 func igCoordToBitmap(x, y int) (int, int) {

@@ -3,6 +3,7 @@ package zone
 import (
 	mobs "github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/monsters"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
+	"sync"
 )
 
 type monster struct {
@@ -12,8 +13,16 @@ type monster struct {
 	mobInfo * shn.MobInfo
 	mobInfoServer * shn.MobInfoServer
 	regenData  mobs.RegenEntry
+
+	sync.RWMutex
 }
 
+func (m *monster) getHandle() uint16 {
+	m.RLock()
+	h := m.handle
+	m.RUnlock()
+	return h
+}
 
 func (m * monster) alive()  {
 

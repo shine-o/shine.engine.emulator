@@ -12,22 +12,22 @@ type player struct {
 	baseEntity
 	players  map[uint16]*player
 	monsters map[uint16]*monster
-	char               *character.Character
-	conn               playerConnection
-	view               playerView
-	stats              playerStats
-	state              playerState
-	items              playerItems
-	money              playerMoney
-	titles             playerTitles
-	quests             playerQuests
-	skills             []skill
-	passives           []passive
-	tickers             []*time.Ticker
+	char     *character.Character
+	conn     playerConnection
+	view     playerView
+	stats    playerStats
+	state    playerState
+	items    playerItems
+	money    playerMoney
+	titles   playerTitles
+	quests   playerQuests
+	skills   []skill
+	passives []passive
+	tickers  []*time.Ticker
 	sync.RWMutex
 }
 
-func (p * player) getHandle() uint16 {
+func (p *player) getHandle() uint16 {
 	p.RLock()
 	h := p.handle
 	p.RUnlock()
@@ -41,12 +41,12 @@ func lastHeartbeat(p *player) float64 {
 	return lastHeartBeat
 }
 
-func (p * player) adjacentPlayers() <- chan *player {
+func (p *player) adjacentPlayers() <-chan *player {
 	p.RLock()
 	ch := make(chan *player, len(p.players))
 	p.RUnlock()
 
-	go func(send chan <- *player) {
+	go func(send chan<- *player) {
 		p.RLock()
 		for _, ap := range p.players {
 			send <- ap
@@ -58,12 +58,18 @@ func (p * player) adjacentPlayers() <- chan *player {
 	return ch
 }
 
-func (p * player) adjacentMonsters() <- chan *monster {
+func (p *player) removeAdjacentPlayer(h uint16) {
+	p.Lock()
+	delete(p.players, h)
+	p.Unlock()
+}
+
+func (p *player) adjacentMonsters() <-chan *monster {
 	p.RLock()
 	ch := make(chan *monster, len(p.monsters))
 	p.RUnlock()
 
-	go func(send chan <- *monster) {
+	go func(send chan<- *monster) {
 		p.RLock()
 		for _, ap := range p.monsters {
 			send <- ap
@@ -221,7 +227,7 @@ func (p *player) load(name string, worldDB *pg.DB) error {
 		return err
 	}
 	p.Lock()
-	defer 	p.Unlock()
+	defer p.Unlock()
 
 	p.char = &char
 
@@ -232,7 +238,7 @@ func (p *player) load(name string, worldDB *pg.DB) error {
 	p.location.d = char.Location.D
 
 	p.players = make(map[uint16]*player)
-
+	p.monsters = make(map[uint16]*monster)
 
 	view := make(chan playerView)
 	state := make(chan playerState)
@@ -659,4 +665,3 @@ func (pi *playerItems) ncCharClientItemCmd() []structs.NcCharClientItemCmd {
 	}
 	return ncs
 }
-

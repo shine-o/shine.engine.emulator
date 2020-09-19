@@ -2,6 +2,7 @@ package zone
 
 import (
 	"fmt"
+	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"sync"
 )
 
@@ -84,8 +85,56 @@ func (m *monsters) newHandle() (uint16, error) {
 	}
 }
 
+func knownMonster(p * player, mh uint16) bool {
+	p.RLock()
+	_, ok := p.monsters[mh]
+	p.RUnlock()
+	if ok {
+		return true
+	}
+	return false
+}
+
+func adjacentMonstersInform(p * player, zm * zoneMap)  {
+	for m := range zm.entities.activeMonsters() {
+		go func(p * player, m * monster) {
+			if !knownMonster(p, m.getHandle()) {
+				if monsterInRange(p, m) {
+					nc := m.ncBriefInfoRegenMobCmd()
+					ncBriefInfoRegenMobCmd(p, &nc)
+				}
+			}
+
+		}(p, m)
+	}
+}
+
+func (m * monster) ncBriefInfoRegenMobCmd() structs.NcBriefInfoRegenMobCmd {
+	m.RLock()
+	nc := structs.NcBriefInfoRegenMobCmd{
+		Handle:         m.handle,
+		Mode:           byte(m.mobInfoServer.EnemyDetect),
+		MobID:          m.mobInfo.ID,
+		Coord:          structs.ShineCoordType{
+			XY:        structs.ShineXYType{
+				X: m.x,
+				Y: m.y,
+			},
+			Direction: m.d,
+		},
+	}
+	m.RUnlock()
+	return nc
+}
+
 func monsterInRange(p *player, m *monster) bool {
-	if entityInRange(p.baseEntity, m.baseEntity)  {
+	p.RLock()
+	m.RLock()
+	yes := entityInRange(p.baseEntity, m.baseEntity)
+	p.RUnlock()
+	m.RUnlock()
+
+	if yes {
 		p.Lock()
 		p.monsters[m.handle] = m
 		p.Unlock()
@@ -93,6 +142,10 @@ func monsterInRange(p *player, m *monster) bool {
 	}
 	return false
 }
+
+// for every movement a player makes, launch a routine that:
+//		iterates over every monster
+
 // a monster can have many routines linked to it
 
 // all these routines should be started when a monster spawns

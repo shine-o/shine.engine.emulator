@@ -50,7 +50,7 @@ func (p *player) persistPosition() {
 }
 
 // remove entities that are outside the view range of the player
-func (p *player) nearbyPlayers(zm *zoneMap) {
+func (p *player) nearbyPlayersMaintenance(zm *zoneMap) {
 	log.Infof("[player_ticks] nearbyEntities for handle %v", p.handle)
 	tick := time.NewTicker(200 * time.Millisecond)
 
@@ -112,19 +112,13 @@ func (p *player) nearbyMonsters(zm *zoneMap) {
 	}
 }
 
-func removeNearbyPlayer(targetHandle uint16, vp *player) {
-	vp.Lock()
-	delete(vp.players, targetHandle)
-	vp.Unlock()
-}
-
 // if foreign player timed out or is not in range
 // send packet to the client to notify of player disappearance
 func checkRemoval(p1, p2 *player) {
 	fh := p2.getHandle()
 
 	if lastHeartbeat(p2) > playerHeartbeatLimit {
-		go removeNearbyPlayer(fh, p1)
+		go p1.removeAdjacentPlayer(fh)
 		return
 	}
 
@@ -133,7 +127,7 @@ func checkRemoval(p1, p2 *player) {
 			Handle: p2.getHandle(),
 		}
 		go ncBriefInfoDeleteHandleCmd(p1, &nc)
-		go removeNearbyPlayer(fh, p1)
+		go p1.removeAdjacentPlayer(fh)
 	}
 }
 
