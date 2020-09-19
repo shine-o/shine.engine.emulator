@@ -18,6 +18,7 @@ type zone struct {
 	events
 	*dynamicEvents
 	worldDB *pg.DB
+	sync.RWMutex
 }
 
 // instead of accessing global variables for data
@@ -32,15 +33,6 @@ func (z *zone) load() {
 	loadGameData()
 
 	z.rm = make(runningMaps)
-
-	normalMaps := viper.GetIntSlice("normal_maps")
-
-	var registerMaps []int32
-
-	for _, id := range normalMaps {
-		registerMaps = append(registerMaps, int32(id))
-		go z.addMap(id)
-	}
 
 	zEvents := []eventIndex{
 		playerMapLogin,
@@ -66,6 +58,19 @@ func (z *zone) load() {
 	z.dynamicEvents = &dynamicEvents{
 		events: make(map[string]events),
 	}
+
+	normalMaps := viper.GetIntSlice("normal_maps")
+
+	var registerMaps []int32
+
+	var wg sync.WaitGroup
+	for _, id := range normalMaps {
+		wg.Add(1)
+		registerMaps = append(registerMaps, int32(id))
+		go z.addMap(id, &wg)
+	}
+
+	wg.Wait()
 
 	err := registerZone(registerMaps)
 
