@@ -10,7 +10,8 @@ import (
 
 type player struct {
 	baseEntity
-	knownNearbyPlayers map[uint16]*player
+	players  map[uint16]*player
+	monsters map[uint16]*monster
 	char               *character.Character
 	conn               playerConnection
 	view               playerView
@@ -22,8 +23,56 @@ type player struct {
 	quests             playerQuests
 	skills             []skill
 	passives           []passive
+	tickers             []*time.Ticker
 	sync.RWMutex
-	tickers []*time.Ticker
+}
+
+func (p * player) getHandle() uint16 {
+	p.RLock()
+	h := p.handle
+	p.RUnlock()
+	return h
+}
+
+func lastHeartbeat(p *player) float64 {
+	p.RLock()
+	lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()
+	p.RUnlock()
+	return lastHeartBeat
+}
+
+func (p * player) adjacentPlayers() <- chan *player {
+	p.RLock()
+	ch := make(chan *player, len(p.players))
+	p.RUnlock()
+
+	go func(send chan <- *player) {
+		p.RLock()
+		for _, ap := range p.players {
+			send <- ap
+		}
+		p.RUnlock()
+		close(send)
+	}(ch)
+
+	return ch
+}
+
+func (p * player) adjacentMonsters() <- chan *monster {
+	p.RLock()
+	ch := make(chan *monster, len(p.monsters))
+	p.RUnlock()
+
+	go func(send chan <- *monster) {
+		p.RLock()
+		for _, ap := range p.monsters {
+			send <- ap
+		}
+		p.RUnlock()
+		close(send)
+	}(ch)
+
+	return ch
 }
 
 type playerConnection struct {
@@ -182,7 +231,7 @@ func (p *player) load(name string, worldDB *pg.DB) error {
 	p.location.y = char.Location.Y
 	p.location.d = char.Location.D
 
-	p.knownNearbyPlayers = make(map[uint16]*player)
+	p.players = make(map[uint16]*player)
 
 
 	view := make(chan playerView)

@@ -2,7 +2,6 @@ package zone
 
 import (
 	"fmt"
-	"sync"
 )
 
 const (
@@ -35,7 +34,6 @@ type baseEntity struct {
 	handle uint16
 	location
 	events
-	sync.Mutex
 }
 
 func (b *baseEntity) getHandle() uint16 {
@@ -51,6 +49,23 @@ func (b *baseEntity) move(m *zoneMap, x, y uint32) error {
 		return nil
 	}
 	return fmt.Errorf("entity %v cannot move to x %v  y %v", b.getHandle(), x, y)
+}
+
+func entityInRange(e1, e2 baseEntity) bool {
+	viewerX := (e1.x * 8) / 50
+	viewerY := (e1.y * 8) / 50
+
+	targetX := (e2.x * 8) / 50
+	targetY := (e2.y * 8) / 50
+
+	vertical := targetY <= viewerY+lengthY && targetY >= viewerY || targetY >= (viewerY-lengthY) && targetY <= viewerY
+	horizontal := targetX <= (viewerX+lengthX) && targetX >= viewerX || targetX >= (viewerX-lengthX) && targetX <= viewerX
+
+	if vertical && horizontal {
+		return true
+	}
+
+	return false
 }
 
 type mover struct {

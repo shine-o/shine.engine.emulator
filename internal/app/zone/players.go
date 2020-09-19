@@ -7,12 +7,42 @@ import (
 
 const playerHandleMin uint16 = 8000
 const playerHandleMax uint16 = 12000
-const playerAttemptsMax uint16 = 50
+const playerAttemptsMax uint16 = 500
 
 type players struct {
 	handleIndex uint16
 	active      map[uint16]*player
 	sync.RWMutex
+}
+
+func (p * players) activePlayers() <- chan *player {
+
+	p.RLock()
+	ch := make(chan *player, len(p.active))
+	p.RUnlock()
+
+	go func(send chan <- *player) {
+		p.RLock()
+		for _, ap := range p.active {
+			send <- ap
+		}
+		p.RUnlock()
+		close(send)
+	}(ch)
+
+	return ch
+}
+
+func (p * players) removeHandle(h uint16)  {
+	p.Lock()
+	delete(p.active, h)
+	p.Unlock()
+}
+
+func (p * players) addHandle(h uint16, ap * player)  {
+	p.Lock()
+	p.active[h] = ap
+	p.Unlock()
 }
 
 func (p *players) newHandle() (uint16, error) {
@@ -51,35 +81,21 @@ func (p *players) newHandle() (uint16, error) {
 	}
 }
 
-func playerInRange(viewer, target *player) bool {
+func playerInRange(v, t * player) bool {
+	v.RLock()
+	t.RLock()
 
-	target.RLock()
-	targetX := (target.x * 8) / 50
-	targetY := (target.y * 8) / 50
-	targetHandle := target.handle
-	target.RUnlock()
+	yes := entityInRange(v.baseEntity, t.baseEntity)
 
-	viewer.RLock()
-	viewerX := (viewer.x * 8) / 50
-	viewerY := (viewer.y * 8) / 50
-	viewerHandle := viewer.handle
-	viewer.RUnlock()
+	v.RUnlock()
+	t.RUnlock()
 
-	vertical := targetY <= viewerY+lengthY && targetY >= viewerY || targetY >= (viewerY-lengthY) && targetY <= viewerY
-	horizontal := targetX <= (viewerX+lengthX) && targetX >= viewerX || targetX >= (viewerX-lengthX) && targetX <= viewerX
-
-	if vertical && horizontal {
-
-		viewer.Lock()
-		viewer.knownNearbyPlayers[target.handle] = target
-		viewer.Unlock()
-
-		log.Infof("%v is in range of %v", targetHandle, viewerHandle)
+	if yes {
+		v.Lock()
+		v.players[t.handle] = t
+		v.Unlock()
 		return true
 	}
-
-	log.Infof("%v is in not in range of %v", targetHandle, viewerHandle)
-
 	return false
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"path/filepath"
+	"runtime"
 )
 
 var log *logger.Logger
@@ -20,6 +21,8 @@ func init() {
 
 // Start initializes the TCP server and all the needed services and configuration for the zone
 func Start(cmd *cobra.Command, args []string) {
+	runtime.SetMutexProfileFraction(1000)
+
 	ctx := context.Background()
 
 	log = logger.Init("world logger", true, false, ioutil.Discard)

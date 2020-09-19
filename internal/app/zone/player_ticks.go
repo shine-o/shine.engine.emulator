@@ -65,84 +65,75 @@ func (p *player) nearbyPlayers(zm *zoneMap) {
 				return
 			}
 
-			// also send data to the player that is running about nearby players
-			zm.entities.players.RLock()
-			for i := range zm.entities.players.active {
-				foreignPlayer := zm.entities.players.active[i]
-
-				go func(vp, fp * player) {
-					fp.RLock()
-					fH := fp.handle
-					fp.RUnlock()
-
-					vp.RLock()
-					pH := vp.handle
-					vp.RUnlock()
-
-					if fH == pH {
+			for ap := range zm.entities.activePlayers() {
+				go func(p1, p2 * player) {
+					if p2.getHandle() == p1.getHandle() {
 						return
 					}
 
-					if playerInRange(vp, fp) {
-						fp.RLock()
-						nc := fp.ncBriefInfoLoginCharacterCmd()
-						fp.RUnlock()
+					if playerInRange(p1, p2) {
 
-						vp.RLock()
-						_, exists := vp.knownNearbyPlayers[fH]
-						vp.RUnlock()
+						p1.RLock()
+						_, exists := p1.players[p2.getHandle()]
+						p1.RUnlock()
 
 						if !exists {
-							go ncBriefInfoLoginCharacterCmd(vp, &nc)
+							p2.RLock() //todo move locks into the method
+							nc := p2.ncBriefInfoLoginCharacterCmd()
+							p2.RUnlock()
+							ncBriefInfoLoginCharacterCmd(p1, &nc)
 						}
-
 					}
-				}(p, foreignPlayer)
+				}(p, ap)
 			}
 
-			zm.entities.players.RUnlock()
-
-			p.RLock()
-			log.Infof("[player_ticks] removing out of range entities for handle %v", p.handle)
-			for i := range p.knownNearbyPlayers {
-				go checkRemoval(i, p)
+			for ap := range p.adjacentPlayers() {
+				go checkRemoval(p, ap)
 			}
-			p.RUnlock()
+
 		}
 	}
 }
 
-func removeNearbyPlayer(targetHandle uint16, vp * player) {
+func (p *player) nearbyMonsters(zm *zoneMap) {
+	log.Infof("[player_ticks] nearbyMonsters for handle %v", p.handle)
+	tick := time.NewTicker(200 * time.Millisecond)
+
+	p.Lock()
+	p.tickers = append(p.tickers, tick)
+	p.Unlock()
+	defer tick.Stop()
+	for {
+		select {
+		case <-tick.C:
+			// for each monster
+			// if nearby, add to known nearby
+		}
+	}
+}
+
+func removeNearbyPlayer(targetHandle uint16, vp *player) {
 	vp.Lock()
-	delete(vp.knownNearbyPlayers, targetHandle)
+	delete(vp.players, targetHandle)
 	vp.Unlock()
 }
 
 // if foreign player timed out or is not in range
 // send packet to the client to notify of player disappearance
-func checkRemoval(fHandle uint16, viewerPlayer * player) {
+func checkRemoval(p1, p2 *player) {
+	fh := p2.getHandle()
 
-	viewerPlayer.RLock()
-	foreignPlayer := viewerPlayer.knownNearbyPlayers[fHandle]
-	viewerPlayer.RUnlock()
-
-	if lastHeartbeat(foreignPlayer) > playerHeartbeatLimit {
-		go removeNearbyPlayer(fHandle, viewerPlayer)
+	if lastHeartbeat(p2) > playerHeartbeatLimit {
+		go removeNearbyPlayer(fh, p1)
 		return
 	}
 
-	if !playerInRange(viewerPlayer, foreignPlayer) {
+	if !playerInRange(p1, p2) {
 		nc := structs.NcBriefInfoDeleteHandleCmd{
-			Handle: foreignPlayer.handle,
+			Handle: p2.getHandle(),
 		}
-		go ncBriefInfoDeleteHandleCmd(viewerPlayer, &nc)
-		go removeNearbyPlayer(fHandle, viewerPlayer)
+		go ncBriefInfoDeleteHandleCmd(p1, &nc)
+		go removeNearbyPlayer(fh, p1)
 	}
 }
 
-func lastHeartbeat(p *player) float64 {
-	p.RLock()
-	lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()
-	p.RUnlock()
-	return lastHeartBeat
-}

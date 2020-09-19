@@ -7,13 +7,11 @@ import (
 
 type monster struct {
 	baseEntity
-	hp int
-	sp int
+	hp, sp uint32
 
 	mobInfo * shn.MobInfo
 	mobInfoServer * shn.MobInfoServer
-	regenData * mobs.RegenEntry
-
+	regenData  mobs.RegenEntry
 }
 
 
