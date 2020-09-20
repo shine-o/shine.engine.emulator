@@ -6,7 +6,7 @@ type ShineMobInfo struct {
 	FieldSize   uint32
 	ColumnCount uint32
 	Columns     []ShineColumn `struct:"sizefrom=ColumnCount"`
-	ShineRow    []MobInfo   `struct:"sizefrom=RowsCount"`
+	ShineRow    []MobInfo     `struct:"sizefrom=RowsCount"`
 }
 
 //struct MobInfo

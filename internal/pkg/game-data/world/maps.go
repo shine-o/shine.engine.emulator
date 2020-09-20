@@ -20,9 +20,9 @@ func init() {
 
 type Map struct {
 	ID int `struct:"int32"`
-	Attributes
-	Info   shn.MapInfo
-	SHBD * blocks.SHBD
+	*Attributes
+	Info *shn.MapInfo
+	SHBD *blocks.SHBD
 }
 
 type Attributes struct {
@@ -104,6 +104,12 @@ func LoadMapData(shineFolder string) (map[int]*Map, error) {
 
 	var wg sync.WaitGroup
 
+	md := &data{
+		shineFolder: shineFolder,
+		attributes:  attributes,
+		mapInfo:     &mapInfo,
+	}
+
 	for _, file := range mapFiles {
 		var maps []Map
 		mapsPath, err := utils.ValidPath(shineFolder + "/world/" + file)
@@ -115,11 +121,6 @@ func LoadMapData(shineFolder string) (map[int]*Map, error) {
 
 		for _, m := range maps {
 			wg.Add(1)
-			md := data{
-				shineFolder: shineFolder,
-				attributes:  attributes,
-				mapInfo:     &mapInfo,
-			}
 			go md.loadData(&wg, m, &allMaps)
 		}
 	}
@@ -129,22 +130,22 @@ func LoadMapData(shineFolder string) (map[int]*Map, error) {
 	return allMaps.data, err
 }
 
-func (md * data) loadData(wg *sync.WaitGroup, m Map, allMaps *maps) {
+func (md *data) loadData(wg *sync.WaitGroup, m Map, allMaps *maps) {
 	defer wg.Done()
 	if attr, ok := md.attributes[m.Attributes.ID]; ok {
-		m.Attributes = attr
+		m.Attributes = &attr
 	} else {
 		log.Errorf("unkown map attribute entry with ID %v", m.ID)
 		return
 	}
 
-	for _, row := range md.mapInfo.Rows {
+	for i, row := range md.mapInfo.Rows {
 		if row.MapName.Name == m.Attributes.MapInfoIndex {
-			m.Info = row
+			m.Info = &md.mapInfo.Rows[i]
 		}
 	}
 
-	if m.Info == (shn.MapInfo{}) {
+	if m.Info == nil {
 		log.Errorf("no MapInfo.shn entry found for normal map entry with ID %v, ignoring map", m.ID)
 		return
 	}
@@ -155,6 +156,7 @@ func (md * data) loadData(wg *sync.WaitGroup, m Map, allMaps *maps) {
 	shbdPath, err := utils.ValidPath(md.shineFolder + "/blocks/" + m.Info.MapName.Name + ".shbd")
 	if err != nil {
 		log.Errorf("shbd file found for normal map entry with ID %v, ignoring map %v", m.ID, err)
+		return
 	}
 
 	s, err = blocks.LoadSHBDFile(shbdPath)
@@ -209,7 +211,7 @@ func loadMaps(filePath string) ([]Map, error) {
 		}
 		maps = append(maps, Map{
 			ID:         id,
-			Attributes: Attributes{ID: mapAttributeID},
+			Attributes: &Attributes{ID: mapAttributeID},
 		})
 	}
 	return maps, nil

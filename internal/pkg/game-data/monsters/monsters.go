@@ -28,10 +28,14 @@ type MonsterRegenTable struct {
 }
 
 type RegenEntry struct {
-	IsFamily                                             bool
-	X, Y, Width, Height, RangeDegree                     int
-	MobIndex                                             string
-	MobNum                                               uint16
+	IsFamily                         bool
+	X, Y, Width, Height, RangeDegree int
+	Mobs                             []RegenEntryMob
+}
+
+type RegenEntryMob struct {
+	Index                                                string
+	Num                                                  uint16
 	KillNumber                                           int
 	RespawnSeconds, RespawnSecondsMin, RespawnSecondsMax int
 	RespawnDeltas                                        [9]uint32
@@ -147,7 +151,7 @@ func loadRegenData(shineFolder string) (map[string]MonsterRegenTable, error) {
 					continue
 				}
 
-				y, err = strconv.Atoi(row[ 5])
+				y, err = strconv.Atoi(row[5])
 
 				if err != nil {
 					log.Error(err)
@@ -239,12 +243,15 @@ func loadRegenData(shineFolder string) (map[string]MonsterRegenTable, error) {
 				e, ok := mrt.Groups[groupIndex]
 
 				if ok {
-					e.MobIndex = mobIndex
-					e.MobNum = uint16(mobNum)
-					e.KillNumber = killNum
-					e.RespawnSeconds = regSec
-					e.RespawnSecondsMin = regSecMin
-					e.RespawnSecondsMax = regSecMax
+					e.Mobs = append(e.Mobs, RegenEntryMob{
+						Index:             mobIndex,
+						Num:               uint16(mobNum),
+						KillNumber:        killNum,
+						RespawnSeconds:    regSec,
+						RespawnSecondsMin: regSecMin,
+						RespawnSecondsMax: regSecMax,
+						RespawnDeltas:     [9]uint32{},
+					})
 					mrt.Groups[groupIndex] = e
 				}
 
@@ -253,7 +260,7 @@ func loadRegenData(shineFolder string) (map[string]MonsterRegenTable, error) {
 
 		// remove incomplete entries
 		for inx, g := range mrt.Groups {
-			if g.MobIndex == "" {
+			if len(g.Mobs) == 0 {
 				delete(mrt.Groups, inx)
 			}
 		}

@@ -66,7 +66,7 @@ func (p *player) nearbyPlayersMaintenance(zm *zoneMap) {
 			}
 
 			for ap := range zm.entities.activePlayers() {
-				go func(p1, p2 * player) {
+				go func(p1, p2 *player) {
 					if p2.getHandle() == p1.getHandle() {
 						return
 					}
@@ -95,7 +95,7 @@ func (p *player) nearbyPlayersMaintenance(zm *zoneMap) {
 	}
 }
 
-func (p *player) nearbyMonsters(zm *zoneMap) {
+func (p *player) nearbyMonstersMaintenance(zm *zoneMap) {
 	log.Infof("[player_ticks] nearbyMonsters for handle %v", p.handle)
 	tick := time.NewTicker(200 * time.Millisecond)
 
@@ -108,6 +108,20 @@ func (p *player) nearbyMonsters(zm *zoneMap) {
 		case <-tick.C:
 			// for each monster
 			// if nearby, add to known nearby
+			for am := range p.adjacentMonsters() {
+				go func(p * player, m *monster) {
+					if !monsterInRange(p, m) {
+						mh :=  m.getHandle()
+						p.Lock()
+						delete(p.monsters, mh)
+						p.Unlock()
+						nc := structs.NcBriefInfoDeleteHandleCmd{
+							Handle: mh,
+						}
+						ncBriefInfoDeleteHandleCmd(p, &nc)
+					}
+				}(p, am)
+			}
 		}
 	}
 }
@@ -130,4 +144,3 @@ func checkRemoval(p1, p2 *player) {
 		go p1.removeAdjacentPlayer(fh)
 	}
 }
-

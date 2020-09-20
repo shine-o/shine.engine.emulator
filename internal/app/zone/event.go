@@ -78,10 +78,10 @@ const (
 	monsterDisappeared
 	monsterWalks
 	monsterRuns
+	monsterStopped
 	monsterIdle
 	queryPlayer
 	queryMonster
-
 
 	// dynamically registered events
 	// events that are defined at run time

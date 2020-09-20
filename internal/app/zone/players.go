@@ -15,13 +15,13 @@ type players struct {
 	sync.RWMutex
 }
 
-func (p * players) activePlayers() <- chan *player {
+func (p *players) activePlayers() <-chan *player {
 
 	p.RLock()
 	ch := make(chan *player, len(p.active))
 	p.RUnlock()
 
-	go func(send chan <- *player) {
+	go func(send chan<- *player) {
 		p.RLock()
 		for _, ap := range p.active {
 			send <- ap
@@ -33,13 +33,13 @@ func (p * players) activePlayers() <- chan *player {
 	return ch
 }
 
-func (p * players) removeHandle(h uint16)  {
+func (p *players) removeHandle(h uint16) {
 	p.Lock()
 	delete(p.active, h)
 	p.Unlock()
 }
 
-func (p * players) addHandle(h uint16, ap * player)  {
+func (p *players) addHandle(h uint16, ap *player) {
 	p.Lock()
 	p.active[h] = ap
 	p.Unlock()
@@ -81,7 +81,7 @@ func (p *players) newHandle() (uint16, error) {
 	}
 }
 
-func playerInRange(v, t * player) bool {
+func playerInRange(v, t *player) bool {
 	v.RLock()
 	t.RLock()
 
@@ -98,4 +98,3 @@ func playerInRange(v, t * player) bool {
 	}
 	return false
 }
-

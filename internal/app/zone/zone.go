@@ -15,7 +15,7 @@ type runningMaps map[int]*zoneMap
 
 type zone struct {
 	rm runningMaps
-	events
+	*events
 	*dynamicEvents
 	worldDB *pg.DB
 	sync.RWMutex
@@ -24,9 +24,9 @@ type zone struct {
 // instead of accessing global variables for data
 // fire a query event struct, which will be populated with the requested data by a worker (event receiver)
 var (
-	zoneEvents sendEvents
+	zoneEvents  sendEvents
 	monsterData mobs.MonsterData
-	mapData map[int]*world.Map
+	mapData     map[int]*world.Map
 )
 
 func (z *zone) load() {
@@ -44,16 +44,18 @@ func (z *zone) load() {
 		persistPlayerPosition,
 	}
 
-	z.recv = make(recvEvents)
-	z.send = make(sendEvents)
-
-	for _, index := range zEvents {
-		c := make(chan event, 5)
-		z.recv[index] = c
-		z.send[index] = c
+	z.events = &events{
+		send:  make(sendEvents),
+		recv: make(recvEvents),
 	}
 
-	zoneEvents = z.send
+	for _, index := range zEvents {
+		c := make(chan event, 500)
+		z.events.recv[index] = c
+		z.events.send[index] = c
+	}
+
+	zoneEvents = z.events.send
 
 	z.dynamicEvents = &dynamicEvents{
 		events: make(map[string]events),
