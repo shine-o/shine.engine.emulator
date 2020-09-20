@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	lengthX = 100
-	lengthY = 100
+	lengthX = 250
+	lengthY = 250
 )
 
 type entity interface {
@@ -31,7 +31,8 @@ type movement struct {
 }
 
 type baseEntity struct {
-	handle uint16
+	handle   uint16
+	fallback location
 	location
 	events
 }

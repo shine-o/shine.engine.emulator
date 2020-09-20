@@ -39,6 +39,12 @@ normal_maps:
   - 2
   - 3
   - 4
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  - 11
 
 world_database:
   host: 127.0.0.1

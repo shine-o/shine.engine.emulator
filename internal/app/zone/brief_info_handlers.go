@@ -91,7 +91,7 @@ func ncBriefInfoInformCmd(ctx context.Context, np *networking.Parameters) {
 
 // NC_BRIEFINFO_REGENMOB_CMD
 // 7176
-func ncBriefInfoRegenMobCmd(p * player, nc * structs.NcBriefInfoRegenMobCmd) {
+func ncBriefInfoRegenMobCmd(p *player, nc *structs.NcBriefInfoRegenMobCmd) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 7176,

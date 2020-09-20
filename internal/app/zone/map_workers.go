@@ -50,9 +50,27 @@ func (zm *zoneMap) monsterActivity() {
 		case e := <-zm.recv[monsterDisappeared]:
 			log.Info(e)
 		case e := <-zm.recv[monsterWalks]:
-			log.Info(e)
+			go func() {
+				ev, ok := e.(*monsterWalksEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&monsterWalksEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				for ap := range zm.entities.activePlayers() {
+					go ncActSomeoneMoveWalkCmd(ap, ev.nc)
+				}
+			}()
 		case e := <-zm.recv[monsterRuns]:
-			log.Info(e)
+			go func() {
+				ev, ok := e.(*monsterRunsEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&monsterRunsEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				for ap := range zm.entities.activePlayers() {
+					go ncActSomeoneMoveRunCmd(ap, ev.nc)
+				}
+			}()
 		}
 	}
 }
@@ -168,8 +186,8 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 	go nearbyPlayers(p1, zm)
 
 	go p1.nearbyPlayersMaintenance(zm)
-	go p1.nearbyPlayersMaintenance(zm)
-	go p1.nearbyPlayersMaintenance(zm)
+	go p1.nearbyMonstersMaintenance(zm)
+
 	go adjacentMonstersInform(p1, zm)
 }
 
@@ -243,7 +261,7 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	}
 
 	for ap := range zm.entities.activePlayers() {
-		go func(p2 * player) {
+		go func(p2 *player) {
 			if p2.getHandle() != ev.handle {
 				if playerInRange(p2, p1) {
 					go ncActSomeoneMoveWalkCmd(p2, &nc)
@@ -308,7 +326,6 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	}
 
 	go adjacentMonstersInform(p1, zm)
-
 
 }
 
@@ -415,7 +432,6 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 	p2 := zm.entities.getPlayer(ev.nc.ForeignHandle)
 
 	if p2 == nil {
-		log.Error("player not found")
 		return
 	}
 
@@ -425,7 +441,6 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 		nc1 := p1.ncBriefInfoLoginCharacterCmd()
 		p1.RUnlock()
 		go ncBriefInfoLoginCharacterCmd(p2, &nc1)
-
 
 		p2.RLock()
 		nc2 := p2.ncBriefInfoLoginCharacterCmd()
@@ -437,7 +452,7 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 // notify every player in proximity about player that logged in
 func newPlayer(p1 *player, zm *zoneMap) {
 	for ap := range zm.entities.activePlayers() {
-		go func(p2 * player) {
+		go func(p2 *player) {
 			if p1.getHandle() != p2.getHandle() {
 				if playerInRange(p2, p1) {
 					nc := p1.ncBriefInfoLoginCharacterCmd()

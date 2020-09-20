@@ -16,13 +16,13 @@ type monsters struct {
 	sync.RWMutex
 }
 
-func (m * monsters) activeMonsters() <- chan *monster {
+func (m *monsters) activeMonsters() <-chan *monster {
 
 	m.RLock()
 	ch := make(chan *monster, len(m.active))
 	m.RUnlock()
 
-	go func(send chan <- *monster) {
+	go func(send chan<- *monster) {
 		m.RLock()
 		for _, ap := range m.active {
 			send <- ap
@@ -34,13 +34,13 @@ func (m * monsters) activeMonsters() <- chan *monster {
 	return ch
 }
 
-func (m * monsters) removeHandle(h uint16)  {
+func (m *monsters) removeHandle(h uint16) {
 	m.Lock()
 	delete(m.active, h)
 	m.Unlock()
 }
 
-func (m * monsters) addHandle(h uint16, ap * monster)  {
+func (m *monsters) addHandle(h uint16, ap *monster) {
 	m.Lock()
 	m.active[h] = ap
 	m.Unlock()
@@ -85,7 +85,7 @@ func (m *monsters) newHandle() (uint16, error) {
 	}
 }
 
-func knownMonster(p * player, mh uint16) bool {
+func knownMonster(p *player, mh uint16) bool {
 	p.RLock()
 	_, ok := p.monsters[mh]
 	p.RUnlock()
@@ -95,28 +95,27 @@ func knownMonster(p * player, mh uint16) bool {
 	return false
 }
 
-func adjacentMonstersInform(p * player, zm * zoneMap)  {
+func adjacentMonstersInform(p *player, zm *zoneMap) {
 	for m := range zm.entities.activeMonsters() {
-		go func(p * player, m * monster) {
+		go func(p *player, m *monster) {
 			if !knownMonster(p, m.getHandle()) {
 				if monsterInRange(p, m) {
 					nc := m.ncBriefInfoRegenMobCmd()
 					ncBriefInfoRegenMobCmd(p, &nc)
 				}
 			}
-
 		}(p, m)
 	}
 }
 
-func (m * monster) ncBriefInfoRegenMobCmd() structs.NcBriefInfoRegenMobCmd {
+func (m *monster) ncBriefInfoRegenMobCmd() structs.NcBriefInfoRegenMobCmd {
 	m.RLock()
 	nc := structs.NcBriefInfoRegenMobCmd{
-		Handle:         m.handle,
-		Mode:           byte(m.mobInfoServer.EnemyDetect),
-		MobID:          m.mobInfo.ID,
-		Coord:          structs.ShineCoordType{
-			XY:        structs.ShineXYType{
+		Handle: m.handle,
+		Mode:   byte(m.mobInfoServer.EnemyDetect),
+		MobID:  m.mobInfo.ID,
+		Coord: structs.ShineCoordType{
+			XY: structs.ShineXYType{
 				X: m.x,
 				Y: m.y,
 			},
