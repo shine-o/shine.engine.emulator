@@ -37,6 +37,13 @@ type baseEntity struct {
 	events
 }
 
+type status struct {
+	idling   chan  bool
+	fighting chan  bool
+	chasing  chan  bool
+	fleeing  chan  bool
+}
+
 func (b *baseEntity) getHandle() uint16 {
 	return b.handle
 }

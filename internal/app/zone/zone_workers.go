@@ -253,12 +253,10 @@ func playerLogoutStartLogic(z *zone, e event) {
 		return
 	}
 
-	m.entities.players.Lock()
-	p, ok := m.entities.players.active[ev.handle]
-	m.entities.players.Unlock()
+	p:= m.entities.players.getPlayer(ev.handle)
 
-	if !ok {
-		log.Errorf("map with id %v not available", ev.mapID)
+	if p == nil {
+		log.Errorf("player with handle %v not available", ev.handle)
 		return
 	}
 
@@ -277,8 +275,9 @@ func playerLogoutCancelLogic(z *zone, e event) {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerLogoutCancelEvent{}).String(), reflect.TypeOf(ev).String())
 		return
 	}
-	z.dynamicEvents.Lock()
-	defer z.dynamicEvents.Unlock()
+
+	z.dynamicEvents.RLock()
+	defer z.dynamicEvents.RUnlock()
 
 	sid := ev.sessionID
 
@@ -298,8 +297,8 @@ func playerLogoutConcludeLogic(z *zone, e event) {
 		return
 	}
 
-	z.dynamicEvents.Lock()
-	defer z.dynamicEvents.Unlock()
+	z.dynamicEvents.RLock()
+	defer z.dynamicEvents.RUnlock()
 
 	sid := ev.sessionID
 

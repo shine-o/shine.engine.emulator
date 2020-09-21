@@ -169,21 +169,23 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 					break
 				}
 
-				if re.Width == 0 {
-					re.Width = networking.RandomIntBetween(100, 150)
-				}
-
-				if re.Height == 0 {
-					re.Height = networking.RandomIntBetween(100, 150)
-				}
-
-				x = networking.RandomIntBetween(re.X, re.X+re.Width)
-				y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
+				//if re.Width == 0 {
+				//	re.Width = networking.RandomIntBetween(100, 150)
+				//}
+				//
+				//if re.Height == 0 {
+				//	re.Height = networking.RandomIntBetween(100, 150)
+				//}
+				//
+				//x = networking.RandomIntBetween(re.X, re.X+re.Width)
+				//y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
+				x = re.X
+				y = re.Y
 				d = networking.RandomIntBetween(1, 250)
 
-				rX, rY := igCoordToBitmap(x, y)
+				rX, rY := igCoordToBitmap(uint32(re.X), uint32(re.Y))
 
-				if canWalk(zm.walkableX, zm.walkableY, uint32(rX), uint32(rY)) {
+				if canWalk(zm.walkableX, zm.walkableY, rX, rY) {
 					spawn = true
 				}
 
@@ -220,6 +222,12 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 					mobInfo:       mi,
 					mobInfoServer: mis,
 					regenData:     &re,
+					status: status{
+						idling:   make(chan bool),
+						fighting: make(chan bool),
+						chasing:  make(chan bool),
+						fleeing:  make(chan bool),
+					},
 				}
 
 				zm.entities.monsters.Lock()
@@ -235,10 +243,16 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 
 }
 
-func igCoordToBitmap(x, y int) (int, int) {
+func igCoordToBitmap(x, y uint32) (uint32, uint32) {
 	rX := (x * 8) / 50
 	rY := (y * 8) / 50
 	return rX, rY
+}
+
+func bitmapCoordToIg(rX, rY uint32) (uint32, uint32) {
+	igX := (rX * 50) / 8
+	igY := (rY * 50) / 8
+	return igX, igY
 }
 
 // CanWalk translates in game coordinates to SHBD coordinates
@@ -258,6 +272,8 @@ func walkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) 
 
 	for y := 0; y < s.Y; y++ {
 		for x := 0; x < s.X; x++ {
+	//for y := s.Y; y != 0; y-- {
+	//	for x := 0; x < s.X; x++ {
 			b, err := r.ReadByte()
 			if err != nil {
 				return walkableX, walkableY, err

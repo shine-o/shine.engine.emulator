@@ -57,7 +57,11 @@ func (zm *zoneMap) monsterActivity() {
 					return
 				}
 				for ap := range zm.entities.activePlayers() {
-					go ncActSomeoneMoveWalkCmd(ap, ev.nc)
+					go func(p * player, m*monster) {
+						if monsterInRange(p, m) {
+							go ncActSomeoneMoveWalkCmd(p, ev.nc)
+						}
+					}(ap, ev.m)
 				}
 			}()
 		case e := <-zm.recv[monsterRuns]:

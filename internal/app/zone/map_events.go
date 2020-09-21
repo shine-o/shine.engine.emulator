@@ -44,6 +44,7 @@ type unknownHandleEvent struct {
 
 type monsterWalksEvent struct {
 	nc *structs.NcActSomeoneMoveWalkCmd
+	m  *monster
 }
 
 type monsterRunsEvent struct {
