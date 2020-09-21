@@ -23,6 +23,7 @@ type monster struct {
 	mobInfoServer *shn.MobInfoServer
 	regenData     *mobs.RegenEntry
 	tickers       []*time.Ticker
+	status
 	sync.RWMutex
 }
 
@@ -46,71 +47,70 @@ func (m *monster) dead() {
 	// create ticker so it can respawn again
 }
 
-func (m *monster) roam(zm *zoneMap) {
-	log.Infof("[monster_ticks] roam for handle %v", m.handle)
-
-	tick := time.NewTicker(time.Duration(int64(networking.RandomIntBetween(15, 20))) * time.Second)
-
-	m.Lock()
-	m.tickers = append(m.tickers, tick)
-	m.Unlock()
-	defer tick.Stop()
-
-	// first, walks to a position
-	// 		while it walks, notify the player
-	// after it reaches destination, stop there for a few seconds
-	//
-	var state = monsterRoaming
-
+func (m * monster) monsterWalk(c chan <- * location, zm * zoneMap)  {
+	tick := time.NewTicker(time.Duration(int64(networking.RandomIntBetween(4200, 8150))) * time.Millisecond)
+	//tick := time.NewTicker(3 * time.Second)
 	for {
 		select {
-		case <-tick.C:
-
+		case <- tick.C:
 			m.RLock()
-			rd := m.regenData.RangeDegree
-
-			if rd == 0 {
-				continue
-			}
-
-			if rd < 0 {
-				rd = 40
-			}
+			var (
+				x = m.x
+				y = m.y
+				walkSpeed = (m.mobInfo.WalkSpeed/10) * 2
+			)
 			m.RUnlock()
 
-			if state == monsterRoaming {
-				var (
-					x, y  int
-					tries = 100
-					done  = false
-				)
+			var (
+				lx, ly uint32
+			)
 
-				for tries != 0 {
+			// problem is, I need to generate the same kind of coordinates as the game does, I cannot invent them!
+			//rstX := (rX * 50.0) / 8.0
+			rX, rY := igCoordToBitmap(x, y)
 
-					if done {
-						break
-					}
+			switch networking.RandomIntBetween(0,5) {
+				case 1:
+					lx = rX
+					ly = rY - walkSpeed
+				case 2:
+					lx = rX
+					ly = rY + walkSpeed
+				case 3:
+					lx = rX - walkSpeed
+					ly = rY
+				case 4:
+					lx = rX + walkSpeed
+					ly = rY
+			}
 
-					m.RLock()
-
-					x = networking.RandomIntBetween(int(m.location.x), int(m.location.x)+rd)
-					y = networking.RandomIntBetween(int(m.location.y), int(m.location.y)+rd)
-					m.RUnlock()
-
-					rX, rY := igCoordToBitmap(x, y)
-
-					if canWalk(zm.walkableX, zm.walkableY, uint32(rX), uint32(rY)) {
-						done = true
-					}
-
-					tries--
-
+			if ly > m.fallback.y + 400 && lx > m.fallback.x + 400 {
+				c <- &location{
+					x:         m.fallback.x,
+					y:        m.fallback.y,
 				}
+				break
+			}
 
-				if tries == 0 {
-					break
+
+			if canWalk(zm.walkableX, zm.walkableY, lx, ly) {
+				igX, igY := bitmapCoordToIg(lx, ly)
+
+				c <- &location{
+					x:         igX,
+					y:         igY,
 				}
+			}
+		}
+	}
+}
 
+func (m *monster) roam(zm *zoneMap) {
+	ch := make(chan * location)
+	go m.monsterWalk(ch, zm)
+	for {
+		select {
+			case l := <- ch:
 				m.RLock()
 				nc := structs.NcActSomeoneMoveWalkCmd{
 					Handle: m.handle,
@@ -119,87 +119,25 @@ func (m *monster) roam(zm *zoneMap) {
 						Y: m.y,
 					},
 					To: structs.ShineXYType{
-						X: uint32(x),
-						Y: uint32(y),
+						X: l.x,
+						Y: l.y,
 					},
 					Speed:    uint16(m.mobInfo.WalkSpeed),
 					MoveAttr: structs.NcActSomeoneMoveWalkCmdAttr{},
 				}
 				m.RUnlock()
-				state = monsterGoBack
 
 				m.Lock()
-				m.location.x = uint32(x)
-				m.location.y = uint32(y)
+				m.location.x = l.x
+				m.location.y = l.y
 				m.Unlock()
 
-				go func() {
-
-					e := monsterWalksEvent{
-						nc: &nc,
-					}
-					zm.send[monsterWalks] <- &e
-
-				}()
-
-			}
-
-			if state == monsterGoBack {
-
-				m.RLock()
-				nc := structs.NcActSomeoneMoveRunCmd{
-					Handle: m.handle,
-					From: structs.ShineXYType{
-						X: m.location.x,
-						Y: m.location.y,
-					},
-					To: structs.ShineXYType{
-						X: m.fallback.x,
-						Y: m.fallback.y,
-					},
-					Speed:    uint16(m.mobInfo.RunSpeed),
+				e := monsterWalksEvent{
+					nc: &nc,
+					m:  m,
 				}
-				m.RUnlock()
 
-				state = monsterRoaming
-
-				m.Lock()
-				m.location.x = m.fallback.x
-				m.location.y = m.fallback.y
-				m.Unlock()
-
-				go func() {
-					e := monsterRunsEvent{
-						nc: &nc,
-					}
-					zm.send[monsterRuns] <- &e
-				}()
-
-			}
-
-
-			//if state == monsterIdling {
-			//
-			//
-			//}
-			//
-			//if state == monsterWalking {
-			//	state = monsterRunning
-			//}
-			//
-			//if state == monsterWalking {
-			//	state = monsterIdling
-			//}
-			//
-			//if state == monsterFighting {
-			//	continue
-			//}
-
-			//nc
-
-			//zoneEvents[monsterRuns]    <- &emptyEvent{}
-			//zoneEvents[monsterStopped] <- &emptyEvent{}
-
+				zm.send[monsterWalks] <- &e
 		}
 	}
 }
