@@ -2,24 +2,22 @@ package zone
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/RoaringBitmap/roaring"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/blocks"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/utils"
+	mobs "github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/monsters"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/world"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/viper"
-	bolt "go.etcd.io/bbolt"
 	"math"
-	"os"
 	"sync"
 )
 
 type zoneMap struct {
-	data      world.MapData
+	data      *world.Map
 	walkableX *roaring.Bitmap
 	walkableY *roaring.Bitmap
-	entities  entities
+	entities  *entities
 	events
 }
 
@@ -28,121 +26,233 @@ type entities struct {
 	*monsters
 }
 
-type players struct {
-	handleIndex uint16
-	active      map[uint16]*player
-	sync.RWMutex
-}
+func (z *zone) addMap(mapId int, wg *sync.WaitGroup) {
+	defer wg.Done()
+	md, ok := mapData[mapId]
 
-type monsters struct {
-	handleIndex uint16
-	active      map[uint16]*monster
-	sync.RWMutex
-}
-
-const playerHandleMin uint16 = 8000
-const playerHandleMax uint16 = 12000
-const playerAttemptsMax uint16 = 50
-
-const monsterHandleMin uint16 = 17000
-const monsterHandleMax uint16 = 27000
-const monsterAttemptsMax uint16 = 50
-
-func (zm *zoneMap) run() {
-	// load NPCs for this map
-	// run logic routines
-	// as many workers as needed can be launched
-	num := viper.GetInt("workers.num_zone_workers")
-
-	go zm.removeInactiveHandles()
-
-	for i := 0; i <= num; i++ {
-		go zm.mapHandles()
-		go zm.playerActivity()
-		go zm.playerQueries()
-		go zm.monsterQueries()
-	}
-}
-
-// load maps
-func loadMaps() []zoneMap {
-	var reload bool
-
-	dbPath := viper.GetString("game_data.database")
-
-	_, err := os.Stat(dbPath)
-	if os.IsNotExist(err) {
-		reload = true
-	} else {
-		reload = viper.GetBool("game_data.reload")
+	if !ok {
+		log.Fatalf("no map data for map with id %v", mapId)
 	}
 
-	shinePath := viper.GetString("shine_folder")
-	normalMaps := viper.GetIntSlice("normal_maps")
-
-	db, err := bolt.Open(dbPath, 0600, nil)
+	walkableX, walkableY, err := walkingPositions(md.SHBD)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	if reload {
-		shineAbsPath, err := utils.ValidPath(shinePath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		err = world.LoadMapData(shineAbsPath, db)
-		if err != nil {
-			log.Fatal(err)
-		}
+	m := &zoneMap{
+		data:      md,
+		walkableX: walkableX,
+		walkableY: walkableY,
+		entities: &entities{
+			players: &players{
+				handleIndex: playerHandleMin,
+				active:      make(map[uint16]*player),
+			},
+			monsters: &monsters{
+				handleIndex: monsterHandleMin,
+				active:      make(map[uint16]*monster),
+			},
+		},
+		events: events{
+			send: make(sendEvents),
+			recv: make(recvEvents),
+		},
 	}
 
-	// zones defined in the service, load them and register the loaded ones to the master
-	var zoneMaps []zoneMap
-	for _, id := range normalMaps {
-		var md world.MapData
+	events := []eventIndex{
+		playerHandle,
+		playerHandleMaintenance,
+		queryPlayer, queryMonster,
+		playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
+		unknownHandle, monsterAppeared, monsterDisappeared, monsterWalks, monsterRuns,
+	}
 
-		err = db.View(func(tx *bolt.Tx) error {
-			b := tx.Bucket([]byte("maps"))
-			data := b.Get([]byte(fmt.Sprintf("%v", id)))
-			err = structs.Unpack(data, &md)
-			if err != nil {
-				return err
+	for _, index := range events {
+		c := make(chan event, 500)
+		m.recv[index] = c
+		m.send[index] = c
+	}
+
+	z.Lock()
+	z.rm[m.data.ID] = m
+	z.Unlock()
+
+	go m.run()
+
+}
+
+func (zm *zoneMap) run() {
+	// load NPCs for this map
+	// run logic routines
+	// as many workers as needed can be launched
+	num := viper.GetInt("workers.num_map_workers")
+
+	// load mobs
+
+	//zm.entities.monsters
+
+	spawnData, ok := monsterData.MapRegens[zm.data.MapInfoIndex]
+
+	if ok {
+		// for each groupIndex in spawnData
+		// 		for each number of mobs in groupIndex
+		//		populate a monster object using monster data
+		//		launch monster go routines
+		//		keep pointers to monster data
+		var wg sync.WaitGroup
+
+		for _, group := range spawnData.Groups {
+			wg.Add(1)
+			go spawnMob(zm, group, &wg)
+		}
+
+		wg.Wait()
+	}
+
+	go zm.removeInactiveHandles()
+
+	for i := 0; i <= num; i++ {
+		go zm.mapHandles()
+
+		go zm.playerActivity()
+		go zm.monsterActivity()
+
+		go zm.playerQueries()
+		go zm.monsterQueries()
+	}
+
+}
+func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	for _, mob := range re.Mobs {
+
+		for i := 0; i <= int(mob.Num); i++ {
+
+			var (
+				mi  *shn.MobInfo
+				mis *shn.MobInfoServer
+			)
+
+			for i, row := range monsterData.MobInfo.ShineRow {
+				if row.InxName == mob.Index {
+					mi = &monsterData.MobInfo.ShineRow[i]
+				}
 			}
-			return nil
-		})
 
-		if err != nil {
-			log.Fatalf("failed to get stored map data with id %v %v", id, err)
-		}
+			for i, row := range monsterData.MobInfoServer.ShineRow {
+				if row.InxName == mob.Index {
+					mis = &monsterData.MobInfoServer.ShineRow[i]
+				}
+			}
 
-		walkableX, walkableY, err := walkingPositions(&md.SHBD)
-		if err != nil {
-			log.Fatal(err)
+			if mi == nil {
+				log.Errorf("no entry in MobInfo for %v", mob.Index)
+				return
+			}
+
+			if mis == nil {
+				log.Errorf("no entry in MobInfoServer for %v", mob.Index)
+				return
+			}
+
+			var (
+				x, y, d  int
+					maxTries = 200
+				spawn    = false
+			)
+
+			for maxTries != 0 {
+
+				if spawn {
+					break
+				}
+
+				if re.Width == 0 {
+					re.Width = networking.RandomIntBetween(100, 150)
+				}
+
+				if re.Height == 0 {
+					re.Height = networking.RandomIntBetween(100, 150)
+				}
+				//
+				x = networking.RandomIntBetween(re.X, re.X+re.Width)
+				y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
+				//x = re.X
+				//y = re.Y
+				d = networking.RandomIntBetween(1, 250)
+
+				rX, rY := igCoordToBitmap(uint32(re.X), uint32(re.Y))
+
+				if canWalk(zm.walkableX, zm.walkableY, rX, rY) {
+					spawn = true
+				}
+
+				maxTries--
+			}
+
+			if spawn {
+				h, err := zm.entities.monsters.newHandle()
+				if err != nil {
+					log.Error(err)
+					return
+				}
+
+				m := &monster{
+					baseEntity: baseEntity{
+						handle: h,
+						fallback: location{
+							x: uint32(x),
+							y: uint32(y),
+							d: uint8(d),
+						},
+						current: location{
+							mapID:     zm.data.ID,
+							mapName:   zm.data.MapInfoIndex,
+							x:         uint32(x),
+							y:         uint32(y),
+							d:         uint8(d),
+							movements: [15]movement{},
+						},
+						events: events{},
+					},
+					hp:            mi.MaxHP,
+					sp:            uint32(mis.MaxSP),
+					mobInfo:       mi,
+					mobInfoServer: mis,
+					regenData:     &re,
+					status: status{
+						idling:   make(chan bool),
+						fighting: make(chan bool),
+						chasing:  make(chan bool),
+						fleeing:  make(chan bool),
+					},
+				}
+
+				zm.entities.monsters.Lock()
+				zm.entities.monsters.active[h] = m
+				zm.entities.monsters.Unlock()
+
+				if m.mobInfo.RunSpeed > 0 && m.mobInfo.WalkSpeed > 0 {
+					go m.roam(zm)
+				}
+			}
 		}
-		zm := zoneMap{
-			data:      md,
-			walkableX: walkableX,
-			walkableY: walkableY,
-			entities: entities{
-				players: &players{
-					handleIndex: playerHandleMin,
-					active:      make(map[uint16]*player),
-				},
-				monsters: &monsters{
-					handleIndex: playerHandleMin,
-					active:      make(map[uint16]*monster),
-				},
-			},
-			events: events{
-				send: make(sendEvents),
-				recv: make(recvEvents),
-			},
-		}
-		zoneMaps = append(zoneMaps, zm)
 	}
 
-	return zoneMaps
+}
+
+func igCoordToBitmap(x, y uint32) (uint32, uint32) {
+	rX := (x * 8) / 50
+	rY := (y * 8) / 50
+	return rX, rY
+}
+
+func bitmapCoordToIg(rX, rY uint32) (uint32, uint32) {
+	igX := (rX * 50) / 8
+	igY := (rY * 50) / 8
+	return igX, igY
 }
 
 // CanWalk translates in game coordinates to SHBD coordinates
@@ -176,73 +286,5 @@ func walkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) 
 			}
 		}
 	}
-
 	return walkableX, walkableY, nil
-}
-
-func (m *monsters) newHandle() (uint16, error) {
-	var attempts uint16 = 0
-	min := monsterHandleMin
-	max := monsterHandleMax
-	maxAttempts := monsterAttemptsMax
-
-	index := m.handleIndex
-
-	for {
-
-		if attempts == maxAttempts {
-			return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
-		}
-
-		index++
-
-		if index == max {
-			index = min
-		}
-
-		m.handleIndex = index
-
-		if _, used := m.active[index]; used {
-			attempts++
-			continue
-		}
-
-		return index, nil
-	}
-}
-
-func (p *players) newHandle() (uint16, error) {
-	var attempts uint16 = 0
-	min := playerHandleMin
-	max := playerHandleMax
-	maxAttempts := playerAttemptsMax
-
-	p.RLock()
-	index := p.handleIndex
-	p.RUnlock()
-
-	for {
-		if attempts == maxAttempts {
-			return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
-		}
-
-		index++
-
-		if index == max {
-			index = min
-		}
-
-		p.Lock()
-		p.handleIndex = index
-		p.Unlock()
-
-		p.RLock()
-		if _, used := p.active[index]; used {
-			attempts++
-			continue
-		}
-		p.RUnlock()
-
-		return index, nil
-	}
 }

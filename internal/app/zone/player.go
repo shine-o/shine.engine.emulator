@@ -10,20 +10,75 @@ import (
 
 type player struct {
 	baseEntity
-	knownNearbyPlayers map[uint16]*player
-	char               *character.Character
-	conn               playerConnection
-	view               playerView
-	stats              playerStats
-	state              playerState
-	items              playerItems
-	money              playerMoney
-	titles             playerTitles
-	quests             playerQuests
-	skills             []skill
-	passives           []passive
+	players  map[uint16]*player
+	monsters map[uint16]*monster
+	char     *character.Character
+	conn     playerConnection
+	view     playerView
+	stats    playerStats
+	state    playerState
+	items    playerItems
+	money    playerMoney
+	titles   playerTitles
+	quests   playerQuests
+	skills   []skill
+	passives []passive
+	tickers  []*time.Ticker
 	sync.RWMutex
-	tickers []*time.Ticker
+}
+
+func (p *player) getHandle() uint16 {
+	p.RLock()
+	h := p.handle
+	p.RUnlock()
+	return h
+}
+
+func lastHeartbeat(p *player) float64 {
+	p.RLock()
+	lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()
+	p.RUnlock()
+	return lastHeartBeat
+}
+
+func (p *player) adjacentPlayers() <-chan *player {
+	p.RLock()
+	ch := make(chan *player, len(p.players))
+	p.RUnlock()
+
+	go func(send chan<- *player) {
+		p.RLock()
+		for _, ap := range p.players {
+			send <- ap
+		}
+		p.RUnlock()
+		close(send)
+	}(ch)
+
+	return ch
+}
+
+func (p *player) removeAdjacentPlayer(h uint16) {
+	p.Lock()
+	delete(p.players, h)
+	p.Unlock()
+}
+
+func (p *player) adjacentMonsters() <-chan *monster {
+	p.RLock()
+	ch := make(chan *monster, len(p.monsters))
+	p.RUnlock()
+
+	go func(send chan<- *monster) {
+		p.RLock()
+		for _, ap := range p.monsters {
+			send <- ap
+		}
+		p.RUnlock()
+		close(send)
+	}(ch)
+
+	return ch
 }
 
 type playerConnection struct {
@@ -172,18 +227,18 @@ func (p *player) load(name string, worldDB *pg.DB) error {
 		return err
 	}
 	p.Lock()
-	defer 	p.Unlock()
+	defer p.Unlock()
 
 	p.char = &char
 
-	p.location.mapName = char.Location.MapName
-	p.location.mapID = int(char.Location.MapID)
-	p.location.x = char.Location.X
-	p.location.y = char.Location.Y
-	p.location.d = char.Location.D
+	p.current.mapName = char.Location.MapName
+	p.current.mapID = int(char.Location.MapID)
+	p.current.x = char.Location.X
+	p.current.y = char.Location.Y
+	p.current.d = char.Location.D
 
-	p.knownNearbyPlayers = make(map[uint16]*player)
-
+	p.players = make(map[uint16]*player)
+	p.monsters = make(map[uint16]*monster)
 
 	view := make(chan playerView)
 	state := make(chan playerState)
@@ -426,6 +481,7 @@ func (p *player) passiveData(passives chan<- []passive, c *character.Character, 
 }
 
 func (p *player) ncBriefInfoLoginCharacterCmd() structs.NcBriefInfoLoginCharacterCmd {
+
 	nc := structs.NcBriefInfoLoginCharacterCmd{
 		Handle: p.getHandle(),
 		CharID: structs.Name5{
@@ -433,12 +489,12 @@ func (p *player) ncBriefInfoLoginCharacterCmd() structs.NcBriefInfoLoginCharacte
 		},
 		Coordinates: structs.ShineCoordType{
 			XY: structs.ShineXYType{
-				X: p.location.x,
-				Y: p.location.y,
+				X: p.current.x,
+				Y: p.current.y,
 			},
-			Direction: p.location.d,
+			Direction: p.current.d,
 		},
-		Mode:            0,
+		Mode:            2,
 		Class:           p.view.class,
 		Shape:           *p.view.protoAvatarShapeInfo(),
 		ShapeData:       structs.NcBriefInfoLoginCharacterCmdShapeData{},
@@ -460,16 +516,6 @@ func (p *player) ncBriefInfoLoginCharacterCmd() structs.NcBriefInfoLoginCharacte
 	}
 	return nc
 }
-
-func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
-	return &structs.ProtoAvatarShapeInfo{
-		BF:        1 | pv.class<<2 | pv.gender<<7,
-		HairType:  pv.hairType,
-		HairColor: pv.hairColour,
-		FaceShape: pv.faceType,
-	}
-}
-
 func (p *player) charParameterData() structs.CharParameterData {
 	return structs.CharParameterData{
 		PrevExp: p.state.prevExp,
@@ -572,6 +618,15 @@ func (p *player) charParameterData() structs.CharParameterData {
 			Base:   p.stats.rollbackResistance.base,
 			Change: p.stats.rollbackResistance.withExtras,
 		},
+	}
+}
+
+func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
+	return &structs.ProtoAvatarShapeInfo{
+		BF:        1 | pv.class<<2 | pv.gender<<7,
+		HairType:  pv.hairType,
+		HairColor: pv.hairColour,
+		FaceShape: pv.faceType,
 	}
 }
 

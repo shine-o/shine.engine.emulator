@@ -2,7 +2,11 @@ package zone
 
 import (
 	"fmt"
-	"sync"
+)
+
+const (
+	lengthX = 250
+	lengthY = 250
 )
 
 type entity interface {
@@ -27,47 +31,17 @@ type movement struct {
 }
 
 type baseEntity struct {
-	handle uint16
-	location
+	handle   uint16
+	fallback location
+	current  location
 	events
-	sync.Mutex
 }
 
-const (
-	lengthX = 100
-	lengthY = 100
-)
-
-func playerInRange(viewer, target *player) bool {
-
-	target.RLock()
-	targetX := (target.x * 8) / 50
-	targetY := (target.y * 8) / 50
-	targetHandle := target.handle
-	target.RUnlock()
-
-	viewer.RLock()
-	viewerX := (viewer.x * 8) / 50
-	viewerY := (viewer.y * 8) / 50
-	viewerHandle := viewer.handle
-	viewer.RUnlock()
-
-	vertical := targetY <= viewerY+lengthY && targetY > viewerY || targetY >= (viewerY-lengthY) && targetY < viewerY
-	horizontal := targetX <= (viewerX+lengthX) && targetX > viewerX || targetX >= (viewerX-lengthX) && targetX < viewerX
-
-	if vertical && horizontal {
-
-		viewer.Lock()
-		viewer.knownNearbyPlayers[target.handle] = target
-		viewer.Unlock()
-
-		log.Infof("%v is in range of %v", targetHandle, viewerHandle)
-		return true
-	}
-
-	log.Infof("%v is in not in range of %v", targetHandle, viewerHandle)
-
-	return false
+type status struct {
+	idling   chan bool
+	fighting chan bool
+	chasing  chan bool
+	fleeing  chan bool
 }
 
 func (b *baseEntity) getHandle() uint16 {
@@ -75,7 +49,7 @@ func (b *baseEntity) getHandle() uint16 {
 }
 
 func (b *baseEntity) getLocation() (uint32, uint32) {
-	return b.location.x, b.location.y
+	return b.current.x, b.current.y
 }
 
 func (b *baseEntity) move(m *zoneMap, x, y uint32) error {
@@ -85,11 +59,24 @@ func (b *baseEntity) move(m *zoneMap, x, y uint32) error {
 	return fmt.Errorf("entity %v cannot move to x %v  y %v", b.getHandle(), x, y)
 }
 
-type mover struct {
-	baseEntity
+func entityInRange(e1, e2 baseEntity) bool {
+	viewerX := (e1.current.x * 8) / 50
+	viewerY := (e1.current.y * 8) / 50
+
+	targetX := (e2.current.x * 8) / 50
+	targetY := (e2.current.y * 8) / 50
+
+	vertical := targetY <= viewerY+lengthY && targetY >= viewerY || targetY >= (viewerY-lengthY) && targetY <= viewerY
+	horizontal := targetX <= (viewerX+lengthX) && targetX >= viewerX || targetX >= (viewerX-lengthX) && targetX <= viewerX
+
+	if vertical && horizontal {
+		return true
+	}
+
+	return false
 }
 
-type monster struct {
+type mover struct {
 	baseEntity
 }
 
