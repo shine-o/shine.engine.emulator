@@ -47,8 +47,6 @@ func SHBDToImage(s *SHBD) (*image.RGBA, error) {
 		},
 	})
 
-	//for y := s.Y; y != 0; y-- {
-	//	for x := 0; x < s.X; x++ {
 	for y := 0; y < s.Y; y++ {
 		for x := 0; x < s.X; x++ {
 			b, err := r.ReadByte()
@@ -107,7 +105,7 @@ func ImageToSHBD(img *image.RGBA) SHBD {
 }
 
 // SaveBmpFile for debugging purposes
-func SaveBmpFile(img *image.NRGBA, path, fileName string) error {
+func SaveBmpFile(img *image.RGBA, path, fileName string) error {
 	out, err := os.OpenFile(path+fileName+".bmp", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0700)
 	if err != nil {
 		return err

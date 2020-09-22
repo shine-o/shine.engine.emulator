@@ -3,7 +3,6 @@ package zone
 import (
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
-	"time"
 )
 
 const playerHeartbeatLimit = 10
@@ -42,6 +41,48 @@ func (zm *zoneMap) playerActivity() {
 	}
 }
 
+func (zm *zoneMap) monsterActivity() {
+	log.Infof("[map_worker] monsterActivity worker for map %v", zm.data.Info.MapName)
+	for {
+		select {
+		case e := <-zm.recv[monsterAppeared]:
+			log.Info(e)
+		case e := <-zm.recv[monsterDisappeared]:
+			log.Info(e)
+		case e := <-zm.recv[monsterWalks]:
+			go func() {
+				ev, ok := e.(*monsterWalksEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&monsterWalksEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				for ap := range zm.entities.activePlayers() {
+					go func(p *player, m *monster) {
+						if monsterInRange(p, m) {
+							go ncActSomeoneMoveWalkCmd(p, ev.nc)
+						}
+					}(ap, ev.m)
+				}
+			}()
+		case e := <-zm.recv[monsterRuns]:
+			go func() {
+				ev, ok := e.(*monsterRunsEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&monsterRunsEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				for ap := range zm.entities.activePlayers() {
+					go func(p *player, m *monster) {
+						if monsterInRange(p, m) {
+							go ncActSomeoneMoveRunCmd(p, ev.nc)
+						}
+					}(ap, ev.m)
+				}
+			}()
+		}
+	}
+}
+
 func (zm *zoneMap) playerQueries() {
 	log.Infof("[map_worker] playerQueries worker for map %v", zm.data.Info.MapName)
 	for {
@@ -49,7 +90,7 @@ func (zm *zoneMap) playerQueries() {
 		case e := <-zm.recv[queryPlayer]:
 			ev, ok := e.(*queryPlayerEvent)
 			if !ok {
-				log.Errorf("expected event type %v but got %v", reflect.TypeOf(queryPlayerEvent{}).String(), reflect.TypeOf(ev).String())
+				log.Errorf("expected event type %v but got %v", reflect.TypeOf(&queryPlayerEvent{}).String(), reflect.TypeOf(ev).String())
 				return
 			}
 		}
@@ -67,25 +108,14 @@ func (zm *zoneMap) monsterQueries() {
 }
 
 func playerHandleMaintenanceLogic(zm *zoneMap) {
-	zm.entities.players.RLock()
-	for i := range zm.entities.players.active {
+	for p := range zm.entities.activePlayers() {
+		lhb := lastHeartbeat(p)
 
-		var deleteHandle = func(mapInx uint16, zm * zoneMap) {
-			zm.entities.players.Lock()
-			delete(zm.entities.players.active, mapInx)
-			zm.entities.players.Unlock()
-		}
-
-		p := zm.entities.players.active[i]
-
-		p.RLock()
-
-		lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()
-
-		if lastHeartBeat < playerHeartbeatLimit {
-			p.RUnlock()
+		if lhb < playerHeartbeatLimit {
 			continue
 		}
+
+		p.RLock()
 
 		pde := &playerDisappearedEvent{
 			handle: p.handle,
@@ -102,10 +132,12 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 		for _, t := range p.tickers {
 			t.Stop()
 		}
+
+		go zm.entities.players.removeHandle(p.handle)
+
 		p.RUnlock()
-		go deleteHandle(i, zm)
+
 	}
-	zm.entities.players.RUnlock()
 }
 
 func playerHandleLogic(e event, zm *zoneMap) {
@@ -122,18 +154,23 @@ func playerHandleLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	zm.entities.players.Lock()
-	zm.entities.players.active[handle] = ev.player
-	zm.entities.players.Unlock()
+	zm.entities.players.addHandle(handle, ev.player)
 
 	ev.player.Lock()
 	ev.player.handle = handle
 	ev.player.Unlock()
 
 	ev.session.handle = handle
-	ev.session.mapID = ev.player.mapID
+	ev.session.mapID = ev.player.current.mapID
 
 	ev.done <- true
+}
+
+func (p *players) getPlayer(h uint16) *player {
+	p.RLock()
+	player := p.active[h]
+	p.RUnlock()
+	return player
 }
 
 func playerAppearedLogic(e event, zm *zoneMap) {
@@ -143,43 +180,43 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	zm.entities.players.RLock()
-	player, ok := zm.entities.players.active[ev.handle]
-	zm.entities.players.RUnlock()
+	p1 := zm.entities.players.getPlayer(ev.handle)
 
-	if !ok {
+	if p1 == nil {
 		log.Error("player not found during playerAppearedLogic")
 		return
 	}
 
-	go player.heartbeat()
-	go player.persistPosition()
-	go player.nearbyPlayers(zm)
+	go p1.heartbeat()
+	go p1.persistPosition()
 
-	go newPlayer(player, zm.entities.players)
-	go nearbyPlayers(player, zm.entities.players)
+	go newPlayer(p1, zm)
+	go nearbyPlayers(p1, zm)
+
+	go p1.nearbyPlayersMaintenance(zm)
+	go p1.nearbyMonstersMaintenance(zm)
+
+	go adjacentMonstersInform(p1, zm)
 }
 
 func playerDisappearedLogic(e event, zm *zoneMap) {
 	ev, ok := e.(*playerDisappearedEvent)
+
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerDisappearedEvent{}).String(), reflect.TypeOf(ev).String())
 		return
 	}
 
-	zm.entities.players.RLock()
-
-	for _, p := range zm.entities.players.active {
-		if p.handle == ev.handle {
-			continue
-		}
-
-		go ncMapLogoutCmd(p, &structs.NcMapLogoutCmd{
-			Handle: ev.handle,
-		})
+	for ap := range zm.entities.activePlayers() {
+		go func(p2 *player) {
+			if p2.getHandle() == ev.handle {
+				return
+			}
+			ncMapLogoutCmd(p2, &structs.NcMapLogoutCmd{
+				Handle: ev.handle,
+			})
+		}(ap)
 	}
-
-	zm.entities.players.RUnlock()
 }
 
 func playerWalksLogic(e event, zm *zoneMap) {
@@ -196,19 +233,22 @@ func playerWalksLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	rX := (ev.nc.To.X * 8) / 50
-	rY := (ev.nc.To.Y * 8) / 50
+	p1 := zm.entities.getPlayer(ev.handle)
 
-	zm.entities.players.RLock()
-	player, ok := zm.entities.players.active[ev.handle]
-	zm.entities.players.RUnlock()
+	if p1 == nil {
+		log.Error("player not found")
+		return
+	}
 
 	if !ok {
 		log.Error("player not found during playerStoppedLogic")
 		return
 	}
 
-	err := player.move(zm, rX, rY)
+	rX := (ev.nc.To.X * 8) / 50
+	rY := (ev.nc.To.Y * 8) / 50
+
+	err := p1.move(zm, rX, rY)
 
 	if err != nil {
 		// extra validation steps to avoid speed hacks
@@ -216,29 +256,27 @@ func playerWalksLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	player.Lock()
-	player.x = ev.nc.To.X
-	player.y = ev.nc.To.Y
-	player.Unlock()
+	p1.Lock()
+	p1.current.x = ev.nc.To.X
+	p1.current.y = ev.nc.To.Y
+	p1.Unlock()
 
 	nc := structs.NcActSomeoneMoveWalkCmd{
-		Handle: player.handle,
+		Handle: ev.handle,
 		From:   ev.nc.From,
 		To:     ev.nc.To,
 		Speed:  60,
 	}
-	zm.entities.players.RLock()
-	for i := range zm.entities.players.active {
-		foreignPlayer := zm.entities.players.active[i]
 
-		if foreignPlayer.handle != player.handle {
-			if playerInRange(foreignPlayer, player) {
-				go ncActSomeoneMoveWalkCmd(foreignPlayer, &nc)
+	for ap := range zm.entities.activePlayers() {
+		go func(p2 *player) {
+			if p2.getHandle() != ev.handle {
+				if playerInRange(p2, p1) {
+					go ncActSomeoneMoveWalkCmd(p2, &nc)
+				}
 			}
-		}
+		}(ap)
 	}
-	zm.entities.players.RUnlock()
-
 }
 
 func playerRunsLogic(e event, zm *zoneMap) {
@@ -256,48 +294,47 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	rX := (ev.nc.To.X * 8) / 50
-	rY := (ev.nc.To.Y * 8) / 50
+	p1 := zm.entities.getPlayer(ev.handle)
 
-	zm.entities.players.RLock()
-	player, ok := zm.entities.players.active[ev.handle]
-	zm.entities.players.RUnlock()
-
-	if !ok {
-		log.Error("player not found during playerStoppedLogic")
+	if p1 == nil {
+		log.Error("player not found")
 		return
 	}
 
-	err := player.move(zm, rX, rY)
+	rX := (ev.nc.To.X * 8) / 50
+	rY := (ev.nc.To.Y * 8) / 50
+
+	err := p1.move(zm, rX, rY)
 	if err != nil {
 		// extra validation steps to avoid speed hacks
 		log.Error(err)
 		return
 	}
 
-	player.Lock()
-	player.x = ev.nc.To.X
-	player.y = ev.nc.To.Y
-	player.Unlock()
+	p1.Lock()
+	p1.current.x = ev.nc.To.X
+	p1.current.y = ev.nc.To.Y
+	p1.Unlock()
 
 	nc := structs.NcActSomeoneMoveRunCmd{
-		Handle: player.handle,
+		Handle: ev.handle,
 		From:   ev.nc.From,
 		To:     ev.nc.To,
 		Speed:  120,
 	}
 
-	zm.entities.players.RLock()
-	for i := range zm.entities.players.active {
-		foreignPlayer := zm.entities.players.active[i]
-
-		if foreignPlayer.handle != player.handle {
-			if playerInRange(foreignPlayer, player) {
-				go ncActSomeoneMoveRunCmd(foreignPlayer, &nc)
+	for ap := range zm.entities.activePlayers() {
+		go func(p2 *player) {
+			if p2.getHandle() != ev.handle {
+				if playerInRange(p2, p1) {
+					ncActSomeoneMoveRunCmd(p2, &nc)
+				}
 			}
-		}
+		}(ap)
 	}
-	zm.entities.players.RUnlock()
+
+	go adjacentMonstersInform(p1, zm)
+
 }
 
 func playerStoppedLogic(e event, zm *zoneMap) {
@@ -312,41 +349,43 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	rX := (ev.nc.Location.X * 8) / 50
-	rY := (ev.nc.Location.Y * 8) / 50
+	p1 := zm.entities.getPlayer(ev.handle)
 
-	zm.entities.players.RLock()
-	player, ok := zm.entities.players.active[ev.handle]
-	zm.entities.players.RUnlock()
-
-	if !ok {
-		log.Error("player not found during playerStoppedLogic")
+	if p1 == nil {
+		log.Error("player not found")
 		return
 	}
 
-	err := player.move(zm, rX, rY)
+	rX := (ev.nc.Location.X * 8) / 50
+	rY := (ev.nc.Location.Y * 8) / 50
+
+	err := p1.move(zm, rX, rY)
 
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
+	p1.Lock()
+	p1.current.x = ev.nc.Location.X
+	p1.current.y = ev.nc.Location.Y
+	p1.Unlock()
+
 	nc := structs.NcActSomeoneStopCmd{
-		Handle:   player.handle,
+		Handle:   ev.handle,
 		Location: ev.nc.Location,
 	}
 
-	zm.entities.players.RLock()
-	for i := range zm.entities.players.active {
-		foreignPlayer := zm.entities.players.active[i]
-
-		if foreignPlayer.handle != player.handle {
-			if playerInRange(foreignPlayer, player) {
-				go ncActSomeoneStopCmd(foreignPlayer, &nc)
+	for ap := range zm.entities.activePlayers() {
+		go func(p2 *player) {
+			if p2.getHandle() != ev.handle {
+				if playerInRange(p2, p1) {
+					ncActSomeoneStopCmd(p2, &nc)
+				}
 			}
-		}
+		}(ap)
 	}
-	zm.entities.players.RUnlock()
+
 }
 
 func playerJumpedLogic(e event, zm *zoneMap) {
@@ -356,12 +395,10 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	zm.entities.players.RLock()
-	player, ok := zm.entities.players.active[ev.handle]
-	zm.entities.players.RUnlock()
+	p1 := zm.entities.getPlayer(ev.handle)
 
-	if !ok {
-		log.Error("player not found during playerStoppedLogic")
+	if p1 == nil {
+		log.Error("player not found")
 		return
 	}
 
@@ -369,17 +406,15 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 		Handle: ev.handle,
 	}
 
-	zm.entities.players.RLock()
-
-	for i := range zm.entities.players.active {
-		foreignPlayer := zm.entities.players.active[i]
-		if foreignPlayer.handle != player.handle {
-			if playerInRange(foreignPlayer, player) {
-				go ncActSomeoneJumpCmd(foreignPlayer, &nc)
+	for ap := range zm.entities.activePlayers() {
+		go func(p2 *player) {
+			if p2.getHandle() != ev.handle {
+				if playerInRange(p2, p1) {
+					go ncActSomeoneJumpCmd(p2, &nc)
+				}
 			}
-		}
+		}(ap)
 	}
-	zm.entities.players.RUnlock()
 }
 
 func unknownHandleLogic(e event, zm *zoneMap) {
@@ -394,77 +429,62 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	zm.entities.players.RLock()
-	player, ok := zm.entities.players.active[ev.handle]
-	zm.entities.players.RUnlock()
+	p1 := zm.entities.getPlayer(ev.handle)
 
-	if !ok {
-		log.Errorf("player with handle %v not found", ev.handle)
+	if p1 == nil {
+		log.Error("player not found")
 		return
 	}
 
 	//TODO: could also be NPC, Item on the ground or a Monster
-	zm.entities.players.RLock()
-	foreignPlayer, ok := zm.entities.players.active[ev.nc.ForeignHandle]
-	zm.entities.players.RUnlock()
+	p2 := zm.entities.getPlayer(ev.nc.ForeignHandle)
 
-	if !ok {
-		log.Errorf("player with handle %v not found", ev.handle)
+	if p2 == nil {
 		return
 	}
 
-	if playerInRange(player, foreignPlayer) {
+	if playerInRange(p1, p2) {
 
-		foreignPlayer.RLock()
-		nc1 := foreignPlayer.ncBriefInfoLoginCharacterCmd()
-		foreignPlayer.RUnlock()
+		p1.RLock()
+		nc1 := p1.ncBriefInfoLoginCharacterCmd()
+		p1.RUnlock()
+		go ncBriefInfoLoginCharacterCmd(p2, &nc1)
 
-		player.RLock()
-		nc2 := player.ncBriefInfoLoginCharacterCmd()
-		player.RUnlock()
-
-		go ncBriefInfoLoginCharacterCmd(player, &nc1)
-		go ncBriefInfoLoginCharacterCmd(foreignPlayer, &nc2)
+		p2.RLock()
+		nc2 := p2.ncBriefInfoLoginCharacterCmd()
+		p2.RUnlock()
+		go ncBriefInfoLoginCharacterCmd(p1, &nc2)
 	}
 }
 
 // notify every player in proximity about player that logged in
-func newPlayer(p *player, nearbyPlayers *players) {
-	nearbyPlayers.RLock()
-	for i := range nearbyPlayers.active {
-		foreignPlayer := nearbyPlayers.active[i]
-
-		if p.handle != foreignPlayer.handle {
-			if playerInRange(foreignPlayer, p) {
-				nc := p.ncBriefInfoLoginCharacterCmd()
-				go ncBriefInfoLoginCharacterCmd(foreignPlayer, &nc)
+func newPlayer(p1 *player, zm *zoneMap) {
+	for ap := range zm.entities.activePlayers() {
+		go func(p2 *player) {
+			if p1.getHandle() != p2.getHandle() {
+				if playerInRange(p2, p1) {
+					nc := p1.ncBriefInfoLoginCharacterCmd()
+					ncBriefInfoLoginCharacterCmd(p2, &nc)
+				}
 			}
-		}
+		}(ap)
 	}
-	nearbyPlayers.RUnlock()
 }
 
 // send info to player about nearby players
-func nearbyPlayers(p *player, nearbyPlayers *players) {
+func nearbyPlayers(p1 *player, zm *zoneMap) {
 	var characters []structs.NcBriefInfoLoginCharacterCmd
 
-	nearbyPlayers.RLock()
-
-	for i := range nearbyPlayers.active {
-		foreignPlayer := nearbyPlayers.active[i]
-
-		if p.handle != foreignPlayer.handle {
-			if playerInRange(foreignPlayer, p) {
-				nc := foreignPlayer.ncBriefInfoLoginCharacterCmd()
+	for p2 := range zm.entities.activePlayers() {
+		if p1.getHandle() != p2.getHandle() {
+			if playerInRange(p2, p1) {
+				nc := p2.ncBriefInfoLoginCharacterCmd()
 				characters = append(characters, nc)
 			}
 		}
-
 	}
 
-	nearbyPlayers.RUnlock()
-
-	ncBriefInfoCharacterCmd(p, &structs.NcBriefInfoCharacterCmd{
+	ncBriefInfoCharacterCmd(p1, &structs.NcBriefInfoCharacterCmd{
 		Number:     byte(len(characters)),
 		Characters: characters,
 	})

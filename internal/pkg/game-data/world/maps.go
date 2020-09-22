@@ -7,9 +7,6 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/blocks"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/utils"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
-	bolt "go.etcd.io/bbolt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"sync"
@@ -18,16 +15,17 @@ import (
 var log *logger.Logger
 
 func init() {
-	log = logger.Init("maps logger", true, false, ioutil.Discard)
-	log.Info("maps logger init()")
+	log = logger.Init("maps logger", true, false, os.Stdout)
 }
 
 type Map struct {
-	ID             int `struct:"int32"`
-	MapAttributeID int `struct:"int32"`
+	ID int `struct:"int32"`
+	*Attributes
+	Info *shn.MapInfo
+	SHBD *blocks.SHBD
 }
 
-type MapAttributes struct {
+type Attributes struct {
 	ID               int    `struct:"int32"`
 	MapInfoIndex     string `struct:"[12]byte"`
 	ShineMapName     string `struct:"[32]byte"`
@@ -64,128 +62,113 @@ type MapAttributes struct {
 	PlayerExpPenalty int    `struct:"int32"`
 }
 
-type MapData struct {
-	ID         int `struct:"int32"`
-	Attributes MapAttributes
-	Info       shn.MapInfo
-	SHBD       blocks.SHBD
-}
-
-type mapData struct {
-	attributes  map[int]MapAttributes
+type data struct {
+	attributes  map[int]Attributes
 	mapInfo     *shn.ShineMapInfo
 	shineFolder string
 }
 
-func LoadMapData(shineFolder string, db *bolt.DB) error {
-	var attributes map[int]MapAttributes
-	var mapInfo shn.ShineMapInfo
+type maps struct {
+	data map[int]*Map
+	sync.Mutex
+}
 
-	err := db.Update(func(tx *bolt.Tx) error {
-		_, err := tx.CreateBucketIfNotExists([]byte("maps"))
-		if err != nil {
-			return err
-		}
-		return nil
-	})
+func LoadMapData(shineFolder string) (map[int]*Map, error) {
 
-	if err != nil {
-		return err
+	allMaps := maps{
+		data:  make(map[int]*Map),
+		Mutex: sync.Mutex{},
 	}
+
+	var attributes map[int]Attributes
+	var mapInfo shn.ShineMapInfo
 
 	mapFiles := []string{"NormalMaps.txt", "DungeonMaps.txt", "KingdomQuestMaps.txt", "GuildTournamentMaps.txt"}
 
-	mapAttributesPath, err := utils.ValidPath(shineFolder + "/world/" + "MapAttributes.txt")
+	AttributesPath, err := utils.ValidPath(shineFolder + "/world/" + "MapAttributes.txt")
 
-	attributes, err = loadMapAttributes(mapAttributesPath)
+	attributes, err = loadAttributes(AttributesPath)
 	if err != nil {
-		return err
+		return allMaps.data, err
 	}
 
 	mapInfoPath, err := utils.ValidPath(shineFolder + "/shn/client/" + "MapInfo.shn")
 	if err != nil {
-		return err
+		return allMaps.data, err
 	}
 
 	err = shn.Load(mapInfoPath, &mapInfo)
 	if err != nil {
-		return err
+		return allMaps.data, err
 	}
 
 	var wg sync.WaitGroup
+
+	md := &data{
+		shineFolder: shineFolder,
+		attributes:  attributes,
+		mapInfo:     &mapInfo,
+	}
+
 	for _, file := range mapFiles {
 		var maps []Map
 		mapsPath, err := utils.ValidPath(shineFolder + "/world/" + file)
 		maps, err = loadMaps(mapsPath)
+
 		if err != nil {
-			return err
+			return allMaps.data, err
 		}
+
 		for _, m := range maps {
 			wg.Add(1)
-			md := mapData{
-				shineFolder: shineFolder,
-				attributes:  attributes,
-				mapInfo:     &mapInfo,
-			}
-			go md.persistMap(&wg, m, db)
+			go md.loadData(&wg, m, &allMaps)
 		}
 	}
+
 	wg.Wait()
-	return nil
+
+	return allMaps.data, err
 }
 
-func (md *mapData) persistMap(wg *sync.WaitGroup, m Map, db *bolt.DB) {
+func (md *data) loadData(wg *sync.WaitGroup, m Map, allMaps *maps) {
 	defer wg.Done()
-	var lm MapData
-	if attr, ok := md.attributes[m.MapAttributeID]; ok {
-		lm.Attributes = attr
+	if attr, ok := md.attributes[m.Attributes.ID]; ok {
+		m.Attributes = &attr
 	} else {
-		log.Errorf("unkown map attribute entry with ID %v", m.MapAttributeID)
+		log.Errorf("unkown map attribute entry with ID %v", m.ID)
 		return
 	}
 
-	for _, row := range md.mapInfo.Rows {
-		if row.MapName.Name == lm.Attributes.MapInfoIndex {
-			lm.Info = row
+	for i, row := range md.mapInfo.Rows {
+		if row.MapName.Name == m.Attributes.MapInfoIndex {
+			m.Info = &md.mapInfo.Rows[i]
 		}
 	}
 
-	if lm.Info == (shn.MapInfo{}) {
-		log.Errorf("no MapInfo.shn entry found for normal map entry with ID %v, ignoring map", lm.Attributes.ID)
+	if m.Info == nil {
+		log.Errorf("no MapInfo.shn entry found for normal map entry with ID %v, ignoring map", m.ID)
 		return
 	}
 
 	// load shbd
 	var s *blocks.SHBD
 
-	shbdPath, err := utils.ValidPath(md.shineFolder + "/blocks/" + lm.Info.MapName.Name + ".shbd")
+	shbdPath, err := utils.ValidPath(md.shineFolder + "/blocks/" + m.Info.MapName.Name + ".shbd")
 	if err != nil {
-		log.Errorf("shbd file found for normal map entry with ID %v, ignoring map %v", lm.Attributes.ID, err)
+		log.Errorf("shbd file found for normal map entry with ID %v, ignoring map %v", m.ID, err)
+		return
 	}
 
 	s, err = blocks.LoadSHBDFile(shbdPath)
 	if err != nil {
-		log.Errorf("failed to load shbd file for map entry with ID %v, ignoring map %v", lm.Attributes.ID, err)
+		log.Errorf("failed to load shbd file for map entry with ID %v, ignoring map %v", m.ID, err)
 	}
 
-	lm.SHBD = *s
-	lm.ID = m.ID
-	err = db.Update(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("maps"))
-		data, err := structs.Pack(&lm)
-		if err != nil {
-			return err
-		}
+	m.SHBD = s
 
-		err = b.Put([]byte(fmt.Sprintf("%v", m.ID)), data)
-		if err != nil {
-			return err
-		}
-		return nil
-	})
-	if err != nil {
-		log.Errorf("failed to persist map with id %v %v", lm.Attributes.ID, err)
-	}
+	allMaps.Lock()
+	allMaps.data[m.ID] = &m
+	allMaps.Unlock()
 }
 
 func loadTxtFile(filePath string) ([][]string, error) {
@@ -227,15 +210,15 @@ func loadMaps(filePath string) ([]Map, error) {
 			return maps, err
 		}
 		maps = append(maps, Map{
-			ID:             id,
-			MapAttributeID: mapAttributeID,
+			ID:         id,
+			Attributes: &Attributes{ID: mapAttributeID},
 		})
 	}
 	return maps, nil
 }
 
-func loadMapAttributes(filePath string) (map[int]MapAttributes, error) {
-	var attributes = make(map[int]MapAttributes, 0)
+func loadAttributes(filePath string) (map[int]Attributes, error) {
+	var attributes = make(map[int]Attributes, 0)
 
 	data, err := loadTxtFile(filePath)
 
@@ -262,8 +245,8 @@ func loadMapAttributes(filePath string) (map[int]MapAttributes, error) {
 	return attributes, nil
 }
 
-func mapAttributeFields(fields []string) (MapAttributes, error) {
-	var ma MapAttributes
+func mapAttributeFields(fields []string) (Attributes, error) {
+	var ma Attributes
 
 	//todo:  a better way to iterate over these fields
 	id, err := strconv.Atoi(fields[0])
@@ -406,7 +389,7 @@ func mapAttributeFields(fields []string) (MapAttributes, error) {
 		return ma, err
 	}
 
-	ma = MapAttributes{
+	ma = Attributes{
 		ID:               id,
 		MapInfoIndex:     fields[1],
 		ShineMapName:     fields[2],

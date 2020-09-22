@@ -41,3 +41,13 @@ type unknownHandleEvent struct {
 	handle uint16
 	nc     *structs.NcBriefInfoInformCmd
 }
+
+type monsterWalksEvent struct {
+	nc *structs.NcActSomeoneMoveWalkCmd
+	m  *monster
+}
+
+type monsterRunsEvent struct {
+	nc *structs.NcActSomeoneMoveRunCmd
+	m  *monster
+}
