@@ -53,14 +53,14 @@ func ncCharClientBaseCmd(p *player) {
 			Cen:        54983635, // ¿?
 			LoginInfo: structs.NcCharBaseCmdLoginLocation{
 				CurrentMap: structs.Name3{
-					Name: p.location.mapName,
+					Name: p.current.mapName,
 				},
 				CurrentCoord: structs.ShineCoordType{
 					XY: structs.ShineXYType{
-						X: p.location.x,
-						Y: p.location.y,
+						X: p.current.x,
+						Y: p.current.y,
 					},
-					Direction: p.location.d,
+					Direction: p.current.d,
 				},
 			},
 			Stats: structs.CharStats{
@@ -119,8 +119,8 @@ func ncMapLoginAck(p *player) {
 			//Handle: 2222, // id of the entity inside this map
 			Params: p.charParameterData(),
 			LoginCoord: structs.ShineXYType{
-				X: p.location.x,
-				Y: p.location.y,
+				X: p.current.x,
+				Y: p.current.y,
 			},
 		},
 	}

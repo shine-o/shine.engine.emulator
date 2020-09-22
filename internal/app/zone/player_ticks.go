@@ -109,9 +109,9 @@ func (p *player) nearbyMonstersMaintenance(zm *zoneMap) {
 			// for each monster
 			// if nearby, add to known nearby
 			for am := range p.adjacentMonsters() {
-				go func(p * player, m *monster) {
+				go func(p *player, m *monster) {
 					if !monsterInRange(p, m) {
-						mh :=  m.getHandle()
+						mh := m.getHandle()
 						p.Lock()
 						delete(p.monsters, mh)
 						p.Unlock()

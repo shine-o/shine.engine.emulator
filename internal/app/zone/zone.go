@@ -45,7 +45,7 @@ func (z *zone) load() {
 	}
 
 	z.events = &events{
-		send:  make(sendEvents),
+		send: make(sendEvents),
 		recv: make(recvEvents),
 	}
 

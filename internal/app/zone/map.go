@@ -159,7 +159,7 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 
 			var (
 				x, y, d  int
-				maxTries = 200
+					maxTries = 200
 				spawn    = false
 			)
 
@@ -169,18 +169,18 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 					break
 				}
 
-				//if re.Width == 0 {
-				//	re.Width = networking.RandomIntBetween(100, 150)
-				//}
+				if re.Width == 0 {
+					re.Width = networking.RandomIntBetween(100, 150)
+				}
+
+				if re.Height == 0 {
+					re.Height = networking.RandomIntBetween(100, 150)
+				}
 				//
-				//if re.Height == 0 {
-				//	re.Height = networking.RandomIntBetween(100, 150)
-				//}
-				//
-				//x = networking.RandomIntBetween(re.X, re.X+re.Width)
-				//y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
-				x = re.X
-				y = re.Y
+				x = networking.RandomIntBetween(re.X, re.X+re.Width)
+				y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
+				//x = re.X
+				//y = re.Y
 				d = networking.RandomIntBetween(1, 250)
 
 				rX, rY := igCoordToBitmap(uint32(re.X), uint32(re.Y))
@@ -207,7 +207,7 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 							y: uint32(y),
 							d: uint8(d),
 						},
-						location: location{
+						current: location{
 							mapID:     zm.data.ID,
 							mapName:   zm.data.MapInfoIndex,
 							x:         uint32(x),
@@ -272,8 +272,6 @@ func walkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) 
 
 	for y := 0; y < s.Y; y++ {
 		for x := 0; x < s.X; x++ {
-	//for y := s.Y; y != 0; y-- {
-	//	for x := 0; x < s.X; x++ {
 			b, err := r.ReadByte()
 			if err != nil {
 				return walkableX, walkableY, err

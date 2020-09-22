@@ -130,7 +130,7 @@ func playerMapLoginLogic(e event) {
 	}
 
 	qme = queryMapEvent{
-		id:  p.location.mapID,
+		id:  p.current.mapID,
 		zm:  make(chan *zoneMap),
 		err: make(chan error),
 	}
@@ -228,9 +228,12 @@ func hearbeatUpdateLogic(e event) {
 		return
 	}
 
-	zm.entities.players.Lock()
-	p, ok := zm.entities.players.active[ev.session.handle]
-	zm.entities.players.Unlock()
+	p := zm.entities.players.getPlayer(ev.session.handle)
+
+	if p == nil {
+		log.Errorf("nil player with handle %v", ev.session.handle)
+		return
+	}
 
 	p.Lock()
 	p.conn.lastHeartBeat = time.Now()
@@ -253,7 +256,7 @@ func playerLogoutStartLogic(z *zone, e event) {
 		return
 	}
 
-	p:= m.entities.players.getPlayer(ev.handle)
+	p := m.entities.players.getPlayer(ev.handle)
 
 	if p == nil {
 		log.Errorf("player with handle %v not available", ev.handle)
@@ -320,11 +323,11 @@ func persistPLayerPositionLogic(e event, z *zone) {
 
 	ev.p.Lock()
 	c := ev.p.char
-	c.Location.MapID = uint32(ev.p.mapID)
-	c.Location.MapName = ev.p.mapName
-	c.Location.X = ev.p.x
-	c.Location.Y = ev.p.y
-	c.Location.D = ev.p.d
+	c.Location.MapID = uint32(ev.p.current.mapID)
+	c.Location.MapName = ev.p.current.mapName
+	c.Location.X = ev.p.current.x
+	c.Location.Y = ev.p.current.y
+	c.Location.D = ev.p.current.d
 	c.Location.IsKQ = false
 	ev.p.Unlock()
 
@@ -365,17 +368,17 @@ func playerLogout(z *zone, zm *zoneMap, p *player, sid string) {
 	}
 
 	for {
-		z.dynamicEvents.Lock()
+		z.dynamicEvents.RLock()
 		select {
 		case <-z.dynamicEvents.events[sid].recv[dLogoutCancel]:
-			z.dynamicEvents.Unlock()
+			z.dynamicEvents.RUnlock()
 			return
 		case <-z.dynamicEvents.events[sid].recv[dLogoutConclude]:
-			z.dynamicEvents.Unlock()
+			z.dynamicEvents.RUnlock()
 			finish()
 			return
 		case <-t.C:
-			z.dynamicEvents.Unlock()
+			z.dynamicEvents.RUnlock()
 			finish()
 			return
 		}

@@ -57,7 +57,7 @@ func (zm *zoneMap) monsterActivity() {
 					return
 				}
 				for ap := range zm.entities.activePlayers() {
-					go func(p * player, m*monster) {
+					go func(p *player, m *monster) {
 						if monsterInRange(p, m) {
 							go ncActSomeoneMoveWalkCmd(p, ev.nc)
 						}
@@ -72,7 +72,11 @@ func (zm *zoneMap) monsterActivity() {
 					return
 				}
 				for ap := range zm.entities.activePlayers() {
-					go ncActSomeoneMoveRunCmd(ap, ev.nc)
+					go func(p *player, m *monster) {
+						if monsterInRange(p, m) {
+							go ncActSomeoneMoveRunCmd(p, ev.nc)
+						}
+					}(ap, ev.m)
 				}
 			}()
 		}
@@ -157,14 +161,14 @@ func playerHandleLogic(e event, zm *zoneMap) {
 	ev.player.Unlock()
 
 	ev.session.handle = handle
-	ev.session.mapID = ev.player.mapID
+	ev.session.mapID = ev.player.current.mapID
 
 	ev.done <- true
 }
 
 func (p *players) getPlayer(h uint16) *player {
 	p.RLock()
-	player, _ := p.active[h]
+	player := p.active[h]
 	p.RUnlock()
 	return player
 }
@@ -253,8 +257,8 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	}
 
 	p1.Lock()
-	p1.x = ev.nc.To.X
-	p1.y = ev.nc.To.Y
+	p1.current.x = ev.nc.To.X
+	p1.current.y = ev.nc.To.Y
 	p1.Unlock()
 
 	nc := structs.NcActSomeoneMoveWalkCmd{
@@ -308,8 +312,8 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	}
 
 	p1.Lock()
-	p1.x = ev.nc.To.X
-	p1.y = ev.nc.To.Y
+	p1.current.x = ev.nc.To.X
+	p1.current.y = ev.nc.To.Y
 	p1.Unlock()
 
 	nc := structs.NcActSomeoneMoveRunCmd{
@@ -363,8 +367,8 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	}
 
 	p1.Lock()
-	p1.x = ev.nc.Location.X
-	p1.y = ev.nc.Location.Y
+	p1.current.x = ev.nc.Location.X
+	p1.current.y = ev.nc.Location.Y
 	p1.Unlock()
 
 	nc := structs.NcActSomeoneStopCmd{

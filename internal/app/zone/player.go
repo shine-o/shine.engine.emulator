@@ -231,11 +231,11 @@ func (p *player) load(name string, worldDB *pg.DB) error {
 
 	p.char = &char
 
-	p.location.mapName = char.Location.MapName
-	p.location.mapID = int(char.Location.MapID)
-	p.location.x = char.Location.X
-	p.location.y = char.Location.Y
-	p.location.d = char.Location.D
+	p.current.mapName = char.Location.MapName
+	p.current.mapID = int(char.Location.MapID)
+	p.current.x = char.Location.X
+	p.current.y = char.Location.Y
+	p.current.d = char.Location.D
 
 	p.players = make(map[uint16]*player)
 	p.monsters = make(map[uint16]*monster)
@@ -489,12 +489,12 @@ func (p *player) ncBriefInfoLoginCharacterCmd() structs.NcBriefInfoLoginCharacte
 		},
 		Coordinates: structs.ShineCoordType{
 			XY: structs.ShineXYType{
-				X: p.location.x,
-				Y: p.location.y,
+				X: p.current.x,
+				Y: p.current.y,
 			},
-			Direction: p.location.d,
+			Direction: p.current.d,
 		},
-		Mode:            0,
+		Mode:            2,
 		Class:           p.view.class,
 		Shape:           *p.view.protoAvatarShapeInfo(),
 		ShapeData:       structs.NcBriefInfoLoginCharacterCmdShapeData{},

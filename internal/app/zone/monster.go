@@ -9,13 +9,6 @@ import (
 	"time"
 )
 
-const (
-	monsterRoaming = iota
-	monsterGoBack
-	monsterIdling
-	monsterFighting
-)
-
 type monster struct {
 	baseEntity
 	hp, sp        uint32
@@ -47,58 +40,87 @@ func (m *monster) dead() {
 	// create ticker so it can respawn again
 }
 
-func (m * monster) monsterWalk(c chan <- * location, zm * zoneMap)  {
-	tick := time.NewTicker(time.Duration(int64(networking.RandomIntBetween(4200, 8150))) * time.Millisecond)
-	//tick := time.NewTicker(3 * time.Second)
+func (m *monster) monsterWalk(c chan<- location, zm *zoneMap) {
+	defer func() {
+		n := recover()
+		if n != nil {
+			log.Infof("recovered from panic %v", n)
+		}
+	}()
+
+	tick := time.NewTicker(time.Duration(int64(networking.RandomIntBetween(8256, 21234))) * time.Millisecond)
+loop:
 	for {
 		select {
-		case <- tick.C:
+		case <-tick.C:
 			m.RLock()
 			var (
-				x = m.x
-				y = m.y
-				walkSpeed = (m.mobInfo.WalkSpeed/10) * 2
+				x         = m.current.x
+				y         = m.current.y
+				walkSpeed = m.mobInfo.WalkSpeed / 10
 			)
 			m.RUnlock()
 
 			var (
-				lx, ly uint32
+				lx uint32
+				ly uint32
 			)
 
-			// problem is, I need to generate the same kind of coordinates as the game does, I cannot invent them!
-			//rstX := (rX * 50.0) / 8.0
 			rX, rY := igCoordToBitmap(x, y)
 
-			switch networking.RandomIntBetween(0,5) {
-				case 1:
-					lx = rX
-					ly = rY - walkSpeed
-				case 2:
-					lx = rX
-					ly = rY + walkSpeed
-				case 3:
-					lx = rX - walkSpeed
-					ly = rY
-				case 4:
-					lx = rX + walkSpeed
-					ly = rY
-			}
-
-			if ly > m.fallback.y + 400 && lx > m.fallback.x + 400 {
-				c <- &location{
-					x:         m.fallback.x,
-					y:        m.fallback.y,
+			switch networking.RandomIntBetween(0, 8) {
+			case 1:
+				if rX < rX+walkSpeed {
+					lx = uint32(networking.RandomIntBetween(int(rX), int(rX+walkSpeed)))
 				}
-				break
+				if rY < rY+walkSpeed {
+					ly = uint32(networking.RandomIntBetween(int(rY), int(rY+walkSpeed)))
+				}
+			case 2:
+				if int(rX-(walkSpeed*4)) < int(rX+walkSpeed) {
+					lx = uint32(networking.RandomIntBetween(int(rX-(walkSpeed*4)), int(rX+walkSpeed)))
+				}
+				if int(rY-(walkSpeed*4)) < int(rY+walkSpeed) {
+					ly = uint32(networking.RandomIntBetween(int(rY-(walkSpeed*4)), int(rY+walkSpeed)))
+				}
+			case 3:
+				if int(rY-(walkSpeed*4)) < int(rY) {
+					lx = rX
+					ly = uint32(networking.RandomIntBetween(int(rY-(walkSpeed*4)), int(rY)))
+				}
+			case 4:
+				if int(rY+(walkSpeed*4)) < int(rY) {
+					lx = rX
+					ly = uint32(networking.RandomIntBetween(int(rY+(walkSpeed*4)), int(rY)))
+				}
+			case 5:
+				if int(rX-(walkSpeed*4)) < int(rX) {
+					lx = uint32(networking.RandomIntBetween(int(rX-(walkSpeed*4)), int(rX)))
+					ly = rY
+				}
+			case 6:
+				if int(rX+(walkSpeed*4)) < int(rX) {
+					lx = uint32(networking.RandomIntBetween(int(rX+(walkSpeed*4)), int(rX)))
+					ly = rY
+				}
+			case 7:
+				m.RLock()
+				x = m.fallback.x
+				y = m.fallback.y
+				m.RUnlock()
+				c <- location{
+					x: x,
+					y: y,
+				}
+				continue loop
 			}
 
+			igX, igY := bitmapCoordToIg(lx, ly)
 
 			if canWalk(zm.walkableX, zm.walkableY, lx, ly) {
-				igX, igY := bitmapCoordToIg(lx, ly)
-
-				c <- &location{
-					x:         igX,
-					y:         igY,
+				c <- location{
+					x: igX,
+					y: igY,
 				}
 			}
 		}
@@ -106,38 +128,38 @@ func (m * monster) monsterWalk(c chan <- * location, zm * zoneMap)  {
 }
 
 func (m *monster) roam(zm *zoneMap) {
-	ch := make(chan * location)
+	ch := make(chan location)
 	go m.monsterWalk(ch, zm)
 	for {
 		select {
-			case l := <- ch:
-				m.RLock()
-				nc := structs.NcActSomeoneMoveWalkCmd{
-					Handle: m.handle,
-					From: structs.ShineXYType{
-						X: m.x,
-						Y: m.y,
-					},
-					To: structs.ShineXYType{
-						X: l.x,
-						Y: l.y,
-					},
-					Speed:    uint16(m.mobInfo.WalkSpeed),
-					MoveAttr: structs.NcActSomeoneMoveWalkCmdAttr{},
-				}
-				m.RUnlock()
+		case l := <-ch:
+			m.RLock()
+			nc := structs.NcActSomeoneMoveWalkCmd{
+				Handle: m.handle,
+				From: structs.ShineXYType{
+					X: m.current.x,
+					Y: m.current.y,
+				},
+				To: structs.ShineXYType{
+					X: l.x,
+					Y: l.y,
+				},
+				Speed:    uint16(m.mobInfo.WalkSpeed),
+				MoveAttr: structs.NcActSomeoneMoveWalkCmdAttr{},
+			}
+			m.RUnlock()
 
-				m.Lock()
-				m.location.x = l.x
-				m.location.y = l.y
-				m.Unlock()
+			m.Lock()
+			m.current.x = l.x
+			m.current.y = l.y
+			m.Unlock()
 
-				e := monsterWalksEvent{
-					nc: &nc,
-					m:  m,
-				}
+			e := monsterWalksEvent{
+				nc: &nc,
+				m:  m,
+			}
 
-				zm.send[monsterWalks] <- &e
+			zm.send[monsterWalks] <- &e
 		}
 	}
 }
