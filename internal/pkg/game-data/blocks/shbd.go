@@ -46,9 +46,7 @@ func SHBDToImage(s *SHBD) (*image.RGBA, error) {
 			Y: s.Y,
 		},
 	})
-	//
-	//for y := s.Y; y != 0; y-- {
-	//	for x := 0; x < s.X; x++ {
+
 	for y := 0; y < s.Y; y++ {
 		for x := 0; x < s.X; x++ {
 			b, err := r.ReadByte()

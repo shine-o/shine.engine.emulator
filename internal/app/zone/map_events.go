@@ -49,5 +49,5 @@ type monsterWalksEvent struct {
 
 type monsterRunsEvent struct {
 	nc *structs.NcActSomeoneMoveRunCmd
+	m  *monster
 }
-

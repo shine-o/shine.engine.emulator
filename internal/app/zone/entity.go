@@ -33,15 +33,15 @@ type movement struct {
 type baseEntity struct {
 	handle   uint16
 	fallback location
-	location
+	current  location
 	events
 }
 
 type status struct {
-	idling   chan  bool
-	fighting chan  bool
-	chasing  chan  bool
-	fleeing  chan  bool
+	idling   chan bool
+	fighting chan bool
+	chasing  chan bool
+	fleeing  chan bool
 }
 
 func (b *baseEntity) getHandle() uint16 {
@@ -49,7 +49,7 @@ func (b *baseEntity) getHandle() uint16 {
 }
 
 func (b *baseEntity) getLocation() (uint32, uint32) {
-	return b.location.x, b.location.y
+	return b.current.x, b.current.y
 }
 
 func (b *baseEntity) move(m *zoneMap, x, y uint32) error {
@@ -60,11 +60,11 @@ func (b *baseEntity) move(m *zoneMap, x, y uint32) error {
 }
 
 func entityInRange(e1, e2 baseEntity) bool {
-	viewerX := (e1.x * 8) / 50
-	viewerY := (e1.y * 8) / 50
+	viewerX := (e1.current.x * 8) / 50
+	viewerY := (e1.current.y * 8) / 50
 
-	targetX := (e2.x * 8) / 50
-	targetY := (e2.y * 8) / 50
+	targetX := (e2.current.x * 8) / 50
+	targetY := (e2.current.y * 8) / 50
 
 	vertical := targetY <= viewerY+lengthY && targetY >= viewerY || targetY >= (viewerY-lengthY) && targetY <= viewerY
 	horizontal := targetX <= (viewerX+lengthX) && targetX >= viewerX || targetX >= (viewerX-lengthX) && targetX <= viewerX

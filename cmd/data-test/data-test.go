@@ -51,8 +51,8 @@ func main() {
 	//	logger.Error(err)
 	//}
 
-	var s * blocks.SHBD
-	s, err := blocks.LoadSHBDFile("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files\\blocks\\EldPri01.shbd")
+	var s *blocks.SHBD
+	s, err := blocks.LoadSHBDFile("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files\\blocks\\Rou.shbd")
 
 	if err != nil {
 		logger.Error(err)
@@ -62,7 +62,7 @@ func main() {
 	if err != nil {
 		logger.Error(err)
 	}
-	err = blocks.SaveBmpFile(img, "./","EldPri01.shbd")
+	err = blocks.SaveBmpFile(img, "./", "Rou")
 	if err != nil {
 		logger.Error(err)
 	}
@@ -85,12 +85,12 @@ func canWalk(x, y *roaring.Bitmap, rX, rY uint32) bool {
 }
 
 func testWalk(walkableX *roaring.Bitmap, walkableY *roaring.Bitmap) {
-	igX := 9935
-	igY := 10604
+	igX := 5868
+	igY := 10462
 
- 	rX :=  (igX * 8.0) / 50.0
+	rX := (igX * 8.0) / 50.0
 
- 	//fmt.Printf("%.6f", float64(rX))
+	//fmt.Printf("%.6f", float64(rX))
 	// 1589 = (x * 8) / 50
 	rstX := (rX * 50.0) / 8.0
 
