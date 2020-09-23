@@ -245,8 +245,10 @@ func playerWalksLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	rX := (ev.nc.To.X * 8) / 50
-	rY := (ev.nc.To.Y * 8) / 50
+	igX := int(ev.nc.To.X)
+	igY := int( ev.nc.To.Y)
+
+	rX, rY := igCoordToBitmap(igX, igY)
 
 	err := p1.move(zm, rX, rY)
 
@@ -257,8 +259,8 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	}
 
 	p1.Lock()
-	p1.current.x = ev.nc.To.X
-	p1.current.y = ev.nc.To.Y
+	p1.current.x = igX
+	p1.current.y = igY
 	p1.Unlock()
 
 	nc := structs.NcActSomeoneMoveWalkCmd{
@@ -301,8 +303,10 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	rX := (ev.nc.To.X * 8) / 50
-	rY := (ev.nc.To.Y * 8) / 50
+	igX := int(ev.nc.To.X)
+	igY := int(ev.nc.To.Y)
+
+	rX, rY := igCoordToBitmap(igX, igY)
 
 	err := p1.move(zm, rX, rY)
 	if err != nil {
@@ -312,8 +316,8 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	}
 
 	p1.Lock()
-	p1.current.x = ev.nc.To.X
-	p1.current.y = ev.nc.To.Y
+	p1.current.x = igX
+	p1.current.y = igY
 	p1.Unlock()
 
 	nc := structs.NcActSomeoneMoveRunCmd{
@@ -356,8 +360,10 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	rX := (ev.nc.Location.X * 8) / 50
-	rY := (ev.nc.Location.Y * 8) / 50
+	igX := int(ev.nc.Location.X)
+	igY := int( ev.nc.Location.Y)
+
+	rX, rY := igCoordToBitmap(igX, igY)
 
 	err := p1.move(zm, rX, rY)
 
@@ -367,8 +373,8 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	}
 
 	p1.Lock()
-	p1.current.x = ev.nc.Location.X
-	p1.current.y = ev.nc.Location.Y
+	p1.current.x = igX
+	p1.current.y = igY
 	p1.Unlock()
 
 	nc := structs.NcActSomeoneStopCmd{

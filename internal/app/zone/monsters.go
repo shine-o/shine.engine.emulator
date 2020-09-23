@@ -116,10 +116,10 @@ func (m *monster) ncBriefInfoRegenMobCmd() structs.NcBriefInfoRegenMobCmd {
 		MobID:  m.mobInfo.ID,
 		Coord: structs.ShineCoordType{
 			XY: structs.ShineXYType{
-				X: m.current.x,
-				Y: m.current.y,
+				X: uint32(m.current.x),
+				Y: uint32(m.current.y),
 			},
-			Direction: m.current.d,
+			Direction: uint8(m.current.d),
 		},
 	}
 	m.RUnlock()

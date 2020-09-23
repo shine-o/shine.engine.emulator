@@ -331,7 +331,7 @@ func persistPLayerPositionLogic(e event, z *zone) {
 	c.Location.IsKQ = false
 	ev.p.Unlock()
 
-	err := character.Update(z.worldDB, c)
+	err := character.UpdateLocation(z.worldDB, c)
 
 	if err != nil {
 		log.Error(err)

@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	lengthX = 250
-	lengthY = 250
+	lengthX = 200
+	lengthY = 200
 )
 
 type entity interface {
@@ -21,8 +21,8 @@ type basicActions interface {
 type location struct {
 	mapID     int
 	mapName   string
-	x, y      uint32
-	d         uint8
+	x, y      int
+	d         int
 	movements [15]movement
 }
 
@@ -48,11 +48,11 @@ func (b *baseEntity) getHandle() uint16 {
 	return b.handle
 }
 
-func (b *baseEntity) getLocation() (uint32, uint32) {
+func (b *baseEntity) getLocation() (int, int) {
 	return b.current.x, b.current.y
 }
 
-func (b *baseEntity) move(m *zoneMap, x, y uint32) error {
+func (b *baseEntity) move(m *zoneMap, x, y int) error {
 	if canWalk(m.walkableX, m.walkableY, x, y) {
 		return nil
 	}
@@ -60,14 +60,21 @@ func (b *baseEntity) move(m *zoneMap, x, y uint32) error {
 }
 
 func entityInRange(e1, e2 baseEntity) bool {
-	viewerX := (e1.current.x * 8) / 50
-	viewerY := (e1.current.y * 8) / 50
+	targetX, targetY := igCoordToBitmap(e2.current.x, e2.current.y)
+	viewerX, viewerY := igCoordToBitmap(e1.current.x, e1.current.y)
 
-	targetX := (e2.current.x * 8) / 50
-	targetY := (e2.current.y * 8) / 50
+	maxY := viewerY + lengthY
+	minY := viewerY - lengthY
 
-	vertical := targetY <= viewerY+lengthY && targetY >= viewerY || targetY >= (viewerY-lengthY) && targetY <= viewerY
-	horizontal := targetX <= (viewerX+lengthX) && targetX >= viewerX || targetX >= (viewerX-lengthX) && targetX <= viewerX
+	maxX := viewerX + lengthX
+	minX := viewerX - lengthX
+
+	if minY > 2048 {
+		//log.Infof("minY=%v  maxY=%v minX=%v maxX=%v; viewer at X=%v, Y=%v ;target at X=%v Y=%v", minY, maxY, minX, maxX, viewerX, viewerY, targetX, targetY)
+	}
+
+	vertical   := (targetY <= maxY && targetY >= viewerY) || (targetY >= minY && targetY <= viewerY)
+	horizontal := (targetX <= maxX && targetX >= viewerX) || (targetX >= minX && targetX <= viewerX)
 
 	if vertical && horizontal {
 		return true

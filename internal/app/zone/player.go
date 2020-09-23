@@ -489,10 +489,10 @@ func (p *player) ncBriefInfoLoginCharacterCmd() structs.NcBriefInfoLoginCharacte
 		},
 		Coordinates: structs.ShineCoordType{
 			XY: structs.ShineXYType{
-				X: p.current.x,
-				Y: p.current.y,
+				X: uint32(p.current.x),
+				Y: uint32(p.current.y),
 			},
-			Direction: p.current.d,
+			Direction: byte(p.current.d),
 		},
 		Mode:            2,
 		Class:           p.view.class,
