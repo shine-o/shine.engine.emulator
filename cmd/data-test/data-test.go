@@ -51,8 +51,9 @@ func main() {
 	//	logger.Error(err)
 	//}
 
+	m := "EldPri01"
 	var s *blocks.SHBD
-	s, err := blocks.LoadSHBDFile("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files\\blocks\\Rou.shbd")
+	s, err := blocks.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files\\blocks\\%v.shbd", m))
 
 	if err != nil {
 		logger.Error(err)
@@ -62,18 +63,23 @@ func main() {
 	if err != nil {
 		logger.Error(err)
 	}
-	err = blocks.SaveBmpFile(img, "./", "Rou")
-	if err != nil {
-		logger.Error(err)
-	}
 
-	xbm, ybm, err := walkingPositions(s)
+	err = blocks.SaveBmpFile(img, "./", m)
 
 	if err != nil {
 		logger.Error(err)
 	}
 
-	testWalk(xbm, ybm)
+	rs := blocks.ImageToSHBD(img)
+
+	blocks.SaveSHBDFile(&rs, "./", m)
+	//xbm, ybm, err := walkingPositions(s)
+	//
+	//if err != nil {
+	//	logger.Error(err)
+	//}
+
+	//testWalk(xbm, ybm)
 
 }
 

@@ -48,7 +48,7 @@ func (m *monster) monsterWalk(c chan<- location, zm *zoneMap) {
 		}
 	}()
 
-	tick := time.NewTicker(time.Duration(int64(networking.RandomIntBetween(8256, 21234))) * time.Millisecond)
+	tick := time.NewTicker(time.Duration(int64(networking.RandomIntBetween(5256, 21234))) * time.Millisecond)
 loop:
 	for {
 		select {
@@ -57,13 +57,13 @@ loop:
 			var (
 				x         = m.current.x
 				y         = m.current.y
-				walkSpeed = m.mobInfo.WalkSpeed / 10
+				walkSpeed = int(m.mobInfo.WalkSpeed / 10)
 			)
 			m.RUnlock()
 
 			var (
-				lx uint32
-				ly uint32
+				lx int
+				ly int
 			)
 
 			rX, rY := igCoordToBitmap(x, y)
@@ -71,36 +71,36 @@ loop:
 			switch networking.RandomIntBetween(0, 8) {
 			case 1:
 				if rX < rX+walkSpeed {
-					lx = uint32(networking.RandomIntBetween(int(rX), int(rX+walkSpeed)))
+					lx = networking.RandomIntBetween(rX, rX+walkSpeed)
 				}
 				if rY < rY+walkSpeed {
-					ly = uint32(networking.RandomIntBetween(int(rY), int(rY+walkSpeed)))
+					ly = networking.RandomIntBetween(rY, rY+walkSpeed)
 				}
 			case 2:
-				if int(rX-(walkSpeed*4)) < int(rX+walkSpeed) {
-					lx = uint32(networking.RandomIntBetween(int(rX-(walkSpeed*4)), int(rX+walkSpeed)))
+				if rX-(walkSpeed*4) < rX+walkSpeed {
+					lx = networking.RandomIntBetween(rX-(walkSpeed*4), rX+walkSpeed)
 				}
-				if int(rY-(walkSpeed*4)) < int(rY+walkSpeed) {
-					ly = uint32(networking.RandomIntBetween(int(rY-(walkSpeed*4)), int(rY+walkSpeed)))
+				if rY-(walkSpeed*4) < rY+walkSpeed {
+					ly = networking.RandomIntBetween(rY-(walkSpeed*4), rY+walkSpeed)
 				}
 			case 3:
-				if int(rY-(walkSpeed*4)) < int(rY) {
+				if rY-(walkSpeed*4) < rY {
 					lx = rX
-					ly = uint32(networking.RandomIntBetween(int(rY-(walkSpeed*4)), int(rY)))
+					ly = networking.RandomIntBetween(rY-(walkSpeed*4), rY)
 				}
 			case 4:
-				if int(rY+(walkSpeed*4)) < int(rY) {
+				if rY+(walkSpeed*4) < rY {
 					lx = rX
-					ly = uint32(networking.RandomIntBetween(int(rY+(walkSpeed*4)), int(rY)))
+					ly = networking.RandomIntBetween(rY+(walkSpeed*4), rY)
 				}
 			case 5:
-				if int(rX-(walkSpeed*4)) < int(rX) {
-					lx = uint32(networking.RandomIntBetween(int(rX-(walkSpeed*4)), int(rX)))
+				if rX-(walkSpeed*4) < rX {
+					lx = networking.RandomIntBetween(rX-(walkSpeed*4), rX)
 					ly = rY
 				}
 			case 6:
-				if int(rX+(walkSpeed*4)) < int(rX) {
-					lx = uint32(networking.RandomIntBetween(int(rX+(walkSpeed*4)), int(rX)))
+				if rX+(walkSpeed*4) < rX {
+					lx = networking.RandomIntBetween(rX+(walkSpeed*4), rX)
 					ly = rY
 				}
 			case 7:
@@ -137,12 +137,12 @@ func (m *monster) roam(zm *zoneMap) {
 			nc := structs.NcActSomeoneMoveWalkCmd{
 				Handle: m.handle,
 				From: structs.ShineXYType{
-					X: m.current.x,
-					Y: m.current.y,
+					X: uint32(m.current.x),
+					Y: uint32(m.current.y),
 				},
 				To: structs.ShineXYType{
-					X: l.x,
-					Y: l.y,
+					X: uint32(l.x),
+					Y: uint32(l.y),
 				},
 				Speed:    uint16(m.mobInfo.WalkSpeed),
 				MoveAttr: structs.NcActSomeoneMoveWalkCmdAttr{},

@@ -57,10 +57,10 @@ func ncCharClientBaseCmd(p *player) {
 				},
 				CurrentCoord: structs.ShineCoordType{
 					XY: structs.ShineXYType{
-						X: p.current.x,
-						Y: p.current.y,
+						X: uint32(p.current.x),
+						Y: uint32(p.current.y),
 					},
-					Direction: p.current.d,
+					Direction: uint8(p.current.d),
 				},
 			},
 			Stats: structs.CharStats{
@@ -119,8 +119,8 @@ func ncMapLoginAck(p *player) {
 			//Handle: 2222, // id of the entity inside this map
 			Params: p.charParameterData(),
 			LoginCoord: structs.ShineXYType{
-				X: p.current.x,
-				Y: p.current.y,
+				X: uint32(p.current.x),
+				Y: uint32(p.current.y),
 			},
 		},
 	}

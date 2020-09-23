@@ -159,7 +159,7 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 
 			var (
 				x, y, d  int
-					maxTries = 200
+				maxTries = 500 // todo: use goroutines for this, with a maximum of 50 routines, first one to get a spot wins the spawn
 				spawn    = false
 			)
 
@@ -176,14 +176,13 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 				if re.Height == 0 {
 					re.Height = networking.RandomIntBetween(100, 150)
 				}
-				//
+
 				x = networking.RandomIntBetween(re.X, re.X+re.Width)
 				y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
-				//x = re.X
-				//y = re.Y
+
 				d = networking.RandomIntBetween(1, 250)
 
-				rX, rY := igCoordToBitmap(uint32(re.X), uint32(re.Y))
+				rX, rY := igCoordToBitmap(x, y)
 
 				if canWalk(zm.walkableX, zm.walkableY, rX, rY) {
 					spawn = true
@@ -203,16 +202,16 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 					baseEntity: baseEntity{
 						handle: h,
 						fallback: location{
-							x: uint32(x),
-							y: uint32(y),
-							d: uint8(d),
+							x: x,
+							y: y,
+							d: d,
 						},
 						current: location{
 							mapID:     zm.data.ID,
 							mapName:   zm.data.MapInfoIndex,
-							x:         uint32(x),
-							y:         uint32(y),
-							d:         uint8(d),
+							x:         x,
+							y:         y,
+							d:         d,
 							movements: [15]movement{},
 						},
 						events: events{},
@@ -243,21 +242,21 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 
 }
 
-func igCoordToBitmap(x, y uint32) (uint32, uint32) {
+func igCoordToBitmap(x, y int) (int, int) {
 	rX := (x * 8) / 50
 	rY := (y * 8) / 50
 	return rX, rY
 }
 
-func bitmapCoordToIg(rX, rY uint32) (uint32, uint32) {
+func bitmapCoordToIg(rX, rY int) (int, int) {
 	igX := (rX * 50) / 8
 	igY := (rY * 50) / 8
 	return igX, igY
 }
 
 // CanWalk translates in game coordinates to SHBD coordinates
-func canWalk(x, y *roaring.Bitmap, rX, rY uint32) bool {
-	if x.ContainsInt(int(rX)) && y.ContainsInt(int(rY)) {
+func canWalk(x, y *roaring.Bitmap, rX, rY int) bool {
+	if x.ContainsInt(rX) && y.ContainsInt(rY) {
 		return true
 	}
 	return false
