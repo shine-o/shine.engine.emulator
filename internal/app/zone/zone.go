@@ -66,10 +66,18 @@ func (z *zone) load() {
 	var registerMaps []int32
 
 	var wg sync.WaitGroup
+	var sem = make(chan int, 10)
 	for _, id := range normalMaps {
 		wg.Add(1)
+		sem <- 1
 		registerMaps = append(registerMaps, int32(id))
-		go z.addMap(id, &wg)
+
+		go func(id int) {
+			defer wg.Done()
+			z.addMap(id)
+		}(id)
+
+		<- sem
 	}
 
 	wg.Wait()

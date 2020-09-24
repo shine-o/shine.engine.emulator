@@ -1,5 +1,5 @@
 serve:
-  port: 9500
+  port: 54000
 
 session:
   redis:

@@ -26,8 +26,7 @@ type entities struct {
 	*monsters
 }
 
-func (z *zone) addMap(mapId int, wg *sync.WaitGroup) {
-	defer wg.Done()
+func (z *zone) addMap(mapId int) {
 	md, ok := mapData[mapId]
 
 	if !ok {
@@ -83,30 +82,26 @@ func (z *zone) addMap(mapId int, wg *sync.WaitGroup) {
 }
 
 func (zm *zoneMap) run() {
-	// load NPCs for this map
-	// run logic routines
-	// as many workers as needed can be launched
+
 	num := viper.GetInt("workers.num_map_workers")
-
-	// load mobs
-
-	//zm.entities.monsters
 
 	spawnData, ok := monsterData.MapRegens[zm.data.MapInfoIndex]
 
 	if ok {
-		// for each groupIndex in spawnData
-		// 		for each number of mobs in groupIndex
-		//		populate a monster object using monster data
-		//		launch monster go routines
-		//		keep pointers to monster data
-		var wg sync.WaitGroup
+		var (
+			sem = make(chan int, 100)
+			wg sync.WaitGroup
+		)
 
 		for _, group := range spawnData.Groups {
 			wg.Add(1)
-			go spawnMob(zm, group, &wg)
+			sem <- 1
+			go func(g mobs.RegenEntry) {
+				defer wg.Done()
+				spawnMob(zm, g)
+				<- sem
+			}(group)
 		}
-
 		wg.Wait()
 	}
 
@@ -123,125 +118,178 @@ func (zm *zoneMap) run() {
 	}
 
 }
-func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
-	defer wg.Done()
+func spawnMob(zm *zoneMap, re mobs.RegenEntry) {
+
+	var iwg sync.WaitGroup
+
+	var sem = make(chan int, 100)
 
 	for _, mob := range re.Mobs {
+		var (
+			mi  *shn.MobInfo
+			mis *shn.MobInfoServer
+		)
 
-		for i := 0; i <= int(mob.Num); i++ {
-
-			var (
-				mi  *shn.MobInfo
-				mis *shn.MobInfoServer
-			)
-
-			for i, row := range monsterData.MobInfo.ShineRow {
-				if row.InxName == mob.Index {
-					mi = &monsterData.MobInfo.ShineRow[i]
-				}
+		for i, row := range monsterData.MobInfo.ShineRow {
+			if row.InxName == mob.Index {
+				mi = &monsterData.MobInfo.ShineRow[i]
 			}
+		}
 
-			for i, row := range monsterData.MobInfoServer.ShineRow {
-				if row.InxName == mob.Index {
-					mis = &monsterData.MobInfoServer.ShineRow[i]
-				}
+		for i, row := range monsterData.MobInfoServer.ShineRow {
+			if row.InxName == mob.Index {
+				mis = &monsterData.MobInfoServer.ShineRow[i]
 			}
+		}
 
-			if mi == nil {
-				log.Errorf("no entry in MobInfo for %v", mob.Index)
-				return
-			}
+		if mi == nil {
+			log.Errorf("no entry in MobInfo for %v", mob.Index)
+			break
+		}
 
-			if mis == nil {
-				log.Errorf("no entry in MobInfoServer for %v", mob.Index)
-				return
-			}
+		if mis == nil {
+			log.Errorf("no entry in MobInfoServer for %v", mob.Index)
+			break
+		}
 
-			var (
-				x, y, d  int
-				maxTries = 500 // todo: use goroutines for this, with a maximum of 50 routines, first one to get a spot wins the spawn
-				spawn    = false
-			)
-
-			for maxTries != 0 {
-
-				if spawn {
-					break
-				}
-
-				if re.Width == 0 {
-					re.Width = networking.RandomIntBetween(100, 150)
-				}
-
-				if re.Height == 0 {
-					re.Height = networking.RandomIntBetween(100, 150)
-				}
-
-				x = networking.RandomIntBetween(re.X, re.X+re.Width)
-				y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
-
-				d = networking.RandomIntBetween(1, 250)
-
-				rX, rY := igCoordToBitmap(x, y)
-
-				if canWalk(zm.walkableX, zm.walkableY, rX, rY) {
-					spawn = true
-				}
-
-				maxTries--
-			}
-
-			if spawn {
-				h, err := zm.entities.monsters.newHandle()
-				if err != nil {
-					log.Error(err)
-					return
-				}
-
-				m := &monster{
-					baseEntity: baseEntity{
-						handle: h,
-						fallback: location{
-							x: x,
-							y: y,
-							d: d,
-						},
-						current: location{
-							mapID:     zm.data.ID,
-							mapName:   zm.data.MapInfoIndex,
-							x:         x,
-							y:         y,
-							d:         d,
-							movements: [15]movement{},
-						},
-						events: events{},
-					},
-					hp:            mi.MaxHP,
-					sp:            uint32(mis.MaxSP),
-					mobInfo:       mi,
-					mobInfoServer: mis,
-					regenData:     &re,
-					status: status{
-						idling:   make(chan bool),
-						fighting: make(chan bool),
-						chasing:  make(chan bool),
-						fleeing:  make(chan bool),
-					},
-				}
-
-				zm.entities.monsters.Lock()
-				zm.entities.monsters.active[h] = m
-				zm.entities.monsters.Unlock()
-
-				if m.mobInfo.RunSpeed > 0 && m.mobInfo.WalkSpeed > 0 {
-					go m.roam(zm)
-				}
-			}
+		for i := 0; i < int(mob.Num); i++ {
+			iwg.Add(1)
+			sem <- 1
+			go func() {
+				iwg.Done()
+				spawn(zm, re, mi, mis)
+				<-sem
+			}()
 		}
 	}
 
+	iwg.Wait()
 }
 
+func spawn(zm *zoneMap, re mobs.RegenEntry, mi *shn.MobInfo, mis *shn.MobInfoServer) {
+	var (
+		x, y, d  int
+		maxTries = 100 // todo: use goroutines for this, with a maximum of 50 routines, first one to get a spot wins the spawn
+		spawn    = false
+		staticMonster = false
+	)
+
+	if mi.WalkSpeed == 0 && mi.RunSpeed == 0 {
+		staticMonster = true
+	}
+
+	for maxTries != 0 {
+
+		if spawn {
+			break
+		}
+
+		if re.Width == 0 {
+			re.Width = networking.RandomIntBetween(20, 250)
+		}
+
+		if re.Height == 0 {
+			re.Height = networking.RandomIntBetween(20, 250)
+		}
+
+		x = networking.RandomIntBetween(re.X, re.X+re.Width)
+		y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
+
+		d = networking.RandomIntBetween(1, 250)
+
+		spawn = validateLocation(zm, x, y, 5, 30)
+
+		maxTries--
+
+	}
+
+	if spawn {
+		h, err := zm.entities.monsters.newHandle()
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		m := &monster{
+			baseEntity: baseEntity{
+				handle: h,
+				fallback: location{
+					x: x,
+					y: y,
+					d: d,
+				},
+				current: location{
+					mapID:     zm.data.ID,
+					mapName:   zm.data.MapInfoIndex,
+					x:         x,
+					y:         y,
+					d:         d,
+					movements: [15]movement{},
+				},
+				events: events{},
+			},
+			hp:            mi.MaxHP,
+			sp:            uint32(mis.MaxSP),
+			mobInfo:       mi,
+			mobInfoServer: mis,
+			regenData:     &re,
+			status: status{
+				idling:   make(chan bool),
+				fighting: make(chan bool),
+				chasing:  make(chan bool),
+				fleeing:  make(chan bool),
+			},
+		}
+
+		zm.entities.monsters.Lock()
+		zm.entities.monsters.active[h] = m
+		zm.entities.monsters.Unlock()
+
+		if !staticMonster {
+			go m.roam(zm)
+		}
+	}
+}
+
+func validateLocation(zm *zoneMap, x, y, numSteps, speed int) bool {
+	var directions = make(map[string]bool)
+
+	directions["left"] = false
+	directions["right"] = false
+	directions["up"] = false
+	directions["down"] = false
+
+	for k, _ := range directions {
+		lx := x
+		ly := y
+
+		for i := 0; i < numSteps; i++ {
+			switch k {
+			case "left":
+				lx -= speed
+				break
+			case "right":
+				lx += speed
+				break
+			case "up":
+				ly -= speed
+				break
+			case "down":
+				ly += speed
+				break
+			}
+
+			rx, ry := igCoordToBitmap(lx, ly)
+			if canWalk(zm.walkableX, zm.walkableY, rx, ry) {
+				continue
+			}
+
+			return false
+		}
+		directions[k] = true
+	}
+	return true
+}
 func igCoordToBitmap(x, y int) (int, int) {
 	rX := (x * 8) / 50
 	rY := (y * 8) / 50
@@ -252,6 +300,47 @@ func bitmapCoordToIg(rX, rY int) (int, int) {
 	igX := (rX * 50) / 8
 	igY := (rY * 50) / 8
 	return igX, igY
+}
+
+func calculateSpawnCoordinates(igx, igy, width, height, rotate int) (int, int) {
+	//var cos, sin float64
+	v := float64(rotate) * 0.01745329
+	cos := int(math.Cos(v) * 1024.0)
+	sin := int(math.Sin(v) * 1024.0)
+
+	//  v2 = 0;
+	//  v3 = this;
+	//  if ( pLoc )
+	//  {
+	//    if ( this->mrlr_Width > 0 )
+	//    {
+	//      v4 = this->mrlr_Width;
+	//      v2 = rand() % (2 * v4) - v4;
+	//      v5 = v3->mrlr_Height;
+	//      ody = rand() % (2 * v5) - v5;
+	//    }
+	//    else
+	//    {
+	//      ody = 0;
+	//    }
+	//    v6 = ody * v3->mrlr_CosD1024 - v2 * v3->mrlr_SinD1024;
+	//    pLoc->x = v3->mrlr_X + (v2 * v3->mrlr_CosD1024 + ody * v3->mrlr_SinD1024) / 1024;
+	//    pLoc->y = v6 / 1024 + v3->mrlr_Y;
+	//  }
+	var ody, v2 int
+	v2 = 0
+	if width > 0 {
+		v2 =  networking.RandomIntBetween(0, width)
+		ody = networking.RandomIntBetween(0, height)
+	} else {
+		ody = 0
+	}
+
+	v6 := (ody * cos) - (height  * sin)
+	x := igx + ( (v2 * cos) + (ody * sin) ) / 1024
+	y := (v6 / 1024) + igy
+
+	return x, y
 }
 
 // CanWalk translates in game coordinates to SHBD coordinates

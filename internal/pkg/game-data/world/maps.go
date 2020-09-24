@@ -85,9 +85,9 @@ func LoadMapData(shineFolder string) (map[int]*Map, error) {
 
 	mapFiles := []string{"NormalMaps.txt", "DungeonMaps.txt", "KingdomQuestMaps.txt", "GuildTournamentMaps.txt"}
 
-	AttributesPath, err := utils.ValidPath(shineFolder + "/world/" + "MapAttributes.txt")
+	attributesPath, err := utils.ValidPath(shineFolder + "/world/" + "MapAttributes.txt")
 
-	attributes, err = loadAttributes(AttributesPath)
+	attributes, err = loadAttributes(attributesPath)
 	if err != nil {
 		return allMaps.data, err
 	}

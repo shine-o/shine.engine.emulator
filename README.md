@@ -27,4 +27,4 @@ Videos showcase:
 
 #### Processes and events example
 
-![](docs/process-events.PNG)
+![](docs/process-events.PNG)    
