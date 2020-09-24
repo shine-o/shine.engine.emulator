@@ -115,10 +115,13 @@ func (z *zone) addMap(mapId int) {
 				},
 				active:    make(map[uint16]*monster),
 			},
-			//npcs: &npc{
-			//	handleIndex: monsterHandleMin,
-			//	active:      make(map[uint16]*monster),
-			//},
+			npcs: &npcs{
+				handler:     handler{
+					handleIndex: npcHandleMin,
+					usedHandles:      make(map[uint16]bool),
+				},
+				active:      make(map[uint16]*npc),
+			},
 		},
 		events: events{
 			send: make(sendEvents),

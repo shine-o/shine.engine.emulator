@@ -2,6 +2,7 @@ package zone
 
 import (
 	"fmt"
+	"sync"
 )
 
 const (
@@ -15,6 +16,45 @@ type entity interface {
 	getLocation() (uint32, uint32)
 }
 
+
+
+type handler struct {
+	handleIndex uint16
+	usedHandles map[uint16]bool
+	sync.RWMutex
+}
+
+func (h * handler) new(min, max, attempts uint16) (uint16, error) {
+	h.RLock()
+	index := h.handleIndex
+	h.RUnlock()
+
+	for attempts != 0 {
+
+		index++
+
+		if index == max {
+			index = min
+		}
+
+		h.Lock()
+		h.handleIndex = index
+		h.Unlock()
+
+		h.RLock()
+		_, used := h.usedHandles[index]
+		h.RUnlock()
+
+		attempts--
+
+		if used {
+			continue
+		}
+
+		return index, nil
+	}
+	return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
+}
 type basicActions interface {
 	move(x, y int) error
 }

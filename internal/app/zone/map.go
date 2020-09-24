@@ -31,25 +31,18 @@ func (zm *zoneMap) run() {
 
 	num := viper.GetInt("workers.num_map_workers")
 
-	spawnData, ok := monsterData.MapRegens[zm.data.MapInfoIndex]
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		zm.spawnMobs()
+	}()
 
-	if ok {
-		var (
-			sem = make(chan int, 100)
-			wg sync.WaitGroup
-		)
-
-		for _, group := range spawnData.Groups {
-			wg.Add(1)
-			sem <- 1
-			go func(g mobs.RegenEntry) {
-				defer wg.Done()
-				spawnMob(zm, g)
-				<- sem
-			}(group)
-		}
-		wg.Wait()
-	}
+	go func() {
+		defer wg.Done()
+		zm.spawnNPC()
+	}()
+	wg.Wait()
 
 	go zm.removeInactiveHandles()
 
@@ -62,6 +55,122 @@ func (zm *zoneMap) run() {
 		go zm.playerQueries()
 		go zm.monsterQueries()
 	}
+}
+
+func (zm * zoneMap) spawnNPC()  {
+	npcs, ok := npcData.Data[zm.data.MapInfoIndex]
+
+	if ok {
+		var (
+			sem = make(chan int, 100)
+			wg  sync.WaitGroup
+		)
+
+		for _, data := range npcs {
+			wg.Add(1)
+			sem <- 1
+			go func(sn * world.ShineNPC) {
+				defer wg.Done()
+
+				mi, mis := mobDataPointers(sn.MobIndex)
+
+				if mi == nil {
+					log.Errorf("no entry in MobInfo for %v", sn.MobIndex)
+					return
+				}
+
+				if mis == nil {
+					log.Errorf("no entry in MobInfoServer for %v", sn.MobIndex)
+					return
+				}
+
+				h, err := zm.entities.npcs.new(npcHandleMin, npcHandleMax, npcAttemptsMax)
+				if err != nil {
+					log.Error(err)
+					return
+				}
+
+				n := &npc{
+					baseEntity: baseEntity{
+						handle: h,
+						fallback: location{
+							x: sn.X,
+							y: sn.Y,
+							d: sn.D,
+						},
+						current: location{
+							mapID:     zm.data.ID,
+							mapName:   zm.data.MapInfoIndex,
+							x: sn.X,
+							y: sn.Y,
+							d: sn.D,
+							movements: [15]movement{},
+						},
+						events: events{},
+					},
+					hp:            mi.MaxHP,
+					sp:            uint32(mis.MaxSP),
+					mobInfo:       mi,
+					mobInfoServer: mis,
+					status: status{
+						idling:   make(chan bool),
+						fighting: make(chan bool),
+						chasing:  make(chan bool),
+						fleeing:  make(chan bool),
+					},
+				}
+
+				zm.entities.npcs.Lock()
+				zm.entities.npcs.active[h] = n
+				zm.entities.npcs.Unlock()
+
+				<-sem
+			}(data)
+		}
+	}
+}
+
+// a mob is a collection of entities, in this case monsters
+func (zm *zoneMap) spawnMobs() {
+	spawnData, ok := monsterData.MapRegens[zm.data.MapInfoIndex]
+	if ok {
+		var (
+			sem = make(chan int, 100)
+			wg  sync.WaitGroup
+		)
+
+		for _, group := range spawnData.Groups {
+			wg.Add(1)
+			sem <- 1
+			go func(g mobs.RegenEntry) {
+				defer wg.Done()
+				spawnMob(zm, g)
+				<-sem
+			}(group)
+		}
+		wg.Wait()
+	}
+}
+
+func mobDataPointers(mobIndex string) (*shn.MobInfo, *shn.MobInfoServer) {
+	var (
+		mi  *shn.MobInfo
+		mis *shn.MobInfoServer
+	)
+
+	for i, row := range monsterData.MobInfo.ShineRow {
+		if row.InxName == mobIndex {
+			mi = &monsterData.MobInfo.ShineRow[i]
+		}
+	}
+
+	for i, row := range monsterData.MobInfoServer.ShineRow {
+		if row.InxName == mobIndex {
+			mis = &monsterData.MobInfoServer.ShineRow[i]
+		}
+	}
+
+	return mi, mis
 }
 
 func spawnMob(zm *zoneMap, re mobs.RegenEntry) {
@@ -103,7 +212,7 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry) {
 			sem <- 1
 			go func() {
 				iwg.Done()
-				spawn(zm, re, mi, mis)
+				spawnMonster(zm, re, mi, mis)
 				<-sem
 			}()
 		}
@@ -112,7 +221,7 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry) {
 	iwg.Wait()
 }
 
-func spawn(zm *zoneMap, re mobs.RegenEntry, mi *shn.MobInfo, mis *shn.MobInfoServer) {
+func spawnMonster(zm *zoneMap, re mobs.RegenEntry, mi *shn.MobInfo, mis *shn.MobInfoServer) {
 	var (
 		x, y, d  int
 		maxTries = 1000 // todo: use goroutines for this, with a maximum of 50 routines, first one to get a spot wins the spawn
@@ -143,6 +252,7 @@ func spawn(zm *zoneMap, re mobs.RegenEntry, mi *shn.MobInfo, mis *shn.MobInfoSer
 		}
 
 		x = networking.RandomIntBetween(re.X, re.X+re.Width)
+
 		y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
 
 		d = networking.RandomIntBetween(1, 250)

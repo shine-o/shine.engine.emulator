@@ -3,6 +3,7 @@ package zone
 import (
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
+	"sync"
 )
 
 const playerHeartbeatLimit = 10
@@ -183,11 +184,26 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 	go p1.heartbeat()
 	go p1.persistPosition()
 
-	go newPlayer(p1, zm)
+	var wg sync.WaitGroup
+	wg.Add(4)
+	go func() {
+		defer wg.Done()
+		newPlayer(p1, zm)
+	}()
 
-	go nearbyPlayers(p1, zm)
-
-	go nearbyMonsters(p1, zm)
+	go func() {
+		defer wg.Done()
+		nearbyPlayers(p1, zm)
+	}()
+	go func() {
+		defer wg.Done()
+		nearbyMonsters(p1, zm)
+	}()
+	go func() {
+		defer wg.Done()
+		p1.allNPC(zm)
+	}()
+	wg.Wait()
 
 	go p1.nearbyPlayersMaintenance(zm)
 
@@ -197,22 +213,15 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 }
 
 func (p * player) allNPC(zm * zoneMap)  {
+	var npcs structs.NcBriefInfoMobCmd
 
-	//var characters []structs.NcBriefInfoLoginCharacterCmd
-	//
-	//for p2 := range zm.entities.all() {
-	//	if p1.getHandle() != p2.getHandle() {
-	//		if playerInRange(p2, p1) {
-	//			nc := p2.ncBriefInfoLoginCharacterCmd()
-	//			characters = append(characters, nc)
-	//		}
-	//	}
-	//}
-	//
-	//ncBriefInfoCharacterCmd(p1, &structs.NcBriefInfoCharacterCmd{
-	//	Number:     byte(len(characters)),
-	//	Characters: characters,
-	//})
+	for n := range zm.entities.npcs.all() {
+		npcs.Mobs = append(npcs.Mobs, n.ncBriefInfoRegenMobCmd())
+	}
+
+	npcs.MobNum = byte(len(npcs.Mobs))
+
+	ncBriefInfoMobCmd(p, &npcs)
 
 }
 
