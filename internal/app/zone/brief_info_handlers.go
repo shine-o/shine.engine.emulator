@@ -89,6 +89,18 @@ func ncBriefInfoInformCmd(ctx context.Context, np *networking.Parameters) {
 	zm.send[unknownHandle] <- &uhe
 }
 
+// NC_BRIEFINFO_MOB_CMD
+// 7177
+func ncBriefInfoMobCmd(p *player, nc *structs.NcBriefInfoMobCmd) {
+	pc := networking.Command{
+		Base: networking.CommandBase{
+			OperationCode: 7177,
+		},
+		NcStruct: nc,
+	}
+	pc.Send(p.conn.outboundData)
+}
+
 // NC_BRIEFINFO_REGENMOB_CMD
 // 7176
 func ncBriefInfoRegenMobCmd(p *player, nc *structs.NcBriefInfoRegenMobCmd) {
