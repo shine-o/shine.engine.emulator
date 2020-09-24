@@ -228,7 +228,7 @@ func hearbeatUpdateLogic(e event) {
 		return
 	}
 
-	p := zm.entities.players.getPlayer(ev.session.handle)
+	p := zm.entities.players.get(ev.session.handle)
 
 	if p == nil {
 		log.Errorf("nil player with handle %v", ev.session.handle)
@@ -256,7 +256,7 @@ func playerLogoutStartLogic(z *zone, e event) {
 		return
 	}
 
-	p := m.entities.players.getPlayer(ev.handle)
+	p := m.entities.players.get(ev.handle)
 
 	if p == nil {
 		log.Errorf("player with handle %v not available", ev.handle)

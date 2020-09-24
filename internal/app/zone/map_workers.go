@@ -56,10 +56,10 @@ func (zm *zoneMap) monsterActivity() {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&monsterWalksEvent{}).String(), reflect.TypeOf(ev).String())
 					return
 				}
-				for ap := range zm.entities.activePlayers() {
+				for ap := range zm.entities.players.all() {
 					go func(p *player, m *monster) {
 						if monsterInRange(p, m) {
-							go ncActSomeoneMoveWalkCmd(p, ev.nc)
+							ncActSomeoneMoveWalkCmd(p, ev.nc)
 						}
 					}(ap, ev.m)
 				}
@@ -71,7 +71,7 @@ func (zm *zoneMap) monsterActivity() {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&monsterRunsEvent{}).String(), reflect.TypeOf(ev).String())
 					return
 				}
-				for ap := range zm.entities.activePlayers() {
+				for ap := range zm.entities.players.all() {
 					go func(p *player, m *monster) {
 						if monsterInRange(p, m) {
 							go ncActSomeoneMoveRunCmd(p, ev.nc)
@@ -108,7 +108,7 @@ func (zm *zoneMap) monsterQueries() {
 }
 
 func playerHandleMaintenanceLogic(zm *zoneMap) {
-	for p := range zm.entities.activePlayers() {
+	for p := range zm.entities.players.all() {
 		lhb := lastHeartbeat(p)
 
 		if lhb < playerHeartbeatLimit {
@@ -133,7 +133,7 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 			t.Stop()
 		}
 
-		go zm.entities.players.removeHandle(p.handle)
+		go zm.entities.players.remove(p.handle)
 
 		p.RUnlock()
 
@@ -147,30 +147,23 @@ func playerHandleLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	handle, err := zm.entities.players.newHandle()
+	handle, err := zm.entities.players.handler.new(playerHandleMin, playerHandleMax, playerAttemptsMax)
 
 	if err != nil {
 		ev.err <- err
 		return
 	}
 
-	zm.entities.players.addHandle(handle, ev.player)
-
 	ev.player.Lock()
 	ev.player.handle = handle
 	ev.player.Unlock()
+
+	zm.entities.players.add(ev.player)
 
 	ev.session.handle = handle
 	ev.session.mapID = ev.player.current.mapID
 
 	ev.done <- true
-}
-
-func (p *players) getPlayer(h uint16) *player {
-	p.RLock()
-	player := p.active[h]
-	p.RUnlock()
-	return player
 }
 
 func playerAppearedLogic(e event, zm *zoneMap) {
@@ -179,8 +172,8 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
 		return
 	}
-
-	p1 := zm.entities.players.getPlayer(ev.handle)
+	
+	p1 := zm.entities.players.get(ev.handle)
 
 	if p1 == nil {
 		log.Error("player not found during playerAppearedLogic")
@@ -191,12 +184,36 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 	go p1.persistPosition()
 
 	go newPlayer(p1, zm)
+
 	go nearbyPlayers(p1, zm)
 
+	go nearbyMonsters(p1, zm)
+
 	go p1.nearbyPlayersMaintenance(zm)
+
 	go p1.nearbyMonstersMaintenance(zm)
 
-	go adjacentMonstersInform(p1, zm)
+	//go adjacentMonstersInform(p1, zm)
+}
+
+func (p * player) allNPC(zm * zoneMap)  {
+
+	//var characters []structs.NcBriefInfoLoginCharacterCmd
+	//
+	//for p2 := range zm.entities.all() {
+	//	if p1.getHandle() != p2.getHandle() {
+	//		if playerInRange(p2, p1) {
+	//			nc := p2.ncBriefInfoLoginCharacterCmd()
+	//			characters = append(characters, nc)
+	//		}
+	//	}
+	//}
+	//
+	//ncBriefInfoCharacterCmd(p1, &structs.NcBriefInfoCharacterCmd{
+	//	Number:     byte(len(characters)),
+	//	Characters: characters,
+	//})
+
 }
 
 func playerDisappearedLogic(e event, zm *zoneMap) {
@@ -207,7 +224,7 @@ func playerDisappearedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	for ap := range zm.entities.activePlayers() {
+	for ap := range zm.entities.players.all() {
 		go func(p2 *player) {
 			if p2.getHandle() == ev.handle {
 				return
@@ -233,7 +250,7 @@ func playerWalksLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	p1 := zm.entities.getPlayer(ev.handle)
+	p1 := zm.entities.players.get(ev.handle)
 
 	if p1 == nil {
 		log.Error("player not found")
@@ -270,7 +287,7 @@ func playerWalksLogic(e event, zm *zoneMap) {
 		Speed:  60,
 	}
 
-	for ap := range zm.entities.activePlayers() {
+	for ap := range zm.entities.players.all() {
 		go func(p2 *player) {
 			if p2.getHandle() != ev.handle {
 				if playerInRange(p2, p1) {
@@ -296,7 +313,7 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	p1 := zm.entities.getPlayer(ev.handle)
+	p1 := zm.entities.players.get(ev.handle)
 
 	if p1 == nil {
 		log.Error("player not found")
@@ -327,7 +344,7 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		Speed:  120,
 	}
 
-	for ap := range zm.entities.activePlayers() {
+	for ap := range zm.entities.players.all() {
 		go func(p2 *player) {
 			if p2.getHandle() != ev.handle {
 				if playerInRange(p2, p1) {
@@ -337,7 +354,7 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		}(ap)
 	}
 
-	go adjacentMonstersInform(p1, zm)
+	//go adjacentMonstersInform(p1, zm)
 
 }
 
@@ -353,7 +370,7 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	p1 := zm.entities.getPlayer(ev.handle)
+	p1 := zm.entities.players.get(ev.handle)
 
 	if p1 == nil {
 		log.Error("player not found")
@@ -382,7 +399,7 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 		Location: ev.nc.Location,
 	}
 
-	for ap := range zm.entities.activePlayers() {
+	for ap := range zm.entities.players.all() {
 		go func(p2 *player) {
 			if p2.getHandle() != ev.handle {
 				if playerInRange(p2, p1) {
@@ -401,7 +418,7 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	p1 := zm.entities.getPlayer(ev.handle)
+	p1 := zm.entities.players.get(ev.handle)
 
 	if p1 == nil {
 		log.Error("player not found")
@@ -412,7 +429,7 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 		Handle: ev.handle,
 	}
 
-	for ap := range zm.entities.activePlayers() {
+	for ap := range zm.entities.players.all() {
 		go func(p2 *player) {
 			if p2.getHandle() != ev.handle {
 				if playerInRange(p2, p1) {
@@ -435,7 +452,7 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	p1 := zm.entities.getPlayer(ev.handle)
+	p1 := zm.entities.players.get(ev.handle)
 
 	if p1 == nil {
 		log.Error("player not found")
@@ -443,7 +460,8 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 	}
 
 	//TODO: could also be NPC, Item on the ground or a Monster
-	p2 := zm.entities.getPlayer(ev.nc.ForeignHandle)
+
+	p2 := zm.entities.players.get(ev.nc.ForeignHandle)
 
 	if p2 == nil {
 		return
@@ -461,11 +479,24 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 		p2.RUnlock()
 		go ncBriefInfoLoginCharacterCmd(p1, &nc2)
 	}
+
+
+	m := zm.entities.monsters.get(ev.nc.ForeignHandle)
+
+	if m == nil {
+		return
+	}
+
+	if monsterInRange(p1, m) {
+		nc := m.ncBriefInfoRegenMobCmd()
+		go ncBriefInfoRegenMobCmd(p1, &nc)
+	}
+
 }
 
 // notify every player in proximity about player that logged in
 func newPlayer(p1 *player, zm *zoneMap) {
-	for ap := range zm.entities.activePlayers() {
+	for ap := range zm.entities.players.all() {
 		go func(p2 *player) {
 			if p1.getHandle() != p2.getHandle() {
 				if playerInRange(p2, p1) {
@@ -481,7 +512,7 @@ func newPlayer(p1 *player, zm *zoneMap) {
 func nearbyPlayers(p1 *player, zm *zoneMap) {
 	var characters []structs.NcBriefInfoLoginCharacterCmd
 
-	for p2 := range zm.entities.activePlayers() {
+	for p2 := range zm.entities.players.all() {
 		if p1.getHandle() != p2.getHandle() {
 			if playerInRange(p2, p1) {
 				nc := p2.ncBriefInfoLoginCharacterCmd()
@@ -495,3 +526,15 @@ func nearbyPlayers(p1 *player, zm *zoneMap) {
 		Characters: characters,
 	})
 }
+
+func nearbyMonsters(p *player, zm *zoneMap) {
+	for am := range zm.entities.monsters.all() {
+		go func(p * player, m *monster) {
+			if monsterInRange(p, m) {
+				nc := m.ncBriefInfoRegenMobCmd()
+				ncBriefInfoRegenMobCmd(p, &nc)
+			}
+		}(p, am)
+	}
+}
+
