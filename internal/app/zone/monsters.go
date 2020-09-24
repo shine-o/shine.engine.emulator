@@ -1,7 +1,6 @@
 package zone
 
 import (
-	"fmt"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"sync"
 )
@@ -11,12 +10,13 @@ const monsterHandleMax uint16 = 27000
 const monsterAttemptsMax uint16 = 1500
 
 type monsters struct {
+	handler
 	handleIndex uint16
 	active      map[uint16]*monster
 	sync.RWMutex
 }
 
-func (m *monsters) activeMonsters() <-chan *monster {
+func (m *monsters) all() <-chan *monster {
 
 	m.RLock()
 	ch := make(chan *monster, len(m.active))
@@ -34,55 +34,25 @@ func (m *monsters) activeMonsters() <-chan *monster {
 	return ch
 }
 
-func (m *monsters) removeHandle(h uint16) {
+func (m *monsters) get(h uint16) *monster {
+	m.RLock()
+	monster := m.active[h]
+	m.RUnlock()
+	return monster
+}
+
+func (m *monsters) remove(h uint16) {
 	m.Lock()
 	delete(m.active, h)
+	delete(m.handler.usedHandles, h)
 	m.Unlock()
 }
 
-func (m *monsters) addHandle(h uint16, ap *monster) {
+func (m *monsters) add(ap *monster) {
 	m.Lock()
-	m.active[h] = ap
+	m.active[ap.handle] = ap
+	m.handler.usedHandles[ap.handle] = true
 	m.Unlock()
-}
-
-func (m *monsters) newHandle() (uint16, error) {
-	var attempts uint16 = 0
-	min := monsterHandleMin
-	max := monsterHandleMax
-	maxAttempts := monsterAttemptsMax
-
-	m.RLock()
-	index := m.handleIndex
-	m.RUnlock()
-
-	for {
-
-		if attempts == maxAttempts {
-			return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
-		}
-
-		index++
-
-		if index == max {
-			index = min
-		}
-
-		m.Lock()
-		m.handleIndex = index
-		m.Unlock()
-
-		m.RLock()
-		_, used := m.active[index]
-		m.RUnlock()
-
-		if used {
-			attempts++
-			continue
-		}
-
-		return index, nil
-	}
 }
 
 func knownMonster(p *player, mh uint16) bool {
@@ -96,7 +66,7 @@ func knownMonster(p *player, mh uint16) bool {
 }
 
 func adjacentMonstersInform(p *player, zm *zoneMap) {
-	for m := range zm.entities.activeMonsters() {
+	for m := range zm.entities.monsters.all() {
 		go func(p *player, m *monster) {
 			if !knownMonster(p, m.getHandle()) {
 				if monsterInRange(p, m) {

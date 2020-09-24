@@ -10,7 +10,7 @@ import (
 //#ColumnType			STRING[33]	STRING[20]	DWRD	DWRD	WORD	BYTE	INDEX	INDEX
 //#ColumnName			MobName	Map	Coord-X	Coord-Y	Direct	NPCMenu	Role	RoleArg0
 //
-//#Table	LinkTable
+//#Table	ShinePortal
 //#ColumnType		Index	String[33]	String[33]	DWRD	DWRD	WORD	WORD	WORD	BYTE
 //#ColumnName		argument	MapServer	MapClient	Coord-X	Coord-Y	Direct	LevelFrom	LevelTo	Party
 
@@ -25,15 +25,15 @@ type ShineNPC struct {
 	X,Y,D int
 	NPCMenu bool
 	Role string
-	RoleArg string // if Gate then LinkTable is not nil
-	*LinkTable
+	RoleArg string // if Gate then ShinePortal is not nil
+	*ShinePortal
 }
 
-type LinkTable struct {
-	RoleArg string // use it later to assign LinkTable to ShineNPC
+type ShinePortal struct {
+	RoleArg string // use it later to assign ShinePortal to ShineNPC
 	ServerMapIndex string
 	ClientMapIndex string
-	X,Y int
+	X,Y int // landing coordinates
 	FromLevel int
 	Party bool
 }
@@ -44,7 +44,7 @@ func LoadNPCData(shineFolder string) (*NPC, error) {
 			Data: make(map[string][]*ShineNPC),
 		}
 		npcs []*ShineNPC
-		portals []*LinkTable
+		portals []*ShinePortal
 	)
 
 	filePath, err := utils.ValidPath(shineFolder + "/world/" + "NPC.txt")
@@ -137,7 +137,7 @@ func LoadNPCData(shineFolder string) (*NPC, error) {
 					return npc, err
 				}
 
-				portals = append(portals, &LinkTable{
+				portals = append(portals, &ShinePortal{
 					RoleArg:        roleArg,
 					ServerMapIndex: serverMapIndex,
 					ClientMapIndex: clientMapIndex,
@@ -149,14 +149,14 @@ func LoadNPCData(shineFolder string) (*NPC, error) {
 			}
 		}
 	}
-
+	
 	for i, _ := range npcs {
 		n := npcs[i]
 		if n.Role == "IDGate" || n.Role == "Gate" || n.Role == "RandomGate" {
 			for j, _ := range portals {
 				p := portals[j]
 				if p.RoleArg == n.RoleArg {
-					n.LinkTable = p
+					n.ShinePortal = p
 				}
 			}
 		}

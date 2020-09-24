@@ -37,9 +37,6 @@ func (p *player) persistPosition() {
 	for {
 		select {
 		case <-tick.C:
-			if p == nil {
-				return
-			}
 			log.Infof("[player_ticks] persisting position for handle %v", p.handle)
 			pppe := persistPlayerPositionEvent{
 				p: p,
@@ -61,28 +58,21 @@ func (p *player) nearbyPlayersMaintenance(zm *zoneMap) {
 	for {
 		select {
 		case <-tick.C:
-			if p == nil {
-				return
-			}
-
-			for ap := range zm.entities.activePlayers() {
+			for ap := range zm.entities.players.all() {
 				go func(p1, p2 *player) {
 					if p2.getHandle() == p1.getHandle() {
 						return
 					}
 
-					if playerInRange(p1, p2) {
+					p1.RLock()
+					_, exists := p1.players[p2.getHandle()]
+					p1.RUnlock()
 
-						p1.RLock()
-						_, exists := p1.players[p2.getHandle()]
-						p1.RUnlock()
-
-						if !exists {
-							p2.RLock() //todo move locks into the method
-							nc := p2.ncBriefInfoLoginCharacterCmd()
-							p2.RUnlock()
-							ncBriefInfoLoginCharacterCmd(p1, &nc)
-						}
+					if !exists && playerInRange(p1, p2) {
+						p2.RLock() //todo move locks into the method
+						nc := p2.ncBriefInfoLoginCharacterCmd()
+						p2.RUnlock()
+						ncBriefInfoLoginCharacterCmd(p1, &nc)
 					}
 				}(p, ap)
 			}
@@ -108,6 +98,18 @@ func (p *player) nearbyMonstersMaintenance(zm *zoneMap) {
 		case <-tick.C:
 			// for each monster
 			// if nearby, add to known nearby
+			for am := range zm.entities.monsters.all() {
+				go func(p *player, m * monster) {
+					p.RLock()
+					_, exists := p.monsters[m.getHandle()]
+					p.RUnlock()
+					if !exists && monsterInRange(p, m) {
+						nc := m.ncBriefInfoRegenMobCmd()
+						ncBriefInfoRegenMobCmd(p, &nc)
+					}
+				}(p, am)
+			}
+
 			for am := range p.adjacentMonsters() {
 				go func(p *player, m *monster) {
 					if !monsterInRange(p, m) {

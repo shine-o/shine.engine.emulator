@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	lengthX = 1200
-	lengthY = 1200
+	lengthX = 256
+	lengthY = 256
 )
 
 type entity interface {
@@ -70,10 +70,6 @@ func entityInRange(e1, e2 baseEntity) bool {
 	maxX := viewerX + lengthX
 	minX := viewerX - lengthX
 
-	if minY > 2048 {
-		//log.Infof("minY=%v  maxY=%v minX=%v maxX=%v; viewer at X=%v, Y=%v ;target at X=%v Y=%v", minY, maxY, minX, maxX, viewerX, viewerY, targetX, targetY)
-	}
-
 	vertical   := (targetY <= maxY && targetY >= viewerY) || (targetY >= minY && targetY <= viewerY)
 	horizontal := (targetX <= maxX && targetX >= viewerX) || (targetX >= minX && targetX <= viewerX)
 
@@ -87,5 +83,3 @@ func entityInRange(e1, e2 baseEntity) bool {
 type mover struct {
 	baseEntity
 }
-
-type npc struct{}

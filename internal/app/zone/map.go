@@ -24,61 +24,7 @@ type zoneMap struct {
 type entities struct {
 	*players
 	*monsters
-}
-
-func (z *zone) addMap(mapId int) {
-	md, ok := mapData[mapId]
-
-	if !ok {
-		log.Fatalf("no map data for map with id %v", mapId)
-	}
-
-	walkableX, walkableY, err := walkingPositions(md.SHBD)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	m := &zoneMap{
-		data:      md,
-		walkableX: walkableX,
-		walkableY: walkableY,
-		entities: &entities{
-			players: &players{
-				handleIndex: playerHandleMin,
-				active:      make(map[uint16]*player),
-			},
-			monsters: &monsters{
-				handleIndex: monsterHandleMin,
-				active:      make(map[uint16]*monster),
-			},
-		},
-		events: events{
-			send: make(sendEvents),
-			recv: make(recvEvents),
-		},
-	}
-
-	events := []eventIndex{
-		playerHandle,
-		playerHandleMaintenance,
-		queryPlayer, queryMonster,
-		playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
-		unknownHandle, monsterAppeared, monsterDisappeared, monsterWalks, monsterRuns,
-	}
-
-	for _, index := range events {
-		c := make(chan event, 500)
-		m.recv[index] = c
-		m.send[index] = c
-	}
-
-	z.Lock()
-	z.rm[m.data.ID] = m
-	z.Unlock()
-
-	go m.run()
-
+	*npcs
 }
 
 func (zm *zoneMap) run() {
@@ -116,8 +62,8 @@ func (zm *zoneMap) run() {
 		go zm.playerQueries()
 		go zm.monsterQueries()
 	}
-
 }
+
 func spawnMob(zm *zoneMap, re mobs.RegenEntry) {
 
 	var iwg sync.WaitGroup
@@ -169,17 +115,21 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry) {
 func spawn(zm *zoneMap, re mobs.RegenEntry, mi *shn.MobInfo, mis *shn.MobInfoServer) {
 	var (
 		x, y, d  int
-		maxTries = 100 // todo: use goroutines for this, with a maximum of 50 routines, first one to get a spot wins the spawn
+		maxTries = 1000 // todo: use goroutines for this, with a maximum of 50 routines, first one to get a spot wins the spawn
 		spawn    = false
 		staticMonster = false
+		numSteps = 5
+		speed = 30
 	)
 
 	if mi.WalkSpeed == 0 && mi.RunSpeed == 0 {
 		staticMonster = true
+		numSteps = 20
+		speed = 20
 	}
 
 	for maxTries != 0 {
-
+		// todo use go routines for this too, with a semaphore
 		if spawn {
 			break
 		}
@@ -197,14 +147,14 @@ func spawn(zm *zoneMap, re mobs.RegenEntry, mi *shn.MobInfo, mis *shn.MobInfoSer
 
 		d = networking.RandomIntBetween(1, 250)
 
-		spawn = validateLocation(zm, x, y, 5, 30)
+		spawn = validateLocation(zm, x, y, numSteps, speed)
 
 		maxTries--
 
 	}
 
 	if spawn {
-		h, err := zm.entities.monsters.newHandle()
+		h, err := zm.entities.monsters.new(monsterHandleMin, monsterHandleMax, monsterAttemptsMax)
 		if err != nil {
 			log.Error(err)
 			return
@@ -290,60 +240,21 @@ func validateLocation(zm *zoneMap, x, y, numSteps, speed int) bool {
 	}
 	return true
 }
+
+// translates in game coordinates to SHBD coordinates
 func igCoordToBitmap(x, y int) (int, int) {
 	rX := (x * 8) / 50
 	rY := (y * 8) / 50
 	return rX, rY
 }
 
+// translates SHBD coordinates to in game coordinates
 func bitmapCoordToIg(rX, rY int) (int, int) {
 	igX := (rX * 50) / 8
 	igY := (rY * 50) / 8
 	return igX, igY
 }
 
-func calculateSpawnCoordinates(igx, igy, width, height, rotate int) (int, int) {
-	//var cos, sin float64
-	v := float64(rotate) * 0.01745329
-	cos := int(math.Cos(v) * 1024.0)
-	sin := int(math.Sin(v) * 1024.0)
-
-	//  v2 = 0;
-	//  v3 = this;
-	//  if ( pLoc )
-	//  {
-	//    if ( this->mrlr_Width > 0 )
-	//    {
-	//      v4 = this->mrlr_Width;
-	//      v2 = rand() % (2 * v4) - v4;
-	//      v5 = v3->mrlr_Height;
-	//      ody = rand() % (2 * v5) - v5;
-	//    }
-	//    else
-	//    {
-	//      ody = 0;
-	//    }
-	//    v6 = ody * v3->mrlr_CosD1024 - v2 * v3->mrlr_SinD1024;
-	//    pLoc->x = v3->mrlr_X + (v2 * v3->mrlr_CosD1024 + ody * v3->mrlr_SinD1024) / 1024;
-	//    pLoc->y = v6 / 1024 + v3->mrlr_Y;
-	//  }
-	var ody, v2 int
-	v2 = 0
-	if width > 0 {
-		v2 =  networking.RandomIntBetween(0, width)
-		ody = networking.RandomIntBetween(0, height)
-	} else {
-		ody = 0
-	}
-
-	v6 := (ody * cos) - (height  * sin)
-	x := igx + ( (v2 * cos) + (ody * sin) ) / 1024
-	y := (v6 / 1024) + igy
-
-	return x, y
-}
-
-// CanWalk translates in game coordinates to SHBD coordinates
 func canWalk(x, y *roaring.Bitmap, rX, rY int) bool {
 	if x.ContainsInt(rX) && y.ContainsInt(rY) {
 		return true
@@ -351,7 +262,7 @@ func canWalk(x, y *roaring.Bitmap, rX, rY int) bool {
 	return false
 }
 
-// WalkingPositions creates two X,Y roaring bitmaps with walkable coordinates
+// creates two X,Y roaring bitmaps with walkable coordinates
 func walkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) {
 	walkableX := roaring.BitmapOf()
 	walkableY := roaring.BitmapOf()
