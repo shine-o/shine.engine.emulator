@@ -5,11 +5,12 @@ import (
 )
 
 const (
-	lengthX = 200
-	lengthY = 200
+	lengthX = 1200
+	lengthY = 1200
 )
 
 type entity interface {
+	basicActions
 	getHandle() uint16
 	getLocation() (uint32, uint32)
 }
