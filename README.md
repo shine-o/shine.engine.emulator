@@ -25,14 +25,28 @@ Videos showcase:
     
     go mod vendor
     
-    # wait a few seconds untill everything is running
     docker-compose up --build
-    
-    # copy external ip in configs/login.docker.yml and use it to launch the client
-    
-    # if you made any change to a service, this will also download all the dependencies again: 
+        
+    # if you made any change to a service:
     docker-compose up -d --force-recreate --no-deps <service-name>
+    
+    
+If everything is okay, you should see something like this when using **docker-compose ps**:
 
+
+![](assets/docker-services.PNG)    
+
+## Metrics
+   
+For metrics I use the following services:    
+    - Prometheus
+    - Loki
+    - Grafana
+
+The services are configured and ready to use in the **docker-compose.yml** file. You can get something like this:
+
+![](assets/grafana.PNG)
+    
 ## Event logic for login, world, zone services
 
 #### From tcp connection to network command to logic handler
