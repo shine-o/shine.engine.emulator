@@ -110,6 +110,11 @@ func (zm *zoneMap) monsterQueries() {
 
 func playerHandleMaintenanceLogic(zm *zoneMap) {
 	for p := range zm.entities.players.all() {
+
+		if p.spawned() {
+			continue
+		}
+
 		lhb := lastHeartbeat(p)
 
 		if lhb < playerHeartbeatLimit {
@@ -205,7 +210,6 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 	}()
 
 	wg.Wait()
-
 
 	go p1.heartbeat()
 	go p1.persistPosition()

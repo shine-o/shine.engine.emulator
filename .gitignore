@@ -14,3 +14,6 @@ build/package/zone-master/zone-master*
 
 !vendor/.keep
 vendor/*
+/deployments/data/grafana/grafana.db
+/deployments/data/prometheus/data/
+/data/

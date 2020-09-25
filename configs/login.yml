@@ -35,3 +35,8 @@ session:
     host:  127.0.0.1
     port: 6379
     db: 0
+
+metrics:
+  enabled: true
+  prometheus:
+    port: 30000
