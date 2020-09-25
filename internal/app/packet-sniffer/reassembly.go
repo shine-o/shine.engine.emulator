@@ -8,38 +8,17 @@ import (
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/reassembly"
-	"github.com/google/logger"
 	"github.com/google/uuid"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"os"
 	"path/filepath"
 	"strconv"
 	"sync"
 )
 
-func init() {
-	dir, err := filepath.Abs("./output/")
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		err = os.Mkdir(dir, 0700)
-
-		if err != nil {
-			log.Error(err)
-		}
-	} else {
-		err = os.RemoveAll(dir)
-		if err != nil {
-			log.Error(err)
-		}
-	}
-
-	lf, err := os.OpenFile("./output/streams.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
-	if err != nil {
-		logger.Fatalf("Failed to open log file: %v", err)
-	}
-	log = logger.Init("SnifferLogger", true, false, lf)
-	log.Info("sniffer logger init()")
-}
+var log = shinelog.NewLogger("packet-sniffer", "./output", logrus.DebugLevel)
 
 type shineStreamFactory struct {
 	shineContext   context.Context
@@ -62,7 +41,6 @@ var (
 	iface             string
 	snaplen           int
 	filter            string
-	log               *logger.Logger
 	serverSideCapture bool
 )
 
