@@ -21,6 +21,7 @@ require (
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/pelletier/go-toml v1.8.0 // indirect
+	github.com/prometheus/client_golang v1.7.1
 	github.com/segmentio/encoding v0.1.15 // indirect
 	github.com/segmentio/ksuid v1.0.3
 	github.com/spf13/afero v1.3.4 // indirect

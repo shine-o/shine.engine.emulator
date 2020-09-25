@@ -355,13 +355,6 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 
 	zm.send[playerAppeared] <- &pae
 
-	// there's the mapID, handle ID
-
-	// start the heartbeat for this player
-
-	// send info about surrounding mobs, players to this player
-
-	// to all surrounding players, send info about this player
 }
 
 //4210

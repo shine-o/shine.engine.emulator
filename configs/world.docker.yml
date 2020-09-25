@@ -39,3 +39,8 @@ session:
     host: redis
     port: 6379
     db: 0
+
+metrics:
+  enabled: true
+  prometheus:
+    port: 30000

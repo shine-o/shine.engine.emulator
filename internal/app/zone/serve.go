@@ -3,14 +3,16 @@ package zone
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"github.com/google/logger"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 )
 
 var log *logger.Logger
@@ -27,14 +29,25 @@ func init() {
 	if err != nil {
 		logger.Fatalf("Failed to create output file: %v", err)
 	}
-
 	log = logger.Init("zone", true, false, lf)
 }
 
 // Start initializes the TCP server and all the needed services and configuration for the zone
 func Start(cmd *cobra.Command, args []string) {
-	runtime.SetMutexProfileFraction(1000)
-
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error(r)
+		}
+	}()
+	go func() {
+		enabled := viper.GetBool("metrics.enabled")
+		if enabled {
+			port := viper.GetString("metrics.prometheus.port")
+			log.Infof("metrics enabled at :%v/metrics", port)
+			http.Handle("/metrics", promhttp.Handler())
+			log.Info(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
+		}
+	}()
 	ctx := context.Background()
 
 	zonePort := viper.GetString("serve.port")

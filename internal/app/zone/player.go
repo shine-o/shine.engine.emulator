@@ -12,7 +12,7 @@ type player struct {
 	baseEntity
 	players  map[uint16]*player
 	monsters map[uint16]*monster
-	npcs 	 map[uint16]*npc
+	npcs     map[uint16]*npc
 	char     *character.Character
 	conn     playerConnection
 	view     playerView
@@ -26,6 +26,7 @@ type player struct {
 	passives []passive
 	tickers  []*time.Ticker
 	sync.RWMutex
+	justSpawned bool
 }
 
 func (p *player) getHandle() uint16 {
@@ -34,7 +35,12 @@ func (p *player) getHandle() uint16 {
 	p.RUnlock()
 	return h
 }
+func (p * player) spawned() bool {
+	p.RLock()
+	defer 	p.RUnlock()
 
+	return p.justSpawned
+}
 func lastHeartbeat(p *player) float64 {
 	p.RLock()
 	lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()

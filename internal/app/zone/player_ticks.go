@@ -48,6 +48,7 @@ func (p *player) persistPosition() {
 
 // remove entities that are outside the view range of the player
 func (p *player) nearbyPlayersMaintenance(zm *zoneMap) {
+
 	log.Infof("[player_ticks] nearbyEntities for handle %v", p.handle)
 	tick := time.NewTicker(200 * time.Millisecond)
 
@@ -175,6 +176,10 @@ func (p *player) nearbyNPCMaintenance(zm *zoneMap) {
 // send packet to the client to notify of player disappearance
 func checkRemoval(p1, p2 *player) {
 	fh := p2.getHandle()
+
+	if p2.spawned() {
+		return
+	}
 
 	if lastHeartbeat(p2) > playerHeartbeatLimit {
 		go p1.removeAdjacentPlayer(fh)

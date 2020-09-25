@@ -2,6 +2,7 @@ package zone
 
 import (
 	"sync"
+	"time"
 )
 
 const playerHandleMin uint16 = 8000
@@ -10,7 +11,7 @@ const playerAttemptsMax uint16 = 500
 
 type players struct {
 	handler
-	active      map[uint16]*player
+	active map[uint16]*player
 	sync.RWMutex
 }
 
@@ -50,7 +51,14 @@ func (p *players) add(ap *player) {
 	p.Lock()
 	p.active[ap.handle] = ap
 	p.usedHandles[ap.handle] = true
+	ap.justSpawned = true
 	p.Unlock()
+	go func(p * player) {
+		time.Sleep(3 * time.Second)
+		p.Lock()
+		p.justSpawned = false
+		p.Unlock()
+	}(ap)
 }
 
 func playerInRange(v, t *player) bool {

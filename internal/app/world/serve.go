@@ -3,11 +3,14 @@ package world
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 	"github.com/google/logger"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"net/http"
 	"os"
 	"path/filepath"
 )
@@ -36,6 +39,15 @@ func init()  {
 // that is, use networking library to handle TCP connection
 // configure networking library to use handlers implemented in this package for packets
 func Start(cmd *cobra.Command, args []string) {
+	go func() {
+		enabled := viper.GetBool("metrics.enabled")
+		if enabled {
+			port := viper.GetString("metrics.prometheus.port")
+			log.Infof("metrics enabled at :%v/metrics", port)
+			http.Handle("/metrics", promhttp.Handler())
+			log.Info(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
+		}
+	}()
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 
