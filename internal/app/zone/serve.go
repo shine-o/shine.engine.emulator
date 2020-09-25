@@ -8,7 +8,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"runtime"
 )
@@ -16,7 +16,19 @@ import (
 var log *logger.Logger
 
 func init() {
-	log = logger.Init("zone master logger", true, false, ioutil.Discard)
+	if _, err := os.Stat("./output"); os.IsNotExist(err) {
+		err := os.Mkdir("./output", 0660)
+		if err != nil {
+			logger.Fatalf("Failed to create output folder: %v", err)
+		}
+	}
+
+	lf, err := os.OpenFile("./output/zone.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
+	if err != nil {
+		logger.Fatalf("Failed to create output file: %v", err)
+	}
+
+	log = logger.Init("zone", true, false, lf)
 }
 
 // Start initializes the TCP server and all the needed services and configuration for the zone
@@ -24,8 +36,6 @@ func Start(cmd *cobra.Command, args []string) {
 	runtime.SetMutexProfileFraction(1000)
 
 	ctx := context.Background()
-
-	log = logger.Init("world logger", true, false, ioutil.Discard)
 
 	zonePort := viper.GetString("serve.port")
 

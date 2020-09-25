@@ -112,6 +112,23 @@ func monsterInRange(p *player, m *monster) bool {
 	return false
 }
 
+func npcInRange(p *player, n *npc) bool {
+	p.RLock()
+	n.RLock()
+	yes := entityInRange(p.baseEntity, n.baseEntity)
+	p.RUnlock()
+	n.RUnlock()
+
+	if yes {
+		p.Lock()
+		p.npcs[n.handle] = n
+		p.Unlock()
+		return true
+	}
+	return false
+}
+
+
 // for every movement a player makes, launch a routine that:
 //		iterates over every monster
 

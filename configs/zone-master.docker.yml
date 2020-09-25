@@ -1,8 +1,8 @@
 serve:
-  port: 53000
+  port: 54000
 
 session:
   redis:
-    host: 127.0.0.1
+    host: redis
     port: 6379
     db: 3

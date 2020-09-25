@@ -17,6 +17,21 @@ Videos showcase:
 - [zone  - monsters!!](https://www.youtube.com/watch?v=f7nPVcIaKfw)
 
 
+## Development setup
+
+    git clone https://github.com/shine-o/shine.engine.emulator
+    
+    cd shine.engine.emulator
+    
+    go mod vendor
+    
+    # wait a few seconds untill everything is running
+    docker-compose up --build
+    
+    # copy external ip in configs/login.docker.yml and use it to launch the client
+    
+    # if you made any change to a service, this will also download all the dependencies again: 
+    docker-compose up -d --force-recreate --no-deps <service-name>
 
 ## Event logic for login, world, zone services
 
