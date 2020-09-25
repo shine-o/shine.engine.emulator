@@ -33,27 +33,33 @@ func Migrate(cmd *cobra.Command, args []string) {
 
 	db := dbConn(ctx, "service")
 	defer db.Close()
-	if yes, err := cmd.Flags().GetBool("fixtures"); err != nil {
+
+	p, err := cmd.Flags().GetBool("purge")
+
+	if err != nil {
 		log.Error(err)
+	}
+
+	if p {
+		err := purge(db)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = createSchema(db)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		err = fixtures(db)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Info("loading fixtures")
+
 	} else {
-		if yes {
-			err := purge(db)
-			if err != nil {
-				log.Fatal(err)
-			}
-			err = createSchema(db)
-			if err != nil {
-				log.Fatal(err)
-			}
-			err = fixtures(db)
-			if err != nil {
-				log.Fatal(err)
-			}
-		} else {
-			err = createSchema(db)
-			if err != nil {
-				log.Fatal(err)
-			}
+		err = createSchema(db)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 }

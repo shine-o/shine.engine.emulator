@@ -65,7 +65,7 @@ services:
       - intranet
     volumes:
       - ./:/app
-    entrypoint: sh -c './build/wait-for postgres:5432 --  go run -mod=vendor  /app/cmd/login/login.go migrate --config "/app/configs/login.docker.yml"'
+    entrypoint: sh -c './build/wait-for postgres:5432 --  go run -mod=vendor  /app/cmd/login/login.go migrate --config "/app/configs/login.docker.yml" --purge "true"'
     tty: false
 
   ######################################

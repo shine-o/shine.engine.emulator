@@ -25,6 +25,8 @@ Videos showcase:
     
     go mod vendor
     
+    cp .env.dist .env
+    
     docker-compose up --build
         
     # if you made any change to a service:

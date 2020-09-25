@@ -14,6 +14,9 @@ var migrateCmd = &cobra.Command{
 }
 
 func init() {
+
 	rootCmd.AddCommand(migrateCmd)
-	migrateCmd.Flags().Bool("fixtures", false, "load dummy data. WARNING: it wil purge the database")
+
+	migrateCmd.PersistentFlags().Bool("purge", false, "load dummy data. WARNING: it wil purge the database")
+
 }
