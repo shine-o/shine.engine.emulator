@@ -2,40 +2,22 @@ package zonemaster
 
 import (
 	"fmt"
-	"github.com/google/logger"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
+	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"net"
 	"net/http"
-	"os"
 )
 
-var (
-	log *logger.Logger
-)
-
-func init()  {
-	if _, err := os.Stat("./output"); os.IsNotExist(err) {
-		err := os.Mkdir("./output", 0660)
-		if err != nil {
-			logger.Fatalf("Failed to create output folder: %v", err)
-		}
-	}
-
-	lf, err := os.OpenFile("./output/zone-master.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
-	if err != nil {
-		logger.Fatalf("Failed to create output file: %v", err)
-	}
-
-	log = logger.Init("zone-master", true, false, lf)
-}
-
+var log = shinelog.NewLogger("zone-master", "./output", logrus.DebugLevel)
 
 // Start initializes an intermediary service for the diverse zone services to connect to and acknowledge their status
 func Start(cmd *cobra.Command, args []string) {
+
 	go func() {
 		enabled := viper.GetBool("metrics.enabled")
 		if enabled {

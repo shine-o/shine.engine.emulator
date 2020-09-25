@@ -94,6 +94,9 @@ func (p *player) nearbyMonstersMaintenance(zm *zoneMap) {
 	p.tickers = append(p.tickers, tick)
 	p.Unlock()
 	defer tick.Stop()
+	defer func() {
+		log.Warning("exiting nearbyMonstersMaintenance")
+	}()
 	for {
 		select {
 		case <-tick.C:

@@ -4,41 +4,28 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/google/logger"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
+	"github.com/sirupsen/logrus"
+	//"github.com/google/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"net/http"
-	"os"
 	"path/filepath"
 )
 
-var log *logger.Logger
 
-func init() {
-	if _, err := os.Stat("./output"); os.IsNotExist(err) {
-		err := os.Mkdir("./output", 0660)
-		if err != nil {
-			logger.Fatalf("Failed to create output folder: %v", err)
-		}
-	}
-
-	lf, err := os.OpenFile("./output/zone.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
-	if err != nil {
-		logger.Fatalf("Failed to create output file: %v", err)
-	}
-	log = logger.Init("zone", true, false, lf)
-}
+var log = shinelog.NewLogger("zone", "./output", logrus.DebugLevel)
 
 // Start initializes the TCP server and all the needed services and configuration for the zone
 func Start(cmd *cobra.Command, args []string) {
-	defer func() {
-		if r := recover(); r != nil {
-			log.Error(r)
-		}
-	}()
+	//defer func() {
+	//	if r := recover(); r != nil {
+	//		log.Error(r)
+	//	}
+	//}()
 	go func() {
 		enabled := viper.GetBool("metrics.enabled")
 		if enabled {
@@ -92,6 +79,7 @@ func Start(cmd *cobra.Command, args []string) {
 	s.CommandsFilePath = path
 
 	ss := networking.ShineService{
+		Name: "zone",
 		Settings: s,
 		ShineHandler: networking.ShineHandler{
 			2055: ncMiscSeedAck,

@@ -24,6 +24,7 @@ require (
 	github.com/prometheus/client_golang v1.7.1
 	github.com/segmentio/encoding v0.1.15 // indirect
 	github.com/segmentio/ksuid v1.0.3
+	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/afero v1.3.4 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.0.0

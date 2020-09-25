@@ -7,10 +7,8 @@ import (
 	"fmt"
 	"github.com/go-pg/pg/v9"
 	"github.com/go-pg/pg/v9/orm"
-	"github.com/google/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
 	"time"
 )
 
@@ -31,8 +29,8 @@ func Migrate(cmd *cobra.Command, args []string) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	log = logger.Init("Database Logger", true, false, ioutil.Discard)
 	log.Info("Database Logger Migrate()")
+
 	db := dbConn(ctx, "service")
 	defer db.Close()
 	if yes, err := cmd.Flags().GetBool("fixtures"); err != nil {

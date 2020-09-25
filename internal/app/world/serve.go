@@ -4,36 +4,18 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/google/logger"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"net/http"
-	"os"
 	"path/filepath"
 )
 
-var (
-	log *logger.Logger
-)
-
-func init()  {
-	if _, err := os.Stat("./output"); os.IsNotExist(err) {
-		err := os.Mkdir("./output", 0660)
-		if err != nil {
-			logger.Fatalf("Failed to create output folder: %v", err)
-		}
-	}
-
-	lf, err := os.OpenFile("./output/world.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
-	if err != nil {
-		logger.Fatalf("Failed to create output file: %v", err)
-	}
-
-	log = logger.Init("world", true, false, lf)
-}
+var log = shinelog.NewLogger("world", "./output", logrus.DebugLevel)
 
 // Start the service service
 // that is, use networking library to handle TCP connection
@@ -116,11 +98,13 @@ func Start(cmd *cobra.Command, args []string) {
 	}
 
 	ss := networking.ShineService{
+		Name: "world",
 		Settings:     s,
 		ShineHandler: sh,
 		SessionFactory: sessionFactory{
 			worldID: viper.GetInt("world.id"),
 		},
+
 	}
 
 	ss.Listen(ctx, worldPort)

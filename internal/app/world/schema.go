@@ -2,12 +2,10 @@ package world
 
 import (
 	"context"
-	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
 )
 
 // Migrate schemas and models
@@ -16,7 +14,6 @@ func Migrate(cmd *cobra.Command, args []string) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	log = logger.Init("Database Logger", true, false, ioutil.Discard)
 	log.Info("Database Logger Migrate()")
 	db := database.Connection(ctx, database.ConnectionParams{
 		User:     viper.GetString("database.postgres.db_user"),

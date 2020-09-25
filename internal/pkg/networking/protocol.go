@@ -39,7 +39,6 @@ type Command struct {
 	Base CommandBase // common data in every command, like operation code and length
 	//NcStruct interface{} // any kind of structure that is the representation in bytes of the network packet
 	NcStruct structs.NC // any kind of structure that is the representation in bytes of the network packet
-	sync.RWMutex
 }
 
 // CommandBase type used to store decoded data from a packet

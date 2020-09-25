@@ -3,11 +3,9 @@ package networking
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/google/logger"
 )
 
 var (
-	log         *logger.Logger
 	xorKey      []byte
 	xorLimit    uint16
 	commandList *PCList

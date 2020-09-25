@@ -4,8 +4,8 @@ import (
 	"sync"
 )
 
-const npcHandleMin uint16 = 17000
-const npcHandleMax uint16 = 27000
+const npcHandleMin uint16 = 37000
+const npcHandleMax uint16 = 47000
 const npcAttemptsMax uint16 = 1500
 
 type npcs struct {

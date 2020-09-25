@@ -5,26 +5,24 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/google/logger"
+	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net"
 	"reflect"
 	"time"
 )
 
-func init() {
-	log = logger.Init("networking logger", true, false, ioutil.Discard)
-	log.Info("networking logger init()")
-}
+var log =  shinelog.NewLogger("networking default", "./output", logrus.DebugLevel)
 
 type ShineService struct {
 	Settings
 	ShineHandler
 	SessionFactory
 	ExtraParameters interface{}
+	Name            string
 }
 
 type InboundSegments struct {
@@ -86,6 +84,8 @@ func (s *Settings) Set() {
 
 // Listen on TPC socket for connection on given port
 func (ss *ShineService) Listen(ctx context.Context, port string) {
+	log = shinelog.NewLogger( fmt.Sprintf("%v-networking", ss.Name), "./output", logrus.DebugLevel)
+
 	ss.Settings.Set()
 
 	in := make(chan *Command, 4096)
@@ -209,22 +209,23 @@ func logPackets(ctx context.Context, in <-chan *Command, out <-chan *Command) {
 		case <-ctx.Done():
 			return
 		case ipc := <-in:
-			logDirection(ipc, "inbound")
+			logDirection(*ipc, "inbound")
 		case opc := <-out:
-			logDirection(opc, "outbound")
+			logDirection(*opc, "outbound")
 		}
 	}
 }
 
-func logDirection(pc *Command, direction string) {
-	pc.RLock()
-	defer pc.RUnlock()
-	cn := CommandName(pc)
+func logDirection(pc Command, direction string) {
+	//pc.RLock()
+	//defer pc.RUnlock()
+	cn := CommandName(&pc)
 	log.Infof("%v %v packet metadata: %v", direction, cn, pc.Base.String())
 	if pc.NcStruct != nil {
 		sd, err := json.Marshal(pc.NcStruct)
+		ncStructType := reflect.TypeOf(pc.NcStruct).String()
 		if err != nil {
-			log.Errorf("converting struct %v to json resulted in error: %v", reflect.TypeOf(pc.NcStruct).String(), err)
+			log.Errorf("converting struct %v to json resulted in error: %v", ncStructType, err)
 		} else {
 			log.Infof("%v %v packet structure data: %v %v", direction, cn, reflect.TypeOf(pc.NcStruct).String(), string(sd))
 		}
@@ -237,11 +238,11 @@ func CommandName(pc *Command) string {
 	if (&PCList{}) != commandList { // should be commented out on production to increase performance
 		opCode := pc.Base.OperationCode
 		department := opCode >> 10
-		command := opCode & 1023
+		command := fmt.Sprintf("%X", opCode & 1023)
 		if dpt, ok := commandList.Departments[uint8(department)]; ok {
-			return dpt.ProcessedCommands[fmt.Sprintf("%X", command)]
+			return dpt.ProcessedCommands[command]
 		} else {
-			log.Warningf("Missing friendly name for command with: operationCode %v,  department %v, command %v, ", opCode, department, fmt.Sprintf("%X", command))
+			log.Warningf("Missing friendly name for command with: operationCode %v,  department %v, command %v, ", opCode, department,command)
 		}
 	}
 	return ""
