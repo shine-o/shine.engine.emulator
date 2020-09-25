@@ -7,17 +7,30 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	"io/ioutil"
 	"net"
+	"os"
 )
 
 var (
 	log *logger.Logger
 )
 
-func init() {
-	log = logger.Init("zone master logger", true, false, ioutil.Discard)
+func init()  {
+	if _, err := os.Stat("./output"); os.IsNotExist(err) {
+		err := os.Mkdir("./output", 0660)
+		if err != nil {
+			logger.Fatalf("Failed to create output folder: %v", err)
+		}
+	}
+
+	lf, err := os.OpenFile("./output/zone-master.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
+	if err != nil {
+		logger.Fatalf("Failed to create output file: %v", err)
+	}
+
+	log = logger.Init("zone-master", true, false, lf)
 }
+
 
 // Start initializes an intermediary service for the diverse zone services to connect to and acknowledge their status
 func Start(cmd *cobra.Command, args []string) {

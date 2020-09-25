@@ -1,0 +1,184 @@
+version: '3.8'
+
+networks:
+  intranet:
+    driver: bridge
+
+volumes:
+  data:
+    driver: local
+
+services:
+  #######################################
+  ############## POSTGRES ###############
+  #######################################
+  postgres:
+    image: postgres:${POSTGRES_VERSION}
+    container_name: shineo_postgres
+    volumes:
+      - ${DATA_PATH_HOST}/data:/var/lib/postgresql/data
+    ports:
+    - "5432:5432"
+    networks:
+      - intranet
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+
+  #######################################
+  ############## REDIS ##################
+  #######################################    
+  redis:
+    image: redis:${REDIS_VERSION}
+    container_name: shineo_redis
+    ports:
+      - "6379:6379"
+    networks:
+      - intranet
+
+  ######################################
+  ############# DEV BASE IMAGE #########
+  ######################################
+  build:
+    image: shineo/dev-services:${BUILD_VERSION}
+    build:
+      context: ./
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./:/app
+  
+  ######################################
+  ############# MIGRATE LOGIN ##########
+  ######################################
+  migrate-login:
+    image: shineo/dev-services:${BUILD_VERSION}
+    container_name: shineo_login_db_migrate
+    depends_on:
+      - build
+      - postgres
+      - redis
+    networks:
+      - intranet
+    volumes:
+      - ./:/app
+    entrypoint: sh -c './build/wait-for postgres:5432 --  go run -mod=vendor  /app/cmd/login/login.go migrate --config "/app/configs/login.docker.yml"'
+    tty: false
+
+  ######################################
+  ############# MIGRATE WORLD ##########
+  ######################################
+  migrate-world:
+    image: shineo/dev-services:${BUILD_VERSION}
+    container_name: shineo_world_db_migrate
+    depends_on:
+      - build
+      - postgres
+      - redis
+    networks:
+      - intranet
+    volumes:
+      - ./:/app
+    entrypoint: sh -c './build/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world/world.go migrate --config "/app/configs/world.docker.yml"'
+    tty: false
+
+  ######################################
+  ############# LOGIN ##################
+  ######################################
+  login:
+    image: shineo/dev-services:${BUILD_VERSION}
+    container_name: shineo_login
+    depends_on:
+      - redis
+      - build
+      - postgres
+      - migrate-login
+      - world-master
+    networks:
+      - intranet
+    volumes:
+      - ./:/app
+    ports:
+      - "51000:51000"
+      - "51001:51001"
+    entrypoint: sh -c './build/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/login/login.go serve --config "/app/configs/login.docker.yml"'
+
+  ######################################
+  ############# WORLD MASTER ###########
+  ######################################
+  world-master:
+    image: shineo/dev-services:${BUILD_VERSION}
+    container_name: shineo_world-master
+    depends_on:
+      - build
+      - postgres
+      - redis
+    networks:
+      - intranet
+    volumes:
+      - ./:/app
+    ports:
+      - "53000:53000"
+    entrypoint: sh -c './build/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world-master/world-master.go serve --config "/app/configs/world-master.docker.yml"'
+
+  ######################################
+  ############# WORLD ##################
+  ######################################
+  world:
+    image: shineo/dev-services:${BUILD_VERSION}
+    container_name: shineo_world
+    depends_on:
+      - build
+      - world-master
+      - postgres
+      - redis
+      - migrate-world
+    networks:
+      - intranet
+    volumes:
+      - ./:/app
+    ports:
+      - "52000:52000"
+      - "52001:52001"
+    entrypoint: sh -c './build/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world/world.go serve --config "/app/configs/world.docker.yml"'
+
+  ######################################
+  ############# ZONE MASTER ############
+  ######################################
+  zone-master:
+    image: shineo/dev-services:${BUILD_VERSION}
+    container_name: shineo_zone-master
+    depends_on:
+      - build
+      - postgres
+      - redis
+    networks:
+      - intranet
+    volumes:
+      - ./:/app
+    ports:
+      - "54000:54000"
+    entrypoint: sh -c './build/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/zone-master/zone-master.go serve --config "/app/configs/zone-master.docker.yml"'
+
+  ######################################
+  ############# ZONE ###### ############
+  ######################################
+  zone:
+    image: shineo/dev-services:${BUILD_VERSION}
+    container_name: shineo_zone
+    depends_on:
+      - zone-master
+      - build
+      - postgres
+      - redis
+    volumes:
+    - ./:/app
+    networks:
+      - intranet
+    ports:
+      - "55000:55000"
+      - "55001:55001"
+    entrypoint: sh -c './build/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/zone/zone.go serve --config "/app/configs/zone.docker.yml"'
+

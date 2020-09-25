@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"time"
 
 	wm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world-master"
 	"github.com/spf13/viper"
@@ -64,10 +65,16 @@ func (l *login) load() {
 
 	loginEvents = l.send
 
-	err := l.availableWorlds()
-	if err != nil {
-		log.Fatal(err)
+	for {
+		err := l.availableWorlds()
+		if err != nil {
+			log.Error(err)
+			time.Sleep(2*time.Second)
+			continue
+		}
+		break
 	}
+
 	go l.startWorkers()
 }
 

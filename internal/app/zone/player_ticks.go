@@ -128,6 +128,49 @@ func (p *player) nearbyMonstersMaintenance(zm *zoneMap) {
 	}
 }
 
+func (p *player) nearbyNPCMaintenance(zm *zoneMap) {
+	log.Infof("[player_ticks] nearbyNPCs for handle %v", p.handle)
+	tick := time.NewTicker(200 * time.Millisecond)
+
+	p.Lock()
+	p.tickers = append(p.tickers, tick)
+	p.Unlock()
+	defer tick.Stop()
+	for {
+		select {
+		case <-tick.C:
+			// for each monster
+			// if nearby, add to known nearby
+			for an := range zm.entities.npcs.all() {
+				go func(p *player, n * npc) {
+					p.RLock()
+					_, exists := p.npcs[n.getHandle()]
+					p.RUnlock()
+					if !exists && npcInRange(p, n) {
+						nc := n.ncBriefInfoRegenMobCmd()
+						ncBriefInfoRegenMobCmd(p, &nc)
+					}
+				}(p, an)
+			}
+
+			//for am := range p.adjacentMonsters() {
+			//	go func(p *player, m *monster) {
+			//		if !monsterInRange(p, m) {
+			//			mh := m.getHandle()
+			//			p.Lock()
+			//			delete(p.monsters, mh)
+			//			p.Unlock()
+			//			nc := structs.NcBriefInfoDeleteHandleCmd{
+			//				Handle: mh,
+			//			}
+			//			ncBriefInfoDeleteHandleCmd(p, &nc)
+			//		}
+			//	}(p, am)
+			//}
+		}
+	}
+}
+
 // if foreign player timed out or is not in range
 // send packet to the client to notify of player disappearance
 func checkRemoval(p1, p2 *player) {

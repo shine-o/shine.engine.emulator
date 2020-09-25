@@ -12,6 +12,7 @@ type player struct {
 	baseEntity
 	players  map[uint16]*player
 	monsters map[uint16]*monster
+	npcs 	 map[uint16]*npc
 	char     *character.Character
 	conn     playerConnection
 	view     playerView
@@ -239,6 +240,7 @@ func (p *player) load(name string, worldDB *pg.DB) error {
 
 	p.players = make(map[uint16]*player)
 	p.monsters = make(map[uint16]*monster)
+	p.npcs = make(map[uint16]*npc)
 
 	view := make(chan playerView)
 	state := make(chan playerState)

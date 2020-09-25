@@ -89,6 +89,13 @@ func (zm * zoneMap) spawnNPC()  {
 					log.Error(err)
 					return
 				}
+				//             Position = new Position(X, Y, (byte)(RotationInt < 0 ? ((360 + RotationInt) / 2) : (RotationInt / 2)));
+				var shineD int
+				if sn.D < 0 {
+					shineD = (360 + sn.D) / 2
+				} else {
+					shineD = sn.D / 2
+				}
 
 				n := &npc{
 					baseEntity: baseEntity{
@@ -96,14 +103,14 @@ func (zm * zoneMap) spawnNPC()  {
 						fallback: location{
 							x: sn.X,
 							y: sn.Y,
-							d: sn.D,
+							d: shineD,
 						},
 						current: location{
 							mapID:     zm.data.ID,
 							mapName:   zm.data.MapInfoIndex,
 							x: sn.X,
 							y: sn.Y,
-							d: sn.D,
+							d: shineD,
 							movements: [15]movement{},
 						},
 						events: events{},
@@ -123,8 +130,8 @@ func (zm * zoneMap) spawnNPC()  {
 				zm.entities.npcs.Lock()
 				zm.entities.npcs.active[h] = n
 				zm.entities.npcs.Unlock()
-
 				<-sem
+
 			}(data)
 		}
 	}
@@ -152,6 +159,7 @@ func (zm *zoneMap) spawnMobs() {
 	}
 }
 
+// maybe in the future create a wrapping struct for this, as more monster shine files will be loaded
 func mobDataPointers(mobIndex string) (*shn.MobInfo, *shn.MobInfoServer) {
 	var (
 		mi  *shn.MobInfo

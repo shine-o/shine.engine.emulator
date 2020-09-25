@@ -21,10 +21,8 @@ require (
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/pelletier/go-toml v1.8.0 // indirect
-	github.com/pkg/errors v0.9.1
 	github.com/segmentio/encoding v0.1.15 // indirect
 	github.com/segmentio/ksuid v1.0.3
-	github.com/shine-o/shine.engine.core v0.0.3
 	github.com/spf13/afero v1.3.4 // indirect
 	github.com/spf13/cast v1.3.1 // indirect
 	github.com/spf13/cobra v1.0.0
@@ -34,7 +32,6 @@ require (
 	github.com/tinylib/msgp v1.1.2 // indirect
 	github.com/vmihailenco/msgpack/v4 v4.3.12 // indirect
 	github.com/willf/bitset v1.1.11 // indirect
-	go.etcd.io/bbolt v1.3.5
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect
 	golang.org/x/image v0.0.0-20200801110659-972c09e46d76
 	golang.org/x/net v0.0.0-20200813134508-3edf25e44fcc // indirect

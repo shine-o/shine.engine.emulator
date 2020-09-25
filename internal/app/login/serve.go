@@ -7,7 +7,6 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -16,14 +15,28 @@ var (
 	log *logger.Logger
 )
 
+func init()  {
+	if _, err := os.Stat("./output"); os.IsNotExist(err) {
+		err := os.Mkdir("./output", 0660)
+		if err != nil {
+			logger.Fatalf("Failed to create output folder: %v", err)
+		}
+	}
+
+	lf, err := os.OpenFile("./output/login.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
+	if err != nil {
+		logger.Fatalf("Failed to create output file: %v", err)
+	}
+
+	log = logger.Init("login", true, false, lf)
+}
+
 // Start the login service
 // that is, use networking library to handle TCP connection
 // configure networking library to use handlers implemented in this package for packets
 func Start(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
-	log = logger.Init("LoginLogger", true, false, ioutil.Discard)
-	log.Info("login logger init()")
 
 	db = dbConn(ctx, "accounts")
 	initRedis()

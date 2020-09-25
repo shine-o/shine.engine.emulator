@@ -177,14 +177,12 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 	p1 := zm.entities.players.get(ev.handle)
 
 	if p1 == nil {
-		log.Error("player not found during playerAppearedLogic")
+		log.Error("player not found")
 		return
 	}
 
-	go p1.heartbeat()
-	go p1.persistPosition()
-
 	var wg sync.WaitGroup
+
 	wg.Add(4)
 	go func() {
 		defer wg.Done()
@@ -195,19 +193,28 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 		defer wg.Done()
 		nearbyPlayers(p1, zm)
 	}()
+
 	go func() {
 		defer wg.Done()
 		nearbyMonsters(p1, zm)
 	}()
+
 	go func() {
 		defer wg.Done()
 		p1.allNPC(zm)
 	}()
+
 	wg.Wait()
+
+
+	go p1.heartbeat()
+	go p1.persistPosition()
 
 	go p1.nearbyPlayersMaintenance(zm)
 
 	go p1.nearbyMonstersMaintenance(zm)
+
+	go p1.nearbyNPCMaintenance(zm)
 
 	//go adjacentMonstersInform(p1, zm)
 }
@@ -245,6 +252,12 @@ func playerDisappearedLogic(e event, zm *zoneMap) {
 	}
 }
 
+const (
+	runSpeed = 120
+	walkSpeed = 60
+	//runSpeed = 300
+	//walkSpeed = 150
+)
 func playerWalksLogic(e event, zm *zoneMap) {
 	// player has a fifo queue for the last 30 movements
 	// for every movement
@@ -293,7 +306,7 @@ func playerWalksLogic(e event, zm *zoneMap) {
 		Handle: ev.handle,
 		From:   ev.nc.From,
 		To:     ev.nc.To,
-		Speed:  60,
+		Speed:  walkSpeed,
 	}
 
 	for ap := range zm.entities.players.all() {
@@ -350,7 +363,7 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		Handle: ev.handle,
 		From:   ev.nc.From,
 		To:     ev.nc.To,
-		Speed:  120,
+		Speed:  runSpeed,
 	}
 
 	for ap := range zm.entities.players.all() {

@@ -8,7 +8,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 )
 
@@ -16,8 +16,20 @@ var (
 	log *logger.Logger
 )
 
-func init() {
-	log = logger.Init("world service default logger", true, false, ioutil.Discard)
+func init()  {
+	if _, err := os.Stat("./output"); os.IsNotExist(err) {
+		err := os.Mkdir("./output", 0660)
+		if err != nil {
+			logger.Fatalf("Failed to create output folder: %v", err)
+		}
+	}
+
+	lf, err := os.OpenFile("./output/world.log", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0660)
+	if err != nil {
+		logger.Fatalf("Failed to create output file: %v", err)
+	}
+
+	log = logger.Init("world", true, false, lf)
 }
 
 // Start the service service
