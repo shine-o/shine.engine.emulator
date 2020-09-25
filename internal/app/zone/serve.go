@@ -3,29 +3,39 @@ package zone
 import (
 	"context"
 	"encoding/hex"
-	"github.com/google/logger"
+	"fmt"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
+	"github.com/sirupsen/logrus"
+	//"github.com/google/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
+	"net/http"
 	"path/filepath"
-	"runtime"
 )
 
-var log *logger.Logger
 
-func init() {
-	log = logger.Init("zone master logger", true, false, ioutil.Discard)
-}
+var log = shinelog.NewLogger("zone", "./output", logrus.DebugLevel)
 
 // Start initializes the TCP server and all the needed services and configuration for the zone
 func Start(cmd *cobra.Command, args []string) {
-	runtime.SetMutexProfileFraction(1000)
-
+	//defer func() {
+	//	if r := recover(); r != nil {
+	//		log.Error(r)
+	//	}
+	//}()
+	go func() {
+		enabled := viper.GetBool("metrics.enabled")
+		if enabled {
+			port := viper.GetString("metrics.prometheus.port")
+			log.Infof("metrics enabled at :%v/metrics", port)
+			http.Handle("/metrics", promhttp.Handler())
+			log.Info(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
+		}
+	}()
 	ctx := context.Background()
-
-	log = logger.Init("world logger", true, false, ioutil.Discard)
 
 	zonePort := viper.GetString("serve.port")
 
@@ -69,6 +79,7 @@ func Start(cmd *cobra.Command, args []string) {
 	s.CommandsFilePath = path
 
 	ss := networking.ShineService{
+		Name: "zone",
 		Settings: s,
 		ShineHandler: networking.ShineHandler{
 			2055: ncMiscSeedAck,

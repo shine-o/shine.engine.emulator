@@ -2,18 +2,59 @@ package zone
 
 import (
 	"fmt"
+	"sync"
 )
 
 const (
-	lengthX = 200
-	lengthY = 200
+	lengthX = 256
+	lengthY = 256
 )
 
 type entity interface {
+	basicActions
 	getHandle() uint16
 	getLocation() (uint32, uint32)
 }
 
+
+
+type handler struct {
+	handleIndex uint16
+	usedHandles map[uint16]bool
+	sync.RWMutex
+}
+
+func (h * handler) new(min, max, attempts uint16) (uint16, error) {
+	h.RLock()
+	index := h.handleIndex
+	h.RUnlock()
+
+	for attempts != 0 {
+
+		index++
+
+		if index == max {
+			index = min
+		}
+
+		h.Lock()
+		h.handleIndex = index
+		h.Unlock()
+
+		h.RLock()
+		_, used := h.usedHandles[index]
+		h.RUnlock()
+
+		attempts--
+
+		if used {
+			continue
+		}
+
+		return index, nil
+	}
+	return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
+}
 type basicActions interface {
 	move(x, y int) error
 }
@@ -69,10 +110,6 @@ func entityInRange(e1, e2 baseEntity) bool {
 	maxX := viewerX + lengthX
 	minX := viewerX - lengthX
 
-	if minY > 2048 {
-		//log.Infof("minY=%v  maxY=%v minX=%v maxX=%v; viewer at X=%v, Y=%v ;target at X=%v Y=%v", minY, maxY, minX, maxX, viewerX, viewerY, targetX, targetY)
-	}
-
 	vertical   := (targetY <= maxY && targetY >= viewerY) || (targetY >= minY && targetY <= viewerY)
 	horizontal := (targetX <= maxX && targetX >= viewerX) || (targetX >= minX && targetX <= viewerX)
 
@@ -86,5 +123,3 @@ func entityInRange(e1, e2 baseEntity) bool {
 type mover struct {
 	baseEntity
 }
-
-type npc struct{}

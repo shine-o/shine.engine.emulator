@@ -3,27 +3,35 @@ package login
 import (
 	"context"
 	"encoding/hex"
-	"github.com/google/logger"
+	"fmt"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 )
 
-var (
-	log *logger.Logger
-)
+var log = shinelog.NewLogger("login", "./output", logrus.DebugLevel)
 
 // Start the login service
 // that is, use networking library to handle TCP connection
 // configure networking library to use handlers implemented in this package for packets
 func Start(cmd *cobra.Command, args []string) {
+	go func() {
+		enabled := viper.GetBool("metrics.enabled")
+		if enabled {
+			port := viper.GetString("metrics.prometheus.port")
+			log.Infof("metrics enabled at :%v/metrics", port)
+			http.Handle("/metrics", promhttp.Handler())
+			log.Info(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
+		}
+	}()
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
-	log = logger.Init("LoginLogger", true, false, ioutil.Discard)
-	log.Info("login logger init()")
 
 	db = dbConn(ctx, "accounts")
 	initRedis()
@@ -56,6 +64,7 @@ func Start(cmd *cobra.Command, args []string) {
 	// note: use factory
 
 	ss := networking.ShineService{
+		Name: "login",
 		Settings: s,
 		ShineHandler: networking.ShineHandler{
 			2055: ncMiscSeedAck,

@@ -1,8 +1,8 @@
 package zone
 
 import (
-	"fmt"
 	"sync"
+	"time"
 )
 
 const playerHandleMin uint16 = 8000
@@ -10,12 +10,12 @@ const playerHandleMax uint16 = 12000
 const playerAttemptsMax uint16 = 500
 
 type players struct {
-	handleIndex uint16
-	active      map[uint16]*player
+	handler
+	active map[uint16]*player
 	sync.RWMutex
 }
 
-func (p *players) activePlayers() <-chan *player {
+func (p *players) all() <-chan *player {
 
 	p.RLock()
 	ch := make(chan *player, len(p.active))
@@ -33,52 +33,32 @@ func (p *players) activePlayers() <-chan *player {
 	return ch
 }
 
-func (p *players) removeHandle(h uint16) {
+func (p *players) get(h uint16) *player {
+	p.RLock()
+	player := p.active[h]
+	p.RUnlock()
+	return player
+}
+
+func (p *players) remove(h uint16) {
 	p.Lock()
 	delete(p.active, h)
+	delete(p.usedHandles, h)
 	p.Unlock()
 }
 
-func (p *players) addHandle(h uint16, ap *player) {
+func (p *players) add(ap *player) {
 	p.Lock()
-	p.active[h] = ap
+	p.active[ap.handle] = ap
+	p.usedHandles[ap.handle] = true
+	ap.justSpawned = true
 	p.Unlock()
-}
-
-func (p *players) newHandle() (uint16, error) {
-	var attempts uint16 = 0
-	min := playerHandleMin
-	max := playerHandleMax
-	maxAttempts := playerAttemptsMax
-
-	p.RLock()
-	index := p.handleIndex
-	p.RUnlock()
-
-	for {
-		if attempts == maxAttempts {
-			return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
-		}
-
-		index++
-
-		if index == max {
-			index = min
-		}
-
+	go func(p * player) {
+		time.Sleep(3 * time.Second)
 		p.Lock()
-		p.handleIndex = index
+		p.justSpawned = false
 		p.Unlock()
-
-		p.RLock()
-		if _, used := p.active[index]; used {
-			attempts++
-			continue
-		}
-		p.RUnlock()
-
-		return index, nil
-	}
+	}(ap)
 }
 
 func playerInRange(v, t *player) bool {

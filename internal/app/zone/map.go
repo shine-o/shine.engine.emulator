@@ -24,91 +24,25 @@ type zoneMap struct {
 type entities struct {
 	*players
 	*monsters
-}
-
-func (z *zone) addMap(mapId int, wg *sync.WaitGroup) {
-	defer wg.Done()
-	md, ok := mapData[mapId]
-
-	if !ok {
-		log.Fatalf("no map data for map with id %v", mapId)
-	}
-
-	walkableX, walkableY, err := walkingPositions(md.SHBD)
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	m := &zoneMap{
-		data:      md,
-		walkableX: walkableX,
-		walkableY: walkableY,
-		entities: &entities{
-			players: &players{
-				handleIndex: playerHandleMin,
-				active:      make(map[uint16]*player),
-			},
-			monsters: &monsters{
-				handleIndex: monsterHandleMin,
-				active:      make(map[uint16]*monster),
-			},
-		},
-		events: events{
-			send: make(sendEvents),
-			recv: make(recvEvents),
-		},
-	}
-
-	events := []eventIndex{
-		playerHandle,
-		playerHandleMaintenance,
-		queryPlayer, queryMonster,
-		playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
-		unknownHandle, monsterAppeared, monsterDisappeared, monsterWalks, monsterRuns,
-	}
-
-	for _, index := range events {
-		c := make(chan event, 500)
-		m.recv[index] = c
-		m.send[index] = c
-	}
-
-	z.Lock()
-	z.rm[m.data.ID] = m
-	z.Unlock()
-
-	go m.run()
-
+	*npcs
 }
 
 func (zm *zoneMap) run() {
-	// load NPCs for this map
-	// run logic routines
-	// as many workers as needed can be launched
+
 	num := viper.GetInt("workers.num_map_workers")
 
-	// load mobs
+	var wg sync.WaitGroup
+	wg.Add(2)
+	go func() {
+		defer wg.Done()
+		zm.spawnMobs()
+	}()
 
-	//zm.entities.monsters
-
-	spawnData, ok := monsterData.MapRegens[zm.data.MapInfoIndex]
-
-	if ok {
-		// for each groupIndex in spawnData
-		// 		for each number of mobs in groupIndex
-		//		populate a monster object using monster data
-		//		launch monster go routines
-		//		keep pointers to monster data
-		var wg sync.WaitGroup
-
-		for _, group := range spawnData.Groups {
-			wg.Add(1)
-			go spawnMob(zm, group, &wg)
-		}
-
-		wg.Wait()
-	}
+	go func() {
+		defer wg.Done()
+		zm.spawnNPC()
+	}()
+	wg.Wait()
 
 	go zm.removeInactiveHandles()
 
@@ -121,97 +55,62 @@ func (zm *zoneMap) run() {
 		go zm.playerQueries()
 		go zm.monsterQueries()
 	}
-
 }
-func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
-	defer wg.Done()
 
-	for _, mob := range re.Mobs {
+func (zm * zoneMap) spawnNPC()  {
+	npcs, ok := npcData.Data[zm.data.MapInfoIndex]
 
-		for i := 0; i <= int(mob.Num); i++ {
+	if ok {
+		var (
+			sem = make(chan int, 100)
+			wg  sync.WaitGroup
+		)
 
-			var (
-				mi  *shn.MobInfo
-				mis *shn.MobInfoServer
-			)
+		for _, data := range npcs {
+			wg.Add(1)
+			sem <- 1
+			go func(sn * world.ShineNPC) {
+				defer wg.Done()
 
-			for i, row := range monsterData.MobInfo.ShineRow {
-				if row.InxName == mob.Index {
-					mi = &monsterData.MobInfo.ShineRow[i]
-				}
-			}
+				mi, mis := mobDataPointers(sn.MobIndex)
 
-			for i, row := range monsterData.MobInfoServer.ShineRow {
-				if row.InxName == mob.Index {
-					mis = &monsterData.MobInfoServer.ShineRow[i]
-				}
-			}
-
-			if mi == nil {
-				log.Errorf("no entry in MobInfo for %v", mob.Index)
-				return
-			}
-
-			if mis == nil {
-				log.Errorf("no entry in MobInfoServer for %v", mob.Index)
-				return
-			}
-
-			var (
-				x, y, d  int
-				maxTries = 500 // todo: use goroutines for this, with a maximum of 50 routines, first one to get a spot wins the spawn
-				spawn    = false
-			)
-
-			for maxTries != 0 {
-
-				if spawn {
-					break
+				if mi == nil {
+					log.Errorf("no entry in MobInfo for %v", sn.MobIndex)
+					return
 				}
 
-				if re.Width == 0 {
-					re.Width = networking.RandomIntBetween(100, 150)
+				if mis == nil {
+					log.Errorf("no entry in MobInfoServer for %v", sn.MobIndex)
+					return
 				}
 
-				if re.Height == 0 {
-					re.Height = networking.RandomIntBetween(100, 150)
-				}
-
-				x = networking.RandomIntBetween(re.X, re.X+re.Width)
-				y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
-
-				d = networking.RandomIntBetween(1, 250)
-
-				rX, rY := igCoordToBitmap(x, y)
-
-				if canWalk(zm.walkableX, zm.walkableY, rX, rY) {
-					spawn = true
-				}
-
-				maxTries--
-			}
-
-			if spawn {
-				h, err := zm.entities.monsters.newHandle()
+				h, err := zm.entities.npcs.new(npcHandleMin, npcHandleMax, npcAttemptsMax)
 				if err != nil {
 					log.Error(err)
 					return
 				}
+				//             Position = new Position(X, Y, (byte)(RotationInt < 0 ? ((360 + RotationInt) / 2) : (RotationInt / 2)));
+				var shineD int
+				if sn.D < 0 {
+					shineD = (360 + sn.D) / 2
+				} else {
+					shineD = sn.D / 2
+				}
 
-				m := &monster{
+				n := &npc{
 					baseEntity: baseEntity{
 						handle: h,
 						fallback: location{
-							x: x,
-							y: y,
-							d: d,
+							x: sn.X,
+							y: sn.Y,
+							d: shineD,
 						},
 						current: location{
 							mapID:     zm.data.ID,
 							mapName:   zm.data.MapInfoIndex,
-							x:         x,
-							y:         y,
-							d:         d,
+							x: sn.X,
+							y: sn.Y,
+							d: shineD,
 							movements: [15]movement{},
 						},
 						events: events{},
@@ -220,7 +119,6 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 					sp:            uint32(mis.MaxSP),
 					mobInfo:       mi,
 					mobInfoServer: mis,
-					regenData:     &re,
 					status: status{
 						idling:   make(chan bool),
 						fighting: make(chan bool),
@@ -229,32 +127,252 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry, wg *sync.WaitGroup) {
 					},
 				}
 
-				zm.entities.monsters.Lock()
-				zm.entities.monsters.active[h] = m
-				zm.entities.monsters.Unlock()
+				zm.entities.npcs.Lock()
+				zm.entities.npcs.active[h] = n
+				zm.entities.npcs.Unlock()
+				<-sem
 
-				if m.mobInfo.RunSpeed > 0 && m.mobInfo.WalkSpeed > 0 {
-					go m.roam(zm)
-				}
-			}
+			}(data)
+		}
+	}
+}
+
+// a mob is a collection of entities, in this case monsters
+func (zm *zoneMap) spawnMobs() {
+	spawnData, ok := monsterData.MapRegens[zm.data.MapInfoIndex]
+	if ok {
+		var (
+			sem = make(chan int, 100)
+			wg  sync.WaitGroup
+		)
+
+		for _, group := range spawnData.Groups {
+			wg.Add(1)
+			sem <- 1
+			go func(g mobs.RegenEntry) {
+				defer wg.Done()
+				spawnMob(zm, g)
+				<-sem
+			}(group)
+		}
+		wg.Wait()
+	}
+}
+
+// maybe in the future create a wrapping struct for this, as more monster shine files will be loaded
+func mobDataPointers(mobIndex string) (*shn.MobInfo, *shn.MobInfoServer) {
+	var (
+		mi  *shn.MobInfo
+		mis *shn.MobInfoServer
+	)
+
+	for i, row := range monsterData.MobInfo.ShineRow {
+		if row.InxName == mobIndex {
+			mi = &monsterData.MobInfo.ShineRow[i]
 		}
 	}
 
+	for i, row := range monsterData.MobInfoServer.ShineRow {
+		if row.InxName == mobIndex {
+			mis = &monsterData.MobInfoServer.ShineRow[i]
+		}
+	}
+
+	return mi, mis
 }
 
+func spawnMob(zm *zoneMap, re mobs.RegenEntry) {
+
+	var iwg sync.WaitGroup
+
+	var sem = make(chan int, 100)
+
+	for _, mob := range re.Mobs {
+		var (
+			mi  *shn.MobInfo
+			mis *shn.MobInfoServer
+		)
+
+		for i, row := range monsterData.MobInfo.ShineRow {
+			if row.InxName == mob.Index {
+				mi = &monsterData.MobInfo.ShineRow[i]
+			}
+		}
+
+		for i, row := range monsterData.MobInfoServer.ShineRow {
+			if row.InxName == mob.Index {
+				mis = &monsterData.MobInfoServer.ShineRow[i]
+			}
+		}
+
+		if mi == nil {
+			log.Errorf("no entry in MobInfo for %v", mob.Index)
+			break
+		}
+
+		if mis == nil {
+			log.Errorf("no entry in MobInfoServer for %v", mob.Index)
+			break
+		}
+
+		for i := 0; i < int(mob.Num); i++ {
+			iwg.Add(1)
+			sem <- 1
+			go func() {
+				iwg.Done()
+				spawnMonster(zm, re, mi, mis)
+				<-sem
+			}()
+		}
+	}
+
+	iwg.Wait()
+}
+
+func spawnMonster(zm *zoneMap, re mobs.RegenEntry, mi *shn.MobInfo, mis *shn.MobInfoServer) {
+	var (
+		x, y, d  int
+		maxTries = 1000 // todo: use goroutines for this, with a maximum of 50 routines, first one to get a spot wins the spawn
+		spawn    = false
+		staticMonster = false
+		numSteps = 5
+		speed = 30
+	)
+
+	if mi.WalkSpeed == 0 && mi.RunSpeed == 0 {
+		staticMonster = true
+		numSteps = 20
+		speed = 20
+	}
+
+	for maxTries != 0 {
+		// todo use go routines for this too, with a semaphore
+		if spawn {
+			break
+		}
+
+		if re.Width == 0 {
+			re.Width = networking.RandomIntBetween(20, 250)
+		}
+
+		if re.Height == 0 {
+			re.Height = networking.RandomIntBetween(20, 250)
+		}
+
+		x = networking.RandomIntBetween(re.X, re.X+re.Width)
+
+		y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
+
+		d = networking.RandomIntBetween(1, 250)
+
+		spawn = validateLocation(zm, x, y, numSteps, speed)
+
+		maxTries--
+
+	}
+
+	if spawn {
+		h, err := zm.entities.monsters.new(monsterHandleMin, monsterHandleMax, monsterAttemptsMax)
+		if err != nil {
+			log.Error(err)
+			return
+		}
+
+		m := &monster{
+			baseEntity: baseEntity{
+				handle: h,
+				fallback: location{
+					x: x,
+					y: y,
+					d: d,
+				},
+				current: location{
+					mapID:     zm.data.ID,
+					mapName:   zm.data.MapInfoIndex,
+					x:         x,
+					y:         y,
+					d:         d,
+					movements: [15]movement{},
+				},
+				events: events{},
+			},
+			hp:            mi.MaxHP,
+			sp:            uint32(mis.MaxSP),
+			mobInfo:       mi,
+			mobInfoServer: mis,
+			regenData:     &re,
+			status: status{
+				idling:   make(chan bool),
+				fighting: make(chan bool),
+				chasing:  make(chan bool),
+				fleeing:  make(chan bool),
+			},
+		}
+
+		zm.entities.monsters.Lock()
+		zm.entities.monsters.active[h] = m
+		zm.entities.monsters.Unlock()
+
+		if !staticMonster {
+			go m.roam(zm)
+		}
+	}
+}
+
+func validateLocation(zm *zoneMap, x, y, numSteps, speed int) bool {
+	var directions = make(map[string]bool)
+
+	directions["left"] = false
+	directions["right"] = false
+	directions["up"] = false
+	directions["down"] = false
+
+	for k, _ := range directions {
+		lx := x
+		ly := y
+
+		for i := 0; i < numSteps; i++ {
+			switch k {
+			case "left":
+				lx -= speed
+				break
+			case "right":
+				lx += speed
+				break
+			case "up":
+				ly -= speed
+				break
+			case "down":
+				ly += speed
+				break
+			}
+
+			rx, ry := igCoordToBitmap(lx, ly)
+			if canWalk(zm.walkableX, zm.walkableY, rx, ry) {
+				continue
+			}
+
+			return false
+		}
+		directions[k] = true
+	}
+	return true
+}
+
+// translates in game coordinates to SHBD coordinates
 func igCoordToBitmap(x, y int) (int, int) {
 	rX := (x * 8) / 50
 	rY := (y * 8) / 50
 	return rX, rY
 }
 
+// translates SHBD coordinates to in game coordinates
 func bitmapCoordToIg(rX, rY int) (int, int) {
 	igX := (rX * 50) / 8
 	igY := (rY * 50) / 8
 	return igX, igY
 }
 
-// CanWalk translates in game coordinates to SHBD coordinates
 func canWalk(x, y *roaring.Bitmap, rX, rY int) bool {
 	if x.ContainsInt(rX) && y.ContainsInt(rY) {
 		return true
@@ -262,7 +380,7 @@ func canWalk(x, y *roaring.Bitmap, rX, rY int) bool {
 	return false
 }
 
-// WalkingPositions creates two X,Y roaring bitmaps with walkable coordinates
+// creates two X,Y roaring bitmaps with walkable coordinates
 func walkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) {
 	walkableX := roaring.BitmapOf()
 	walkableY := roaring.BitmapOf()

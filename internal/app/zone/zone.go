@@ -21,14 +21,6 @@ type zone struct {
 	sync.RWMutex
 }
 
-// instead of accessing global variables for data
-// fire a query event struct, which will be populated with the requested data by a worker (event receiver)
-var (
-	zoneEvents  sendEvents
-	monsterData mobs.MonsterData
-	mapData     map[int]*world.Map
-)
-
 func (z *zone) load() {
 	loadGameData()
 
@@ -66,10 +58,18 @@ func (z *zone) load() {
 	var registerMaps []int32
 
 	var wg sync.WaitGroup
+	var sem = make(chan int, 10)
 	for _, id := range normalMaps {
 		wg.Add(1)
+		sem <- 1
 		registerMaps = append(registerMaps, int32(id))
-		go z.addMap(id, &wg)
+
+		go func(id int) {
+			defer wg.Done()
+			z.addMap(id)
+		}(id)
+
+		<- sem
 	}
 
 	wg.Wait()
@@ -82,6 +82,93 @@ func (z *zone) load() {
 
 	go z.run()
 }
+
+func (z *zone) addMap(mapId int) {
+	md, ok := mapData[mapId]
+
+	if !ok {
+		log.Fatalf("no map data for map with id %v", mapId)
+	}
+
+	walkableX, walkableY, err := walkingPositions(md.SHBD)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	m := &zoneMap{
+		data:      md,
+		walkableX: walkableX,
+		walkableY: walkableY,
+		entities: &entities{
+			players: &players{
+				handler:     handler{
+					handleIndex: playerHandleMin,
+					usedHandles:      make(map[uint16]bool),
+				},
+				active:      make(map[uint16]*player),
+			},
+			monsters: &monsters{
+				handler:     handler{
+					handleIndex: monsterHandleMin,
+					usedHandles:      make(map[uint16]bool),
+				},
+				active:    make(map[uint16]*monster),
+			},
+			npcs: &npcs{
+				handler:     handler{
+					handleIndex: npcHandleMin,
+					usedHandles:      make(map[uint16]bool),
+				},
+				active:      make(map[uint16]*npc),
+			},
+		},
+		events: events{
+			send: make(sendEvents),
+			recv: make(recvEvents),
+		},
+	}
+
+	events := []eventIndex{
+		playerHandle,
+		playerHandleMaintenance,
+		queryPlayer, queryMonster,
+		playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
+		unknownHandle, monsterAppeared, monsterDisappeared, monsterWalks, monsterRuns,
+	}
+
+	for _, index := range events {
+		c := make(chan event, 500)
+		m.recv[index] = c
+		m.send[index] = c
+	}
+
+	z.Lock()
+	z.rm[m.data.ID] = m
+	z.Unlock()
+
+	go m.run()
+
+}
+func (z *zone) run() {
+	// run query workers
+	num := viper.GetInt("workers.num_zone_workers")
+	for i := 0; i <= num; i++ {
+		go z.mapQueries()
+		go z.security()
+		go z.playerSession()
+		go z.playerGameData()
+	}
+}
+
+// instead of accessing global variables for data
+// fire a query event struct, which will be populated with the requested data by a worker (event receiver)
+var (
+	zoneEvents  sendEvents
+	monsterData mobs.MonsterData
+	mapData     map[int]*world.Map
+	npcData *world.NPC
+)
 
 func loadGameData() {
 	shinePath := viper.GetString("shine_folder")
@@ -105,6 +192,16 @@ func loadGameData() {
 			log.Fatal(err)
 		}
 		mapData = md
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		nd, err := world.LoadNPCData(shinePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		npcData = nd
 	}()
 
 	wg.Wait()
@@ -138,15 +235,4 @@ func registerZone(mapIDs []int32) error {
 		return errors.New("failed to register against the zone master")
 	}
 	return nil
-}
-
-func (z *zone) run() {
-	// run query workers
-	num := viper.GetInt("workers.num_zone_workers")
-	for i := 0; i <= num; i++ {
-		go z.mapQueries()
-		go z.security()
-		go z.playerSession()
-		go z.playerGameData()
-	}
 }
