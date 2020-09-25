@@ -18,7 +18,10 @@ Videos showcase:
 
 
 ## Development setup
+    
+**NOTE**: Do check the ports used in **docker-compose.yml** are not in use on your machine!
 
+    
     git clone https://github.com/shine-o/shine.engine.emulator
     
     cd shine.engine.emulator
