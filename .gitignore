@@ -20,3 +20,5 @@ vendor/*
 !output/.keep
 
 output/*
+/build/databases/
+/build/output/

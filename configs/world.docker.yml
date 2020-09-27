@@ -41,6 +41,6 @@ session:
     db: 0
 
 metrics:
-  enabled: true
+  enabled: false
   prometheus:
     port: 30000

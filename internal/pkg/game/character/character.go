@@ -16,7 +16,6 @@ var log *logger.Logger
 
 func init() {
 	log = logger.Init("character logger", true, false, ioutil.Discard)
-	log.Info("character logger init()")
 }
 
 // ErrCharacter is used to handle known errors

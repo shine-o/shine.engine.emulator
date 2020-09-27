@@ -22,6 +22,7 @@ type zone struct {
 }
 
 func (z *zone) load() {
+
 	loadGameData()
 
 	z.rm = make(runningMaps)
@@ -171,7 +172,9 @@ var (
 )
 
 func loadGameData() {
+
 	shinePath := viper.GetString("shine_folder")
+
 	var wg sync.WaitGroup
 
 	wg.Add(1)

@@ -82,6 +82,8 @@ const (
 	monsterIdle
 	queryPlayer
 	queryMonster
+	playerSelectsEntity
+	playerUnselectsEntity
 
 	// dynamically registered events
 	// events that are defined at run time

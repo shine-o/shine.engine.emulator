@@ -4,6 +4,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"github.com/magefile/mage/sh"
 )
 
@@ -37,11 +38,23 @@ func runDocker() error {
 	return sh.Run("docker-compose","up", "-d")
 }
 
+//func vendor() error {
+//	return sh.RunV("go", "mod", "vendor", "../")
+//}
+
 func buildCmd(name string) error {
-	workdir := fmt.Sprintf("./cmd/%v/", name)
-	out := fmt.Sprintf("./build/package/%v/%v", name, name)
+	var out string
+	workdir := fmt.Sprintf("../cmd/%v/", name)
+	if isWindows() {
+		out = fmt.Sprintf("./package/%v/%v", name, name+".exe")
+	} else {
+		out = fmt.Sprintf("./package/%v/%v", name, name+".exe")
+	}
 
 	// TODO: build for linux
+	return sh.RunV("go", "build", "-mod", "mod",  "--race", "-o", out, workdir)
+}
 
-	return sh.RunV("go", "build", "--race", "-o", out, workdir)
+func isWindows() bool {
+	return os.PathSeparator == '\\' && os.PathListSeparator == ';'
 }
