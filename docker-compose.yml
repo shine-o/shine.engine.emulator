@@ -104,7 +104,7 @@ services:
     ports:
       - "51000:51000"
       - "51001:51001"
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -race -mod=vendor /app/cmd/login/login.go serve --config "/app/configs/login.docker.yml"'
+    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/login/login.go serve --config "/app/configs/login.docker.yml"'
 
   ######################################
   ############# WORLD MASTER ###########
