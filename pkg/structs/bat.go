@@ -102,6 +102,11 @@ type NcBatDotDamageCmd struct {
 	IsMissDamage  byte
 }
 
+
+type NcBatTargetInfoReq struct {
+	TargetHandle uint16
+}
+
 //struct PROTO_NC_BAT_TARGETINFO_CMD
 //{
 //  char order;

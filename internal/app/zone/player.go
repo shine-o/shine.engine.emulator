@@ -35,9 +35,9 @@ func (p *player) getHandle() uint16 {
 	p.RUnlock()
 	return h
 }
-func (p * player) spawned() bool {
+func (p *player) spawned() bool {
 	p.RLock()
-	defer 	p.RUnlock()
+	defer p.RUnlock()
 
 	return p.justSpawned
 }
@@ -123,6 +123,9 @@ type playerStats struct {
 	hp                  uint32
 	sp                  uint32
 	lp                  uint32
+	maxHP               uint32
+	maxSP               uint32
+	maxLP               uint32
 	maxHpStones         uint32
 	maxSpStones         uint32
 	hpStones            uint16
@@ -404,9 +407,13 @@ func (p *player) statsData(stats chan<- playerStats, c *character.Character, err
 			base:       0,
 			withExtras: 0,
 		},
+		// todo: remove magick :(
 		hp:       1000,
 		sp:       1000,
-		lp:       0,
+		maxHP: 1000,
+		maxSP: 1000,
+		lp:    100,
+		maxLP: 100,
 		hpStones: 15,
 		spStones: 15,
 		curseResistance: stat{
@@ -592,9 +599,9 @@ func (p *player) charParameterData() structs.CharParameterData {
 			Base:   500, // ?
 			Change: 500, // ?
 		},
-		MaxHP:      p.stats.hp,
-		MaxSP:      p.stats.sp,
-		MaxLP:      p.stats.lp,
+		MaxHP:      p.stats.maxHP,
+		MaxSP:      p.stats.maxSP,
+		MaxLP:      p.stats.maxLP,
 		MaxAP:      0, // ¿?
 		MaxHPStone: p.stats.maxHpStones,
 		MaxSPStone: p.stats.maxSpStones,

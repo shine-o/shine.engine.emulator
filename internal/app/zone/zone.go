@@ -136,6 +136,7 @@ func (z *zone) addMap(mapId int) {
 		queryPlayer, queryMonster,
 		playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
 		unknownHandle, monsterAppeared, monsterDisappeared, monsterWalks, monsterRuns,
+		playerSelectsEntity, playerUnselectsEntity,
 	}
 
 	for _, index := range events {

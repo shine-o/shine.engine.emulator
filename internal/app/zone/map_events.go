@@ -51,3 +51,8 @@ type monsterRunsEvent struct {
 	nc *structs.NcActSomeoneMoveRunCmd
 	m  *monster
 }
+
+type playerSelectsEntityEvent struct {
+	nc *structs.NcBatTargetInfoReq
+	handle uint16
+}

@@ -38,8 +38,160 @@ func (zm *zoneMap) playerActivity() {
 			go playerJumpedLogic(e, zm)
 		case e := <-zm.recv[unknownHandle]:
 			go unknownHandleLogic(e, zm)
+		case e := <-zm.recv[playerSelectsEntity]:
+			go func() {
+				log.Info(e)
+				ev, ok := e.(*playerSelectsEntityEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerSelectsEntityEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				// ev.nc.targetHandle can be NPC, Monster, Player
+				// launch a routine that iterates over active NPCs, Monsters, Players
+				// if an NPC, Monster, Player is found, send to channel
+				// first match, wins the race and I generate a NC_BAT_TARGETINFO_CMD packet using the entity data.
+
+				vp := zm.entities.players.get(ev.handle)
+				if vp == nil {
+					log.Errorf("player not found %v", ev.handle)
+					return
+				}
+
+				p := make(chan *player,1)
+				m := make(chan *monster,1)
+				n := make(chan *npc,1)
+
+				go func(p chan <- *player, zm*zoneMap, targetHandle uint16) {
+					for ap := range zm.entities.players.all() {
+						if ap.getHandle() == targetHandle {
+							p <- ap
+							return
+						}
+					}
+					p <- nil
+				}(p, zm, ev.nc.TargetHandle)
+
+				go func(m chan <- *monster,  zm*zoneMap, targetHandle uint16) {
+					for am := range zm.entities.monsters.all() {
+						if am.getHandle() == targetHandle {
+							m <- am
+							return
+						}
+					}
+					m <- nil
+				}(m, zm, ev.nc.TargetHandle)
+
+				go func(n chan <- *npc, zm*zoneMap, targetHandle uint16) {
+					for an := range zm.entities.npcs.all() {
+						if an.getHandle() == targetHandle {
+							n <- an
+							return
+						}
+					}
+					n <- nil
+				}(n, zm, ev.nc.TargetHandle)
+
+				// set timeout in case of nonexistent handle
+				// or use bool channels, and in the default case check if all three are false and return if so
+				var nc *structs.NcBatTargetInfoCmd
+
+				var notP, notM, notN bool
+
+				for {
+					select {
+					case ap := <- p:
+						if ap == nil {
+							notP = true
+							break
+						}
+						nc = ap.ncBatTargetInfoCmd()
+						go ncBatTargetInfoCmd(vp, nc)
+						return
+					case am := <- m:
+						if am == nil {
+							notM = true
+							break
+						}
+						nc = am.ncBatTargetInfoCmd()
+						go ncBatTargetInfoCmd(vp, nc)
+						return
+					case an := <- n:
+						if an == nil {
+							notN = true
+							break
+						}
+						nc = an.ncBatTargetInfoCmd()
+						go ncBatTargetInfoCmd(vp, nc)
+						return
+					default:
+						if notP && notM && notN {
+							return
+						}
+					}
+				}
+
+			}()
+			//go unknownHandleLogic(e, zm)
 		}
 	}
+}
+
+
+func (p * player) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
+	var nc structs.NcBatTargetInfoCmd
+	p.RLock()
+	nc = structs.NcBatTargetInfoCmd{
+		Order:         0,
+		Handle:        p.handle,
+		TargetHP:      p.stats.hp,
+		TargetMaxHP:   p.stats.maxHP,
+		TargetSP:      p.stats.sp,
+		TargetMaxSP:   p.stats.maxSP,
+		TargetLP:      p.stats.lp,
+		TargetMaxLP:   p.stats.maxLP,
+		TargetLevel:   p.state.level,
+		HpChangeOrder: 0,
+	}
+	p.RUnlock()
+	return &nc
+}
+
+func (m * monster) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
+	var nc structs.NcBatTargetInfoCmd
+	m.RLock()
+	nc = structs.NcBatTargetInfoCmd{
+		Order:         0,
+		Handle:        m.handle,
+		TargetHP:      m.hp,
+		TargetMaxHP:   m.mobInfo.MaxHP, //todo: use the same player stat system for mobs and NPCs
+		TargetSP:      m.sp,
+		TargetMaxSP:   uint32(m.mobInfoServer.MaxSP),  //todo: use the same player stat system for mobs and NPCs
+		TargetLP:      0,
+		TargetMaxLP:   0,
+		TargetLevel:   byte(m.mobInfo.Level),
+		HpChangeOrder: 0,
+	}
+	m.RUnlock()
+	return &nc
+}
+
+func (n * npc) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
+	var nc structs.NcBatTargetInfoCmd
+	n.RLock()
+	nc = structs.NcBatTargetInfoCmd{
+		Order:         0,
+		Handle:        n.handle,
+		TargetHP:      n.hp,
+		TargetMaxHP:   n.mobInfo.MaxHP, //todo: use the same player stat system for mobs and NPCs
+		TargetSP:      n.sp,
+		TargetMaxSP:   uint32(n.mobInfoServer.MaxSP),  //todo: use the same player stat system for mobs and NPCs
+		TargetLP:      0,
+		TargetMaxLP:   0,
+		TargetLevel:   byte(n.mobInfo.Level),
+		HpChangeOrder: 0,
+	}
+	n.RUnlock()
+	return &nc
 }
 
 func (zm *zoneMap) monsterActivity() {
@@ -109,39 +261,43 @@ func (zm *zoneMap) monsterQueries() {
 }
 
 func playerHandleMaintenanceLogic(zm *zoneMap) {
-	for p := range zm.entities.players.all() {
+	for ap := range zm.entities.players.all() {
 
-		if p.spawned() {
-			continue
-		}
+		go func(p * player) {
 
-		lhb := lastHeartbeat(p)
+			if p.spawned() {
+				return
+			}
 
-		if lhb < playerHeartbeatLimit {
-			continue
-		}
+			lhb := lastHeartbeat(p)
 
-		p.RLock()
+			if lhb < playerHeartbeatLimit {
+				return
+			}
 
-		pde := &playerDisappearedEvent{
-			handle: p.handle,
-		}
+			p.RLock()
 
-		select {
-		case zm.events.send[playerDisappeared] <- pde:
-			break
-		default:
-			log.Error("failed to stop heartbeat")
-			break
-		}
+			pde := &playerDisappearedEvent{
+				handle: p.handle,
+			}
 
-		for _, t := range p.tickers {
-			t.Stop()
-		}
+			select {
+			case zm.events.send[playerDisappeared] <- pde:
+				break
+			default:
+				log.Error("failed to stop heartbeat")
+				break
+			}
 
-		go zm.entities.players.remove(p.handle)
+			for _, t := range p.tickers {
+				t.Stop()
+			}
 
-		p.RUnlock()
+			go zm.entities.players.remove(p.handle)
+
+			p.RUnlock()
+
+		}(ap)
 
 	}
 }

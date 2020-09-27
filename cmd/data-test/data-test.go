@@ -34,7 +34,8 @@ func shnTest()  {
 func packetDataTest()  {
 	var s structs.NcBatTargetInfoCmd
 
-	hexS := "00ce1eab020000ab0200006400000064000000000000000000000014e807"
+	hexS := "e1f81f3f0100003f010000ad0100001a020000000000000000000014af4d"
+	//hexS := "a1f81f3f0100003f010000ad0100001a020000000000000000000014b14d"
 
 	data, err := hex.DecodeString(hexS)
 
