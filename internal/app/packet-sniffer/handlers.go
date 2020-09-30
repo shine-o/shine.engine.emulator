@@ -194,13 +194,36 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 	}
 }
 
+type CapturedPacket struct {
+	Command networking.Command
+	Seen time.Time
+	Direction string
+}
+
 func (ss *shineStream) handleDecodedPackets(ctx context.Context, decodedPackets <-chan decodedPacket) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case dp := <-decodedPackets:
-			go ss.logPacket(dp)
+			go func(p decodedPacket) {
+
+				if params == nil {
+					return
+				}
+				_, ok := params.WatchCommands[p.packet.Base.OperationCode]
+				if ok {
+					params.Send <- CapturedPacket{
+						Command:   *p.packet,
+						Seen:      p.seen,
+						Direction: p.direction,
+					}
+				}
+			}(dp)
+
+			if params == nil {
+				go ss.logPacket(dp)
+			}
 		}
 	}
 }

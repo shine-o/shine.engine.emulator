@@ -56,3 +56,7 @@ type playerSelectsEntityEvent struct {
 	nc *structs.NcBatTargetInfoReq
 	handle uint16
 }
+
+type playerUnselectsEntityEvent struct {
+	handle uint16
+}

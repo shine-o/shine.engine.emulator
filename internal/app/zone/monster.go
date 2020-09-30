@@ -40,7 +40,12 @@ func (m *monster) dead() {
 	// create ticker so it can respawn again
 }
 
-func (m *monster) monsterWalk(c chan<- location, zm *zoneMap) {
+type monsterLocationActivity struct {
+	location
+	run bool
+}
+
+func (m *monster) monsterActivity(c chan<- monsterLocationActivity, zm *zoneMap) {
 	defer func() {
 		n := recover()
 		if n != nil {
@@ -108,9 +113,12 @@ loop:
 				x = m.fallback.x
 				y = m.fallback.y
 				m.RUnlock()
-				c <- location{
-					x: x,
-					y: y,
+				c <- monsterLocationActivity{
+					location: location{
+						x: x,
+						y: y,
+					},
+					run: true,
 				}
 				continue loop
 			}
@@ -118,9 +126,11 @@ loop:
 			igX, igY := bitmapCoordToIg(lx, ly)
 
 			if canWalk(zm.walkableX, zm.walkableY, lx, ly) {
-				c <- location{
-					x: igX,
-					y: igY,
+				c <- monsterLocationActivity{
+					location: location{
+						x: igX,
+						y: igY,
+					},
 				}
 			}
 		}
@@ -128,38 +138,67 @@ loop:
 }
 
 func (m *monster) roam(zm *zoneMap) {
-	ch := make(chan location)
-	go m.monsterWalk(ch, zm)
+	ch := make(chan monsterLocationActivity)
+	go m.monsterActivity(ch, zm)
 	for {
 		select {
 		case l := <-ch:
 			m.RLock()
-			nc := structs.NcActSomeoneMoveWalkCmd{
-				Handle: m.handle,
-				From: structs.ShineXYType{
-					X: uint32(m.current.x),
-					Y: uint32(m.current.y),
-				},
-				To: structs.ShineXYType{
-					X: uint32(l.x),
-					Y: uint32(l.y),
-				},
-				Speed:    uint16(m.mobInfo.WalkSpeed),
-				MoveAttr: structs.NcActSomeoneMoveWalkCmdAttr{},
+			if l.run {
+				nc := structs.NcActSomeoneMoveRunCmd{
+					Handle: m.handle,
+					From: structs.ShineXYType{
+						X: uint32(m.current.x),
+						Y: uint32(m.current.y),
+					},
+					To: structs.ShineXYType{
+						X: uint32(l.x),
+						Y: uint32(l.y),
+					},
+					Speed:    uint16(m.mobInfo.RunSpeed),
+				}
+				m.RUnlock()
+
+				m.Lock()
+				m.current.x = l.x
+				m.current.y = l.y
+				m.Unlock()
+
+				e := monsterRunsEvent{
+					nc: &nc,
+					m:  m,
+				}
+
+				zm.send[monsterRuns] <- &e
+			} else {
+				nc := structs.NcActSomeoneMoveWalkCmd{
+					Handle: m.handle,
+					From: structs.ShineXYType{
+						X: uint32(m.current.x),
+						Y: uint32(m.current.y),
+					},
+					To: structs.ShineXYType{
+						X: uint32(l.x),
+						Y: uint32(l.y),
+					},
+					Speed:    uint16(m.mobInfo.WalkSpeed),
+					MoveAttr: structs.NcActSomeoneMoveWalkCmdAttr{},
+				}
+				m.RUnlock()
+
+				m.Lock()
+				m.current.x = l.x
+				m.current.y = l.y
+				m.Unlock()
+
+				e := monsterWalksEvent{
+					nc: &nc,
+					m:  m,
+				}
+
+				zm.send[monsterWalks] <- &e
 			}
-			m.RUnlock()
 
-			m.Lock()
-			m.current.x = l.x
-			m.current.y = l.y
-			m.Unlock()
-
-			e := monsterWalksEvent{
-				nc: &nc,
-				m:  m,
-			}
-
-			zm.send[monsterWalks] <- &e
 		}
 	}
 }

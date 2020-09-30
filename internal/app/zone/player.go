@@ -25,8 +25,34 @@ type player struct {
 	skills   []skill
 	passives []passive
 	tickers  []*time.Ticker
+	targeting
 	sync.RWMutex
 	justSpawned bool
+}
+
+type playerSelected struct {
+	order byte
+	p *player
+}
+
+type monsterSelected struct {
+	order byte
+	p *monster
+}
+
+type npcSelected struct {
+	order byte
+	p *npc
+}
+
+type targeting struct {
+	selectionOrder byte
+	selectingP * player
+	selectingM * monster
+	selectingN * npc
+	selectedByP [] *player
+	selectedByM [] *monster
+	selectedByN [] *npc
 }
 
 func (p *player) getHandle() uint16 {

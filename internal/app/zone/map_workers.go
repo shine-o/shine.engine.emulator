@@ -57,71 +57,101 @@ func (zm *zoneMap) playerActivity() {
 					return
 				}
 
-				p := make(chan *player,1)
-				m := make(chan *monster,1)
-				n := make(chan *npc,1)
-
-				go func(p chan <- *player, zm*zoneMap, targetHandle uint16) {
-					for ap := range zm.entities.players.all() {
-						if ap.getHandle() == targetHandle {
-							p <- ap
-							return
-						}
-					}
-					p <- nil
-				}(p, zm, ev.nc.TargetHandle)
-
-				go func(m chan <- *monster,  zm*zoneMap, targetHandle uint16) {
-					for am := range zm.entities.monsters.all() {
-						if am.getHandle() == targetHandle {
-							m <- am
-							return
-						}
-					}
-					m <- nil
-				}(m, zm, ev.nc.TargetHandle)
-
-				go func(n chan <- *npc, zm*zoneMap, targetHandle uint16) {
-					for an := range zm.entities.npcs.all() {
-						if an.getHandle() == targetHandle {
-							n <- an
-							return
-						}
-					}
-					n <- nil
-				}(n, zm, ev.nc.TargetHandle)
+				p, m, n := findFirstEntity(zm, ev.nc.TargetHandle)
 
 				// set timeout in case of nonexistent handle
 				// or use bool channels, and in the default case check if all three are false and return if so
 				var nc *structs.NcBatTargetInfoCmd
 
 				var notP, notM, notN bool
-
 				for {
 					select {
-					case ap := <- p:
+					case ap := <-p:
 						if ap == nil {
 							notP = true
 							break
 						}
+
 						nc = ap.ncBatTargetInfoCmd()
-						go ncBatTargetInfoCmd(vp, nc)
-						return
-					case am := <- m:
+
+						order := vp.selectsPlayer(ap)
+
+						nc.Order = order
+						ncBatTargetInfoCmd(vp, nc)
+
+						if ap.targeting.selectingP != nil {
+							nextNc := ap.targeting.selectingP.ncBatTargetInfoCmd()
+							nextNc.Order = order + 1
+							ncBatTargetInfoCmd(vp, nextNc)
+							//return
+						}
+
+						if ap.targeting.selectingM != nil {
+							nextNc := ap.targeting.selectingM.ncBatTargetInfoCmd()
+							nextNc.Order = order + 1
+							ncBatTargetInfoCmd(vp, nextNc)
+							//return
+						}
+
+						if ap.targeting.selectingN != nil {
+							nextNc := ap.targeting.selectingN.ncBatTargetInfoCmd()
+							nextNc.Order = order + 1
+							ncBatTargetInfoCmd(vp, nextNc)
+							//return
+						}
+
+						vp.RLock()
+						for _, p := range vp.targeting.selectedByP {
+							nextNc := *nc
+							nextNc.Order++
+							ncBatTargetInfoCmd(p, &nextNc)
+						}
+						vp.RUnlock()
+
+
+					case am := <-m:
 						if am == nil {
 							notM = true
 							break
 						}
+
+						order := vp.selectsMonster(am)
+
 						nc = am.ncBatTargetInfoCmd()
-						go ncBatTargetInfoCmd(vp, nc)
+
+						nc.Order = order
+
+						ncBatTargetInfoCmd(vp, nc)
+
+						//if vp is being selected by player
+						//send them information about the monster
+						vp.RLock()
+						for _, p := range vp.targeting.selectedByP {
+							nextNc := *nc
+							nextNc.Order++
+							ncBatTargetInfoCmd(p, &nextNc)
+						}
+						vp.RUnlock()
 						return
-					case an := <- n:
+					case an := <-n:
 						if an == nil {
 							notN = true
 							break
 						}
+						order := vp.selectsNPC(an)
+
 						nc = an.ncBatTargetInfoCmd()
-						go ncBatTargetInfoCmd(vp, nc)
+
+						nc.Order = order
+
+						ncBatTargetInfoCmd(vp, nc)
+						vp.RLock()
+						for _, p := range vp.targeting.selectedByP {
+							nextNc := *nc
+							nextNc.Order++
+							ncBatTargetInfoCmd(p, &nextNc)
+						}
+						vp.RUnlock()
 						return
 					default:
 						if notP && notM && notN {
@@ -131,13 +161,138 @@ func (zm *zoneMap) playerActivity() {
 				}
 
 			}()
-			//go unknownHandleLogic(e, zm)
+		case e := <-zm.recv[playerUnselectsEntity]:
+			go func() {
+				log.Info(e)
+				ev, ok := e.(*playerUnselectsEntityEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerUnselectsEntityEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+
+				vp := zm.entities.players.get(ev.handle)
+				if vp == nil {
+					log.Errorf("player not found %v", ev.handle)
+					return
+				}
+
+				var order byte
+				vp.Lock()
+				order = vp.targeting.selectionOrder
+				vp.targeting.selectingP = nil
+				vp.targeting.selectingM = nil
+				vp.targeting.selectingN = nil
+				vp.Unlock()
+
+				nc := structs.NcBatTargetInfoCmd{
+					Order:         order + 1,
+					Handle:        65535,
+					TargetHP:      0,
+					TargetMaxHP:   0,
+					TargetSP:      0,
+					TargetMaxSP:   0,
+					TargetLP:      0,
+					TargetMaxLP:   0,
+					TargetLevel:   0,
+					HpChangeOrder: 0,
+				}
+				vp.RLock()
+				for _, p := range vp.targeting.selectedByP {
+					go ncBatTargetInfoCmd(p, &nc)
+				}
+				vp.RUnlock()
+
+			}()
 		}
 	}
 }
 
+func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *monster, chan *npc) {
+	p := make(chan *player, 1)
+	m := make(chan *monster, 1)
+	n := make(chan *npc, 1)
 
-func (p * player) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
+	go func(p chan<- *player, zm *zoneMap, targetHandle uint16) {
+		for ap := range zm.entities.players.all() {
+			if ap.getHandle() == targetHandle {
+				p <- ap
+				return
+			}
+		}
+		p <- nil
+	}(p, zm, handle)
+
+	go func(m chan<- *monster, zm *zoneMap, targetHandle uint16) {
+		for am := range zm.entities.monsters.all() {
+			if am.getHandle() == targetHandle {
+				m <- am
+				return
+			}
+		}
+		m <- nil
+	}(m, zm, handle)
+
+	go func(n chan<- *npc, zm *zoneMap, targetHandle uint16) {
+		for an := range zm.entities.npcs.all() {
+			if an.getHandle() == targetHandle {
+				n <- an
+				return
+			}
+		}
+		n <- nil
+	}(n, zm, handle)
+	return p, m, n
+}
+
+func (p *player) selectsPlayer(ap *player) byte {
+	var order byte
+	p.Lock()
+	p.targeting.selectingP = ap
+	p.targeting.selectingM = nil
+	p.targeting.selectingN = nil
+
+	p.targeting.selectionOrder += 32
+	order = p.targeting.selectionOrder
+	p.Unlock()
+
+	ap.Lock()
+	ap.targeting.selectedByP = append(ap.targeting.selectedByP, p)
+	ap.Unlock()
+
+	return order
+}
+
+func (p *player) selectsMonster(m *monster) byte {
+	var order byte
+	p.Lock()
+	p.targeting.selectingP = nil
+	p.targeting.selectingM = m
+	p.targeting.selectingN = nil
+	p.targeting.selectionOrder += 32
+	order = p.targeting.selectionOrder
+	p.Unlock()
+	//ep.Lock()
+	//ep.targeting.selectedByP = append(ep.targeting.selectedByP, p)
+	//ep.Unlock()
+	return order
+}
+
+func (p *player) selectsNPC(n *npc) byte {
+	var order byte
+	p.Lock()
+	p.targeting.selectingP = nil
+	p.targeting.selectingM = nil
+	p.targeting.selectingN = n
+	p.targeting.selectionOrder += 32
+	order = p.targeting.selectionOrder
+	p.Unlock()
+	//ep.Lock()
+	//ep.targeting.selectedByP = append(ep.targeting.selectedByP, p)
+	//ep.Unlock()
+	return order
+}
+
+func (p *player) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
 	var nc structs.NcBatTargetInfoCmd
 	p.RLock()
 	nc = structs.NcBatTargetInfoCmd{
@@ -156,7 +311,7 @@ func (p * player) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
 	return &nc
 }
 
-func (m * monster) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
+func (m *monster) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
 	var nc structs.NcBatTargetInfoCmd
 	m.RLock()
 	nc = structs.NcBatTargetInfoCmd{
@@ -165,7 +320,7 @@ func (m * monster) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
 		TargetHP:      m.hp,
 		TargetMaxHP:   m.mobInfo.MaxHP, //todo: use the same player stat system for mobs and NPCs
 		TargetSP:      m.sp,
-		TargetMaxSP:   uint32(m.mobInfoServer.MaxSP),  //todo: use the same player stat system for mobs and NPCs
+		TargetMaxSP:   uint32(m.mobInfoServer.MaxSP), //todo: use the same player stat system for mobs and NPCs
 		TargetLP:      0,
 		TargetMaxLP:   0,
 		TargetLevel:   byte(m.mobInfo.Level),
@@ -175,7 +330,7 @@ func (m * monster) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
 	return &nc
 }
 
-func (n * npc) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
+func (n *npc) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
 	var nc structs.NcBatTargetInfoCmd
 	n.RLock()
 	nc = structs.NcBatTargetInfoCmd{
@@ -184,7 +339,7 @@ func (n * npc) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
 		TargetHP:      n.hp,
 		TargetMaxHP:   n.mobInfo.MaxHP, //todo: use the same player stat system for mobs and NPCs
 		TargetSP:      n.sp,
-		TargetMaxSP:   uint32(n.mobInfoServer.MaxSP),  //todo: use the same player stat system for mobs and NPCs
+		TargetMaxSP:   uint32(n.mobInfoServer.MaxSP), //todo: use the same player stat system for mobs and NPCs
 		TargetLP:      0,
 		TargetMaxLP:   0,
 		TargetLevel:   byte(n.mobInfo.Level),
@@ -218,24 +373,25 @@ func (zm *zoneMap) monsterActivity() {
 				}
 			}()
 		case e := <-zm.recv[monsterRuns]:
-			go func() {
-				ev, ok := e.(*monsterRunsEvent)
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&monsterRunsEvent{}).String(), reflect.TypeOf(ev).String())
-					return
-				}
-				for ap := range zm.entities.players.all() {
-					go func(p *player, m *monster) {
-						if monsterInRange(p, m) {
-							go ncActSomeoneMoveRunCmd(p, ev.nc)
-						}
-					}(ap, ev.m)
-				}
-			}()
+			go monsterRunsLogic(zm, e)
 		}
 	}
 }
 
+func monsterRunsLogic(zm * zoneMap, e event)  {
+	ev, ok := e.(*monsterRunsEvent)
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&monsterRunsEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+	for ap := range zm.entities.players.all() {
+		go func(p *player, m *monster) {
+			if monsterInRange(p, m) {
+				go ncActSomeoneMoveRunCmd(p, ev.nc)
+			}
+		}(ap, ev.m)
+	}
+}
 func (zm *zoneMap) playerQueries() {
 	log.Infof("[map_worker] playerQueries worker for map %v", zm.data.Info.MapName)
 	for {
@@ -263,7 +419,7 @@ func (zm *zoneMap) monsterQueries() {
 func playerHandleMaintenanceLogic(zm *zoneMap) {
 	for ap := range zm.entities.players.all() {
 
-		go func(p * player) {
+		go func(p *player) {
 
 			if p.spawned() {
 				return
@@ -334,7 +490,7 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
 		return
 	}
-	
+
 	p1 := zm.entities.players.get(ev.handle)
 
 	if p1 == nil {
@@ -379,7 +535,7 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 	//go adjacentMonstersInform(p1, zm)
 }
 
-func (p * player) allNPC(zm * zoneMap)  {
+func (p *player) allNPC(zm *zoneMap) {
 	var npcs structs.NcBriefInfoMobCmd
 
 	for n := range zm.entities.npcs.all() {
@@ -413,11 +569,12 @@ func playerDisappearedLogic(e event, zm *zoneMap) {
 }
 
 const (
-	runSpeed = 120
+	runSpeed  = 120
 	walkSpeed = 60
 	//runSpeed = 300
 	//walkSpeed = 150
 )
+
 func playerWalksLogic(e event, zm *zoneMap) {
 	// player has a fifo queue for the last 30 movements
 	// for every movement
@@ -445,7 +602,7 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	}
 
 	igX := int(ev.nc.To.X)
-	igY := int( ev.nc.To.Y)
+	igY := int(ev.nc.To.Y)
 
 	rX, rY := igCoordToBitmap(igX, igY)
 
@@ -560,7 +717,7 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	}
 
 	igX := int(ev.nc.Location.X)
-	igY := int( ev.nc.Location.Y)
+	igY := int(ev.nc.Location.Y)
 
 	rX, rY := igCoordToBitmap(igX, igY)
 
@@ -662,7 +819,6 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 		go ncBriefInfoLoginCharacterCmd(p1, &nc2)
 	}
 
-
 	m := zm.entities.monsters.get(ev.nc.ForeignHandle)
 
 	if m == nil {
@@ -711,7 +867,7 @@ func nearbyPlayers(p1 *player, zm *zoneMap) {
 
 func nearbyMonsters(p *player, zm *zoneMap) {
 	for am := range zm.entities.monsters.all() {
-		go func(p * player, m *monster) {
+		go func(p *player, m *monster) {
 			if monsterInRange(p, m) {
 				nc := m.ncBriefInfoRegenMobCmd()
 				ncBriefInfoRegenMobCmd(p, &nc)
@@ -719,4 +875,3 @@ func nearbyMonsters(p *player, zm *zoneMap) {
 		}(p, am)
 	}
 }
-

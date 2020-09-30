@@ -107,6 +107,8 @@ type NcBatTargetInfoReq struct {
 	TargetHandle uint16
 }
 
+type NcBatUnTargetReq struct {}
+
 //struct PROTO_NC_BAT_TARGETINFO_CMD
 //{
 //  char order;
@@ -184,4 +186,58 @@ type NcBatSkillBashHitBlastCmd struct {
 	Index   uint16
 	Caster  uint16
 	SkillID uint16
+}
+
+// struct PROTO_NC_BAT_SWING_START_CMD
+//{
+//  unsigned __int16 attacker;
+//  unsigned __int16 defender;
+//  char actioncode;
+//  unsigned __int16 attackspeed;
+//  char damageindex;
+//  char attacksequence;
+//};
+type NcBatSwingStartCmd struct {
+	Attacker uint16
+	Defender uint16
+	ActionCode byte
+	AttackSpeed uint16
+	DamageIndex byte
+	AttackSequence byte
+}
+
+///*14534 */
+//struct PROTO_NC_BAT_SWING_DAMAGE_CMD::<unnamed-type-flag>
+//{
+//  _BYTE gap0[1];
+//  char _bf1;
+//};
+//
+type NcBatSwingDamageCmdFlag struct {
+	Gap [1]byte
+	BF1 byte
+}
+
+
+///*14535 */
+//struct PROTO_NC_BAT_SWING_DAMAGE_CMD
+//{
+//  unsigned __int16 attacker;
+//  unsigned __int16 defender;
+//  PROTO_NC_BAT_SWING_DAMAGE_CMD::<unnamed-type-flag> flag;
+//  unsigned __int16 damage;
+//  unsigned int resthp;
+//  unsigned __int16 hpchangeorder;
+//  char damageindex;
+//  char attacksequence;
+//};
+type NcBatSwingDamageCmd struct {
+	Attacker uint16
+	Defender uint16
+	Flag NcBatSwingDamageCmdFlag
+	Damage uint16
+	RestHP uint32
+	HpChangeOrder uint16
+	DamageIndex byte
+	AttackSequence byte
 }

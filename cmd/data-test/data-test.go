@@ -3,9 +3,11 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/logger"
+	ps "github.com/shine-o/shine.engine.emulator/internal/app/packet-sniffer"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/blocks"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
@@ -17,13 +19,84 @@ func main() {
 	//shn sample
 	//shnTest()
 	//packet data sample
-	packetDataTest()
+	//packetDataTest()
 	//shbdTest()
+	captured := make(chan ps.CapturedPacket, 1500)
+	p := ps.Params{
+		WatchCommands: make(map[uint16]interface{}),
+		Send:          captured,
+	}
 
+	p.WatchCommands[9217] = true
+	p.WatchCommands[9218] = true
+	p.WatchCommands[9280] = true
+	p.WatchCommands[9294] = true
+	p.WatchCommands[9303] = true
+	p.WatchCommands[9287] = true
+	p.WatchCommands[9224] = true
+
+	go ps.ExtendedCapture(&p)
+
+	for {
+		select {
+		case cp := <- captured:
+			var jData, structName string
+			switch cp.Command.Base.OperationCode {
+			case 9217:
+				jData = packetData(cp.Command.Base.Data, &structs.NcBatTargetInfoReq{})
+				structName = "NcBatTargetInfoReq"
+			case 9218:
+				jData = packetData(cp.Command.Base.Data, &structs.NcBatTargetInfoCmd{})
+				structName = "NcBatTargetInfoCmd"
+
+			case 9280:
+				jData = packetData(cp.Command.Base.Data, &structs.NcBatSkillBashObjCastReq{})
+				structName = "NcBatSkillBashObjCastReq"
+
+			case 9294:
+				jData = packetData(cp.Command.Base.Data, &structs.NcBatSkillBashHitObjStartCmd{})
+				structName = "NcBatSkillBashHitObjStartCmd"
+
+			case 9303:
+				jData = packetData(cp.Command.Base.Data, &structs.NcBatSkillBashHitBlastCmd{})
+				structName = "NcBatSkillBashHitBlastCmd"
+
+			case 9287:
+				jData = packetData(cp.Command.Base.Data, &structs.NcBatSwingDamageCmd{})
+				structName = "NcBatSwingDamageCmd"
+			case 9277:
+				jData = packetData(cp.Command.Base.Data, &structs.NcBatCeaseFireCmd{})
+				structName = "NcBatCeaseFireCmd"
+			case 9224:
+				jData = packetData(cp.Command.Base.Data, &structs.NcBatUnTargetReq{})
+				structName = "NcBatUnTargetReq"
+			}
+
+			logger.Infof("%v %v %v %v",cp.Seen, cp.Direction, structName, jData)
+		}
+	}
+}
+
+
+func packetData(data []byte, nc interface{}) string {
+
+	err := structs.Unpack(data, nc)
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	jData, err := json.Marshal(nc)
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	return string(jData)
 }
 
 //
-func shnTest()  {
+func shnTest() {
 	var mi shn.ShineMobInfoServer
 	err := shn.Load("assets/MobInfoServer.shn", &mi)
 	if err != nil {
@@ -50,7 +123,7 @@ func packetDataTest()  {
 	}
 }
 
-func shbdTest()  {
+func shbdTest() {
 	m := "EldPri01"
 	var s *blocks.SHBD
 	s, err := blocks.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files\\blocks\\%v.shbd", m))
