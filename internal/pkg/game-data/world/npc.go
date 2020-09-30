@@ -14,7 +14,6 @@ import (
 //#ColumnType		Index	String[33]	String[33]	DWRD	DWRD	WORD	WORD	WORD	BYTE
 //#ColumnName		argument	MapServer	MapClient	Coord-X	Coord-Y	Direct	LevelFrom	LevelTo	Party
 
-
 type NPC struct {
 	Data map[string][]*ShineNPC
 }
@@ -22,20 +21,20 @@ type NPC struct {
 type ShineNPC struct {
 	MobIndex string
 	MapIndex string
-	X,Y,D int
-	NPCMenu bool
-	Role string
-	RoleArg string // if Gate then ShinePortal is not nil
+	X, Y, D  int
+	NPCMenu  bool
+	Role     string
+	RoleArg  string // if Gate then ShinePortal is not nil
 	*ShinePortal
 }
 
 type ShinePortal struct {
-	RoleArg string // use it later to assign ShinePortal to ShineNPC
+	RoleArg        string // use it later to assign ShinePortal to ShineNPC
 	ServerMapIndex string
 	ClientMapIndex string
-	X,Y int // landing coordinates
-	FromLevel int
-	Party bool
+	X, Y           int // landing coordinates
+	FromLevel      int
+	Party          bool
 }
 
 func LoadNPCData(shineFolder string) (*NPC, error) {
@@ -43,7 +42,7 @@ func LoadNPCData(shineFolder string) (*NPC, error) {
 		npc = &NPC{
 			Data: make(map[string][]*ShineNPC),
 		}
-		npcs []*ShineNPC
+		npcs    []*ShineNPC
 		portals []*ShinePortal
 	)
 
@@ -99,14 +98,14 @@ func LoadNPCData(shineFolder string) (*NPC, error) {
 				roleArg := row[10]
 
 				sn := &ShineNPC{
-					MobIndex:  monsterIndex,
-					MapIndex:  mapIndex,
-					X:         x,
-					Y:         y,
-					D:         d,
-					NPCMenu:   npcMenu,
-					Role:      role,
-					RoleArg:   roleArg,
+					MobIndex: monsterIndex,
+					MapIndex: mapIndex,
+					X:        x,
+					Y:        y,
+					D:        d,
+					NPCMenu:  npcMenu,
+					Role:     role,
+					RoleArg:  roleArg,
 				}
 
 				//npc.Data[sn.MapIndex] = sn
@@ -149,7 +148,7 @@ func LoadNPCData(shineFolder string) (*NPC, error) {
 			}
 		}
 	}
-	
+
 	for i, _ := range npcs {
 		n := npcs[i]
 		if n.Role == "IDGate" || n.Role == "Gate" || n.Role == "RandomGate" {

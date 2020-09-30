@@ -70,7 +70,7 @@ func (z *zone) load() {
 			z.addMap(id)
 		}(id)
 
-		<- sem
+		<-sem
 	}
 
 	wg.Wait()
@@ -103,25 +103,25 @@ func (z *zone) addMap(mapId int) {
 		walkableY: walkableY,
 		entities: &entities{
 			players: &players{
-				handler:     handler{
+				handler: handler{
 					handleIndex: playerHandleMin,
-					usedHandles:      make(map[uint16]bool),
+					usedHandles: make(map[uint16]bool),
 				},
-				active:      make(map[uint16]*player),
+				active: make(map[uint16]*player),
 			},
 			monsters: &monsters{
-				handler:     handler{
+				handler: handler{
 					handleIndex: monsterHandleMin,
-					usedHandles:      make(map[uint16]bool),
+					usedHandles: make(map[uint16]bool),
 				},
-				active:    make(map[uint16]*monster),
+				active: make(map[uint16]*monster),
 			},
 			npcs: &npcs{
-				handler:     handler{
+				handler: handler{
 					handleIndex: npcHandleMin,
-					usedHandles:      make(map[uint16]bool),
+					usedHandles: make(map[uint16]bool),
 				},
-				active:      make(map[uint16]*npc),
+				active: make(map[uint16]*npc),
 			},
 		},
 		events: events{
@@ -169,7 +169,7 @@ var (
 	zoneEvents  sendEvents
 	monsterData mobs.MonsterData
 	mapData     map[int]*world.Map
-	npcData *world.NPC
+	npcData     *world.NPC
 )
 
 func loadGameData() {

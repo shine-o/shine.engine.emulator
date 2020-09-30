@@ -103,7 +103,7 @@ func (p *player) nearbyMonstersMaintenance(zm *zoneMap) {
 			// for each monster
 			// if nearby, add to known nearby
 			for am := range zm.entities.monsters.all() {
-				go func(p *player, m * monster) {
+				go func(p *player, m *monster) {
 					p.RLock()
 					_, exists := p.monsters[m.getHandle()]
 					p.RUnlock()
@@ -146,7 +146,7 @@ func (p *player) nearbyNPCMaintenance(zm *zoneMap) {
 			// for each monster
 			// if nearby, add to known nearby
 			for an := range zm.entities.npcs.all() {
-				go func(p *player, n * npc) {
+				go func(p *player, n *npc) {
 					p.RLock()
 					_, exists := p.npcs[n.getHandle()]
 					p.RUnlock()

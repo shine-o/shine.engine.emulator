@@ -69,7 +69,7 @@ func (l *login) load() {
 		err := l.availableWorlds()
 		if err != nil {
 			log.Error(err)
-			time.Sleep(2*time.Second)
+			time.Sleep(2 * time.Second)
 			continue
 		}
 		break

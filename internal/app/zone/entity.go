@@ -16,15 +16,13 @@ type entity interface {
 	getLocation() (uint32, uint32)
 }
 
-
-
 type handler struct {
 	handleIndex uint16
 	usedHandles map[uint16]bool
 	sync.RWMutex
 }
 
-func (h * handler) new(min, max, attempts uint16) (uint16, error) {
+func (h *handler) new(min, max, attempts uint16) (uint16, error) {
 	h.RLock()
 	index := h.handleIndex
 	h.RUnlock()
@@ -55,6 +53,7 @@ func (h * handler) new(min, max, attempts uint16) (uint16, error) {
 	}
 	return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
 }
+
 type basicActions interface {
 	move(x, y int) error
 }
@@ -76,6 +75,16 @@ type baseEntity struct {
 	fallback location
 	current  location
 	events
+}
+
+type targeting struct {
+	selectionOrder byte
+	selectingP     *player
+	selectingM     *monster
+	selectingN     *npc
+	selectedByP    []*player
+	selectedByM    []*monster
+	selectedByN    []*npc
 }
 
 type status struct {
@@ -110,7 +119,7 @@ func entityInRange(e1, e2 baseEntity) bool {
 	maxX := viewerX + lengthX
 	minX := viewerX - lengthX
 
-	vertical   := (targetY <= maxY && targetY >= viewerY) || (targetY >= minY && targetY <= viewerY)
+	vertical := (targetY <= maxY && targetY >= viewerY) || (targetY >= minY && targetY <= viewerY)
 	horizontal := (targetX <= maxX && targetX >= viewerX) || (targetX >= minX && targetX <= viewerX)
 
 	if vertical && horizontal {

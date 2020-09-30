@@ -127,9 +127,9 @@ type Location struct {
 	Character   *Character
 	MapID       uint32 `pg:",notnull"`
 	MapName     string `pg:",notnull"`
-	X           int `pg:",notnull"`
-	Y           int `pg:",notnull"`
-	D           int  `pg:",notnull,use_zero"`
+	X           int    `pg:",notnull"`
+	Y           int    `pg:",notnull"`
+	D           int    `pg:",notnull,use_zero"`
 	IsKQ        bool   `pg:",notnull,use_zero"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
@@ -407,10 +407,8 @@ func UpdateLocation(db *pg.DB, c *Character) error {
 
 	defer updateTx.Close()
 
-
 	_, err = updateTx.Model(c.Location).
 		WherePK().Returning("*").Update()
-
 
 	if err != nil {
 		updateTx.Rollback()
@@ -419,6 +417,7 @@ func UpdateLocation(db *pg.DB, c *Character) error {
 
 	return updateTx.Commit()
 }
+
 // Delete character for User with userID
 // soft deletion is performed
 func Delete(db *pg.DB, userID uint64, req *structs.NcAvatarEraseReq) error {

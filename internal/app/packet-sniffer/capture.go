@@ -32,7 +32,6 @@ func Capture(cmd *cobra.Command, args []string) {
 func initConfig() {
 	viper.SetConfigFile("configs/packet-sniffer-client.yml")
 
-
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
 		fmt.Println("Using config file:", viper.ConfigFileUsed())
@@ -66,12 +65,12 @@ func initConfig() {
 type Params struct {
 	// if command operation code is in this list, send command on the channel
 	WatchCommands map[uint16]interface{}
-	Send chan <- CapturedPacket
+	Send          chan<- CapturedPacket
 }
 
-var params * Params
+var params *Params
 
-func ExtendedCapture(p * Params)  {
+func ExtendedCapture(p *Params) {
 	initConfig()
 	params = p
 

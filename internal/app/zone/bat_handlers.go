@@ -11,7 +11,7 @@ import (
 func ncBatTargetingReq(ctx context.Context, np *networking.Parameters) {
 	var (
 		psee playerSelectsEntityEvent
-		mqe queryMapEvent
+		mqe  queryMapEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -57,7 +57,7 @@ func ncBatUntargetReq(ctx context.Context, np *networking.Parameters) {
 	// remove current SelectionOrder value for player
 	var (
 		psee playerUnselectsEntityEvent
-		mqe queryMapEvent
+		mqe  queryMapEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -93,7 +93,7 @@ func ncBatUntargetReq(ctx context.Context, np *networking.Parameters) {
 
 // NC_BAT_TARGETINFO_CMD
 // 9218
-func ncBatTargetInfoCmd(p *player, nc * structs.NcBatTargetInfoCmd) {
+func ncBatTargetInfoCmd(p *player, nc *structs.NcBatTargetInfoCmd) {
 	pc := networking.Command{
 		Base: networking.CommandBase{
 			OperationCode: 9218,

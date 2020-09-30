@@ -53,7 +53,7 @@ type monsterRunsEvent struct {
 }
 
 type playerSelectsEntityEvent struct {
-	nc *structs.NcBatTargetInfoReq
+	nc     *structs.NcBatTargetInfoReq
 	handle uint16
 }
 

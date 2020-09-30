@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func NewLogger(name, outputFolder string, level logrus.Level) * logger.Logger  {
+func NewLogger(name, outputFolder string, level logrus.Level) *logger.Logger {
 	if _, err := os.Stat(outputFolder); os.IsNotExist(err) {
 		err := os.Mkdir(outputFolder, 0666)
 		if err != nil {
@@ -21,7 +21,7 @@ func NewLogger(name, outputFolder string, level logrus.Level) * logger.Logger  {
 		logger.Fatalf("Failed to create output file: %v", err)
 	}
 
-	log := logger.Init(name,true, false, lf)
+	log := logger.Init(name, true, false, lf)
 
 	return log
 }

@@ -29,6 +29,7 @@ type player struct {
 	sync.RWMutex
 	justSpawned bool
 }
+
 func (p *player) selectsNPC(n *npc) byte {
 	var order byte
 	p.Lock()
@@ -61,6 +62,7 @@ func (p *player) selectsPlayer(ap *player) byte {
 
 	return order
 }
+
 func (p *player) selectsMonster(m *monster) byte {
 	var order byte
 	p.Lock()
@@ -75,82 +77,6 @@ func (p *player) selectsMonster(m *monster) byte {
 	//ep.Unlock()
 	return order
 }
-func (p *player) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
-	var nc structs.NcBatTargetInfoCmd
-	p.RLock()
-	nc = structs.NcBatTargetInfoCmd{
-		Order:         0,
-		Handle:        p.handle,
-		TargetHP:      p.stats.hp,
-		TargetMaxHP:   p.stats.maxHP,
-		TargetSP:      p.stats.sp,
-		TargetMaxSP:   p.stats.maxSP,
-		TargetLP:      p.stats.lp,
-		TargetMaxLP:   p.stats.maxLP,
-		TargetLevel:   p.state.level,
-		HpChangeOrder: 0,
-	}
-	p.RUnlock()
-	return &nc
-}
-
-type targeting struct {
-	selectionOrder byte
-	selectingP * player
-	selectingM * monster
-	selectingN * npc
-	selectedByP [] *player
-	selectedByM [] *monster
-	selectedByN [] *npc
-}
-
-func (p * player)  selectedByMonsters() chan *monster {
-	p.RLock()
-	ch := make(chan *monster, len(p.targeting.selectedByM))
-	p.RUnlock()
-
-	go func(send chan<- *monster) {
-		p.RLock()
-		for _, m := range p.targeting.selectedByM {
-			send <- m
-		}
-		p.RUnlock()
-		close(send)
-	}(ch)
-	return ch
-}
-
-func (p * player)  selectedByPlayers() chan *player {
-	p.RLock()
-	ch := make(chan *player, len(p.targeting.selectedByP))
-	p.RUnlock()
-
-	go func(send chan<- *player) {
-		p.RLock()
-		for _, ap := range p.targeting.selectedByP {
-			send <- ap
-		}
-		p.RUnlock()
-		close(send)
-	}(ch)
-	return ch
-}
-
-func (p * player)  selectedByNPCs() chan *npc {
-	p.RLock()
-	ch := make(chan *npc, len(p.targeting.selectedByN))
-	p.RUnlock()
-
-	go func(send chan<- *npc) {
-		p.RLock()
-		for _, n := range p.targeting.selectedByN {
-			send <- n
-		}
-		p.RUnlock()
-		close(send)
-	}(ch)
-	return ch
-}
 
 func (p *player) getHandle() uint16 {
 	p.RLock()
@@ -158,17 +84,12 @@ func (p *player) getHandle() uint16 {
 	p.RUnlock()
 	return h
 }
+
 func (p *player) spawned() bool {
 	p.RLock()
 	defer p.RUnlock()
 
 	return p.justSpawned
-}
-func lastHeartbeat(p *player) float64 {
-	p.RLock()
-	lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()
-	p.RUnlock()
-	return lastHeartBeat
 }
 
 func (p *player) adjacentPlayers() <-chan *player {
@@ -209,6 +130,80 @@ func (p *player) adjacentMonsters() <-chan *monster {
 	}(ch)
 
 	return ch
+}
+
+func (p *player) selectedByMonsters() chan *monster {
+	p.RLock()
+	ch := make(chan *monster, len(p.targeting.selectedByM))
+	p.RUnlock()
+
+	go func(send chan<- *monster) {
+		p.RLock()
+		for _, m := range p.targeting.selectedByM {
+			send <- m
+		}
+		p.RUnlock()
+		close(send)
+	}(ch)
+	return ch
+}
+
+func (p *player) selectedByPlayers() chan *player {
+	p.RLock()
+	ch := make(chan *player, len(p.targeting.selectedByP))
+	p.RUnlock()
+
+	go func(send chan<- *player) {
+		p.RLock()
+		for _, ap := range p.targeting.selectedByP {
+			send <- ap
+		}
+		p.RUnlock()
+		close(send)
+	}(ch)
+	return ch
+}
+
+func (p *player) selectedByNPCs() chan *npc {
+	p.RLock()
+	ch := make(chan *npc, len(p.targeting.selectedByN))
+	p.RUnlock()
+
+	go func(send chan<- *npc) {
+		p.RLock()
+		for _, n := range p.targeting.selectedByN {
+			send <- n
+		}
+		p.RUnlock()
+		close(send)
+	}(ch)
+	return ch
+}
+
+func (p *player) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
+	var nc structs.NcBatTargetInfoCmd
+	p.RLock()
+	nc = structs.NcBatTargetInfoCmd{
+		Order:         0,
+		Handle:        p.handle,
+		TargetHP:      p.stats.hp,
+		TargetMaxHP:   p.stats.maxHP,
+		TargetSP:      p.stats.sp,
+		TargetMaxSP:   p.stats.maxSP,
+		TargetLP:      p.stats.lp,
+		TargetMaxLP:   p.stats.maxLP,
+		TargetLevel:   p.state.level,
+		HpChangeOrder: 0,
+	}
+	p.RUnlock()
+	return &nc
+}
+
+func lastHeartbeat(p *player) float64 {
+	p.RLock()
+	lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()
+	p.RUnlock()
+	return lastHeartBeat
 }
 
 type playerConnection struct {
@@ -533,10 +528,10 @@ func (p *player) statsData(stats chan<- playerStats, c *character.Character, err
 		// todo: remove magick :(
 		hp:       1000,
 		sp:       1000,
-		maxHP: 1000,
-		maxSP: 1000,
-		lp:    100,
-		maxLP: 100,
+		maxHP:    1000,
+		maxSP:    1000,
+		lp:       100,
+		maxLP:    100,
 		hpStones: 15,
 		spStones: 15,
 		curseResistance: stat{

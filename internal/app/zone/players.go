@@ -53,7 +53,7 @@ func (p *players) add(ap *player) {
 	p.usedHandles[ap.handle] = true
 	ap.justSpawned = true
 	p.Unlock()
-	go func(p * player) {
+	go func(p *player) {
 		time.Sleep(3 * time.Second)
 		p.Lock()
 		p.justSpawned = false

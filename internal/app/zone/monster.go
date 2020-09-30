@@ -9,6 +9,11 @@ import (
 	"time"
 )
 
+type monsterLocationActivity struct {
+	location
+	run bool
+}
+
 type monster struct {
 	baseEntity
 	hp, sp        uint32
@@ -18,13 +23,6 @@ type monster struct {
 	tickers       []*time.Ticker
 	status
 	sync.RWMutex
-}
-
-func (m *monster) getHandle() uint16 {
-	m.RLock()
-	h := m.handle
-	m.RUnlock()
-	return h
 }
 
 func (m *monster) alive() {
@@ -38,11 +36,6 @@ func (m *monster) dead() {
 	// initial removal from monsters...
 	// trigger monsterDied event
 	// create ticker so it can respawn again
-}
-
-type monsterLocationActivity struct {
-	location
-	run bool
 }
 
 func (m *monster) monsterActivity(c chan<- monsterLocationActivity, zm *zoneMap) {
@@ -136,24 +129,6 @@ loop:
 		}
 	}
 }
-func (m *monster) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
-	var nc structs.NcBatTargetInfoCmd
-	m.RLock()
-	nc = structs.NcBatTargetInfoCmd{
-		Order:         0,
-		Handle:        m.handle,
-		TargetHP:      m.hp,
-		TargetMaxHP:   m.mobInfo.MaxHP, //todo: use the same player stat system for mobs and NPCs
-		TargetSP:      m.sp,
-		TargetMaxSP:   uint32(m.mobInfoServer.MaxSP), //todo: use the same player stat system for mobs and NPCs
-		TargetLP:      0,
-		TargetMaxLP:   0,
-		TargetLevel:   byte(m.mobInfo.Level),
-		HpChangeOrder: 0,
-	}
-	m.RUnlock()
-	return &nc
-}
 
 func (m *monster) roam(zm *zoneMap) {
 	ch := make(chan monsterLocationActivity)
@@ -173,7 +148,7 @@ func (m *monster) roam(zm *zoneMap) {
 						X: uint32(l.x),
 						Y: uint32(l.y),
 					},
-					Speed:    uint16(m.mobInfo.RunSpeed),
+					Speed: uint16(m.mobInfo.RunSpeed),
 				}
 				m.RUnlock()
 
@@ -219,4 +194,30 @@ func (m *monster) roam(zm *zoneMap) {
 
 		}
 	}
+}
+
+func (m *monster) getHandle() uint16 {
+	m.RLock()
+	h := m.handle
+	m.RUnlock()
+	return h
+}
+
+func (m *monster) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
+	var nc structs.NcBatTargetInfoCmd
+	m.RLock()
+	nc = structs.NcBatTargetInfoCmd{
+		Order:         0,
+		Handle:        m.handle,
+		TargetHP:      m.hp,
+		TargetMaxHP:   m.mobInfo.MaxHP, //todo: use the same player stat system for mobs and NPCs
+		TargetSP:      m.sp,
+		TargetMaxSP:   uint32(m.mobInfoServer.MaxSP), //todo: use the same player stat system for mobs and NPCs
+		TargetLP:      0,
+		TargetMaxLP:   0,
+		TargetLevel:   byte(m.mobInfo.Level),
+		HpChangeOrder: 0,
+	}
+	m.RUnlock()
+	return &nc
 }

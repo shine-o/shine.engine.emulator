@@ -64,7 +64,7 @@ func Start(cmd *cobra.Command, args []string) {
 	// note: use factory
 
 	ss := networking.ShineService{
-		Name: "login",
+		Name:     "login",
 		Settings: s,
 		ShineHandler: networking.ShineHandler{
 			2055: ncMiscSeedAck,

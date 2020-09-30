@@ -10,7 +10,7 @@ const npcAttemptsMax uint16 = 1500
 
 type npcs struct {
 	handler
-	active      map[uint16]*npc
+	active map[uint16]*npc
 	sync.RWMutex
 }
 
@@ -51,4 +51,20 @@ func (n *npcs) add(ap *npc) {
 	n.active[ap.handle] = ap
 	n.handler.usedHandles[ap.handle] = true
 	n.Unlock()
+}
+
+func npcInRange(p *player, n *npc) bool {
+	p.RLock()
+	n.RLock()
+	yes := entityInRange(p.baseEntity, n.baseEntity)
+	p.RUnlock()
+	n.RUnlock()
+
+	if yes {
+		p.Lock()
+		p.npcs[n.handle] = n
+		p.Unlock()
+		return true
+	}
+	return false
 }

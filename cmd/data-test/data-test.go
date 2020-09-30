@@ -39,7 +39,7 @@ func main() {
 
 	for {
 		select {
-		case cp := <- captured:
+		case cp := <-captured:
 			var jData, structName string
 			switch cp.Command.Base.OperationCode {
 			case 9217:
@@ -72,11 +72,10 @@ func main() {
 				structName = "NcBatUnTargetReq"
 			}
 
-			logger.Infof("%v %v %v %v",cp.Seen, cp.Direction, structName, jData)
+			logger.Infof("%v %v %v %v", cp.Seen, cp.Direction, structName, jData)
 		}
 	}
 }
-
 
 func packetData(data []byte, nc interface{}) string {
 
@@ -104,7 +103,7 @@ func shnTest() {
 	}
 }
 
-func packetDataTest()  {
+func packetDataTest() {
 	var s structs.NcBatTargetInfoCmd
 
 	hexS := "e1f81f3f0100003f010000ad0100001a020000000000000000000014af4d"

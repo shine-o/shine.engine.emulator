@@ -57,7 +57,7 @@ func (zm *zoneMap) run() {
 	}
 }
 
-func (zm * zoneMap) spawnNPC()  {
+func (zm *zoneMap) spawnNPC() {
 	npcs, ok := npcData.Data[zm.data.MapInfoIndex]
 
 	if ok {
@@ -69,7 +69,7 @@ func (zm * zoneMap) spawnNPC()  {
 		for _, data := range npcs {
 			wg.Add(1)
 			sem <- 1
-			go func(sn * world.ShineNPC) {
+			go func(sn *world.ShineNPC) {
 				defer wg.Done()
 
 				mi, mis := mobDataPointers(sn.MobIndex)
@@ -108,9 +108,9 @@ func (zm * zoneMap) spawnNPC()  {
 						current: location{
 							mapID:     zm.data.ID,
 							mapName:   zm.data.MapInfoIndex,
-							x: sn.X,
-							y: sn.Y,
-							d: shineD,
+							x:         sn.X,
+							y:         sn.Y,
+							d:         shineD,
 							movements: [15]movement{},
 						},
 						events: events{},
@@ -231,12 +231,12 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry) {
 
 func spawnMonster(zm *zoneMap, re mobs.RegenEntry, mi *shn.MobInfo, mis *shn.MobInfoServer) {
 	var (
-		x, y, d  int
-		maxTries = 1000 // todo: use goroutines for this, with a maximum of 50 routines, first one to get a spot wins the spawn
-		spawn    = false
+		x, y, d       int
+		maxTries      = 1000 // todo: use goroutines for this, with a maximum of 50 routines, first one to get a spot wins the spawn
+		spawn         = false
 		staticMonster = false
-		numSteps = 5
-		speed = 30
+		numSteps      = 5
+		speed         = 30
 	)
 
 	if mi.WalkSpeed == 0 && mi.RunSpeed == 0 {

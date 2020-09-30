@@ -102,12 +102,11 @@ type NcBatDotDamageCmd struct {
 	IsMissDamage  byte
 }
 
-
 type NcBatTargetInfoReq struct {
 	TargetHandle uint16
 }
 
-type NcBatUnTargetReq struct {}
+type NcBatUnTargetReq struct{}
 
 //struct PROTO_NC_BAT_TARGETINFO_CMD
 //{
@@ -198,11 +197,11 @@ type NcBatSkillBashHitBlastCmd struct {
 //  char attacksequence;
 //};
 type NcBatSwingStartCmd struct {
-	Attacker uint16
-	Defender uint16
-	ActionCode byte
-	AttackSpeed uint16
-	DamageIndex byte
+	Attacker       uint16
+	Defender       uint16
+	ActionCode     byte
+	AttackSpeed    uint16
+	DamageIndex    byte
 	AttackSequence byte
 }
 
@@ -218,7 +217,6 @@ type NcBatSwingDamageCmdFlag struct {
 	BF1 byte
 }
 
-
 ///*14535 */
 //struct PROTO_NC_BAT_SWING_DAMAGE_CMD
 //{
@@ -232,12 +230,12 @@ type NcBatSwingDamageCmdFlag struct {
 //  char attacksequence;
 //};
 type NcBatSwingDamageCmd struct {
-	Attacker uint16
-	Defender uint16
-	Flag NcBatSwingDamageCmdFlag
-	Damage uint16
-	RestHP uint32
-	HpChangeOrder uint16
-	DamageIndex byte
+	Attacker       uint16
+	Defender       uint16
+	Flag           NcBatSwingDamageCmdFlag
+	Damage         uint16
+	RestHP         uint32
+	HpChangeOrder  uint16
+	DamageIndex    byte
 	AttackSequence byte
 }

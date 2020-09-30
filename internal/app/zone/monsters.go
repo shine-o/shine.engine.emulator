@@ -55,29 +55,6 @@ func (m *monsters) add(ap *monster) {
 	m.Unlock()
 }
 
-func knownMonster(p *player, mh uint16) bool {
-	p.RLock()
-	_, ok := p.monsters[mh]
-	p.RUnlock()
-	if ok {
-		return true
-	}
-	return false
-}
-
-func adjacentMonstersInform(p *player, zm *zoneMap) {
-	for m := range zm.entities.monsters.all() {
-		go func(p *player, m *monster) {
-			if !knownMonster(p, m.getHandle()) {
-				if monsterInRange(p, m) {
-					nc := m.ncBriefInfoRegenMobCmd()
-					ncBriefInfoRegenMobCmd(p, &nc)
-				}
-			}
-		}(p, m)
-	}
-}
-
 func (m *monster) ncBriefInfoRegenMobCmd() structs.NcBriefInfoRegenMobCmd {
 	m.RLock()
 	nc := structs.NcBriefInfoRegenMobCmd{
@@ -96,6 +73,29 @@ func (m *monster) ncBriefInfoRegenMobCmd() structs.NcBriefInfoRegenMobCmd {
 	return nc
 }
 
+func adjacentMonstersInform(p *player, zm *zoneMap) {
+	for m := range zm.entities.monsters.all() {
+		go func(p *player, m *monster) {
+			if !knownMonster(p, m.getHandle()) {
+				if monsterInRange(p, m) {
+					nc := m.ncBriefInfoRegenMobCmd()
+					ncBriefInfoRegenMobCmd(p, &nc)
+				}
+			}
+		}(p, m)
+	}
+}
+
+func knownMonster(p *player, mh uint16) bool {
+	p.RLock()
+	_, ok := p.monsters[mh]
+	p.RUnlock()
+	if ok {
+		return true
+	}
+	return false
+}
+
 func monsterInRange(p *player, m *monster) bool {
 	p.RLock()
 	m.RLock()
@@ -111,31 +111,3 @@ func monsterInRange(p *player, m *monster) bool {
 	}
 	return false
 }
-
-func npcInRange(p *player, n *npc) bool {
-	p.RLock()
-	n.RLock()
-	yes := entityInRange(p.baseEntity, n.baseEntity)
-	p.RUnlock()
-	n.RUnlock()
-
-	if yes {
-		p.Lock()
-		p.npcs[n.handle] = n
-		p.Unlock()
-		return true
-	}
-	return false
-}
-
-
-// for every movement a player makes, launch a routine that:
-//		iterates over every monster
-
-// a monster can have many routines linked to it
-
-// all these routines should be started when a monster spawns
-// all these routines should be stopped when a monster dies
-
-// when a monster dies, it should respawn again in a random number of seconds between RegMin and RegMax
-// a monster should spawn at the defined random coordinates product of  X,Y, Width, Height

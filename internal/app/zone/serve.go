@@ -16,7 +16,6 @@ import (
 	"path/filepath"
 )
 
-
 var log = shinelog.NewLogger("zone", "./output", logrus.DebugLevel)
 
 // Start initializes the TCP server and all the needed services and configuration for the zone
@@ -79,7 +78,7 @@ func Start(cmd *cobra.Command, args []string) {
 	s.CommandsFilePath = path
 
 	ss := networking.ShineService{
-		Name: "zone",
+		Name:     "zone",
 		Settings: s,
 		ShineHandler: networking.ShineHandler{
 			2055: ncMiscSeedAck,
@@ -95,6 +94,7 @@ func Start(cmd *cobra.Command, args []string) {
 			7169: ncBriefInfoInformCmd,
 			9217: ncBatTargetingReq,
 			9224: ncBatUntargetReq,
+			3096: ncUserNormalLogoutCmd,
 		},
 		SessionFactory: sessionFactory{},
 	}

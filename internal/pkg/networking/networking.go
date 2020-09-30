@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-var log =  shinelog.NewLogger("networking default", "./output", logrus.DebugLevel)
+var log = shinelog.NewLogger("networking default", "./output", logrus.DebugLevel)
 
 type ShineService struct {
 	Settings
@@ -84,7 +84,7 @@ func (s *Settings) Set() {
 
 // Listen on TPC socket for connection on given port
 func (ss *ShineService) Listen(ctx context.Context, port string) {
-	log = shinelog.NewLogger( fmt.Sprintf("%v-networking", ss.Name), "./output", logrus.DebugLevel)
+	log = shinelog.NewLogger(fmt.Sprintf("%v-networking", ss.Name), "./output", logrus.DebugLevel)
 
 	ss.Settings.Set()
 
@@ -238,11 +238,11 @@ func CommandName(pc *Command) string {
 	if (&PCList{}) != commandList { // should be commented out on production to increase performance
 		opCode := pc.Base.OperationCode
 		department := opCode >> 10
-		command := fmt.Sprintf("%X", opCode & 1023)
+		command := fmt.Sprintf("%X", opCode&1023)
 		if dpt, ok := commandList.Departments[uint8(department)]; ok {
 			return dpt.ProcessedCommands[command]
 		} else {
-			log.Warningf("Missing friendly name for command with: operationCode %v,  department %v, command %v, ", opCode, department,command)
+			log.Warningf("Missing friendly name for command with: operationCode %v,  department %v, command %v, ", opCode, department, command)
 		}
 	}
 	return ""

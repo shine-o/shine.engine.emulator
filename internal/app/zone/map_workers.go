@@ -6,7 +6,11 @@ import (
 	"sync"
 )
 
-const playerHeartbeatLimit = 10
+const (
+	runSpeed             = 120
+	walkSpeed            = 60
+	playerHeartbeatLimit = 10
+)
 
 func (zm *zoneMap) mapHandles() {
 	log.Infof("[map_worker] mapHandles worker for map %v", zm.data.Info.MapName)
@@ -46,7 +50,47 @@ func (zm *zoneMap) playerActivity() {
 	}
 }
 
-func playerSelectsEntityLogic(zm * zoneMap, e event)  {
+func (zm *zoneMap) monsterActivity() {
+	log.Infof("[map_worker] monsterActivity worker for map %v", zm.data.Info.MapName)
+	for {
+		select {
+		case e := <-zm.recv[monsterAppeared]:
+			log.Info(e)
+		case e := <-zm.recv[monsterDisappeared]:
+			log.Info(e)
+		case e := <-zm.recv[monsterWalks]:
+			go monsterWalksLogic(zm, e)
+		case e := <-zm.recv[monsterRuns]:
+			go monsterRunsLogic(zm, e)
+		}
+	}
+}
+
+func (zm *zoneMap) playerQueries() {
+	log.Infof("[map_worker] playerQueries worker for map %v", zm.data.Info.MapName)
+	for {
+		select {
+		case e := <-zm.recv[queryPlayer]:
+			ev, ok := e.(*queryPlayerEvent)
+			if !ok {
+				log.Errorf("expected event type %v but got %v", reflect.TypeOf(&queryPlayerEvent{}).String(), reflect.TypeOf(ev).String())
+				return
+			}
+		}
+	}
+}
+
+func (zm *zoneMap) monsterQueries() {
+	log.Infof("[map_worker] monsterQueries worker for map %v", zm.data.Info.MapName)
+	for {
+		select {
+		case e := <-zm.recv[queryMonster]:
+			log.Info(e)
+		}
+	}
+}
+
+func playerSelectsEntityLogic(zm *zoneMap, e event) {
 	log.Info(e)
 	ev, ok := e.(*playerSelectsEntityEvent)
 	if !ok {
@@ -102,13 +146,12 @@ func playerSelectsEntityLogic(zm * zoneMap, e event)  {
 				//return
 			}
 
-			vp.RLock()
-			for _, p := range vp.targeting.selectedByP {
+			for p := range vp.selectedByPlayers() {
 				nextNc := *nc
 				nextNc.Order++
 				ncBatTargetInfoCmd(p, &nextNc)
 			}
-			vp.RUnlock()
+
 			return
 		case am := <-m:
 			if am == nil {
@@ -126,13 +169,11 @@ func playerSelectsEntityLogic(zm * zoneMap, e event)  {
 
 			//if vp is being selected by player
 			//send them information about the monster
-			vp.RLock()
-			for _, p := range vp.targeting.selectedByP {
+			for p := range vp.selectedByPlayers() {
 				nextNc := *nc
 				nextNc.Order++
 				ncBatTargetInfoCmd(p, &nextNc)
 			}
-			vp.RUnlock()
 			return
 		case an := <-n:
 			if an == nil {
@@ -146,13 +187,12 @@ func playerSelectsEntityLogic(zm * zoneMap, e event)  {
 			nc.Order = order
 
 			ncBatTargetInfoCmd(vp, nc)
-			vp.RLock()
-			for _, p := range vp.targeting.selectedByP {
+
+			for p := range vp.selectedByPlayers() {
 				nextNc := *nc
 				nextNc.Order++
 				ncBatTargetInfoCmd(p, &nextNc)
 			}
-			vp.RUnlock()
 			return
 		default:
 			if notP && notM && notN {
@@ -162,7 +202,7 @@ func playerSelectsEntityLogic(zm * zoneMap, e event)  {
 	}
 }
 
-func playerUnselectsEntityLogic(zm * zoneMap, e event)  {
+func playerUnselectsEntityLogic(zm *zoneMap, e event) {
 	log.Info(e)
 	ev, ok := e.(*playerUnselectsEntityEvent)
 	if !ok {
@@ -203,59 +243,6 @@ func playerUnselectsEntityLogic(zm * zoneMap, e event)  {
 	vp.RUnlock()
 }
 
-func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *monster, chan *npc) {
-	p := make(chan *player, 1)
-	m := make(chan *monster, 1)
-	n := make(chan *npc, 1)
-
-	go func(p chan<- *player, zm *zoneMap, targetHandle uint16) {
-		for ap := range zm.entities.players.all() {
-			if ap.getHandle() == targetHandle {
-				p <- ap
-				return
-			}
-		}
-		p <- nil
-	}(p, zm, handle)
-
-	go func(m chan<- *monster, zm *zoneMap, targetHandle uint16) {
-		for am := range zm.entities.monsters.all() {
-			if am.getHandle() == targetHandle {
-				m <- am
-				return
-			}
-		}
-		m <- nil
-	}(m, zm, handle)
-
-	go func(n chan<- *npc, zm *zoneMap, targetHandle uint16) {
-		for an := range zm.entities.npcs.all() {
-			if an.getHandle() == targetHandle {
-				n <- an
-				return
-			}
-		}
-		n <- nil
-	}(n, zm, handle)
-	return p, m, n
-}
-
-func (zm *zoneMap) monsterActivity() {
-	log.Infof("[map_worker] monsterActivity worker for map %v", zm.data.Info.MapName)
-	for {
-		select {
-		case e := <-zm.recv[monsterAppeared]:
-			log.Info(e)
-		case e := <-zm.recv[monsterDisappeared]:
-			log.Info(e)
-		case e := <-zm.recv[monsterWalks]:
-			go monsterWalksLogic(zm, e)
-		case e := <-zm.recv[monsterRuns]:
-			go monsterRunsLogic(zm, e)
-		}
-	}
-}
-
 func monsterWalksLogic(zm *zoneMap, e event) {
 	ev, ok := e.(*monsterWalksEvent)
 	if !ok {
@@ -283,30 +270,6 @@ func monsterRunsLogic(zm *zoneMap, e event) {
 				go ncActSomeoneMoveRunCmd(p, ev.nc)
 			}
 		}(ap, ev.m)
-	}
-}
-
-func (zm *zoneMap) playerQueries() {
-	log.Infof("[map_worker] playerQueries worker for map %v", zm.data.Info.MapName)
-	for {
-		select {
-		case e := <-zm.recv[queryPlayer]:
-			ev, ok := e.(*queryPlayerEvent)
-			if !ok {
-				log.Errorf("expected event type %v but got %v", reflect.TypeOf(&queryPlayerEvent{}).String(), reflect.TypeOf(ev).String())
-				return
-			}
-		}
-	}
-}
-
-func (zm *zoneMap) monsterQueries() {
-	log.Infof("[map_worker] monsterQueries worker for map %v", zm.data.Info.MapName)
-	for {
-		select {
-		case e := <-zm.recv[queryMonster]:
-			log.Info(e)
-		}
 	}
 }
 
@@ -412,7 +375,7 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 
 	go func() {
 		defer wg.Done()
-		p1.allNPC(zm)
+		showAllNPC(p1, zm)
 	}()
 
 	wg.Wait()
@@ -427,19 +390,6 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 	go p1.nearbyNPCMaintenance(zm)
 
 	//go adjacentMonstersInform(p1, zm)
-}
-
-func (p *player) allNPC(zm *zoneMap) {
-	var npcs structs.NcBriefInfoMobCmd
-
-	for n := range zm.entities.npcs.all() {
-		npcs.Mobs = append(npcs.Mobs, n.ncBriefInfoRegenMobCmd())
-	}
-
-	npcs.MobNum = byte(len(npcs.Mobs))
-
-	ncBriefInfoMobCmd(p, &npcs)
-
 }
 
 func playerDisappearedLogic(e event, zm *zoneMap) {
@@ -461,13 +411,6 @@ func playerDisappearedLogic(e event, zm *zoneMap) {
 		}(ap)
 	}
 }
-
-const (
-	runSpeed  = 120
-	walkSpeed = 60
-	//runSpeed = 300
-	//walkSpeed = 150
-)
 
 func playerWalksLogic(e event, zm *zoneMap) {
 	// player has a fifo queue for the last 30 movements
@@ -768,4 +711,53 @@ func nearbyMonsters(p *player, zm *zoneMap) {
 			}
 		}(p, am)
 	}
+}
+
+func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *monster, chan *npc) {
+	p := make(chan *player, 1)
+	m := make(chan *monster, 1)
+	n := make(chan *npc, 1)
+
+	go func(p chan<- *player, zm *zoneMap, targetHandle uint16) {
+		for ap := range zm.entities.players.all() {
+			if ap.getHandle() == targetHandle {
+				p <- ap
+				return
+			}
+		}
+		p <- nil
+	}(p, zm, handle)
+
+	go func(m chan<- *monster, zm *zoneMap, targetHandle uint16) {
+		for am := range zm.entities.monsters.all() {
+			if am.getHandle() == targetHandle {
+				m <- am
+				return
+			}
+		}
+		m <- nil
+	}(m, zm, handle)
+
+	go func(n chan<- *npc, zm *zoneMap, targetHandle uint16) {
+		for an := range zm.entities.npcs.all() {
+			if an.getHandle() == targetHandle {
+				n <- an
+				return
+			}
+		}
+		n <- nil
+	}(n, zm, handle)
+	return p, m, n
+}
+
+func showAllNPC(p *player, zm *zoneMap) {
+	var npcs structs.NcBriefInfoMobCmd
+
+	for n := range zm.entities.npcs.all() {
+		npcs.Mobs = append(npcs.Mobs, n.ncBriefInfoRegenMobCmd())
+	}
+
+	npcs.MobNum = byte(len(npcs.Mobs))
+
+	ncBriefInfoMobCmd(p, &npcs)
 }

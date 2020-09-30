@@ -195,8 +195,8 @@ func (ss *shineStream) decodeServerPackets(ctx context.Context, segments <-chan 
 }
 
 type CapturedPacket struct {
-	Command networking.Command
-	Seen time.Time
+	Command   networking.Command
+	Seen      time.Time
 	Direction string
 }
 

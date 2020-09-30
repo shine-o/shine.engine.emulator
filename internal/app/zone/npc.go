@@ -38,7 +38,6 @@ func (n *npc) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
 	return &nc
 }
 
-
 // find a way to merge npc and monster structs
 func (n *npc) ncBriefInfoRegenMobCmd() structs.NcBriefInfoRegenMobCmd {
 	n.RLock()
