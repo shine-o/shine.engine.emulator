@@ -136,6 +136,24 @@ loop:
 		}
 	}
 }
+func (m *monster) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
+	var nc structs.NcBatTargetInfoCmd
+	m.RLock()
+	nc = structs.NcBatTargetInfoCmd{
+		Order:         0,
+		Handle:        m.handle,
+		TargetHP:      m.hp,
+		TargetMaxHP:   m.mobInfo.MaxHP, //todo: use the same player stat system for mobs and NPCs
+		TargetSP:      m.sp,
+		TargetMaxSP:   uint32(m.mobInfoServer.MaxSP), //todo: use the same player stat system for mobs and NPCs
+		TargetLP:      0,
+		TargetMaxLP:   0,
+		TargetLevel:   byte(m.mobInfo.Level),
+		HpChangeOrder: 0,
+	}
+	m.RUnlock()
+	return &nc
+}
 
 func (m *monster) roam(zm *zoneMap) {
 	ch := make(chan monsterLocationActivity)

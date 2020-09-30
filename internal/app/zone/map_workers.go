@@ -39,172 +39,168 @@ func (zm *zoneMap) playerActivity() {
 		case e := <-zm.recv[unknownHandle]:
 			go unknownHandleLogic(e, zm)
 		case e := <-zm.recv[playerSelectsEntity]:
-			go func() {
-				log.Info(e)
-				ev, ok := e.(*playerSelectsEntityEvent)
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerSelectsEntityEvent{}).String(), reflect.TypeOf(ev).String())
-					return
-				}
-				// ev.nc.targetHandle can be NPC, Monster, Player
-				// launch a routine that iterates over active NPCs, Monsters, Players
-				// if an NPC, Monster, Player is found, send to channel
-				// first match, wins the race and I generate a NC_BAT_TARGETINFO_CMD packet using the entity data.
-
-				vp := zm.entities.players.get(ev.handle)
-				if vp == nil {
-					log.Errorf("player not found %v", ev.handle)
-					return
-				}
-
-				p, m, n := findFirstEntity(zm, ev.nc.TargetHandle)
-
-				// set timeout in case of nonexistent handle
-				// or use bool channels, and in the default case check if all three are false and return if so
-				var nc *structs.NcBatTargetInfoCmd
-
-				var notP, notM, notN bool
-				for {
-					select {
-					case ap := <-p:
-						if ap == nil {
-							notP = true
-							break
-						}
-
-						nc = ap.ncBatTargetInfoCmd()
-
-						order := vp.selectsPlayer(ap)
-
-						nc.Order = order
-						ncBatTargetInfoCmd(vp, nc)
-
-						if ap.targeting.selectingP != nil {
-							nextNc := ap.targeting.selectingP.ncBatTargetInfoCmd()
-							nextNc.Order = order + 1
-							ncBatTargetInfoCmd(vp, nextNc)
-							//return
-						}
-
-						if ap.targeting.selectingM != nil {
-							nextNc := ap.targeting.selectingM.ncBatTargetInfoCmd()
-							nextNc.Order = order + 1
-							ncBatTargetInfoCmd(vp, nextNc)
-							//return
-						}
-
-						if ap.targeting.selectingN != nil {
-							nextNc := ap.targeting.selectingN.ncBatTargetInfoCmd()
-							nextNc.Order = order + 1
-							ncBatTargetInfoCmd(vp, nextNc)
-							//return
-						}
-
-						vp.RLock()
-						for _, p := range vp.targeting.selectedByP {
-							nextNc := *nc
-							nextNc.Order++
-							ncBatTargetInfoCmd(p, &nextNc)
-						}
-						vp.RUnlock()
-
-
-					case am := <-m:
-						if am == nil {
-							notM = true
-							break
-						}
-
-						order := vp.selectsMonster(am)
-
-						nc = am.ncBatTargetInfoCmd()
-
-						nc.Order = order
-
-						ncBatTargetInfoCmd(vp, nc)
-
-						//if vp is being selected by player
-						//send them information about the monster
-						vp.RLock()
-						for _, p := range vp.targeting.selectedByP {
-							nextNc := *nc
-							nextNc.Order++
-							ncBatTargetInfoCmd(p, &nextNc)
-						}
-						vp.RUnlock()
-						return
-					case an := <-n:
-						if an == nil {
-							notN = true
-							break
-						}
-						order := vp.selectsNPC(an)
-
-						nc = an.ncBatTargetInfoCmd()
-
-						nc.Order = order
-
-						ncBatTargetInfoCmd(vp, nc)
-						vp.RLock()
-						for _, p := range vp.targeting.selectedByP {
-							nextNc := *nc
-							nextNc.Order++
-							ncBatTargetInfoCmd(p, &nextNc)
-						}
-						vp.RUnlock()
-						return
-					default:
-						if notP && notM && notN {
-							return
-						}
-					}
-				}
-
-			}()
+			go playerSelectsEntityLogic(zm, e)
 		case e := <-zm.recv[playerUnselectsEntity]:
-			go func() {
-				log.Info(e)
-				ev, ok := e.(*playerUnselectsEntityEvent)
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerUnselectsEntityEvent{}).String(), reflect.TypeOf(ev).String())
-					return
-				}
-
-				vp := zm.entities.players.get(ev.handle)
-				if vp == nil {
-					log.Errorf("player not found %v", ev.handle)
-					return
-				}
-
-				var order byte
-				vp.Lock()
-				order = vp.targeting.selectionOrder
-				vp.targeting.selectingP = nil
-				vp.targeting.selectingM = nil
-				vp.targeting.selectingN = nil
-				vp.Unlock()
-
-				nc := structs.NcBatTargetInfoCmd{
-					Order:         order + 1,
-					Handle:        65535,
-					TargetHP:      0,
-					TargetMaxHP:   0,
-					TargetSP:      0,
-					TargetMaxSP:   0,
-					TargetLP:      0,
-					TargetMaxLP:   0,
-					TargetLevel:   0,
-					HpChangeOrder: 0,
-				}
-				vp.RLock()
-				for _, p := range vp.targeting.selectedByP {
-					go ncBatTargetInfoCmd(p, &nc)
-				}
-				vp.RUnlock()
-
-			}()
+			go playerUnselectsEntityLogic(zm, e)
 		}
 	}
+}
+
+func playerSelectsEntityLogic(zm * zoneMap, e event)  {
+	log.Info(e)
+	ev, ok := e.(*playerSelectsEntityEvent)
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerSelectsEntityEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
+	vp := zm.entities.players.get(ev.handle)
+	if vp == nil {
+		log.Errorf("player not found %v", ev.handle)
+		return
+	}
+
+	p, m, n := findFirstEntity(zm, ev.nc.TargetHandle)
+
+	// set timeout in case of nonexistent handle
+	// or use bool channels, and in the default case check if all three are false and return if so
+	var nc *structs.NcBatTargetInfoCmd
+
+	var notP, notM, notN bool
+	for {
+		select {
+		case ap := <-p:
+			if ap == nil {
+				notP = true
+				break
+			}
+
+			nc = ap.ncBatTargetInfoCmd()
+
+			order := vp.selectsPlayer(ap)
+
+			nc.Order = order
+			ncBatTargetInfoCmd(vp, nc)
+
+			if ap.targeting.selectingP != nil {
+				nextNc := ap.targeting.selectingP.ncBatTargetInfoCmd()
+				nextNc.Order = order + 1
+				ncBatTargetInfoCmd(vp, nextNc)
+			}
+
+			if ap.targeting.selectingM != nil {
+				nextNc := ap.targeting.selectingM.ncBatTargetInfoCmd()
+				nextNc.Order = order + 1
+				ncBatTargetInfoCmd(vp, nextNc)
+				//return
+			}
+
+			if ap.targeting.selectingN != nil {
+				nextNc := ap.targeting.selectingN.ncBatTargetInfoCmd()
+				nextNc.Order = order + 1
+				ncBatTargetInfoCmd(vp, nextNc)
+				//return
+			}
+
+			vp.RLock()
+			for _, p := range vp.targeting.selectedByP {
+				nextNc := *nc
+				nextNc.Order++
+				ncBatTargetInfoCmd(p, &nextNc)
+			}
+			vp.RUnlock()
+			return
+		case am := <-m:
+			if am == nil {
+				notM = true
+				break
+			}
+
+			order := vp.selectsMonster(am)
+
+			nc = am.ncBatTargetInfoCmd()
+
+			nc.Order = order
+
+			ncBatTargetInfoCmd(vp, nc)
+
+			//if vp is being selected by player
+			//send them information about the monster
+			vp.RLock()
+			for _, p := range vp.targeting.selectedByP {
+				nextNc := *nc
+				nextNc.Order++
+				ncBatTargetInfoCmd(p, &nextNc)
+			}
+			vp.RUnlock()
+			return
+		case an := <-n:
+			if an == nil {
+				notN = true
+				break
+			}
+			order := vp.selectsNPC(an)
+
+			nc = an.ncBatTargetInfoCmd()
+
+			nc.Order = order
+
+			ncBatTargetInfoCmd(vp, nc)
+			vp.RLock()
+			for _, p := range vp.targeting.selectedByP {
+				nextNc := *nc
+				nextNc.Order++
+				ncBatTargetInfoCmd(p, &nextNc)
+			}
+			vp.RUnlock()
+			return
+		default:
+			if notP && notM && notN {
+				return
+			}
+		}
+	}
+}
+
+func playerUnselectsEntityLogic(zm * zoneMap, e event)  {
+	log.Info(e)
+	ev, ok := e.(*playerUnselectsEntityEvent)
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerUnselectsEntityEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
+	vp := zm.entities.players.get(ev.handle)
+	if vp == nil {
+		log.Errorf("player not found %v", ev.handle)
+		return
+	}
+
+	var order byte
+	vp.Lock()
+	order = vp.targeting.selectionOrder
+	vp.targeting.selectingP = nil
+	vp.targeting.selectingM = nil
+	vp.targeting.selectingN = nil
+	vp.Unlock()
+
+	nc := structs.NcBatTargetInfoCmd{
+		Order:         order + 1,
+		Handle:        65535,
+		TargetHP:      0,
+		TargetMaxHP:   0,
+		TargetSP:      0,
+		TargetMaxSP:   0,
+		TargetLP:      0,
+		TargetMaxLP:   0,
+		TargetLevel:   0,
+		HpChangeOrder: 0,
+	}
+	vp.RLock()
+	for _, p := range vp.targeting.selectedByP {
+		go ncBatTargetInfoCmd(p, &nc)
+	}
+	vp.RUnlock()
 }
 
 func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *monster, chan *npc) {
@@ -244,111 +240,6 @@ func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *monster, c
 	return p, m, n
 }
 
-func (p *player) selectsPlayer(ap *player) byte {
-	var order byte
-	p.Lock()
-	p.targeting.selectingP = ap
-	p.targeting.selectingM = nil
-	p.targeting.selectingN = nil
-
-	p.targeting.selectionOrder += 32
-	order = p.targeting.selectionOrder
-	p.Unlock()
-
-	ap.Lock()
-	ap.targeting.selectedByP = append(ap.targeting.selectedByP, p)
-	ap.Unlock()
-
-	return order
-}
-
-func (p *player) selectsMonster(m *monster) byte {
-	var order byte
-	p.Lock()
-	p.targeting.selectingP = nil
-	p.targeting.selectingM = m
-	p.targeting.selectingN = nil
-	p.targeting.selectionOrder += 32
-	order = p.targeting.selectionOrder
-	p.Unlock()
-	//ep.Lock()
-	//ep.targeting.selectedByP = append(ep.targeting.selectedByP, p)
-	//ep.Unlock()
-	return order
-}
-
-func (p *player) selectsNPC(n *npc) byte {
-	var order byte
-	p.Lock()
-	p.targeting.selectingP = nil
-	p.targeting.selectingM = nil
-	p.targeting.selectingN = n
-	p.targeting.selectionOrder += 32
-	order = p.targeting.selectionOrder
-	p.Unlock()
-	//ep.Lock()
-	//ep.targeting.selectedByP = append(ep.targeting.selectedByP, p)
-	//ep.Unlock()
-	return order
-}
-
-func (p *player) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
-	var nc structs.NcBatTargetInfoCmd
-	p.RLock()
-	nc = structs.NcBatTargetInfoCmd{
-		Order:         0,
-		Handle:        p.handle,
-		TargetHP:      p.stats.hp,
-		TargetMaxHP:   p.stats.maxHP,
-		TargetSP:      p.stats.sp,
-		TargetMaxSP:   p.stats.maxSP,
-		TargetLP:      p.stats.lp,
-		TargetMaxLP:   p.stats.maxLP,
-		TargetLevel:   p.state.level,
-		HpChangeOrder: 0,
-	}
-	p.RUnlock()
-	return &nc
-}
-
-func (m *monster) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
-	var nc structs.NcBatTargetInfoCmd
-	m.RLock()
-	nc = structs.NcBatTargetInfoCmd{
-		Order:         0,
-		Handle:        m.handle,
-		TargetHP:      m.hp,
-		TargetMaxHP:   m.mobInfo.MaxHP, //todo: use the same player stat system for mobs and NPCs
-		TargetSP:      m.sp,
-		TargetMaxSP:   uint32(m.mobInfoServer.MaxSP), //todo: use the same player stat system for mobs and NPCs
-		TargetLP:      0,
-		TargetMaxLP:   0,
-		TargetLevel:   byte(m.mobInfo.Level),
-		HpChangeOrder: 0,
-	}
-	m.RUnlock()
-	return &nc
-}
-
-func (n *npc) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
-	var nc structs.NcBatTargetInfoCmd
-	n.RLock()
-	nc = structs.NcBatTargetInfoCmd{
-		Order:         0,
-		Handle:        n.handle,
-		TargetHP:      n.hp,
-		TargetMaxHP:   n.mobInfo.MaxHP, //todo: use the same player stat system for mobs and NPCs
-		TargetSP:      n.sp,
-		TargetMaxSP:   uint32(n.mobInfoServer.MaxSP), //todo: use the same player stat system for mobs and NPCs
-		TargetLP:      0,
-		TargetMaxLP:   0,
-		TargetLevel:   byte(n.mobInfo.Level),
-		HpChangeOrder: 0,
-	}
-	n.RUnlock()
-	return &nc
-}
-
 func (zm *zoneMap) monsterActivity() {
 	log.Infof("[map_worker] monsterActivity worker for map %v", zm.data.Info.MapName)
 	for {
@@ -358,27 +249,29 @@ func (zm *zoneMap) monsterActivity() {
 		case e := <-zm.recv[monsterDisappeared]:
 			log.Info(e)
 		case e := <-zm.recv[monsterWalks]:
-			go func() {
-				ev, ok := e.(*monsterWalksEvent)
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&monsterWalksEvent{}).String(), reflect.TypeOf(ev).String())
-					return
-				}
-				for ap := range zm.entities.players.all() {
-					go func(p *player, m *monster) {
-						if monsterInRange(p, m) {
-							ncActSomeoneMoveWalkCmd(p, ev.nc)
-						}
-					}(ap, ev.m)
-				}
-			}()
+			go monsterWalksLogic(zm, e)
 		case e := <-zm.recv[monsterRuns]:
 			go monsterRunsLogic(zm, e)
 		}
 	}
 }
 
-func monsterRunsLogic(zm * zoneMap, e event)  {
+func monsterWalksLogic(zm *zoneMap, e event) {
+	ev, ok := e.(*monsterWalksEvent)
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&monsterWalksEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+	for ap := range zm.entities.players.all() {
+		go func(p *player, m *monster) {
+			if monsterInRange(p, m) {
+				ncActSomeoneMoveWalkCmd(p, ev.nc)
+			}
+		}(ap, ev.m)
+	}
+}
+
+func monsterRunsLogic(zm *zoneMap, e event) {
 	ev, ok := e.(*monsterRunsEvent)
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&monsterRunsEvent{}).String(), reflect.TypeOf(ev).String())
@@ -392,6 +285,7 @@ func monsterRunsLogic(zm * zoneMap, e event)  {
 		}(ap, ev.m)
 	}
 }
+
 func (zm *zoneMap) playerQueries() {
 	log.Infof("[map_worker] playerQueries worker for map %v", zm.data.Info.MapName)
 	for {

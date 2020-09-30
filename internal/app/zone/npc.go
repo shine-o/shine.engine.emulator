@@ -19,6 +19,25 @@ type npc struct {
 	sync.RWMutex
 }
 
+func (n *npc) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
+	var nc structs.NcBatTargetInfoCmd
+	n.RLock()
+	nc = structs.NcBatTargetInfoCmd{
+		Order:         0,
+		Handle:        n.handle,
+		TargetHP:      n.hp,
+		TargetMaxHP:   n.mobInfo.MaxHP, //todo: use the same player stat system for mobs and NPCs
+		TargetSP:      n.sp,
+		TargetMaxSP:   uint32(n.mobInfoServer.MaxSP), //todo: use the same player stat system for mobs and NPCs
+		TargetLP:      0,
+		TargetMaxLP:   0,
+		TargetLevel:   byte(n.mobInfo.Level),
+		HpChangeOrder: 0,
+	}
+	n.RUnlock()
+	return &nc
+}
+
 
 // find a way to merge npc and monster structs
 func (n *npc) ncBriefInfoRegenMobCmd() structs.NcBriefInfoRegenMobCmd {

@@ -29,20 +29,69 @@ type player struct {
 	sync.RWMutex
 	justSpawned bool
 }
-
-type playerSelected struct {
-	order byte
-	p *player
+func (p *player) selectsNPC(n *npc) byte {
+	var order byte
+	p.Lock()
+	p.targeting.selectingP = nil
+	p.targeting.selectingM = nil
+	p.targeting.selectingN = n
+	p.targeting.selectionOrder += 32
+	order = p.targeting.selectionOrder
+	p.Unlock()
+	//ep.Lock()
+	//ep.targeting.selectedByP = append(ep.targeting.selectedByP, p)
+	//ep.Unlock()
+	return order
 }
 
-type monsterSelected struct {
-	order byte
-	p *monster
-}
+func (p *player) selectsPlayer(ap *player) byte {
+	var order byte
+	p.Lock()
+	p.targeting.selectingP = ap
+	p.targeting.selectingM = nil
+	p.targeting.selectingN = nil
 
-type npcSelected struct {
-	order byte
-	p *npc
+	p.targeting.selectionOrder += 32
+	order = p.targeting.selectionOrder
+	p.Unlock()
+
+	ap.Lock()
+	ap.targeting.selectedByP = append(ap.targeting.selectedByP, p)
+	ap.Unlock()
+
+	return order
+}
+func (p *player) selectsMonster(m *monster) byte {
+	var order byte
+	p.Lock()
+	p.targeting.selectingP = nil
+	p.targeting.selectingM = m
+	p.targeting.selectingN = nil
+	p.targeting.selectionOrder += 32
+	order = p.targeting.selectionOrder
+	p.Unlock()
+	//ep.Lock()
+	//ep.targeting.selectedByP = append(ep.targeting.selectedByP, p)
+	//ep.Unlock()
+	return order
+}
+func (p *player) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
+	var nc structs.NcBatTargetInfoCmd
+	p.RLock()
+	nc = structs.NcBatTargetInfoCmd{
+		Order:         0,
+		Handle:        p.handle,
+		TargetHP:      p.stats.hp,
+		TargetMaxHP:   p.stats.maxHP,
+		TargetSP:      p.stats.sp,
+		TargetMaxSP:   p.stats.maxSP,
+		TargetLP:      p.stats.lp,
+		TargetMaxLP:   p.stats.maxLP,
+		TargetLevel:   p.state.level,
+		HpChangeOrder: 0,
+	}
+	p.RUnlock()
+	return &nc
 }
 
 type targeting struct {
@@ -53,6 +102,54 @@ type targeting struct {
 	selectedByP [] *player
 	selectedByM [] *monster
 	selectedByN [] *npc
+}
+
+func (p * player)  selectedByMonsters() chan *monster {
+	p.RLock()
+	ch := make(chan *monster, len(p.targeting.selectedByM))
+	p.RUnlock()
+
+	go func(send chan<- *monster) {
+		p.RLock()
+		for _, m := range p.targeting.selectedByM {
+			send <- m
+		}
+		p.RUnlock()
+		close(send)
+	}(ch)
+	return ch
+}
+
+func (p * player)  selectedByPlayers() chan *player {
+	p.RLock()
+	ch := make(chan *player, len(p.targeting.selectedByP))
+	p.RUnlock()
+
+	go func(send chan<- *player) {
+		p.RLock()
+		for _, ap := range p.targeting.selectedByP {
+			send <- ap
+		}
+		p.RUnlock()
+		close(send)
+	}(ch)
+	return ch
+}
+
+func (p * player)  selectedByNPCs() chan *npc {
+	p.RLock()
+	ch := make(chan *npc, len(p.targeting.selectedByN))
+	p.RUnlock()
+
+	go func(send chan<- *npc) {
+		p.RLock()
+		for _, n := range p.targeting.selectedByN {
+			send <- n
+		}
+		p.RUnlock()
+		close(send)
+	}(ch)
+	return ch
 }
 
 func (p *player) getHandle() uint16 {
