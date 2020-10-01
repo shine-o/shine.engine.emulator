@@ -7,5 +7,5 @@ package structs
 //};
 type ServerMenu struct {
 	Reply   byte
-	Content [32]byte
+	Content string `struct:"[32]byte"`
 }

@@ -306,6 +306,9 @@ type NcCharReviveSameCmd struct {
 //NC_MAP_LINKOTHER_CMD
 type NcMapLinkOtherCmd NcCharReviveOtherCmd
 
+// NC_MAP_LINKSAME_CMD
+type NcMapLinkSameCmd NcCharReviveSameCmd
+
 //struct PROTO_NC_CHAR_SKILL_PASSIVE_CMD
 //{
 //  unsigned __int16 number;

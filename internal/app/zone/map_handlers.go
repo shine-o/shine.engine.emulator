@@ -14,3 +14,6 @@ func ncMapLogoutCmd(p *player, nc *structs.NcMapLogoutCmd) {
 	}
 	pc.Send(p.conn.outboundData)
 }
+
+// NC_MAP_TONORMALCOORD_CMD
+// 6172

@@ -63,6 +63,7 @@ const (
 	playerLogoutConclude
 	persistPlayerPosition
 	queryMap
+	changeMap
 
 	// map events
 	playerHandleMaintenance
@@ -84,6 +85,8 @@ const (
 	queryMonster
 	playerSelectsEntity
 	playerUnselectsEntity
+	playerClicksOnNpc
+	playerPromptReply
 
 	// dynamically registered events
 	// events that are defined at run time

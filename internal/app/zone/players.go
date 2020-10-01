@@ -54,7 +54,7 @@ func (p *players) add(ap *player) {
 	ap.justSpawned = true
 	p.Unlock()
 	go func(p *player) {
-		time.Sleep(3 * time.Second)
+		time.Sleep(15 * time.Second)
 		p.Lock()
 		p.justSpawned = false
 		p.Unlock()

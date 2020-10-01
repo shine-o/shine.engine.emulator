@@ -60,3 +60,10 @@ type playerLogoutConcludeEvent struct {
 type persistPlayerPositionEvent struct {
 	p *player
 }
+
+type changeMapEvent struct {
+	p    *player
+	s    *session
+	next *zoneMap
+	prev *zoneMap
+}

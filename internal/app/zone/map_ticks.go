@@ -13,7 +13,7 @@ func (zm *zoneMap) removeInactiveHandles() {
 				//log.Infof("executing playerHandleMaintenance for %v", zm.data.Info.MapName)
 				break
 			default:
-				//log.Infof("failed toexecuting playerHandleMaintenance for %v", zm.data.Info.MapName)
+				log.Infof("failed toexecuting playerHandleMaintenance for %v", zm.data.Info.MapName)
 			}
 		}
 	}

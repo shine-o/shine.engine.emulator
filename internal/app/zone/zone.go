@@ -35,6 +35,7 @@ func (z *zone) load() {
 		queryMap,
 		playerLogoutStart, playerLogoutCancel, playerLogoutConclude,
 		persistPlayerPosition,
+		changeMap,
 	}
 
 	z.events = &events{
@@ -136,7 +137,7 @@ func (z *zone) addMap(mapId int) {
 		queryPlayer, queryMonster,
 		playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
 		unknownHandle, monsterAppeared, monsterDisappeared, monsterWalks, monsterRuns,
-		playerSelectsEntity, playerUnselectsEntity,
+		playerSelectsEntity, playerUnselectsEntity,playerClicksOnNpc,playerPromptReply,
 	}
 
 	for _, index := range events {

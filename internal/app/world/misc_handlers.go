@@ -47,3 +47,15 @@ func NcMiscGameTimeAck(np *networking.Parameters, nc *structs.NcMiscGameTimeAck)
 	}
 	pc.Send(np.OutboundSegments.Send)
 }
+
+// NC_MISC_SERVER_TIME_NOTIFY_CMD
+// 2121
+func ncMiscServerTimeNotifyCmd(dst chan <- []byte, nc * structs.NcMiscServerTimeNotifyCmd)  {
+	pc := networking.Command{
+		Base:     networking.CommandBase{
+			OperationCode: 2121,
+		},
+		NcStruct: &nc,
+	}
+	pc.Send(dst)
+}

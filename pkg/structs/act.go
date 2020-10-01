@@ -188,3 +188,20 @@ type NcActMoveWalkCmd struct {
 	From ShineXYType
 	To   ShineXYType
 }
+
+// NC_ACT_NPCMENUOPEN_REQ
+// struct PROTO_NC_ACT_NPCMENUOPEN_REQ
+//{
+//  unsigned __int16 mobid;
+//};
+type NcActNpcMenuOpenReq struct {
+	MobID uint16
+}
+
+// struct PROTO_NC_ACT_NPCMENUOPEN_ACK
+//{
+//  char ack;
+//};
+type NcActNpcMenuOpenAck struct {
+	Ack byte
+}

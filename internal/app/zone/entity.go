@@ -74,6 +74,7 @@ type baseEntity struct {
 	handle   uint16
 	fallback location
 	current  location
+	next    * location
 	events
 }
 

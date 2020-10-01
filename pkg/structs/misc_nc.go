@@ -29,3 +29,14 @@ type NcMiscGameTimeAck struct {
 //};
 type NcMiscHeartBeatAck struct {
 }
+
+
+//struct PROTO_NC_MISC_SERVER_TIME_NOTIFY_CMD
+//{
+//  tm dCurrentTM;
+//  char nTimeZone;
+//};
+type NcMiscServerTimeNotifyCmd struct {
+	Time TM
+	TimeZone byte
+}

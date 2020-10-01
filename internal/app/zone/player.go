@@ -530,8 +530,8 @@ func (p *player) statsData(stats chan<- playerStats, c *character.Character, err
 		sp:       1000,
 		maxHP:    1000,
 		maxSP:    1000,
-		lp:       100,
-		maxLP:    100,
+		lp:       4294967295,
+		maxLP:    4294967295,
 		hpStones: 15,
 		spStones: 15,
 		curseResistance: stat{
@@ -649,6 +649,7 @@ func (p *player) ncBriefInfoLoginCharacterCmd() structs.NcBriefInfoLoginCharacte
 	}
 	return nc
 }
+
 func (p *player) charParameterData() structs.CharParameterData {
 	return structs.CharParameterData{
 		PrevExp: p.state.prevExp,

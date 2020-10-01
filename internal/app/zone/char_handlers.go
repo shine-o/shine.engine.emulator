@@ -350,7 +350,6 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 
 	pae = playerAppearedEvent{
 		handle: session.handle,
-		err:    make(chan error),
 	}
 
 	zm.send[playerAppeared] <- &pae

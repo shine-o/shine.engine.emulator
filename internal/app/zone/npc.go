@@ -3,6 +3,7 @@ package zone
 import (
 	mobs "github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/monsters"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/world"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"sync"
 	"time"
@@ -14,6 +15,7 @@ type npc struct {
 	mobInfo       *shn.MobInfo
 	mobInfoServer *shn.MobInfoServer
 	regenData     *mobs.RegenEntry
+	npcData		  *world.ShineNPC
 	tickers       []*time.Ticker
 	status
 	sync.RWMutex

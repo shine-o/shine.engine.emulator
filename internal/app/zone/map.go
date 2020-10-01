@@ -51,7 +51,7 @@ func (zm *zoneMap) run() {
 
 		go zm.playerActivity()
 		go zm.monsterActivity()
-
+		go zm.npcInteractions()
 		go zm.playerQueries()
 		go zm.monsterQueries()
 	}
@@ -73,6 +73,18 @@ func (zm *zoneMap) spawnNPC() {
 				defer wg.Done()
 
 				mi, mis := mobDataPointers(sn.MobIndex)
+
+				_, ok := npcData.Data[zm.data.MapInfoIndex]
+
+				var shineNpc * world.ShineNPC
+
+				if ok {
+					for i, nd := range npcData.Data[zm.data.MapInfoIndex] {
+						if nd.MobIndex == sn.MobIndex {
+							shineNpc = npcData.Data[zm.data.MapInfoIndex][i]
+						}
+					}
+				}
 
 				if mi == nil {
 					log.Errorf("no entry in MobInfo for %v", sn.MobIndex)
@@ -119,6 +131,7 @@ func (zm *zoneMap) spawnNPC() {
 					sp:            uint32(mis.MaxSP),
 					mobInfo:       mi,
 					mobInfoServer: mis,
+					npcData: shineNpc,
 					status: status{
 						idling:   make(chan bool),
 						fighting: make(chan bool),

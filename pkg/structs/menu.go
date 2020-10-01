@@ -11,7 +11,7 @@ package structs
 //  SERVERMENU menu[];
 //};
 type NcServerMenuReq struct {
-	Title       [128]byte
+	Title       string `struct:"[128]byte"`
 	Priority    byte
 	NpcHandle   uint16
 	NpcPosition ShineXYType

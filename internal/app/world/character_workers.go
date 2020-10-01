@@ -53,6 +53,7 @@ func characterSelectLogic(e event, w *world) {
 		log.Error(err)
 		return
 	}
+
 	ncUserLoginWorldAck(ev.np, &nc)
 }
 
@@ -82,7 +83,10 @@ func characterLoginLogic(e event, w *world) {
 		return
 	}
 
+
 	ncCharLoginAck(ev.np, &nc)
+
+	go worldTimeNotification(ev.np)
 
 	session, ok := ev.np.Session.(*session)
 
@@ -91,7 +95,9 @@ func characterLoginLogic(e event, w *world) {
 		return
 	}
 
+	session.Lock()
 	session.characterID = char.ID
+	session.Unlock()
 
 	cs := characterSettingsEvent{
 		char: &char,

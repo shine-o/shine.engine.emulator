@@ -185,7 +185,7 @@ func checkRemoval(p1, p2 *player) {
 	}
 
 	if lastHeartbeat(p2) > playerHeartbeatLimit {
-		go p1.removeAdjacentPlayer(fh)
+		p1.removeAdjacentPlayer(fh)
 		return
 	}
 
@@ -193,7 +193,7 @@ func checkRemoval(p1, p2 *player) {
 		nc := structs.NcBriefInfoDeleteHandleCmd{
 			Handle: p2.getHandle(),
 		}
-		go ncBriefInfoDeleteHandleCmd(p1, &nc)
-		go p1.removeAdjacentPlayer(fh)
+		ncBriefInfoDeleteHandleCmd(p1, &nc)
+		p1.removeAdjacentPlayer(fh)
 	}
 }

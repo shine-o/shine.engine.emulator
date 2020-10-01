@@ -95,6 +95,8 @@ func Start(cmd *cobra.Command, args []string) {
 			9217: ncBatTargetingReq,
 			9224: ncBatUntargetReq,
 			3096: ncUserNormalLogoutCmd,
+			8202: ncActNpcClickCmd,
+			15362: ncMenuServerMenuAck,
 		},
 		SessionFactory: sessionFactory{},
 	}

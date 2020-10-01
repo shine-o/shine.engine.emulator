@@ -11,7 +11,6 @@ type playerHandleEvent struct {
 
 type playerAppearedEvent struct {
 	handle uint16
-	err    chan error
 }
 
 type playerDisappearedEvent struct {
@@ -59,4 +58,14 @@ type playerSelectsEntityEvent struct {
 
 type playerUnselectsEntityEvent struct {
 	handle uint16
+}
+
+type playerClicksOnNpcEvent struct {
+	nc * structs.NcActNpcClickCmd
+	handle uint16
+}
+
+type playerPromptReplyEvent struct {
+	nc     *structs.NcServerMenuAck
+	s * session
 }

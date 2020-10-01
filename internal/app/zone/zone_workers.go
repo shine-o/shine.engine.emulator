@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/go-pg/pg/v9"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
+	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
 	"time"
 )
@@ -34,9 +35,69 @@ func (z *zone) playerSession() {
 			go playerLogoutCancelLogic(z, e)
 		case e := <-z.recv[playerLogoutConclude]:
 			go playerLogoutConcludeLogic(z, e)
+		case e := <-z.recv[changeMap]:
+			go func() {
+				log.Info(e)
+				ev, ok := e.(*changeMapEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(changeMapEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+
+				//todo: zone rpc method for external maps, for now, all maps are running in the same zone
+
+				// delete handle in previous map
+				// trigger player disappeared for that player
+				oldHandle := ev.p.getHandle()
+				ev.prev.entities.players.remove(oldHandle)
+
+				ev.prev.send[playerDisappeared] <- &playerDisappearedEvent{
+					handle: oldHandle,
+				}
+
+				newHandle, err := ev.next.entities.players.new(playerHandleMin, playerHandleMax, playerAttemptsMax)
+
+				if err != nil {
+					log.Error(err)
+					return
+				}
+
+				ev.p.Lock()
+				newLocation := *ev.p.next
+				ev.p.handle = newHandle
+				ev.p.current = newLocation
+				ev.p.Unlock()
+
+				ev.next.entities.players.add(ev.p)
+				// NC_MAP_LINKSAME_CMD
+				
+				nc := structs.NcMapLinkSameCmd{
+					//MapID:    ev.next.data.Info.ID,
+					MapID:    3,
+					Location: structs.ShineXYType{
+						X: uint32(newLocation.x),
+						Y: uint32(newLocation.y),
+					},
+				}
+
+				ev.s.mapID = ev.next.data.ID
+				ev.s.handle = newHandle
+
+				ncMapLinkSameCmd(ev.p, &nc)
+				
+				ev.next.send[playerAppeared] <- &playerAppearedEvent{
+					handle: newHandle,
+				}
+				
+				//		ncCharClientBaseCmd(p)
+				//		ncCharClientShapeCmd(p)
+				//		ncMapLoginAck(p)
+
+			}()
 		}
 	}
 }
+
 
 func (z *zone) playerGameData() {
 	log.Infof("[zone_worker] playerGameData worker")
@@ -166,7 +227,6 @@ func playerMapLoginLogic(e event) {
 	case <-phe.done:
 		ncCharClientBaseCmd(p)
 		ncCharClientShapeCmd(p)
-		// weird bug sometimes the client stucks in character select
 		ncMapLoginAck(p)
 	case err := <-phe.err:
 		log.Error(err)

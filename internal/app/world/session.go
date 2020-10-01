@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/viper"
+	"sync"
 )
 
 type sessionFactory struct {
@@ -19,6 +20,7 @@ type session struct {
 	UserID      uint64 `json:"user_id"`
 	UserName    string `json:"user_name"`
 	characterID uint64
+	sync.RWMutex
 }
 
 func (s sessionFactory) New() networking.Session {
