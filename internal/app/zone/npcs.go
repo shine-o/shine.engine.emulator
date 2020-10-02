@@ -4,12 +4,8 @@ import (
 	"sync"
 )
 
-const npcHandleMin uint16 = 37000
-const npcHandleMax uint16 = 47000
-const npcAttemptsMax uint16 = 1500
-
 type npcs struct {
-	handler
+	*handler
 	active map[uint16]*npc
 	sync.RWMutex
 }
@@ -42,7 +38,6 @@ func (n *npcs) get(h uint16) *npc {
 func (n *npcs) remove(h uint16) {
 	n.Lock()
 	delete(n.active, h)
-	delete(n.handler.usedHandles, h)
 	n.Unlock()
 }
 

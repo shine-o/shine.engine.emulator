@@ -75,30 +75,30 @@ loop:
 					ly = networking.RandomIntBetween(rY, rY+walkSpeed)
 				}
 			case 2:
-				if rX-(walkSpeed*4) < rX+walkSpeed {
-					lx = networking.RandomIntBetween(rX-(walkSpeed*4), rX+walkSpeed)
+				if rX-(walkSpeed) < rX+walkSpeed {
+					lx = networking.RandomIntBetween(rX-(walkSpeed), rX+walkSpeed)
 				}
-				if rY-(walkSpeed*4) < rY+walkSpeed {
-					ly = networking.RandomIntBetween(rY-(walkSpeed*4), rY+walkSpeed)
+				if rY-(walkSpeed) < rY+walkSpeed {
+					ly = networking.RandomIntBetween(rY-(walkSpeed), rY+walkSpeed)
 				}
 			case 3:
-				if rY-(walkSpeed*4) < rY {
+				if rY-(walkSpeed) < rY {
 					lx = rX
-					ly = networking.RandomIntBetween(rY-(walkSpeed*4), rY)
+					ly = networking.RandomIntBetween(rY-(walkSpeed), rY)
 				}
 			case 4:
-				if rY+(walkSpeed*4) < rY {
+				if rY+(walkSpeed) < rY {
 					lx = rX
-					ly = networking.RandomIntBetween(rY+(walkSpeed*4), rY)
+					ly = networking.RandomIntBetween(rY+(walkSpeed), rY)
 				}
 			case 5:
-				if rX-(walkSpeed*4) < rX {
-					lx = networking.RandomIntBetween(rX-(walkSpeed*4), rX)
+				if rX-(walkSpeed) < rX {
+					lx = networking.RandomIntBetween(rX-(walkSpeed), rX)
 					ly = rY
 				}
 			case 6:
-				if rX+(walkSpeed*4) < rX {
-					lx = networking.RandomIntBetween(rX+(walkSpeed*4), rX)
+				if rX+(walkSpeed) < rX {
+					lx = networking.RandomIntBetween(rX+(walkSpeed), rX)
 					ly = rY
 				}
 			case 7:

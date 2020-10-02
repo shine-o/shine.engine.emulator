@@ -82,7 +82,7 @@ func (zm *zoneMap) npcInteractions() {
 							var md * world.Map
 
 							for i, m := range mapData {
-								if m.MapInfoIndex == n.npcData.ShinePortal.ClientMapIndex {
+								if m.Info.MapName.Name == n.npcData.ShinePortal.ServerMapIndex {
 									md = mapData[i]
 									break
 								}
@@ -90,7 +90,7 @@ func (zm *zoneMap) npcInteractions() {
 
 							var mapName string
 							if md != nil {
-								mapName = md.ShineMapName
+								mapName = md.Info.Name
 							} else {
 								mapName = "UNAVAILABLE"
 							}
@@ -115,7 +115,7 @@ func (zm *zoneMap) npcInteractions() {
 										Content: "Yes.",
 									},
 									{
-										Reply:   1,
+										Reply:   0,
 										Content: "No.",
 									},
 								},
@@ -133,7 +133,7 @@ func (zm *zoneMap) npcInteractions() {
 							p.Lock()
 							p.next = &location{
 								mapID:     md.ID,
-								mapName:   mapName,
+								mapName:   md.Info.MapName.Name,
 								x:         n.npcData.ShinePortal.X,
 								y:         n.npcData.ShinePortal.Y,
 								//d:         n.npcData.ShinePortal.,
@@ -149,12 +149,16 @@ func (zm *zoneMap) npcInteractions() {
 				ncActNpcMenuOpenReq(p, &nc)
 
 			}()
+
 		case e := <-zm.recv[playerPromptReply]:
 			go func() {
 				log.Info(e)
 				ev, ok := e.(*playerPromptReplyEvent)
 				if !ok {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerPromptReplyEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				if ev.nc.Reply == 0 {
 					return
 				}
 				p := zm.entities.players.get(ev.s.handle)
@@ -503,11 +507,11 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 			}
 
 			go zm.entities.players.remove(p.handle)
+			go zm.entities.players.handler.remove(p.handle)
 
 			p.RUnlock()
 
 		}(ap)
-
 	}
 }
 
@@ -518,7 +522,7 @@ func playerHandleLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	handle, err := zm.entities.players.handler.new(playerHandleMin, playerHandleMax, playerAttemptsMax)
+	handle, err := zm.entities.players.handler.new()
 
 	if err != nil {
 		ev.err <- err
@@ -577,12 +581,10 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 	wg.Wait()
 
 	go p1.heartbeat()
+
 	go p1.persistPosition()
-
 	go p1.nearbyPlayersMaintenance(zm)
-
 	go p1.nearbyMonstersMaintenance(zm)
-
 	go p1.nearbyNPCMaintenance(zm)
 
 	//go adjacentMonstersInform(p1, zm)

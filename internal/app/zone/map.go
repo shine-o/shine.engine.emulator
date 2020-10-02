@@ -96,7 +96,7 @@ func (zm *zoneMap) spawnNPC() {
 					return
 				}
 
-				h, err := zm.entities.npcs.new(npcHandleMin, npcHandleMax, npcAttemptsMax)
+				h, err := zm.entities.npcs.new()
 				if err != nil {
 					log.Error(err)
 					return
@@ -285,7 +285,7 @@ func spawnMonster(zm *zoneMap, re mobs.RegenEntry, mi *shn.MobInfo, mis *shn.Mob
 	}
 
 	if spawn {
-		h, err := zm.entities.monsters.new(monsterHandleMin, monsterHandleMax, monsterAttemptsMax)
+		h, err := zm.entities.monsters.new()
 		if err != nil {
 			log.Error(err)
 			return
@@ -327,7 +327,8 @@ func spawnMonster(zm *zoneMap, re mobs.RegenEntry, mi *shn.MobInfo, mis *shn.Mob
 		zm.entities.monsters.Unlock()
 
 		if !staticMonster {
-			go m.roam(zm)
+			// for now its a weird thing, better not to use it
+			//go m.roam(zm)
 		}
 	}
 }

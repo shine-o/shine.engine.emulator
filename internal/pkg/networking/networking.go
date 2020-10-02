@@ -194,7 +194,7 @@ func (pc *Command) Send(outboundStream chan<- []byte) {
 	if pc.NcStruct != nil {
 		data, err := structs.Pack(pc.NcStruct)
 		if err != nil {
-			log.Error(err)
+			log.Errorf("%v, %v", err, pc)
 			return
 		}
 		pc.Base.Data = data

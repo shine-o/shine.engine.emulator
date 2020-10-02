@@ -5,12 +5,8 @@ import (
 	"sync"
 )
 
-const monsterHandleMin uint16 = 17000
-const monsterHandleMax uint16 = 27000
-const monsterAttemptsMax uint16 = 1500
-
 type monsters struct {
-	handler
+	*handler
 	handleIndex uint16
 	active      map[uint16]*monster
 	sync.RWMutex
@@ -44,7 +40,6 @@ func (m *monsters) get(h uint16) *monster {
 func (m *monsters) remove(h uint16) {
 	m.Lock()
 	delete(m.active, h)
-	delete(m.handler.usedHandles, h)
 	m.Unlock()
 }
 

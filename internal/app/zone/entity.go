@@ -6,8 +6,10 @@ import (
 )
 
 const (
-	lengthX = 256
-	lengthY = 256
+	lengthX = 512
+	lengthY = 512
+	//lengthX = 256
+	//lengthY = 256
 )
 
 type entity interface {
@@ -22,23 +24,28 @@ type handler struct {
 	sync.RWMutex
 }
 
-func (h *handler) new(min, max, attempts uint16) (uint16, error) {
+func (n *handler) remove(h uint16) {
+	n.Lock()
+	delete(n.usedHandles, h)
+	n.Unlock()
+}
+
+func (n *handler) add(ap *npc) {
+	n.Lock()
+	n.usedHandles[ap.handle] = true
+	n.Unlock()
+}
+
+const maxAttempts = 1500
+
+func (h *handler) new() (uint16, error) {
 	h.RLock()
 	index := h.handleIndex
 	h.RUnlock()
-
+	attempts := maxAttempts
 	for attempts != 0 {
 
 		index++
-
-		if index == max {
-			index = min
-		}
-
-		h.Lock()
-		h.handleIndex = index
-		h.Unlock()
-
 		h.RLock()
 		_, used := h.usedHandles[index]
 		h.RUnlock()
@@ -49,8 +56,13 @@ func (h *handler) new(min, max, attempts uint16) (uint16, error) {
 			continue
 		}
 
+		h.Lock()
+		h.handleIndex = index
+		h.Unlock()
+
 		return index, nil
 	}
+
 	return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
 }
 
@@ -111,8 +123,9 @@ func (b *baseEntity) move(m *zoneMap, x, y int) error {
 }
 
 func entityInRange(e1, e2 baseEntity) bool {
-	targetX, targetY := igCoordToBitmap(e2.current.x, e2.current.y)
+	//return true
 	viewerX, viewerY := igCoordToBitmap(e1.current.x, e1.current.y)
+	targetX, targetY := igCoordToBitmap(e2.current.x, e2.current.y)
 
 	maxY := viewerY + lengthY
 	minY := viewerY - lengthY

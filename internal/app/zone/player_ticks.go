@@ -8,9 +8,11 @@ import (
 func (p *player) heartbeat() {
 	log.Infof("[player_ticks] heartbeat for player %v", p.view.name)
 	tick := time.NewTicker(5 * time.Second)
+
 	p.Lock()
 	p.tickers = append(p.tickers, tick)
 	p.Unlock()
+
 	defer tick.Stop()
 
 	for {
@@ -32,6 +34,7 @@ func (p *player) persistPosition() {
 	p.Lock()
 	p.tickers = append(p.tickers, tick)
 	p.Unlock()
+
 	defer tick.Stop()
 
 	for {
@@ -51,11 +54,11 @@ func (p *player) nearbyPlayersMaintenance(zm *zoneMap) {
 
 	log.Infof("[player_ticks] nearbyEntities for handle %v", p.handle)
 	tick := time.NewTicker(200 * time.Millisecond)
-
 	p.Lock()
 	p.tickers = append(p.tickers, tick)
 	p.Unlock()
 	defer tick.Stop()
+
 	for {
 		select {
 		case <-tick.C:
@@ -87,16 +90,13 @@ func (p *player) nearbyPlayersMaintenance(zm *zoneMap) {
 }
 
 func (p *player) nearbyMonstersMaintenance(zm *zoneMap) {
-	log.Infof("[player_ticks] nearbyMonsters for handle %v", p.handle)
+	log.Infof("[player_ticks] nearbyMonstersMaintenance for handle %v", p.handle)
 	tick := time.NewTicker(200 * time.Millisecond)
 
 	p.Lock()
 	p.tickers = append(p.tickers, tick)
 	p.Unlock()
 	defer tick.Stop()
-	defer func() {
-		log.Warning("exiting nearbyMonstersMaintenance")
-	}()
 	for {
 		select {
 		case <-tick.C:
@@ -135,11 +135,11 @@ func (p *player) nearbyMonstersMaintenance(zm *zoneMap) {
 func (p *player) nearbyNPCMaintenance(zm *zoneMap) {
 	log.Infof("[player_ticks] nearbyNPCs for handle %v", p.handle)
 	tick := time.NewTicker(200 * time.Millisecond)
-
 	p.Lock()
 	p.tickers = append(p.tickers, tick)
 	p.Unlock()
 	defer tick.Stop()
+
 	for {
 		select {
 		case <-tick.C:

@@ -5,12 +5,8 @@ import (
 	"time"
 )
 
-const playerHandleMin uint16 = 8000
-const playerHandleMax uint16 = 12000
-const playerAttemptsMax uint16 = 500
-
 type players struct {
-	handler
+	*handler
 	active map[uint16]*player
 	sync.RWMutex
 }
@@ -43,16 +39,16 @@ func (p *players) get(h uint16) *player {
 func (p *players) remove(h uint16) {
 	p.Lock()
 	delete(p.active, h)
-	delete(p.usedHandles, h)
 	p.Unlock()
 }
 
 func (p *players) add(ap *player) {
 	p.Lock()
 	p.active[ap.handle] = ap
-	p.usedHandles[ap.handle] = true
 	ap.justSpawned = true
+	p.handler.usedHandles[ap.handle] = true
 	p.Unlock()
+
 	go func(p *player) {
 		time.Sleep(15 * time.Second)
 		p.Lock()

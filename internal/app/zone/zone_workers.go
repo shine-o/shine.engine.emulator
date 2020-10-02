@@ -45,35 +45,40 @@ func (z *zone) playerSession() {
 				}
 
 				//todo: zone rpc method for external maps, for now, all maps are running in the same zone
+				p := ev.p
 
-				// delete handle in previous map
-				// trigger player disappeared for that player
-				oldHandle := ev.p.getHandle()
-				ev.prev.entities.players.remove(oldHandle)
+				for _, v := range p.tickers {
+					v.Stop()
+				}
+
+				handle := ev.p.getHandle()
+
+				ev.prev.entities.players.remove(handle)
+				ev.prev.entities.players.handler.remove(p.handle)
+
+				ev.next.entities.players.add(p)
 
 				ev.prev.send[playerDisappeared] <- &playerDisappearedEvent{
-					handle: oldHandle,
+					handle: handle,
 				}
 
-				newHandle, err := ev.next.entities.players.new(playerHandleMin, playerHandleMax, playerAttemptsMax)
+				p.Lock()
+				newLocation := *p.next
 
-				if err != nil {
-					log.Error(err)
-					return
-				}
+				p.fallback = newLocation
+				p.current = newLocation
 
-				ev.p.Lock()
-				newLocation := *ev.p.next
-				ev.p.handle = newHandle
-				ev.p.current = newLocation
-				ev.p.Unlock()
+				p.next = nil
 
-				ev.next.entities.players.add(ev.p)
-				// NC_MAP_LINKSAME_CMD
-				
+				p.players = make(map[uint16]*player)
+				p.monsters = make(map[uint16]*monster)
+				p.npcs = make(map[uint16]*npc)
+				p.tickers = make([]*time.Ticker, 0)
+				p.Unlock()
+
 				nc := structs.NcMapLinkSameCmd{
 					//MapID:    ev.next.data.Info.ID,
-					MapID:    3,
+					MapID:    ev.next.data.Info.ID,
 					Location: structs.ShineXYType{
 						X: uint32(newLocation.x),
 						Y: uint32(newLocation.y),
@@ -81,18 +86,12 @@ func (z *zone) playerSession() {
 				}
 
 				ev.s.mapID = ev.next.data.ID
-				ev.s.handle = newHandle
 
-				ncMapLinkSameCmd(ev.p, &nc)
-				
+				ncMapLinkSameCmd(p, &nc)
+
 				ev.next.send[playerAppeared] <- &playerAppearedEvent{
-					handle: newHandle,
+					handle: handle,
 				}
-				
-				//		ncCharClientBaseCmd(p)
-				//		ncCharClientShapeCmd(p)
-				//		ncMapLoginAck(p)
-
 			}()
 		}
 	}

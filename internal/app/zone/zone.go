@@ -19,6 +19,7 @@ type zone struct {
 	*dynamicEvents
 	worldDB *pg.DB
 	sync.RWMutex
+	*handler
 }
 
 func (z *zone) load() {
@@ -54,6 +55,13 @@ func (z *zone) load() {
 	z.dynamicEvents = &dynamicEvents{
 		events: make(map[string]events),
 	}
+
+	h := &handler{
+		handleIndex: 0,
+		usedHandles: make(map[uint16]bool),
+	}
+
+	z.handler = h
 
 	normalMaps := viper.GetIntSlice("normal_maps")
 
@@ -104,24 +112,15 @@ func (z *zone) addMap(mapId int) {
 		walkableY: walkableY,
 		entities: &entities{
 			players: &players{
-				handler: handler{
-					handleIndex: playerHandleMin,
-					usedHandles: make(map[uint16]bool),
-				},
+				handler: z.handler,
 				active: make(map[uint16]*player),
 			},
 			monsters: &monsters{
-				handler: handler{
-					handleIndex: monsterHandleMin,
-					usedHandles: make(map[uint16]bool),
-				},
+				handler: z.handler,
 				active: make(map[uint16]*monster),
 			},
 			npcs: &npcs{
-				handler: handler{
-					handleIndex: npcHandleMin,
-					usedHandles: make(map[uint16]bool),
-				},
+				handler: z.handler,
 				active: make(map[uint16]*npc),
 			},
 		},
