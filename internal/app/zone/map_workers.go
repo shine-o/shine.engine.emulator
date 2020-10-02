@@ -558,7 +558,7 @@ func playerDisappearedLogic(e event, zm *zoneMap) {
 			if p2.getHandle() == ev.handle {
 				return
 			}
-			ncMapLogoutCmd(p2, &structs.NcMapLogoutCmd{
+			ncBriefInfoDeleteHandleCmd(p2, &structs.NcBriefInfoDeleteHandleCmd{
 				Handle: ev.handle,
 			})
 		}(ap)
