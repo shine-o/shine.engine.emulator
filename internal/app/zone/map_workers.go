@@ -158,9 +158,11 @@ func (zm *zoneMap) npcInteractions() {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerPromptReplyEvent{}).String(), reflect.TypeOf(ev).String())
 					return
 				}
+
 				if ev.nc.Reply == 0 {
 					return
 				}
+
 				p := zm.entities.players.get(ev.s.handle)
 				if p == nil {
 					log.Errorf("player not found %v", ev.s.handle)

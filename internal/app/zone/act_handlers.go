@@ -358,6 +358,13 @@ func ncMenuServerMenuAck(ctx context.Context, np *networking.Parameters)  {
 		s: session,
 	}
 
+	err := structs.Unpack(np.Command.Base.Data, ppre.nc)
+
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
 	mqe = queryMapEvent{
 		id:  session.mapID,
 		zm:  make(chan *zoneMap),
