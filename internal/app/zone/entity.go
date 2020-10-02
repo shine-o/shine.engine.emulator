@@ -6,10 +6,10 @@ import (
 )
 
 const (
-	lengthX = 512
-	lengthY = 512
-	//lengthX = 256
-	//lengthY = 256
+	//lengthX = 512
+	//lengthY = 512
+	lengthX = 256
+	lengthY = 256
 )
 
 type entity interface {

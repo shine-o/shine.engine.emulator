@@ -97,7 +97,6 @@ func (z *zone) playerSession() {
 	}
 }
 
-
 func (z *zone) playerGameData() {
 	log.Infof("[zone_worker] playerGameData worker")
 	for {

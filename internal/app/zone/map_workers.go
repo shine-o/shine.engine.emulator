@@ -58,200 +58,11 @@ func (zm *zoneMap) npcInteractions() {
 	for {
 		select {
 		case e := <-zm.recv[playerClicksOnNpc]:
-			go func() {
-				log.Info(e)
-				ev, ok := e.(*playerClicksOnNpcEvent)
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerClicksOnNpcEvent{}).String(), reflect.TypeOf(ev).String())
-					return
-				}
-
-				p := zm.entities.players.get(ev.handle)
-				if p == nil {
-					log.Errorf("player not found %v", ev.handle)
-					return
-				}
-				// find npc with handle in ev.nc.Handle
-				// send id of mob
-				var nc structs.NcActNpcMenuOpenReq
-				for n := range zm.entities.npcs.all() {
-					if n.handle == ev.nc.NpcHandle {
-						nc.MobID = n.mobInfo.ID
-						if isPortal(n) {
-
-							var md * world.Map
-
-							for i, m := range mapData {
-								if m.Info.MapName.Name == n.npcData.ShinePortal.ServerMapIndex {
-									md = mapData[i]
-									break
-								}
-							}
-
-							var mapName string
-							if md != nil {
-								mapName = md.Info.Name
-							} else {
-								mapName = "UNAVAILABLE"
-							}
-
-							mapName = strings.Replace(mapName, "#", " ", -1)
-
-							title := fmt.Sprintf("Do you want to move to %v", mapName)
-
-							nc := structs.NcServerMenuReq{
-								Title:     title,
-								Priority:  0,
-								NpcHandle: n.getHandle(),
-								NpcPosition: structs.ShineXYType{
-									X: uint32(n.current.x),
-									Y: uint32(n.current.y),
-								},
-								LimitRange: 350,
-								MenuNumber: 2,
-								Menu: []structs.ServerMenu{
-									{
-										Reply:   1,
-										Content: "Yes.",
-									},
-									{
-										Reply:   0,
-										Content: "No.",
-									},
-								},
-							}
-
-							go ncMenuServerMenuReq(p, &nc)
-
-							if md == nil {
-								return
-							}
-							// create p.current.targetMap field
-							// when NC_MENU_SERVERMENU_ACK is sent by the client, check against p.current.targetMap
-							// if map is on this zone, easy to move, if on another gotta connect to zone master, send connection info.. etc..etc
-
-							p.Lock()
-							p.next = &location{
-								mapID:     md.ID,
-								mapName:   md.Info.MapName.Name,
-								x:         n.npcData.ShinePortal.X,
-								y:         n.npcData.ShinePortal.Y,
-								//d:         n.npcData.ShinePortal.,
-								movements: [15]movement{},
-							}
-							p.Unlock()
-							return
-						}
-						break
-					}
-				}
-
-				ncActNpcMenuOpenReq(p, &nc)
-
-			}()
-
+			go playerClicksOnNpcLogic(zm, e)
 		case e := <-zm.recv[playerPromptReply]:
-			go func() {
-				log.Info(e)
-				ev, ok := e.(*playerPromptReplyEvent)
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerPromptReplyEvent{}).String(), reflect.TypeOf(ev).String())
-					return
-				}
-
-				if ev.nc.Reply == 0 {
-					return
-				}
-
-				p := zm.entities.players.get(ev.s.handle)
-				if p == nil {
-					log.Errorf("player not found %v", ev.s.handle)
-					return
-				}
-
-				// on NC_MENU_SERVERMENU_ACK
-				// select p.next.location
-				// select p.targeting.selectingN
-				// if p.targeting.selectingN is an NPC that is also a ShinePortal and it leads to the p.next.location; then; aprove transaction and move player to other map.
-
-				if p.targeting.selectingN == nil {
-					log.Warning("prompt cannot be answered, player is no longer selecting an NPC")
-					return
-				}
-
-				// for now, its only about portals
-				if isPortal(p.targeting.selectingN) && portalMatchesLocation(p.targeting.selectingN.npcData.ShinePortal, p.next){
-					// move player to map
-					mqe := queryMapEvent{
-						id:  p.next.mapID,
-						zm:  make(chan *zoneMap),
-						err: make(chan error),
-					}
-
-					zoneEvents[queryMap] <- &mqe
-
-					var nzm *zoneMap
-					select {
-					case nzm = <-mqe.zm:
-						break
-					case e := <-mqe.err:
-						log.Error(e)
-						return
-					}
-
-					cme := changeMapEvent{
-						p:    p,
-						s:    ev.s,
-						prev: zm,
-						next: nzm,
-					}
-
-					zoneEvents[changeMap] <- &cme
-				}
-			}()
+			go playerPromptReplyLogic(zm, e)
 		}
 	}
-}
-
-func isPortal(n * npc) bool {
-	if n.npcData == nil {
-		return false
-	}
-	if n.npcData.ShinePortal == nil {
-		return false
-	}
-
-	var loaded bool
-	for _, m := range mapData {
-		if m.MapInfoIndex == n.npcData.ShinePortal.ClientMapIndex {
-			loaded = true
-			break
-		}
-	}
-	if loaded {
-		return true
-	}
-	return false
-}
-
-func portalMatchesLocation(portal * world.ShinePortal, next * location) bool {
-	var md * world.Map
-	for i, m := range mapData {
-		if m.MapInfoIndex == portal.ClientMapIndex {
-			md = mapData[i]
-			break
-		}
-	}
-
-	if md == nil {
-		return false
-	}
-
-	if md.ID == next.mapID {
-		return true
-	}
-
-	return false
 }
 
 func (zm *zoneMap) monsterActivity() {
@@ -291,6 +102,148 @@ func (zm *zoneMap) monsterQueries() {
 		case e := <-zm.recv[queryMonster]:
 			log.Info(e)
 		}
+	}
+}
+
+func playerClicksOnNpcLogic(zm * zoneMap, e event)  {
+	log.Info(e)
+	ev, ok := e.(*playerClicksOnNpcEvent)
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerClicksOnNpcEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
+	p := zm.entities.players.get(ev.handle)
+	if p == nil {
+		log.Errorf("player not found %v", ev.handle)
+		return
+	}
+	// find npc with handle in ev.nc.Handle
+	// send id of mob
+	var nc structs.NcActNpcMenuOpenReq
+	for n := range zm.entities.npcs.all() {
+		if n.handle == ev.nc.NpcHandle {
+			nc.MobID = n.mobInfo.ID
+			if isPortal(n) {
+
+				var md * world.Map
+
+				for i, m := range mapData {
+					if m.Info.MapName.Name == n.npcData.ShinePortal.ServerMapIndex {
+						md = mapData[i]
+						break
+					}
+				}
+
+				var mapName string
+				if md != nil {
+					mapName = md.Info.Name
+				} else {
+					mapName = "UNAVAILABLE"
+				}
+
+				mapName = strings.Replace(mapName, "#", " ", -1)
+
+				title := fmt.Sprintf("Do you want to move to %v", mapName)
+
+				nc := structs.NcServerMenuReq{
+					Title:     title,
+					Priority:  0,
+					NpcHandle: n.getHandle(),
+					NpcPosition: structs.ShineXYType{
+						X: uint32(n.current.x),
+						Y: uint32(n.current.y),
+					},
+					LimitRange: 350,
+					MenuNumber: 2,
+					Menu: []structs.ServerMenu{
+						{
+							Reply:   1,
+							Content: "Yes.",
+						},
+						{
+							Reply:   0,
+							Content: "No.",
+						},
+					},
+				}
+
+				go ncMenuServerMenuReq(p, &nc)
+
+				if md == nil {
+					return
+				}
+
+				p.Lock()
+				p.next = &location{
+					mapID:     md.ID,
+					mapName:   md.Info.MapName.Name,
+					x:         n.npcData.ShinePortal.X,
+					y:         n.npcData.ShinePortal.Y,
+					movements: [15]movement{},
+				}
+				p.Unlock()
+				return
+			}
+			break
+		}
+	}
+
+	ncActNpcMenuOpenReq(p, &nc)
+}
+
+func playerPromptReplyLogic(zm * zoneMap, e event)  {
+	log.Info(e)
+	ev, ok := e.(*playerPromptReplyEvent)
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerPromptReplyEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
+	if ev.nc.Reply == 0 {
+		return
+	}
+
+	p := zm.entities.players.get(ev.s.handle)
+
+	if p == nil {
+		log.Errorf("player not found %v", ev.s.handle)
+		return
+	}
+
+	if p.targeting.selectingN == nil {
+		log.Warning("prompt cannot be answered, player is no longer selecting an NPC")
+		return
+	}
+
+	// for now, its only about portals
+	if isPortal(p.targeting.selectingN) && portalMatchesLocation(p.targeting.selectingN.npcData.ShinePortal, p.next){
+		// move player to map
+		mqe := queryMapEvent{
+			id:  p.next.mapID,
+			zm:  make(chan *zoneMap),
+			err: make(chan error),
+		}
+
+		zoneEvents[queryMap] <- &mqe
+
+		var nzm *zoneMap
+		select {
+		case nzm = <-mqe.zm:
+			break
+		case e := <-mqe.err:
+			log.Error(e)
+			return
+		}
+
+		cme := changeMapEvent{
+			p:    p,
+			s:    ev.s,
+			prev: zm,
+			next: nzm,
+		}
+
+		zoneEvents[changeMap] <- &cme
 	}
 }
 
@@ -955,10 +908,59 @@ func showAllNPC(p *player, zm *zoneMap) {
 	var npcs structs.NcBriefInfoMobCmd
 
 	for n := range zm.entities.npcs.all() {
-		npcs.Mobs = append(npcs.Mobs, n.ncBriefInfoRegenMobCmd())
+		info := n.ncBriefInfoRegenMobCmd()
+		// if portal, FlagState = 1
+		// FlagData, Destination Map Index
+		if isPortal(n) {
+			info.FlagState = 1
+			info.FlagData.Data = n.npcData.ServerMapIndex
+		}
+		npcs.Mobs = append(npcs.Mobs, info)
 	}
 
 	npcs.MobNum = byte(len(npcs.Mobs))
 
 	ncBriefInfoMobCmd(p, &npcs)
+}
+
+func isPortal(n * npc) bool {
+	if n.npcData == nil {
+		return false
+	}
+
+	if n.npcData.ShinePortal == nil {
+		return false
+	}
+
+	var loaded bool
+	for _, m := range mapData {
+		if m.MapInfoIndex == n.npcData.ShinePortal.ServerMapIndex {
+			loaded = true
+			break
+		}
+	}
+	if loaded {
+		return true
+	}
+	return false
+}
+
+func portalMatchesLocation(portal * world.ShinePortal, next * location) bool {
+	var md * world.Map
+	for i, m := range mapData {
+		if m.MapInfoIndex == portal.ClientMapIndex {
+			md = mapData[i]
+			break
+		}
+	}
+
+	if md == nil {
+		return false
+	}
+
+	if md.ID == next.mapID {
+		return true
+	}
+
+	return false
 }

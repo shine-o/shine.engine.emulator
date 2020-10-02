@@ -40,7 +40,7 @@ func (zm *zoneMap) run() {
 
 	go func() {
 		defer wg.Done()
-		zm.spawnNPC()
+		zm.spawnNPCs()
 	}()
 	wg.Wait()
 
@@ -57,97 +57,110 @@ func (zm *zoneMap) run() {
 	}
 }
 
-func (zm *zoneMap) spawnNPC() {
+func (zm *zoneMap) spawnNPCs() {
 	npcs, ok := npcData.Data[zm.data.MapInfoIndex]
 
 	if ok {
 		var (
 			sem = make(chan int, 100)
 			wg  sync.WaitGroup
+			portals []*world.ShineNPC
+			normal []*world.ShineNPC
 		)
 
 		for _, data := range npcs {
+			if data.ShinePortal != nil {
+				portals = append(portals, data)
+			} else {
+				normal = append(normal, data)
+			}
+		}
+
+		for _, data := range portals {
 			wg.Add(1)
 			sem <- 1
 			go func(sn *world.ShineNPC) {
 				defer wg.Done()
-
-				mi, mis := mobDataPointers(sn.MobIndex)
-
-				_, ok := npcData.Data[zm.data.MapInfoIndex]
-
-				var shineNpc * world.ShineNPC
-
-				if ok {
-					for i, nd := range npcData.Data[zm.data.MapInfoIndex] {
-						if nd.MobIndex == sn.MobIndex {
-							shineNpc = npcData.Data[zm.data.MapInfoIndex][i]
-						}
-					}
-				}
-
-				if mi == nil {
-					log.Errorf("no entry in MobInfo for %v", sn.MobIndex)
-					return
-				}
-
-				if mis == nil {
-					log.Errorf("no entry in MobInfoServer for %v", sn.MobIndex)
-					return
-				}
-
-				h, err := zm.entities.npcs.new()
-				if err != nil {
-					log.Error(err)
-					return
-				}
-				//             Position = new Position(X, Y, (byte)(RotationInt < 0 ? ((360 + RotationInt) / 2) : (RotationInt / 2)));
-				var shineD int
-				if sn.D < 0 {
-					shineD = (360 + sn.D) / 2
-				} else {
-					shineD = sn.D / 2
-				}
-
-				n := &npc{
-					baseEntity: baseEntity{
-						handle: h,
-						fallback: location{
-							x: sn.X,
-							y: sn.Y,
-							d: shineD,
-						},
-						current: location{
-							mapID:     zm.data.ID,
-							mapName:   zm.data.MapInfoIndex,
-							x:         sn.X,
-							y:         sn.Y,
-							d:         shineD,
-							movements: [15]movement{},
-						},
-						events: events{},
-					},
-					hp:            mi.MaxHP,
-					sp:            uint32(mis.MaxSP),
-					mobInfo:       mi,
-					mobInfoServer: mis,
-					npcData: shineNpc,
-					status: status{
-						idling:   make(chan bool),
-						fighting: make(chan bool),
-						chasing:  make(chan bool),
-						fleeing:  make(chan bool),
-					},
-				}
-
-				zm.entities.npcs.Lock()
-				zm.entities.npcs.active[h] = n
-				zm.entities.npcs.Unlock()
+				spawnNPC(sn, zm)
 				<-sem
-
 			}(data)
 		}
+
+		for _, data := range normal {
+			wg.Add(1)
+			sem <- 1
+			go func(sn *world.ShineNPC) {
+				defer wg.Done()
+				spawnNPC(sn, zm)
+				<-sem
+			}(data)
+		}
+
 	}
+}
+
+func spawnNPC(sn *world.ShineNPC, zm* zoneMap) {
+
+	mi, mis := mobDataPointers(sn.MobIndex)
+
+	if mi == nil {
+		log.Errorf("no entry in MobInfo for %v", sn.MobIndex)
+		return
+	}
+
+	if mis == nil {
+		log.Errorf("no entry in MobInfoServer for %v", sn.MobIndex)
+		return
+	}
+
+	h, err := zm.entities.npcs.new()
+	if err != nil {
+		log.Error(err)
+		return
+	}
+	//             Position = new Position(X, Y, (byte)(RotationInt < 0 ? ((360 + RotationInt) / 2) : (RotationInt / 2)));
+	var shineD int
+	if sn.D < 0 {
+		shineD = (360 + sn.D) / 2
+	} else {
+		shineD = sn.D / 2
+	}
+
+	n := &npc{
+		baseEntity: baseEntity{
+			handle: h,
+			fallback: location{
+				x: sn.X,
+				y: sn.Y,
+				d: shineD,
+			},
+			current: location{
+				mapID:     zm.data.ID,
+				mapName:   zm.data.MapInfoIndex,
+				x:         sn.X,
+				y:         sn.Y,
+				d:         shineD,
+				movements: [15]movement{},
+			},
+			events: events{},
+		},
+		hp:            mi.MaxHP,
+		sp:            uint32(mis.MaxSP),
+		mobInfo:       mi,
+		mobInfoServer: mis,
+		npcData: sn,
+		status: status{
+			idling:   make(chan bool),
+			fighting: make(chan bool),
+			chasing:  make(chan bool),
+			fleeing:  make(chan bool),
+		},
+	}
+
+	zm.entities.npcs.Lock()
+	zm.entities.npcs.active[h] = n
+	zm.entities.npcs.Unlock()
+
 }
 
 // a mob is a collection of entities, in this case monsters

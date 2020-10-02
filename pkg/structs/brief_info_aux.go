@@ -35,7 +35,7 @@ type NcBriefInfoDroppedItemCmdAttr struct {
 //  char gate2where[12];   			 1
 //};
 type BriefInfoRegenMobCmdFlag struct {
-	Data [112]byte
+	Data string `struct:"[112]byte"`
 }
 
 //struct SHINE_COORD_TYPE

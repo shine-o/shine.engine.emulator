@@ -28,6 +28,28 @@ type player struct {
 	targeting
 	sync.RWMutex
 	justSpawned bool
+	*prompt
+}
+
+type promptAction int
+
+const (
+	portal promptAction = iota
+	partnerSummon
+	deleteItem
+	sellItem
+	equipItem
+	addFriend
+	joinGuild
+	joinParty
+	joinExpedition
+	duel
+	enhanceItem
+)
+
+type prompt struct {
+	action int
+	sync.RWMutex
 }
 
 func (p *player) selectsNPC(n *npc) byte {
@@ -368,6 +390,8 @@ func (p *player) load(name string, worldDB *pg.DB) error {
 	p.players = make(map[uint16]*player)
 	p.monsters = make(map[uint16]*monster)
 	p.npcs = make(map[uint16]*npc)
+
+	p.prompt = &prompt{}
 
 	view := make(chan playerView)
 	state := make(chan playerState)
