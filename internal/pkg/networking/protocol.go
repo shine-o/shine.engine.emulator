@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"strconv"
@@ -38,7 +37,7 @@ type Department struct {
 type Command struct {
 	Base CommandBase // common data in every command, like operation code and length
 	//NcStruct interface{} // any kind of structure that is the representation in bytes of the network packet
-	NcStruct structs.NC // any kind of structure that is the representation in bytes of the network packet
+	NcStruct interface{} // any kind of structure that is the representation in bytes of the network packet
 }
 
 // CommandBase type used to store decoded data from a packet
@@ -168,6 +167,16 @@ func (pcb *CommandBase) JSON() ExportedPcb {
 
 // InitCommandList from protocol commands file
 func InitCommandList(filePath string) error {
+	pcl, err := LoadCommandList(filePath)
+	if err != nil {
+		return err
+	}
+	commandList = pcl
+	return nil
+}
+
+// InitCommandList from protocol commands file
+func LoadCommandList(filePath string) (*PCList, error) {
 	pcl := PCList{
 		Departments: make(map[uint8]Department),
 	}
@@ -176,14 +185,14 @@ func InitCommandList(filePath string) error {
 
 	if err != nil {
 		log.Error(err)
-		return err
+		return &pcl, err
 	}
 
 	rPcl := &RawPCList{}
 
 	if err = yaml.Unmarshal(d, rPcl); err != nil {
 		log.Error(err)
-		return err
+		return &pcl, err
 	}
 
 	for _, d := range rPcl.Departments {
@@ -197,15 +206,15 @@ func InitCommandList(filePath string) error {
 			Name:              d.Name,
 			ProcessedCommands: make(map[string]string),
 		}
-		cmdsRaw := d.RawCommands
-		cmdsRaw = strings.ReplaceAll(cmdsRaw, "\n", "")
-		cmdsRaw = strings.ReplaceAll(cmdsRaw, " ", "")
-		cmdsRaw = strings.ReplaceAll(cmdsRaw, "0x", "")
-		cmdsRaw = strings.ReplaceAll(cmdsRaw, "\t", "")
+		commandsRaw := d.RawCommands
+		commandsRaw = strings.ReplaceAll(commandsRaw, "\n", "")
+		commandsRaw = strings.ReplaceAll(commandsRaw, " ", "")
+		commandsRaw = strings.ReplaceAll(commandsRaw, "0x", "")
+		commandsRaw = strings.ReplaceAll(commandsRaw, "\t", "")
 
-		cmds := strings.Split(cmdsRaw, ",")
+		commands := strings.Split(commandsRaw, ",")
 
-		for _, c := range cmds {
+		for _, c := range commands {
 			if c == "" {
 				continue
 			}
@@ -215,6 +224,5 @@ func InitCommandList(filePath string) error {
 		pcl.Departments[uint8(dptIntVal)] = department
 	}
 
-	commandList = &pcl
-	return nil
+	return &pcl, nil
 }

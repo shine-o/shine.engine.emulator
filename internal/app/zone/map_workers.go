@@ -3,6 +3,7 @@ package zone
 import (
 	"fmt"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/world"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
 	"strings"
@@ -105,7 +106,7 @@ func (zm *zoneMap) monsterQueries() {
 	}
 }
 
-func playerClicksOnNpcLogic(zm * zoneMap, e event)  {
+func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 	log.Info(e)
 	ev, ok := e.(*playerClicksOnNpcEvent)
 	if !ok {
@@ -126,7 +127,7 @@ func playerClicksOnNpcLogic(zm * zoneMap, e event)  {
 			nc.MobID = n.mobInfo.ID
 			if isPortal(n) {
 
-				var md * world.Map
+				var md *world.Map
 
 				for i, m := range mapData {
 					if m.Info.MapName.Name == n.npcData.ShinePortal.ServerMapIndex {
@@ -168,8 +169,7 @@ func playerClicksOnNpcLogic(zm * zoneMap, e event)  {
 					},
 				}
 
-				go ncMenuServerMenuReq(p, &nc)
-
+				go networking.Send(p.conn.outboundData, networking.NC_MENU_SERVERMENU_REQ, &nc)
 				if md == nil {
 					return
 				}
@@ -188,11 +188,10 @@ func playerClicksOnNpcLogic(zm * zoneMap, e event)  {
 			break
 		}
 	}
-
-	ncActNpcMenuOpenReq(p, &nc)
+	networking.Send(p.conn.outboundData, networking.NC_ACT_NPCMENUOPEN_REQ, &nc)
 }
 
-func playerPromptReplyLogic(zm * zoneMap, e event)  {
+func playerPromptReplyLogic(zm *zoneMap, e event) {
 	log.Info(e)
 	ev, ok := e.(*playerPromptReplyEvent)
 	if !ok {
@@ -217,7 +216,7 @@ func playerPromptReplyLogic(zm * zoneMap, e event)  {
 	}
 
 	// for now, its only about portals
-	if isPortal(p.targeting.selectingN) && portalMatchesLocation(p.targeting.selectingN.npcData.ShinePortal, p.next){
+	if isPortal(p.targeting.selectingN) && portalMatchesLocation(p.targeting.selectingN.npcData.ShinePortal, p.next) {
 		// move player to map
 		mqe := queryMapEvent{
 			id:  p.next.mapID,
@@ -280,32 +279,30 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 			order := vp.selectsPlayer(ap)
 
 			nc.Order = order
-			ncBatTargetInfoCmd(vp, nc)
+			networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nc)
 
 			if ap.targeting.selectingP != nil {
 				nextNc := ap.targeting.selectingP.ncBatTargetInfoCmd()
 				nextNc.Order = order + 1
-				ncBatTargetInfoCmd(vp, nextNc)
+				networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
 			}
 
 			if ap.targeting.selectingM != nil {
 				nextNc := ap.targeting.selectingM.ncBatTargetInfoCmd()
 				nextNc.Order = order + 1
-				ncBatTargetInfoCmd(vp, nextNc)
-				//return
+				networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
 			}
 
 			if ap.targeting.selectingN != nil {
 				nextNc := ap.targeting.selectingN.ncBatTargetInfoCmd()
 				nextNc.Order = order + 1
-				ncBatTargetInfoCmd(vp, nextNc)
-				//return
+				networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
 			}
 
 			for p := range vp.selectedByPlayers() {
 				nextNc := *nc
 				nextNc.Order++
-				ncBatTargetInfoCmd(p, &nextNc)
+				networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
 			}
 
 			return
@@ -321,14 +318,14 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 
 			nc.Order = order
 
-			ncBatTargetInfoCmd(vp, nc)
+			networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nc)
 
 			//if vp is being selected by player
 			//send them information about the monster
 			for p := range vp.selectedByPlayers() {
 				nextNc := *nc
 				nextNc.Order++
-				ncBatTargetInfoCmd(p, &nextNc)
+				networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
 			}
 			return
 		case an := <-n:
@@ -342,12 +339,12 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 
 			nc.Order = order
 
-			ncBatTargetInfoCmd(vp, nc)
+			networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nc)
 
 			for p := range vp.selectedByPlayers() {
 				nextNc := *nc
 				nextNc.Order++
-				ncBatTargetInfoCmd(p, &nextNc)
+				networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
 			}
 			return
 		default:
@@ -393,7 +390,7 @@ func playerUnselectsEntityLogic(zm *zoneMap, e event) {
 	}
 	vp.RLock()
 	for _, p := range vp.targeting.selectedByP {
-		go ncBatTargetInfoCmd(p, &nc)
+		go networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, &nc)
 	}
 	vp.RUnlock()
 }
@@ -407,7 +404,7 @@ func monsterWalksLogic(zm *zoneMap, e event) {
 	for ap := range zm.entities.players.all() {
 		go func(p *player, m *monster) {
 			if monsterInRange(p, m) {
-				ncActSomeoneMoveWalkCmd(p, ev.nc)
+				networking.Send(p.conn.outboundData, networking.NC_ACT_SOMEONEMOVEWALK_CMD, ev.nc)
 			}
 		}(ap, ev.m)
 	}
@@ -422,7 +419,7 @@ func monsterRunsLogic(zm *zoneMap, e event) {
 	for ap := range zm.entities.players.all() {
 		go func(p *player, m *monster) {
 			if monsterInRange(p, m) {
-				go ncActSomeoneMoveRunCmd(p, ev.nc)
+				go networking.Send(p.conn.outboundData, networking.NC_ACT_SOMEONEMOVERUN_CMD, ev.nc)
 			}
 		}(ap, ev.m)
 	}
@@ -558,9 +555,10 @@ func playerDisappearedLogic(e event, zm *zoneMap) {
 			if p2.getHandle() == ev.handle {
 				return
 			}
-			ncBriefInfoDeleteHandleCmd(p2, &structs.NcBriefInfoDeleteHandleCmd{
+			nc := &structs.NcBriefInfoDeleteHandleCmd{
 				Handle: ev.handle,
-			})
+			}
+			networking.Send(p2.conn.outboundData, networking.NC_BRIEFINFO_BRIEFINFODELETE_CMD, nc)
 		}(ap)
 	}
 }
@@ -620,7 +618,7 @@ func playerWalksLogic(e event, zm *zoneMap) {
 		go func(p2 *player) {
 			if p2.getHandle() != ev.handle {
 				if playerInRange(p2, p1) {
-					go ncActSomeoneMoveWalkCmd(p2, &nc)
+					go networking.Send(p2.conn.outboundData, networking.NC_ACT_SOMEONEMOVEWALK_CMD, &nc)
 				}
 			}
 		}(ap)
@@ -677,7 +675,7 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		go func(p2 *player) {
 			if p2.getHandle() != ev.handle {
 				if playerInRange(p2, p1) {
-					ncActSomeoneMoveRunCmd(p2, &nc)
+					networking.Send(p2.conn.outboundData, networking.NC_ACT_SOMEONEMOVERUN_CMD, &nc)
 				}
 			}
 		}(ap)
@@ -732,7 +730,7 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 		go func(p2 *player) {
 			if p2.getHandle() != ev.handle {
 				if playerInRange(p2, p1) {
-					ncActSomeoneStopCmd(p2, &nc)
+					networking.Send(p2.conn.outboundData, networking.NC_ACT_SOMEONESTOP_CMD, &nc)
 				}
 			}
 		}(ap)
@@ -762,7 +760,7 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 		go func(p2 *player) {
 			if p2.getHandle() != ev.handle {
 				if playerInRange(p2, p1) {
-					go ncActSomeoneJumpCmd(p2, &nc)
+					go networking.Send(p2.conn.outboundData, networking.NC_ACT_SOMEEONEJUMP_CMD, &nc)
 				}
 			}
 		}(ap)
@@ -802,12 +800,13 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 		p1.RLock()
 		nc1 := p1.ncBriefInfoLoginCharacterCmd()
 		p1.RUnlock()
-		go ncBriefInfoLoginCharacterCmd(p2, &nc1)
+		go networking.Send(p2.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, &nc1)
 
 		p2.RLock()
 		nc2 := p2.ncBriefInfoLoginCharacterCmd()
 		p2.RUnlock()
-		go ncBriefInfoLoginCharacterCmd(p1, &nc2)
+		go networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, &nc2)
+
 	}
 
 	m := zm.entities.monsters.get(ev.nc.ForeignHandle)
@@ -818,7 +817,7 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 
 	if monsterInRange(p1, m) {
 		nc := m.ncBriefInfoRegenMobCmd()
-		go ncBriefInfoRegenMobCmd(p1, &nc)
+		go networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
 	}
 
 }
@@ -830,7 +829,7 @@ func newPlayer(p1 *player, zm *zoneMap) {
 			if p1.getHandle() != p2.getHandle() {
 				if playerInRange(p2, p1) {
 					nc := p1.ncBriefInfoLoginCharacterCmd()
-					ncBriefInfoLoginCharacterCmd(p2, &nc)
+					networking.Send(p2.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, &nc)
 				}
 			}
 		}(ap)
@@ -850,10 +849,12 @@ func nearbyPlayers(p1 *player, zm *zoneMap) {
 		}
 	}
 
-	ncBriefInfoCharacterCmd(p1, &structs.NcBriefInfoCharacterCmd{
+	nc := &structs.NcBriefInfoCharacterCmd{
 		Number:     byte(len(characters)),
 		Characters: characters,
-	})
+	}
+
+	networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_CHARACTER_CMD, nc)
 }
 
 func nearbyMonsters(p *player, zm *zoneMap) {
@@ -861,7 +862,7 @@ func nearbyMonsters(p *player, zm *zoneMap) {
 		go func(p *player, m *monster) {
 			if monsterInRange(p, m) {
 				nc := m.ncBriefInfoRegenMobCmd()
-				ncBriefInfoRegenMobCmd(p, &nc)
+				networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
 			}
 		}(p, am)
 	}
@@ -920,10 +921,10 @@ func showAllNPC(p *player, zm *zoneMap) {
 
 	npcs.MobNum = byte(len(npcs.Mobs))
 
-	ncBriefInfoMobCmd(p, &npcs)
+	networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_MOB_CMD, &npcs)
 }
 
-func isPortal(n * npc) bool {
+func isPortal(n *npc) bool {
 	if n.npcData == nil {
 		return false
 	}
@@ -945,8 +946,8 @@ func isPortal(n * npc) bool {
 	return false
 }
 
-func portalMatchesLocation(portal * world.ShinePortal, next * location) bool {
-	var md * world.Map
+func portalMatchesLocation(portal *world.ShinePortal, next *location) bool {
+	var md *world.Map
 	for i, m := range mapData {
 		if m.MapInfoIndex == portal.ClientMapIndex {
 			md = mapData[i]

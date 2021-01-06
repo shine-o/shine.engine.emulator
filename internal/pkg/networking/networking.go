@@ -29,6 +29,7 @@ type InboundSegments struct {
 	Recv <-chan []byte
 	Send chan<- []byte
 }
+
 type OutboundSegments struct {
 	Recv <-chan []byte
 	Send chan<- []byte
@@ -190,8 +191,26 @@ func (ss *ShineService) handleConnection(conn net.Conn) {
 	}
 }
 
-func (pc *Command) Send(outboundStream chan<- []byte) {
-	if pc.NcStruct != nil {
+//func (pc *Command) Send(outboundStream chan<- []byte) {
+//	if pc.NcStruct != nil {
+//		data, err := structs.Pack(pc.NcStruct)
+//		if err != nil {
+//			log.Errorf("%v, %v", err, pc)
+//			return
+//		}
+//		pc.Base.Data = data
+//	}
+//	outboundStream <- pc.Base.RawData()
+//	logOutboundPackets <- pc
+//}
+
+func Send(outboundStream chan<- []byte, opCode uint16, ncStruct interface{})  {
+	pc := Command{
+		Base: CommandBase{
+			OperationCode: opCode,
+		},
+	}
+	if ncStruct != nil {
 		data, err := structs.Pack(pc.NcStruct)
 		if err != nil {
 			log.Errorf("%v, %v", err, pc)
@@ -200,7 +219,7 @@ func (pc *Command) Send(outboundStream chan<- []byte) {
 		pc.Base.Data = data
 	}
 	outboundStream <- pc.Base.RawData()
-	logOutboundPackets <- pc
+	logOutboundPackets <- &pc
 }
 
 func logPackets(ctx context.Context, in <-chan *Command, out <-chan *Command) {

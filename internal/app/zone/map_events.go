@@ -61,11 +61,11 @@ type playerUnselectsEntityEvent struct {
 }
 
 type playerClicksOnNpcEvent struct {
-	nc * structs.NcActNpcClickCmd
+	nc     *structs.NcActNpcClickCmd
 	handle uint16
 }
 
 type playerPromptReplyEvent struct {
-	nc     *structs.NcServerMenuAck
-	s * session
+	nc *structs.NcServerMenuAck
+	s  *session
 }

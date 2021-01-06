@@ -9,9 +9,6 @@ import (
 	"reflect"
 )
 
-type NC interface {
-}
-
 var log *logger.Logger
 
 func init() {

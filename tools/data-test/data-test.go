@@ -32,7 +32,7 @@ func main() {
 	logger.Info(npcData)
 }
 
-func packetFilter()  {
+func packetFilter() {
 	captured := make(chan ps.CapturedPacket, 1500)
 	p := ps.Params{
 		WatchCommands: make(map[uint16]interface{}),

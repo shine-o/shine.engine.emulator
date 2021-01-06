@@ -29,30 +29,13 @@ func ncAvatarCreateReq(ctx context.Context, np *networking.Parameters) {
 	worldEvents[createCharacter] <- &cce
 }
 
-// NcAvatarCreateSuccAck notifies the character was created and sends the character info
-// NC_AVATAR_CREATESUCC_ACK
-func ncAvatarCreateSuccAck(np *networking.Parameters, nc *structs.NcAvatarCreateSuccAck) {
-	pc := &networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 5126,
-		},
-		NcStruct: nc,
-	}
-	pc.Send(np.OutboundSegments.Send)
-}
-
 // NcAvatarCreateFailAck sends error message to the client when character creation fails
 // NC_AVATAR_CREATEFAIL_ACK
 func ncAvatarCreateFailAck(np *networking.Parameters, errCode uint16) {
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 5124,
-		},
-	}
-	pc.NcStruct = &structs.NcAvatarCreateFailAck{
+	nc := &structs.NcAvatarCreateFailAck{
 		Err: errCode,
 	}
-	pc.Send(np.OutboundSegments.Send)
+	networking.Send(np.OutboundSegments.Send, networking.NC_AVATAR_CREATEFAIL_ACK, nc)
 }
 
 // NcAvatarEraseReq handles a petition to delete a character
@@ -76,18 +59,6 @@ func ncAvatarEraseReq(ctx context.Context, np *networking.Parameters) {
 
 	worldEvents[deleteCharacter] <- &dce
 
-}
-
-// AvatarEraseSuccAck notifies the client that the character was deleted successfully
-// AVATAR_ERASESUCC_ACK
-func avatarEraseSuccAck(np *networking.Parameters, nc *structs.NcAvatarEraseSuccAck) {
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 5132,
-		},
-		NcStruct: nc,
-	}
-	pc.Send(np.OutboundSegments.Send)
 }
 
 func createCharErr(np *networking.Parameters, err error) {

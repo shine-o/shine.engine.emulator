@@ -113,15 +113,15 @@ func (z *zone) addMap(mapId int) {
 		entities: &entities{
 			players: &players{
 				handler: z.handler,
-				active: make(map[uint16]*player),
+				active:  make(map[uint16]*player),
 			},
 			monsters: &monsters{
 				handler: z.handler,
-				active: make(map[uint16]*monster),
+				active:  make(map[uint16]*monster),
 			},
 			npcs: &npcs{
 				handler: z.handler,
-				active: make(map[uint16]*npc),
+				active:  make(map[uint16]*npc),
 			},
 		},
 		events: events{
@@ -136,7 +136,7 @@ func (z *zone) addMap(mapId int) {
 		queryPlayer, queryMonster,
 		playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
 		unknownHandle, monsterAppeared, monsterDisappeared, monsterWalks, monsterRuns,
-		playerSelectsEntity, playerUnselectsEntity,playerClicksOnNpc,playerPromptReply,
+		playerSelectsEntity, playerUnselectsEntity, playerClicksOnNpc, playerPromptReply,
 	}
 
 	for _, index := range events {

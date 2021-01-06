@@ -35,10 +35,11 @@ func clientVersionLogic(e event) {
 	err := checkClientVersion(ev.nc)
 	if err != nil {
 		log.Error(err)
-		ncUserClientWrongVersionCheckAck(ev.np)
+		networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_CLIENT_WRONGVERSION_CHECK_ACK, nil)
 		return
 	}
-	ncUserClientRightVersionCheckAck(ev.np)
+	//ncUserClientRightVersionCheckAck(ev.np)
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_CLIENT_RIGHTVERSION_CHECK_ACK, nil)
 }
 
 func worldManagerStatusLogic(e event) {
@@ -62,7 +63,7 @@ func worldManagerStatusLogic(e event) {
 		return
 	}
 
-	ncUserWorldStatusAck(ev.np)
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_WORLD_STATUS_ACK, nil)
 }
 
 func credentialsLoginLogic(e event, l *login) {
@@ -81,6 +82,15 @@ func credentialsLoginLogic(e event, l *login) {
 	}
 
 	loginSuccessful(l, ev.np)
+}
+
+// NcUserLoginFailAck notifies the user about an error while attempting to log in
+// NC_USER_LOGINFAIL_ACK
+func ncUserLoginFailAck(np *networking.Parameters, errCode uint16) {
+	nc := &structs.NcUserLoginFailAck{
+		Err: errCode,
+	}
+	networking.Send(np.OutboundSegments.Send, networking.NC_USER_LOGINFAIL_ACK, nc)
 }
 
 func tokenLoginLogic(l *login, e event) {
@@ -111,7 +121,7 @@ func loginSuccessful(l *login, np *networking.Parameters) {
 		})
 	}
 	nc.NumOfWorld = byte(len(l.worlds))
-	ncUserLoginAck(np, nc)
+	networking.Send(np.OutboundSegments.Send, networking.NC_USER_LOGIN_ACK, nc)
 }
 
 func serverSelectLogic(l *login, e event) {
@@ -129,7 +139,7 @@ func serverSelectLogic(l *login, e event) {
 				},
 				Port: uint16(w.port),
 			}
-			ncUserWorldSelectAck(ev.np, nc)
+			networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_WORLDSELECT_ACK, nc)
 			return
 		}
 	}

@@ -62,10 +62,10 @@ func (zm *zoneMap) spawnNPCs() {
 
 	if ok {
 		var (
-			sem = make(chan int, 100)
-			wg  sync.WaitGroup
+			sem     = make(chan int, 100)
+			wg      sync.WaitGroup
 			portals []*world.ShineNPC
-			normal []*world.ShineNPC
+			normal  []*world.ShineNPC
 		)
 
 		for _, data := range npcs {
@@ -99,7 +99,7 @@ func (zm *zoneMap) spawnNPCs() {
 	}
 }
 
-func spawnNPC(sn *world.ShineNPC, zm* zoneMap) {
+func spawnNPC(sn *world.ShineNPC, zm *zoneMap) {
 
 	mi, mis := mobDataPointers(sn.MobIndex)
 
@@ -148,7 +148,7 @@ func spawnNPC(sn *world.ShineNPC, zm* zoneMap) {
 		sp:            uint32(mis.MaxSP),
 		mobInfo:       mi,
 		mobInfoServer: mis,
-		npcData: sn,
+		npcData:       sn,
 		status: status{
 			idling:   make(chan bool),
 			fighting: make(chan bool),

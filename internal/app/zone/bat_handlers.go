@@ -90,15 +90,3 @@ func ncBatUntargetReq(ctx context.Context, np *networking.Parameters) {
 
 	zm.send[playerUnselectsEntity] <- &psee
 }
-
-// NC_BAT_TARGETINFO_CMD
-// 9218
-func ncBatTargetInfoCmd(p *player, nc *structs.NcBatTargetInfoCmd) {
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 9218,
-		},
-		NcStruct: nc,
-	}
-	pc.Send(p.conn.outboundData)
-}

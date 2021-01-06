@@ -6,40 +6,6 @@ import (
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 )
 
-// NC_BRIEFINFO_LOGINCHARACTER_CMD
-func ncBriefInfoLoginCharacterCmd(p *player, nc *structs.NcBriefInfoLoginCharacterCmd) {
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 7174,
-		},
-		NcStruct: &nc,
-	}
-	pc.Send(p.conn.outboundData)
-}
-
-// NC_BRIEFINFO_CHARACTER_CMD
-func ncBriefInfoCharacterCmd(p *player, nc *structs.NcBriefInfoCharacterCmd) {
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 7175,
-		},
-		NcStruct: nc,
-	}
-	pc.Send(p.conn.outboundData)
-}
-
-// NC_BRIEFINFO_BRIEFINFODELETE_CMD
-// 7182
-func ncBriefInfoDeleteHandleCmd(p *player, nc *structs.NcBriefInfoDeleteHandleCmd) {
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 7182,
-		},
-		NcStruct: nc,
-	}
-	pc.Send(p.conn.outboundData)
-}
-
 // NC_BRIEFINFO_INFORM_CMD
 // 7169
 func ncBriefInfoInformCmd(ctx context.Context, np *networking.Parameters) {
@@ -87,28 +53,4 @@ func ncBriefInfoInformCmd(ctx context.Context, np *networking.Parameters) {
 	}
 
 	zm.send[unknownHandle] <- &uhe
-}
-
-// NC_BRIEFINFO_MOB_CMD
-// 7177
-func ncBriefInfoMobCmd(p *player, nc *structs.NcBriefInfoMobCmd) {
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 7177,
-		},
-		NcStruct: nc,
-	}
-	pc.Send(p.conn.outboundData)
-}
-
-// NC_BRIEFINFO_REGENMOB_CMD
-// 7176
-func ncBriefInfoRegenMobCmd(p *player, nc *structs.NcBriefInfoRegenMobCmd) {
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 7176,
-		},
-		NcStruct: nc,
-	}
-	pc.Send(p.conn.outboundData)
 }

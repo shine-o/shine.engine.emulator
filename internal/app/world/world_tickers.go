@@ -6,11 +6,11 @@ import (
 	"time"
 )
 
-func worldTimeNotification(np * networking.Parameters) {
+func worldTimeNotification(np *networking.Parameters) {
 	//log.Infof("[world_ticks] worldTimeNotification ticker/worker %v", np.Session)
 	tick := time.Tick(10 * time.Second)
 	for {
-		select{
+		select {
 		case <-tick:
 			t := time.Now()
 			second := t.Second()
@@ -23,22 +23,21 @@ func worldTimeNotification(np * networking.Parameters) {
 			yearDay := t.YearDay()
 
 			nc := structs.NcMiscServerTimeNotifyCmd{
-				Time:     structs.TM{
+				Time: structs.TM{
 					Seconds:  int32(second),
 					Minutes:  int32(minute),
 					Hour:     int32(hour),
 					MonthDay: int32(day),
 					Month:    int32(month),
 					//Year:     int32(year),
-					Year:     120, // 120 = 2020, why? because potatoes
-					WeekDay:  int32(weekDay),
-					YearDay:  int32(yearDay),
-					IsDst:    0,
+					Year:    120, // 120 = 2020, why? because potatoes
+					WeekDay: int32(weekDay),
+					YearDay: int32(yearDay),
+					IsDst:   0,
 				},
 				TimeZone: 11,
 			}
-
-			go ncMiscServerTimeNotifyCmd(np.OutboundSegments.Send, &nc)
+			networking.Send(np.OutboundSegments.Send, networking.NC_MISC_SERVER_TIME_NOTIFY_CMD, &nc)
 		}
 	}
 }

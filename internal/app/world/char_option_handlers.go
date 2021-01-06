@@ -7,42 +7,6 @@ import (
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 )
 
-// NcCharOptionImproveGetGameOptionCmd sends the character's game options to the client
-// NC_CHAR_OPTION_IMPROVE_GET_GAMEOPTION_CMD
-func ncCharOptionImproveGetGameOptionCmd(np *networking.Parameters, nc *structs.NcCharOptionImproveGetGameOptionCmd) {
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 28724,
-		},
-		NcStruct: &nc,
-	}
-	pc.Send(np.OutboundSegments.Send)
-}
-
-// NcCharOptionImproveGetKeymapCmd sends the character's key map settings to the client
-// NC_CHAR_OPTION_IMPROVE_GET_KEYMAP_CMD
-func ncCharOptionImproveGetKeymapCmd(np *networking.Parameters, nc *structs.NcCharGetKeyMapCmd) {
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 28723,
-		},
-		NcStruct: &nc,
-	}
-	pc.Send(np.OutboundSegments.Send)
-}
-
-// NcCharOptionImproveGetShortcutDataCmd sends the character's shortcut settings to the client
-// NC_CHAR_OPTION_IMPROVE_GET_SHORTCUTDATA_CMD
-func ncCharOptionImproveGetShortcutDataCmd(np *networking.Parameters, nc *structs.NcCharGetShortcutDataCmd) {
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 28722,
-		},
-		NcStruct: &nc,
-	}
-	pc.Send(np.OutboundSegments.Send)
-}
-
 // NcCharOptionGetShortcutSizeReq
 // NC_CHAR_OPTION_GET_SHORTCUTSIZE_REQ
 func ncCharOptionGetShortcutSizeReq(ctx context.Context, np *networking.Parameters) {
@@ -63,13 +27,7 @@ func ncCharOptionGetShortcutSizeAck(np *networking.Parameters) {
 	if err != nil {
 		return
 	}
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 28677,
-		},
-		NcStruct: &nc,
-	}
-	pc.Send(np.OutboundSegments.Send)
+	networking.Send(np.OutboundSegments.Send, networking.NC_CHAR_OPTION_GET_SHORTCUTSIZE_ACK, &nc)
 }
 
 // NcCharOptionGetWindowPosReq
@@ -91,13 +49,8 @@ func ncCharOptionGetWindowPosAck(np *networking.Parameters) {
 	if err != nil {
 		return
 	}
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 28685,
-		},
-		NcStruct: &nc,
-	}
-	pc.Send(np.OutboundSegments.Send)
+
+	networking.Send(np.OutboundSegments.Send, networking.NC_CHAR_OPTION_GET_WINDOWPOS_ACK, &nc)
 }
 
 // NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_REQ
@@ -125,20 +78,4 @@ func ncCharOptionImproveSetShortcutDataReq(ctx context.Context, np *networking.P
 	}
 
 	worldEvents[updateShortcuts] <- &use
-	// take the data
-	// store it as the new shortcut data for this character
-	// send the ack with uint16 code 8448
-
-}
-
-// NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_ACK
-// 28728
-func ncCharOptionImproveSetShortcutDataAck(np *networking.Parameters, nc *structs.NcCharOptionImproveShortcutDataAck) {
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 28728,
-		},
-		NcStruct: &nc,
-	}
-	pc.Send(np.OutboundSegments.Send)
 }

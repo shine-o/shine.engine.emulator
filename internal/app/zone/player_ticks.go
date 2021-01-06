@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"time"
 )
@@ -22,7 +23,7 @@ func (p *player) heartbeat() {
 				return
 			}
 			log.Infof("[player_ticks] sending heartbeat for player %v", p.view.name)
-			go ncMiscHeartBeatReq(p)
+			go networking.Send(p.conn.outboundData, networking.NC_MISC_HEARTBEAT_REQ, nil)
 		}
 	}
 }
@@ -76,7 +77,7 @@ func (p *player) nearbyPlayersMaintenance(zm *zoneMap) {
 						p2.RLock() //todo move locks into the method
 						nc := p2.ncBriefInfoLoginCharacterCmd()
 						p2.RUnlock()
-						ncBriefInfoLoginCharacterCmd(p1, &nc)
+						networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, &nc)
 					}
 				}(p, ap)
 			}
@@ -109,7 +110,7 @@ func (p *player) nearbyMonstersMaintenance(zm *zoneMap) {
 					p.RUnlock()
 					if !exists && monsterInRange(p, m) {
 						nc := m.ncBriefInfoRegenMobCmd()
-						ncBriefInfoRegenMobCmd(p, &nc)
+						networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
 					}
 				}(p, am)
 			}
@@ -124,7 +125,7 @@ func (p *player) nearbyMonstersMaintenance(zm *zoneMap) {
 						nc := structs.NcBriefInfoDeleteHandleCmd{
 							Handle: mh,
 						}
-						ncBriefInfoDeleteHandleCmd(p, &nc)
+						networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_BRIEFINFODELETE_CMD, nc)
 					}
 				}(p, am)
 			}
@@ -152,7 +153,7 @@ func (p *player) nearbyNPCMaintenance(zm *zoneMap) {
 					p.RUnlock()
 					if !exists && npcInRange(p, n) {
 						nc := n.ncBriefInfoRegenMobCmd()
-						ncBriefInfoRegenMobCmd(p, &nc)
+						networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
 					}
 				}(p, an)
 			}
@@ -193,7 +194,7 @@ func checkRemoval(p1, p2 *player) {
 		nc := structs.NcBriefInfoDeleteHandleCmd{
 			Handle: p2.getHandle(),
 		}
-		ncBriefInfoDeleteHandleCmd(p1, &nc)
+		networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_BRIEFINFODELETE_CMD, &nc)
 		p1.removeAdjacentPlayer(fh)
 	}
 }
