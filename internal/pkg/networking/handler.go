@@ -16,7 +16,13 @@ type Parameters struct {
 }
 
 // HandleWarden utility struct for triggering functions implemented by the calling shine service
-type ShineHandler map[uint16]func(context.Context, *Parameters)
+//type ShinePacketRegistry map[uint16]func(context.Context, *Parameters)
+type ShinePacketRegistry map[uint16]ShinePacket
+
+type ShinePacket struct {
+	Handler func(context.Context, *Parameters)
+	NcStruct interface{}
+}
 
 // Read packet data from segments
 func (ss *ShineService) handleInboundSegments(ctx context.Context, n *Network) {
@@ -123,8 +129,8 @@ func (ss ShineService) commandWorker(ctx context.Context, n *Network) {
 			log.Warning("commandWorker context canceled")
 			return
 		case c := <-n.Commands.Recv:
-			if callback, ok := ss.ShineHandler[c.Base.OperationCode]; ok {
-				go callback(ctx, &Parameters{
+			if packet, ok := ss.ShinePacketRegistry[c.Base.OperationCode]; ok {
+				go packet.Handler(ctx, &Parameters{
 					Command:       c,
 					Network:       n,
 					ServiceParams: ss.ExtraParameters,

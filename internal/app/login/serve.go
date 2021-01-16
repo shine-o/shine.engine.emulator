@@ -66,7 +66,7 @@ func Start(cmd *cobra.Command, args []string) {
 	ss := networking.ShineService{
 		Name:     "login",
 		Settings: s,
-		ShineHandler: networking.ShineHandler{
+		ShinePacketRegistry: networking.ShinePacketRegistry{
 			2055: ncMiscSeedAck,
 			3173: ncUserClientVersionCheckReq,
 			3162: ncUserUsLoginReq,

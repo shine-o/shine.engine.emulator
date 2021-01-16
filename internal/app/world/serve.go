@@ -82,7 +82,7 @@ func Start(cmd *cobra.Command, args []string) {
 
 	s.CommandsFilePath = path
 
-	sh := networking.ShineHandler{
+	sh := networking.ShinePacketRegistry{
 		2055:  ncMiscSeedAck,
 		3087:  ncUserLoginWorldReq,
 		2061:  ncMiscGameTimeReq,
@@ -100,7 +100,7 @@ func Start(cmd *cobra.Command, args []string) {
 	ss := networking.ShineService{
 		Name:         "world",
 		Settings:     s,
-		ShineHandler: sh,
+		ShinePacketRegistry: sh,
 		SessionFactory: sessionFactory{
 			worldID: viper.GetInt("world.id"),
 		},

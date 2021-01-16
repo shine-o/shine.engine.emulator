@@ -19,7 +19,7 @@ var log = shinelog.NewLogger("networking default", "./output", logrus.DebugLevel
 
 type ShineService struct {
 	Settings
-	ShineHandler
+	ShinePacketRegistry
 	SessionFactory
 	ExtraParameters interface{}
 	Name            string
