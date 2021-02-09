@@ -1,7 +1,9 @@
 package packet_sniffer
 
 import (
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"os"
 	"path/filepath"
@@ -19,6 +21,21 @@ type EntitiesMovements struct {
 type Movement struct {
 	Timestamp time.Time
 	X, Y      uint32
+}
+
+type PacketData struct {
+	// opcode => hex string
+	Packets map[uint16][]string
+	sync.Mutex
+}
+
+var pd PacketData
+
+func persistPacketData(dp decodedPacket)  {
+	ds := hex.EncodeToString(dp.packet.Base.Data)
+	pd.Lock()
+	pd.Packets[dp.packet.Base.OperationCode] = append(pd.Packets[dp.packet.Base.OperationCode], ds)
+	pd.Unlock()
 }
 
 // store info of packets that contain coordinates
@@ -137,6 +154,28 @@ func persistMovement(dp decodedPacket) {
 		})
 		em.Unlock()
 	}
+}
+
+func exportPackets()  {
+	pathName, err := filepath.Abs(fmt.Sprintf("output/packets-%v.json", time.Now().Unix()))
+	if err != nil {
+		log.Fatal(err)
+	}
+	f, err := os.OpenFile(pathName, os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		log.Fatal(err)
+	}
+	//_,_ = f.Write([]byte("{"))
+
+	pd.Lock()
+	b, err := json.Marshal(pd.Packets)
+	if err != nil {
+		log.Error(err)
+	}
+	_, _ = f.Write(b)
+	pd.Unlock()
+
+	f.Close()
 }
 
 func exportEntitiesMovements() {

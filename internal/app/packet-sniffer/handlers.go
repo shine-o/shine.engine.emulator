@@ -273,7 +273,11 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 	ocs.mu.Unlock()
 
 	persistMovement(dp)
+	persistPacketData(dp)
 	if viper.GetBool("websocket.active") {
 		sendPacketToUI(pv)
 	}
+
+	// log packet
+
 }
