@@ -82,21 +82,58 @@ func Start(cmd *cobra.Command, args []string) {
 
 	s.CommandsFilePath = path
 
+	//sh := networking.ShinePacketRegistry{
+	//	2055:  ncMiscSeedAck,
+	//	3087:  ncUserLoginWorldReq,
+	//	2061:  ncMiscGameTimeReq,
+	//	3123:  ncUserWillWorldSelectReq,
+	//	5121:  ncAvatarCreateReq,
+	//	5127:  ncAvatarEraseReq,
+	//	4097:  ncCharLoginReq,
+	//	28684: ncCharOptionGetWindowPosReq,
+	//	28676: ncCharOptionGetShortcutSizeReq,
+	//	31750: ncPrisonGetReq,
+	//	28727: ncCharOptionImproveSetShortcutDataReq,
+	//	3103:  ncUserAvatarListReq,
+	//}
 	sh := networking.ShinePacketRegistry{
-		2055:  ncMiscSeedAck,
-		3087:  ncUserLoginWorldReq,
-		2061:  ncMiscGameTimeReq,
-		3123:  ncUserWillWorldSelectReq,
-		5121:  ncAvatarCreateReq,
-		5127:  ncAvatarEraseReq,
-		4097:  ncCharLoginReq,
-		28684: ncCharOptionGetWindowPosReq,
-		28676: ncCharOptionGetShortcutSizeReq,
-		31750: ncPrisonGetReq,
-		28727: ncCharOptionImproveSetShortcutDataReq,
-		3103:  ncUserAvatarListReq,
+		networking.NC_MISC_SEED_ACK: networking.ShinePacket{
+			Handler:  ncMiscSeedAck,
+		},
+		networking.NC_USER_LOGINWORLD_REQ: networking.ShinePacket{
+			Handler: ncUserLoginWorldReq,
+		},
+		networking.NC_MISC_GAMETIME_REQ: networking.ShinePacket{
+			Handler: ncMiscGameTimeReq,
+		},
+		networking.NC_USER_WILL_WORLD_SELECT_REQ: networking.ShinePacket{
+			Handler: ncUserWillWorldSelectReq,
+		},
+		networking.NC_AVATAR_CREATE_REQ: networking.ShinePacket{
+			Handler: ncAvatarCreateReq,
+		},
+		networking.NC_AVATAR_ERASE_REQ: networking.ShinePacket{
+			Handler: ncAvatarEraseReq,
+		},
+		networking.NC_CHAR_LOGIN_REQ: networking.ShinePacket{
+			Handler: ncCharLoginReq,
+		},
+		networking.NC_CHAR_OPTION_GET_WINDOWPOS_REQ: networking.ShinePacket{
+			Handler: ncCharOptionGetWindowPosReq,
+		},
+		networking.NC_CHAR_OPTION_GET_SHORTCUTSIZE_REQ: networking.ShinePacket{
+			Handler: ncCharOptionGetShortcutSizeReq,
+		},
+		networking.NC_PRISON_GET_REQ: networking.ShinePacket{
+			Handler: ncPrisonGetReq,
+		},
+		networking.NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_REQ: networking.ShinePacket{
+			Handler: ncCharOptionImproveSetShortcutDataReq,
+		},
+		networking.NC_USER_AVATAR_LIST_REQ: networking.ShinePacket{
+			Handler: ncUserAvatarListReq,
+		},
 	}
-
 	ss := networking.ShineService{
 		Name:         "world",
 		Settings:     s,

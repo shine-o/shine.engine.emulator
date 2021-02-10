@@ -81,6 +81,7 @@ func Start(cmd *cobra.Command, args []string) {
 		Name:     "zone",
 		Settings: s,
 		ShinePacketRegistry: networking.ShinePacketRegistry{
+			// inbound
 			networking.NC_MISC_SEED_ACK: networking.ShinePacket{
 				Handler: ncMiscSeedAck,
 			},

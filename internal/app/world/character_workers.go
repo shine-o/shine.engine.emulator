@@ -293,5 +293,6 @@ func updateShortcutsLogic(w *world, e event) {
 	}
 
 	nc := structs.NcCharOptionImproveShortcutDataAck{ErrCode: 8448}
+
 	networking.Send(ev.np.OutboundSegments.Send, networking.NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_ACK, &nc)
 }

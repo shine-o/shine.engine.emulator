@@ -32,6 +32,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.7.1
 	github.com/tinylib/msgp v1.1.2 // indirect
+	github.com/tmthrgd/go-hex v0.0.0-20190904060850-447a3041c3bc
 	github.com/vmihailenco/msgpack/v4 v4.3.12 // indirect
 	github.com/willf/bitset v1.1.11 // indirect
 	golang.org/x/crypto v0.0.0-20200820211705-5c72a883971a // indirect

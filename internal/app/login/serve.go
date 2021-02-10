@@ -67,14 +67,38 @@ func Start(cmd *cobra.Command, args []string) {
 		Name:     "login",
 		Settings: s,
 		ShinePacketRegistry: networking.ShinePacketRegistry{
-			2055: ncMiscSeedAck,
-			3173: ncUserClientVersionCheckReq,
-			3162: ncUserUsLoginReq,
-			3076: ncUserXtrapReq,
-			3099: ncUserWorldStatusReq,
-			3083: ncUserWorldSelectReq,
-			3096: ncUserNormalLogoutCmd,
-			3127: ncUserLoginWithOtpReq,
+			//2055: ncMiscSeedAck,
+			//3173: ncUserClientVersionCheckReq,
+			//3162: ncUserUsLoginReq,
+			//3076: ncUserXtrapReq,
+			//3099: ncUserWorldStatusReq,
+			//3083: ncUserWorldSelectReq,
+			//3096: ncUserNormalLogoutCmd,
+			//3127: ncUserLoginWithOtpReq,
+			networking.NC_MISC_SEED_ACK: {
+				Handler: ncMiscSeedAck,
+			},
+			networking.NC_USER_CLIENT_VERSION_CHECK_REQ: {
+				Handler:  ncUserClientVersionCheckReq,
+			},
+			networking.NC_USER_US_LOGIN_REQ: {
+				Handler:  ncUserUsLoginReq,
+			},
+			networking.NC_USER_XTRAP_REQ: {
+				Handler: ncUserXtrapReq,
+			},
+			networking.NC_USER_WORLD_STATUS_REQ: {
+				Handler:  ncUserWorldStatusReq,
+			},
+			networking.NC_USER_WORLDSELECT_REQ: {
+				Handler:  ncUserWorldSelectReq,
+			},
+			networking.NC_USER_NORMALLOGOUT_CMD: {
+				Handler:  ncUserNormalLogoutCmd,
+			},
+			networking.NC_USER_LOGIN_WITH_OTP_REQ: {
+				Handler:  ncUserLoginWithOtpReq,
+			},
 		},
 		SessionFactory: sessionFactory{},
 	}

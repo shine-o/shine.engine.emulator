@@ -27,8 +27,7 @@ type NcMiscGameTimeAck struct {
 //{
 //  char dummy[1];
 //};
-type NcMiscHeartBeatAck struct {
-}
+type NcMiscHeartBeatAck struct {}
 
 //struct PROTO_NC_MISC_SERVER_TIME_NOTIFY_CMD
 //{
