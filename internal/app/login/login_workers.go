@@ -121,7 +121,8 @@ func loginSuccessful(l *login, np *networking.Parameters) {
 		})
 	}
 	nc.NumOfWorld = byte(len(l.worlds))
-	networking.Send(np.OutboundSegments.Send, networking.NC_USER_LOGIN_ACK, nc)
+	networking.Send(np.OutboundSegments.Send, networking.NC_USER_LOGIN_ACK, &nc)
+	//networking.Send(np.OutboundSegments.Send, networking.NC_USER_PASSWORD_CHECK_ACK, &nc)
 }
 
 func serverSelectLogic(l *login, e event) {
@@ -139,7 +140,8 @@ func serverSelectLogic(l *login, e event) {
 				},
 				Port: uint16(w.port),
 			}
-			networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_WORLDSELECT_ACK, nc)
+			//networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_WORLDSELECT_ACK, &nc)
+			networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_WILLLOGIN_REQ, &nc)
 			return
 		}
 	}

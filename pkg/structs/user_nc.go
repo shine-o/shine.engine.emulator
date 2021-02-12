@@ -30,6 +30,13 @@ type NcUserUsLoginReq struct {
 	SpawnApps Name5
 }
 
+type NewUserLoginReq struct {
+	Unk1 [32]byte
+	UserName  string `struct:"[260]byte"`
+	Password  string `struct:"[37]byte"`
+	Unk2  string `struct:"[20]byte"`
+}
+
 //struct PROTO_NC_USER_LOGIN_ACK
 //{
 //  char numofworld;
@@ -39,6 +46,7 @@ type NcUserLoginAck struct {
 	NumOfWorld byte        `struct:"byte,sizeof=Worlds"`
 	Worlds     []WorldInfo `struct:"sizefrom=NumOfWorld"`
 }
+
 
 // RE client struct:
 // struct PROTO_NC_USER_LOGINFAIL_ACK
@@ -115,4 +123,12 @@ type NcUserWillWorldSelectAck struct {
 // };
 type NcUserLoginWithOtpReq struct {
 	Otp Name8
+}
+
+//struct PROTO_NC_USER_USE_BEAUTY_SHOP_CMD
+//{
+//char dummy[1];
+//};
+type NcUserUseBeautyShopCmd struct {
+	Filler byte
 }

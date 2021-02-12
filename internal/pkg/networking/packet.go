@@ -65,6 +65,7 @@ func DecodePacket(data []byte) (Command, error) {
 		Department:    department,
 		Command:       command,
 		OperationCode: opCode,
+		OperationCodeName: OperationCode(opCode),
 		Data:          data[2:], // omit operationCode bytes
 	}
 

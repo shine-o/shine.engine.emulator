@@ -204,14 +204,14 @@ func (ss *ShineService) handleConnection(conn net.Conn) {
 //	logOutboundPackets <- pc
 //}
 
-func Send(outboundStream chan<- []byte, opCode uint16, ncStruct interface{})  {
+func Send(outboundStream chan<- []byte, opCode OperationCode, ncStruct interface{})  {
 	pc := Command{
 		Base: CommandBase{
-			OperationCode: opCode,
+			OperationCode: uint16(opCode),
 		},
 	}
 	if ncStruct != nil {
-		data, err := structs.Pack(pc.NcStruct)
+		data, err := structs.Pack(ncStruct)
 		if err != nil {
 			log.Errorf("%v, %v", err, pc)
 			return
@@ -238,7 +238,7 @@ func logPackets(ctx context.Context, in <-chan *Command, out <-chan *Command) {
 func logDirection(pc Command, direction string) {
 	//pc.RLock()
 	//defer pc.RUnlock()
-	cn := CommandName(&pc)
+	cn := fmt.Sprint(pc.Base.OperationCodeName)
 	log.Infof("%v %v packet metadata: %v", direction, cn, pc.Base.String())
 	if pc.NcStruct != nil {
 		sd, err := json.Marshal(pc.NcStruct)

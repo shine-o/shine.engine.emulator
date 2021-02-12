@@ -21,7 +21,11 @@ func ncMiscSeedAck(ctx context.Context, np *networking.Parameters) {
 		Seed: xorOffset,
 	}
 
-	networking.Send(np.OutboundSegments.Send, networking.NC_MISC_SEED_ACK, nc)
+	networking.Send(np.OutboundSegments.Send, networking.NC_MISC_SEED_ACK, &nc)
+	// why the fuck do I have to send this? not sure, but the client needs it to proceed with login
+	networking.Send(np.OutboundSegments.Send, networking.NC_USER_USE_BEAUTY_SHOP_CMD, &structs.NcUserUseBeautyShopCmd{
+		Filler: 1,
+	})
 
 	xc <- xorOffset
 }

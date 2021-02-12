@@ -74,6 +74,7 @@ func serverSelectLogic(e event, w *world) {
 		return
 	}
 	networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGINWORLD_ACK, &nc)
+	//networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGOUT_DB, &nc)
 }
 
 func serverSelectTokenLogic(e event) {

@@ -46,8 +46,10 @@ type CommandBase struct {
 	Department       uint16
 	Command          uint16
 	OperationCode    uint16
-	ClientStructName string
-	Data             []byte
+	OperationCodeName    OperationCode
+	//ClientStructName string
+	//OperationCodeString OperationCode
+	Data []byte
 }
 
 // RawData of a packet that contains the length, operation code and packet data
@@ -115,12 +117,11 @@ func (pcb *CommandBase) String() string {
 	}
 	ePcb := exportedPcb{
 		Length:        pcb.PacketLength(),
-		Department:    pcb.OperationCode >> 10,
+		Department:    uint16(pcb.OperationCode) >> 10,
 		Command:       fmt.Sprintf("%X", pcb.OperationCode&1023),
-		OperationCode: pcb.OperationCode,
+		OperationCode: uint16(pcb.OperationCode),
 		Data:          hex.EncodeToString(pcb.Data),
 		RawData:       hex.EncodeToString(pcb.RawData()),
-		FriendlyName:  pcb.ClientStructName,
 	}
 	if pcb.PacketLength() > 255 {
 		ePcb.PacketType = "big"
@@ -155,12 +156,11 @@ func (pcb *CommandBase) JSON() ExportedPcb {
 	//command = opCode & 1023
 	ePcb := ExportedPcb{
 		Length:        pcb.PacketLength(),
-		Department:    pcb.OperationCode >> 10,
+		Department:    uint16(pcb.OperationCode) >> 10,
 		Command:       fmt.Sprintf("%X", pcb.OperationCode&1023),
-		OperationCode: pcb.OperationCode,
+		OperationCode: uint16(pcb.OperationCode),
 		Data:          hex.EncodeToString(pcb.Data),
 		RawData:       hex.EncodeToString(pcb.RawData()),
-		FriendlyName:  pcb.ClientStructName,
 	}
 	return ePcb
 }

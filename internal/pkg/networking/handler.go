@@ -17,7 +17,7 @@ type Parameters struct {
 
 // HandleWarden utility struct for triggering functions implemented by the calling shine service
 //type ShinePacketRegistry map[uint16]func(context.Context, *Parameters)
-type ShinePacketRegistry map[uint16]ShinePacket
+type ShinePacketRegistry map[OperationCode]ShinePacket
 
 type ShinePacket struct {
 	Handler func(context.Context, *Parameters)
@@ -129,15 +129,15 @@ func (ss ShineService) commandWorker(ctx context.Context, n *Network) {
 			log.Warning("commandWorker context canceled")
 			return
 		case c := <-n.Commands.Recv:
-			if packet, ok := ss.ShinePacketRegistry[c.Base.OperationCode]; ok {
+			if packet, ok := ss.ShinePacketRegistry[OperationCode(c.Base.OperationCode)]; ok {
 				go packet.Handler(ctx, &Parameters{
 					Command:       c,
 					Network:       n,
 					ServiceParams: ss.ExtraParameters,
 				})
 			} else {
-				name := CommandName(c)
-				log.Errorf("non existent handler for operation code  %v %v", c.Base.OperationCode, name)
+				//name := CommandName(c)
+				log.Errorf("non existent handler for operation code  %v %v", c.Base.OperationCode, c.Base.OperationCodeName)
 			}
 		}
 	}

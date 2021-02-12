@@ -35,7 +35,8 @@ func ncUserUsLoginReq(ctx context.Context, np *networking.Parameters) {
 
 	var cle credentialsLoginEvent
 
-	nc := structs.NcUserUsLoginReq{}
+	//nc := structs.NcUserUsLoginReq{}
+	nc := structs.NewUserLoginReq{}
 
 	if err := structs.Unpack(np.Command.Base.Data, &nc); err != nil {
 		ncUserLoginFailAck(np, 69)

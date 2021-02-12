@@ -55,6 +55,7 @@ func characterSelectLogic(e event, w *world) {
 		return
 	}
 
+	//networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGOUT_DB, &nc)
 	networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGINWORLD_ACK, &nc)
 }
 
