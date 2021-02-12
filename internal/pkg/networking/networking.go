@@ -238,6 +238,9 @@ func logPackets(ctx context.Context, in <-chan *Command, out <-chan *Command) {
 func logDirection(pc Command, direction string) {
 	//pc.RLock()
 	//defer pc.RUnlock()
+	if pc.Base.OperationCodeName == 0 {
+		pc.Base.OperationCodeName = OperationCode(pc.Base.OperationCode)
+	}
 	cn := fmt.Sprint(pc.Base.OperationCodeName)
 	log.Infof("%v %v packet metadata: %v", direction, cn, pc.Base.String())
 	if pc.NcStruct != nil {
@@ -249,22 +252,6 @@ func logDirection(pc Command, direction string) {
 			log.Infof("%v %v packet structure data: %v %v", direction, cn, reflect.TypeOf(pc.NcStruct).String(), string(sd))
 		}
 	}
-}
-
-func CommandName(pc *Command) string {
-	commandList.mu.Lock()
-	defer commandList.mu.Unlock()
-	if (&PCList{}) != commandList { // should be commented out on production to increase performance
-		opCode := pc.Base.OperationCode
-		department := opCode >> 10
-		command := fmt.Sprintf("%X", opCode&1023)
-		if dpt, ok := commandList.Departments[uint8(department)]; ok {
-			return dpt.ProcessedCommands[command]
-		} else {
-			log.Warningf("Missing friendly name for command with: operationCode %v,  department %v, command %v, ", opCode, department, command)
-		}
-	}
-	return ""
 }
 
 func waitForClose(n *Network) {

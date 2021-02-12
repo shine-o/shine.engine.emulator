@@ -136,7 +136,6 @@ func (ss ShineService) commandWorker(ctx context.Context, n *Network) {
 					ServiceParams: ss.ExtraParameters,
 				})
 			} else {
-				//name := CommandName(c)
 				log.Errorf("non existent handler for operation code  %v %v", c.Base.OperationCode, c.Base.OperationCodeName)
 			}
 		}

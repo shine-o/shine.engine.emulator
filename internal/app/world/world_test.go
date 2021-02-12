@@ -2,9 +2,11 @@ package world
 
 import (
 	"encoding/hex"
+	"fmt"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/utils"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"reflect"
 	"testing"
 )
 
@@ -81,27 +83,32 @@ func netPackets() utils.TargetPackets  {
 func TestPackets(t *testing.T) {
 	netPackets := netPackets()
 
-	packetData := utils.LoadPacketData("../../../test-data/packets-1612910284-version-1.02.295.json")
+	files := []string{
+		"../../../test-data/packets-1612910284-version-1.02.295.json",
+		"../../../test-data/packets-1613170127-version-1.02.295.json",
+	}
 
-	for opCode, packet := range netPackets {
-		dataStrings, ok :=  packetData[opCode]
-		if ok {
-			for _, dataString := range dataStrings {
-				if dataString == "" {
-					continue
-				}
+	for _, f := range files {
+		packetData := utils.LoadPacketData(f)
+		for opCode, packet := range netPackets {
+			dataStrings, ok :=  packetData[uint16(opCode)]
+			if ok {
+				for _, dataString := range dataStrings {
+					if dataString == "" {
+						continue
+					}
 
-				data, err := hex.DecodeString(dataString)
-				if err != nil {
-					t.Error(err)
+					data, err := hex.DecodeString(dataString)
+					if err != nil {
+						t.Error(err)
+					}
+					err = utils.TestPacket(packet, data)
+					if err != nil {
+						t.Error(err)
+					}
+					t.Log(fmt.Sprintf("ok, struct=%v data=%v", reflect.TypeOf(packet.NcStruct).String(), dataString))
 				}
-				err = utils.TestPacket(packet, data)
-				if err != nil {
-					t.Error(err)
-				}
-				//t.Log(fmt.Sprintf("ok, struct=%v data=%v", reflect.TypeOf(packet.NcStruct).String(), dataString))
 			}
-
 		}
 	}
 }

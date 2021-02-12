@@ -140,8 +140,8 @@ func serverSelectLogic(l *login, e event) {
 				},
 				Port: uint16(w.port),
 			}
-			//networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_WORLDSELECT_ACK, &nc)
-			networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_WILLLOGIN_REQ, &nc)
+			networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_WORLDSELECT_ACK, &nc)
+			//networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_WILLLOGIN_REQ, &nc)
 			return
 		}
 	}

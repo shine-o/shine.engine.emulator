@@ -81,9 +81,6 @@ func Start(cmd *cobra.Command, args []string) {
 			networking.NC_USER_CLIENT_VERSION_CHECK_REQ: {
 				Handler:  ncUserClientVersionCheckReq,
 			},
-			//3075: {
-			//	Handler:  ncUserUsLoginReq,
-			//},
 			networking.NC_USER_US_LOGIN_REQ: {
 				Handler:  ncUserUsLoginReq,
 			},
@@ -93,8 +90,8 @@ func Start(cmd *cobra.Command, args []string) {
 			networking.NC_USER_WORLD_STATUS_REQ: {
 				Handler:  ncUserWorldStatusReq,
 			},
-			//networking.NC_USER_WORLDSELECT_REQ: {
-			networking.NC_USER_WORLDSELECT_ACK: {
+			networking.NC_USER_WORLDSELECT_REQ: {
+			//networking.NC_USER_WORLDSELECT_ACK: {
 				Handler:  ncUserWorldSelectReq,
 			},
 			networking.NC_USER_NORMALLOGOUT_CMD: {

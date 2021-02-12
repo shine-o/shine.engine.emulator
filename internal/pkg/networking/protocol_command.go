@@ -2053,7 +2053,7 @@ const (
 	NC_USER_LOGIN_DB                    OperationCode = 3088
 	NC_USER_CONNECTCUT_CMD              OperationCode = 3095
 	NC_USER_TW_IS_IP_BLOCK_REQ          OperationCode = 3136
-	NC_USER_WILLLOGIN_REQ               OperationCode = 3085
+	//NC_USER_WILLLOGIN_REQ               OperationCode = 3085
 	NC_USER_WILLLOGIN_ACK               OperationCode = 3086
 	NC_USER_LOGIN_NETMARBLE_DB_REQ      OperationCode = 3102
 	NC_USER_CREATE_OTP_REQ              OperationCode = 3125
@@ -2063,7 +2063,8 @@ const (
 	//NC_USER_US_LOGIN_REQ OperationCode = 3162
 	NC_USER_US_LOGIN_REQ                  OperationCode = 3075
 	NC_USER_NULL                          OperationCode = 3072
-	NC_USER_WORLDSELECT_ACK               OperationCode = 3084
+	//NC_USER_WORLDSELECT_ACK               OperationCode = 3084
+	NC_USER_WORLDSELECT_ACK               OperationCode = 3085
 	NC_USER_US_PASSWORD_CHECK_REQ         OperationCode = 3163
 	NC_USER_CLIENT_RIGHTVERSION_CHECK_ACK OperationCode = 3175
 	NC_USER_TEENAGER_CMD                  OperationCode = 3109
@@ -2091,7 +2092,8 @@ const (
 	//NC_USER_WILL_WORLD_SELECT_REQ OperationCode = 3123
 	NC_USER_WILL_WORLD_SELECT_REQ OperationCode = 3110
 	NC_USER_IS_IP_BLOCK_REQ       OperationCode = 3114
-	NC_USER_WORLDSELECT_REQ       OperationCode = 3083
+	//NC_USER_WORLDSELECT_REQ       OperationCode = 3083
+	NC_USER_WORLDSELECT_REQ       OperationCode = 3084
 	//NC_USER_TEENAGER_REQ OperationCode = 3110
 	NC_USER_GER_PASSWORD_CHECK_REQ        OperationCode = 3129
 	NC_USER_US_IS_IP_BLOCK_REQ            OperationCode = 3165

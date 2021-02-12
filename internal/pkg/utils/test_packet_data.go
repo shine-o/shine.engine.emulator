@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"io/ioutil"
 	"log"
@@ -16,7 +17,7 @@ type TestablePacket struct {
 	Assert func(interface{}) error
 }
 
-type TargetPackets map[uint16]TestablePacket
+type TargetPackets map[networking.OperationCode]TestablePacket
 
 func LoadPacketData(filePath string) map[uint16][]string {
 	var packetData = make(map[uint16][]string)
