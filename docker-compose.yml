@@ -65,7 +65,7 @@ services:
       - intranet
     volumes:
       - ./:/app
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 --  go run -mod=vendor  /app/cmd/login/login.go migrate --config "/app/configs/login.docker.yml" --purge "true"'
+    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 --  go run -mod=vendor  /app/cmd/login/login.go migrate --config "/app/configs/docker/login.docker.yml" --purge "true"'
     tty: false
 
   ######################################
@@ -82,7 +82,7 @@ services:
       - intranet
     volumes:
       - ./:/app
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world/world.go migrate --config "/app/configs/world.docker.yml"'
+    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world/world.go migrate --config "/app/configs/docker/world.docker.yml"'
     tty: false
 
   ######################################
@@ -104,7 +104,7 @@ services:
     ports:
       - "51000:51000"
       - "51001:51001"
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/login/login.go serve --config "/app/configs/login.docker.yml"'
+    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/login/login.go serve --config "/app/configs/docker/login.docker.yml"'
 
   ######################################
   ############# WORLD MASTER ###########
@@ -122,7 +122,7 @@ services:
       - ./:/app
     ports:
       - "53000:53000"
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world-master/world-master.go serve --config "/app/configs/world-master.docker.yml"'
+    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world-master/world-master.go serve --config "/app/configs/docker/world-master.docker.yml"'
 
   ######################################
   ############# WORLD ##################
@@ -143,7 +143,7 @@ services:
     ports:
       - "52000:52000"
       - "52001:52001"
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world/world.go serve --config "/app/configs/world.docker.yml"'
+    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world/world.go serve --config "/app/configs/docker/world.docker.yml"'
 
   ######################################
   ############# ZONE MASTER ############
@@ -161,10 +161,10 @@ services:
       - ./:/app
     ports:
       - "54000:54000"
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/zone-master/zone-master.go serve --config "/app/configs/zone-master.docker.yml"'
+    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/zone-master/zone-master.go serve --config "/app/configs/docker/zone-master.docker.yml"'
 
   ######################################
-  ############# ZONE ###### ############
+  ############# ZONE ###################
   ######################################
   zone:
     image: shineo/dev-services:${BUILD_VERSION}
@@ -181,7 +181,7 @@ services:
     ports:
       - "55000:55000"
       - "55001:55001"
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/zone/zone.go serve --config "/app/configs/zone.docker.yml"'
+    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/zone/zone.go serve --config "/app/configs/docker/zone.docker.yml"'
 
   ######################################
   ############# METRICS ################

@@ -6,10 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -166,63 +162,63 @@ func (pcb *CommandBase) JSON() ExportedPcb {
 }
 
 // InitCommandList from protocol commands file
-func InitCommandList(filePath string) error {
-	pcl, err := LoadCommandList(filePath)
-	if err != nil {
-		return err
-	}
-	commandList = pcl
-	return nil
-}
+//func InitCommandList(filePath string) error {
+//	pcl, err := LoadCommandList(filePath)
+//	if err != nil {
+//		return err
+//	}
+//	commandList = pcl
+//	return nil
+//}
 
 // InitCommandList from protocol commands file
-func LoadCommandList(filePath string) (*PCList, error) {
-	pcl := PCList{
-		Departments: make(map[uint8]Department),
-	}
-
-	d, err := ioutil.ReadFile(filePath)
-
-	if err != nil {
-		log.Error(err)
-		return &pcl, err
-	}
-
-	rPcl := &RawPCList{}
-
-	if err = yaml.Unmarshal(d, rPcl); err != nil {
-		log.Error(err)
-		return &pcl, err
-	}
-
-	for _, d := range rPcl.Departments {
-
-		dptHexVal := strings.ReplaceAll(d.HexID, "0x", "")
-
-		dptIntVal, _ := strconv.ParseUint(dptHexVal, 16, 32)
-
-		department := Department{
-			HexID:             d.HexID,
-			Name:              d.Name,
-			ProcessedCommands: make(map[string]string),
-		}
-		commandsRaw := d.RawCommands
-		commandsRaw = strings.ReplaceAll(commandsRaw, "\n", "")
-		commandsRaw = strings.ReplaceAll(commandsRaw, " ", "")
-		commandsRaw = strings.ReplaceAll(commandsRaw, "0x", "")
-		commandsRaw = strings.ReplaceAll(commandsRaw, "\t", "")
-
-		commands := strings.Split(commandsRaw, ",")
-
-		for _, c := range commands {
-			if c == "" {
-				continue
-			}
-			cs := strings.Split(c, "=")
-			department.ProcessedCommands[cs[1]] = cs[0]
-		}
-		pcl.Departments[uint8(dptIntVal)] = department
-	}
-
-	return &pcl, nil
-}
+//func LoadCommandList(filePath string) (*PCList, error) {
+//	pcl := PCList{
+//		Departments: make(map[uint8]Department),
+//	}
+//
+//	d, err := ioutil.ReadFile(filePath)
+//
+//	if err != nil {
+//		log.Error(err)
+//		return &pcl, err
+//	}
+//
+//	rPcl := &RawPCList{}
+//
+//	if err = yaml.Unmarshal(d, rPcl); err != nil {
+//		log.Error(err)
+//		return &pcl, err
+//	}
+//
+//	for _, d := range rPcl.Departments {
+//
+//		dptHexVal := strings.ReplaceAll(d.HexID, "0x", "")
+//
+//		dptIntVal, _ := strconv.ParseUint(dptHexVal, 16, 32)
+//
+//		department := Department{
+//			HexID:             d.HexID,
+//			Name:              d.Name,
+//			ProcessedCommands: make(map[string]string),
+//		}
+//		commandsRaw := d.RawCommands
+//		commandsRaw = strings.ReplaceAll(commandsRaw, "\n", "")
+//		commandsRaw = strings.ReplaceAll(commandsRaw, " ", "")
+//		commandsRaw = strings.ReplaceAll(commandsRaw, "0x", "")
+//		commandsRaw = strings.ReplaceAll(commandsRaw, "\t", "")
+//
+//		commands := strings.Split(commandsRaw, ",")
+//
+//		for _, c := range commands {
+//			if c == "" {
+//				continue
+//			}
+//			cs := strings.Split(c, "=")
+//			department.ProcessedCommands[cs[1]] = cs[0]
+//		}
+//		pcl.Departments[uint8(dptIntVal)] = department
+//	}
+//
+//	return &pcl, nil
+//}

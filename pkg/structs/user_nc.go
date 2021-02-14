@@ -47,7 +47,6 @@ type NcUserLoginAck struct {
 	Worlds     []WorldInfo `struct:"sizefrom=NumOfWorld"`
 }
 
-
 // RE client struct:
 // struct PROTO_NC_USER_LOGINFAIL_ACK
 // {

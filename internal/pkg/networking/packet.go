@@ -8,7 +8,7 @@ import (
 var (
 	xorKey      []byte
 	xorLimit    uint16
-	commandList *PCList
+	//commandList *PCList
 )
 
 // PacketBoundary of a packet in a data segment

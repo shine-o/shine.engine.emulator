@@ -92,7 +92,7 @@ func LoadMapData(shineFolder string) (map[int]*Map, error) {
 		return allMaps.data, err
 	}
 
-	mapInfoPath, err := utils.ValidPath(shineFolder + "/shn/client/" + "MapInfo.shn")
+	mapInfoPath, err := utils.ValidPath(shineFolder + "/shn/" + "MapInfo.shn")
 	if err != nil {
 		return allMaps.data, err
 	}

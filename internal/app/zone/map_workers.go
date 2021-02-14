@@ -107,7 +107,7 @@ func (zm *zoneMap) monsterQueries() {
 }
 
 func playerClicksOnNpcLogic(zm *zoneMap, e event) {
-	log.Info(e)
+	//log.Info(e)
 	ev, ok := e.(*playerClicksOnNpcEvent)
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerClicksOnNpcEvent{}).String(), reflect.TypeOf(ev).String())
@@ -465,6 +465,7 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 
 		}(ap)
 	}
+	zm.metrics.players.Set(float64(len(zm.entities.players.active)))
 }
 
 func playerHandleLogic(e event, zm *zoneMap) {
@@ -561,6 +562,7 @@ func playerDisappearedLogic(e event, zm *zoneMap) {
 			networking.Send(p2.conn.outboundData, networking.NC_BRIEFINFO_BRIEFINFODELETE_CMD, nc)
 		}(ap)
 	}
+
 }
 
 func playerWalksLogic(e event, zm *zoneMap) {

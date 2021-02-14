@@ -33,7 +33,9 @@ func Start(cmd *cobra.Command, args []string) {
 			http.Handle("/metrics", promhttp.Handler())
 			log.Info(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
 		}
+
 	}()
+
 	ctx := context.Background()
 
 	zonePort := viper.GetString("serve.port")

@@ -100,8 +100,8 @@ func Start(cmd *cobra.Command, args []string) {
 		networking.NC_MISC_SEED_ACK: networking.ShinePacket{
 			Handler:  ncMiscSeedAck,
 		},
-		//networking.NC_USER_LOGINWORLD_REQ: networking.ShinePacket{
-		networking.NC_USER_LOGIN_DB: networking.ShinePacket{
+		networking.NC_USER_LOGINWORLD_REQ: networking.ShinePacket{
+		//networking.NC_USER_LOGIN_DB: networking.ShinePacket{
 			Handler: ncUserLoginWorldReq,
 		},
 		networking.NC_MISC_GAMETIME_REQ: networking.ShinePacket{

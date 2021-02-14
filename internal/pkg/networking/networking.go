@@ -75,10 +75,10 @@ var logOutboundPackets chan<- *Command
 
 // Set Settings specified by the shine service
 func (s *Settings) Set() {
-	err := InitCommandList(s.CommandsFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
+	//err := InitCommandList(s.CommandsFilePath)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
 	xorKey = s.XorKey
 	xorLimit = s.XorLimit
 }

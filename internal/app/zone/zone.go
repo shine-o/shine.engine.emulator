@@ -3,7 +3,10 @@ package zone
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/go-pg/pg/v9"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	mobs "github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/monsters"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/world"
 	zm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
@@ -106,6 +109,14 @@ func (z *zone) addMap(mapId int) {
 		log.Fatal(err)
 	}
 
+	// if
+	for _, m := range z.rm {
+		if m.data.MapInfoIndex == md.Info.MapName.Name {
+			log.Errorf("duplicate shn map index id %v %v, skipping", mapId,  m.data.MapInfoIndex )
+			return
+		}
+	}
+
 	m := &zoneMap{
 		data:      md,
 		walkableX: walkableX,
@@ -128,7 +139,25 @@ func (z *zone) addMap(mapId int) {
 			send: make(sendEvents),
 			recv: make(recvEvents),
 		},
+		metrics: metrics{
+			players:  promauto.NewGauge(prometheus.GaugeOpts{
+				Name:        fmt.Sprintf("players_in_%v", md.Info.MapName.Name),
+				Help:        "Total number of active players.",
+			}),
+			monsters: promauto.NewGauge(prometheus.GaugeOpts{
+				Name:        fmt.Sprintf("monsters_in_%v", md.Info.MapName.Name),
+				Help:        "Total number of active monsters.",
+			}),
+			npcs:     promauto.NewGauge(prometheus.GaugeOpts{
+				Name:        fmt.Sprintf("npcs_in_%v", md.Info.MapName.Name),
+				Help:        "Total number of active non player characters.",
+			}),
+		},
 	}
+
+	m.metrics.monsters.Set(0)
+	m.metrics.players.Set(0)
+	m.metrics.npcs.Set(0)
 
 	events := []eventIndex{
 		playerHandle,

@@ -3,6 +3,7 @@ package zone
 import (
 	"bytes"
 	"github.com/RoaringBitmap/roaring"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/blocks"
 	mobs "github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/monsters"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
@@ -19,6 +20,17 @@ type zoneMap struct {
 	walkableY *roaring.Bitmap
 	entities  *entities
 	events
+	metrics
+}
+
+// metrics specific to the zone service
+type metrics struct {
+	// every time a player enters or exit a map, update the gauge
+	players prometheus.Gauge
+	// every time a monster dies / respawns, update the gauge
+	monsters prometheus.Gauge
+	// every time a npc dies / respawns, update the gauge
+	npcs prometheus.Gauge
 }
 
 type entities struct {
@@ -161,6 +173,7 @@ func spawnNPC(sn *world.ShineNPC, zm *zoneMap) {
 	zm.entities.npcs.active[h] = n
 	zm.entities.npcs.Unlock()
 
+	zm.metrics.npcs.Inc()
 }
 
 // a mob is a collection of entities, in this case monsters
@@ -253,6 +266,7 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry) {
 	}
 
 	iwg.Wait()
+
 }
 
 func spawnMonster(zm *zoneMap, re mobs.RegenEntry, mi *shn.MobInfo, mis *shn.MobInfoServer) {
@@ -343,7 +357,11 @@ func spawnMonster(zm *zoneMap, re mobs.RegenEntry, mi *shn.MobInfo, mis *shn.Mob
 			// for now its a weird thing, better not to use it
 			//go m.roam(zm)
 		}
+
+		zm.metrics.monsters.Inc()
+
 	}
+
 }
 
 func validateLocation(zm *zoneMap, x, y, numSteps, speed int) bool {

@@ -2109,7 +2109,8 @@ const (
 	NC_USER_JP_PASSWORD_CHECK_ACK         OperationCode = 3148
 	NC_USER_JP_IS_IP_BLOCK_REQ            OperationCode = 3149
 	NC_USER_TUTORIAL_CAN_SKIP_CMD         OperationCode = 3167
-	NC_USER_LOGINWORLD_REQ                OperationCode = 3087
+	//NC_USER_LOGINWORLD_REQ                OperationCode = 3087
+	NC_USER_LOGINWORLD_REQ                OperationCode = 3088
 	NC_USER_TEENAGER_REMAIN_MIN_CMD       OperationCode = 3113
 	NC_USER_RETURN_CHECK_ACK              OperationCode = 3169
 	NC_USER_CLIENT_WRONGVERSION_CHECK_ACK OperationCode = 3174

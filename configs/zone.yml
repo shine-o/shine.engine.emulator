@@ -103,6 +103,6 @@ session:
     db: 3
 
 metrics:
-  enabled: false
+  enabled: true
   prometheus:
-    port: 55002
+    port: 30004

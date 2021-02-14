@@ -49,7 +49,7 @@ func LoadMonsterData(shineFolder string) (MonsterData, error) {
 	var mobInfo shn.ShineMobInfo
 	var mobInfoServer shn.ShineMobInfoServer
 
-	mobInfoPath, err := utils.ValidPath(shineFolder + "/shn/client/" + "MobInfo.shn")
+	mobInfoPath, err := utils.ValidPath(shineFolder + "/shn/" + "MobInfo.shn")
 	if err != nil {
 		return monsterData, err
 	}
@@ -60,7 +60,7 @@ func LoadMonsterData(shineFolder string) (MonsterData, error) {
 		return monsterData, err
 	}
 
-	mobInfoServerPath, err := utils.ValidPath(shineFolder + "/shn/server/" + "MobInfoServer.shn")
+	mobInfoServerPath, err := utils.ValidPath(shineFolder + "/shn/" + "MobInfoServer.shn")
 
 	if err != nil {
 		return monsterData, err

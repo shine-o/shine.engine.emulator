@@ -17,19 +17,23 @@ import (
 
 var log = shinelog.NewLogger("login", "./output", logrus.DebugLevel)
 
+
+func metrics() {
+	enabled := viper.GetBool("metrics.enabled")
+	if enabled {
+		port := viper.GetString("metrics.prometheus.port")
+		log.Infof("metrics enabled at :%v/metrics", port)
+		http.Handle("/metrics", promhttp.Handler())
+		log.Info(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
+	}
+}
+
 // Start the login service
 // that is, use networking library to handle TCP connection
 // configure networking library to use handlers implemented in this package for packets
 func Start(cmd *cobra.Command, args []string) {
-	go func() {
-		enabled := viper.GetBool("metrics.enabled")
-		if enabled {
-			port := viper.GetString("metrics.prometheus.port")
-			log.Infof("metrics enabled at :%v/metrics", port)
-			http.Handle("/metrics", promhttp.Handler())
-			log.Info(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
-		}
-	}()
+	go metrics()
+
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 
