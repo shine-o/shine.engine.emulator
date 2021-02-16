@@ -25,6 +25,9 @@ Videos showcase:
     go mod vendor
     
     cp .env.dist .env
+    
+    # if you have access
+    git submodule add  https://github.com/shine-o/files.git files
         
     docker-compose -f docker-compose.dev.yml up -d
 

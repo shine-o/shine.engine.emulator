@@ -1,5 +1,9 @@
 package shn
 
+import (
+	"reflect"
+)
+
 type ShineItemInfo struct {
 	DataSize    uint32
 	RowsCount   uint32
@@ -664,3 +668,71 @@ const (
 	ItemFuncPutOnClear
 	MaxItemFuncEnum
 )
+
+
+func (s * ShineItemInfo) MissingIndexes(filePath string) (map[string][]string, error) {
+	// have a function for each dependent file separately
+	// ItemInfoServer
+	var res = make(map[string][]string)
+
+	var iis ShineItemInfoServer
+	err := Load(filePath + "shn/ItemInfoServer.shn", &iis)
+	if err != nil {
+		return res, err
+	}
+
+	res[reflect.TypeOf(iis).String()] = s.missingItemInfoServerIndex(&iis)
+
+	return res, nil
+}
+
+func (s * ShineItemInfo) MissingIDs(filePath string) ( map[string][]uint16, error) {
+	var res = make(map[string][]uint16)
+	var iis ShineItemInfoServer
+	err := Load(filePath + "/shn/ItemInfoServer.shn", &iis)
+	if err != nil {
+		return res, err
+	}
+	res[reflect.TypeOf(iis).String()] = s.missingItemInfoServerIDs(&iis)
+	return res, nil
+}
+
+func (s * ShineItemInfo) missingItemInfoServerIndex(iis * ShineItemInfoServer) []string {
+	var res []string
+
+	for _, i := range s.ShineRow {
+
+		hasIndex := false
+		for _, j := range iis.ShineRow {
+			if i.InxName == j.InxName {
+				hasIndex = true
+				break
+			}
+		}
+
+		if !hasIndex {
+			res = append(res, i.InxName)
+		}
+	}
+	return res
+}
+
+func (s * ShineItemInfo) missingItemInfoServerIDs(iis * ShineItemInfoServer) []uint16 {
+	var res []uint16
+
+	for _, i := range s.ShineRow {
+
+		hasID := false
+		for _, j := range iis.ShineRow {
+			if i.ID == uint16(j.ID) {
+				hasID = true
+				break
+			}
+		}
+
+		if !hasID {
+			res = append(res, i.ID)
+		}
+	}
+	return res
+}
