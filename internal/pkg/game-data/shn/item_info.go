@@ -676,7 +676,7 @@ func (s * ShineItemInfo) MissingIndexes(filePath string) (map[string][]string, e
 	var res = make(map[string][]string)
 
 	var iis ShineItemInfoServer
-	err := Load(filePath + "shn/ItemInfoServer.shn", &iis)
+	err := Load(filePath + "/shn/ItemInfoServer.shn", &iis)
 	if err != nil {
 		return res, err
 	}

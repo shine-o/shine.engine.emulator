@@ -1,5 +1,20 @@
 package shn
 
+var filePath = "../../../../files"
+
+// Some SHN files have linked data in other files
+// Related data is linked using an ID or IndexName
+// Every CSV/SHN file may have a dependency in another file
+// If that is the case, this interface should be implemented, meaning:
+// All dependent files should also be loaded and checked.
+type FileDependency interface {
+	// For the given file, return a list of missing indexes in linked files
+	// e.g: ItemInfoServer => ["El1", "El2"]
+	MissingIndexes(string) (map[string][]string, error)
+	// For the given file, return a list of missing indexes in linked files
+	MissingIDs(string) (map[string][]uint16, error)
+}
+
 //enum SHN_DATA_FILE_INDEX
 //{
 //  SHN_Abstate = 0x0,
@@ -168,17 +183,4 @@ type ShineColumn struct {
 	Name string `struct:"[48]byte"`
 	Type ShineDataType
 	Size uint32
-}
-
-// Some SHN files have linked data in other files
-// Related data is linked using an ID or IndexName
-// Every CSV/SHN file may have a dependency in another file
-// If that is the case, this interface should be implemented, meaning:
-// All dependent files should also be loaded and checked.
-type FileDependency interface {
-	// For the given file, return a list of missing indexes in linked files
-	// e.g: ItemInfoServer => ["El1", "El2"]
-	MissingIndexes(string) (map[string][]string, error)
-	// For the given file, return a list of missing indexes in linked files
-	MissingIDs(string) (map[string][]uint16, error)
 }

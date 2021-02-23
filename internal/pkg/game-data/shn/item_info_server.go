@@ -1,5 +1,10 @@
 package shn
 
+import (
+	"fmt"
+	"reflect"
+)
+
 type ShineItemInfoServer struct {
 	DataSize    uint32
 	RowsCount   uint32
@@ -127,3 +132,117 @@ const (
 	ISET_BRACELET
 	MAX_ISETYPE
 )
+
+func (s * ShineItemInfoServer) MissingIndexes(filePath string) (map[string][]string, error) {
+	// have a function for each dependent file separately
+	// ItemInfoServer
+	var res = make(map[string][]string)
+
+	var iis ShineItemInfo
+	err := Load(filePath + "/shn/ItemInfo.shn", &iis)
+	if err != nil {
+		return res, err
+	}
+
+	res[reflect.TypeOf(iis).String()] = s.missingItemInfoIndex(&iis)
+
+	return res, nil
+}
+
+func (s * ShineItemInfoServer) MissingIDs(filePath string) ( map[string][]uint16, error) {
+	var res = make(map[string][]uint16)
+	var iis ShineItemInfo
+	err := Load(filePath + "/shn/ItemInfo.shn", &iis)
+	if err != nil {
+		return res, err
+	}
+	res[reflect.TypeOf(iis).String()] = s.missingItemInfoIDs(&iis)
+	return res, nil
+}
+
+func (s * ShineItemInfoServer) MismatchedIndexAndID(filePath string) (map[string][]string, error){
+	var res = make(map[string][]string)
+
+	var iis ShineItemInfo
+	err := Load(filePath + "/shn/ItemInfo.shn", &iis)
+	if err != nil {
+		return res, err
+	}
+
+	res[reflect.TypeOf(iis).String()] = s.itemInfoServerMismatchedIndexID(&iis)
+	return res, nil
+}
+
+func (s * ShineItemInfoServer) itemInfoServerMismatchedIndexID(iis * ShineItemInfo) []string {
+	var res []string
+
+	for _, i := range s.ShineRow {
+
+		//var (
+		//	id uint16
+		//	index string
+		//)
+		match := false
+		for _, j := range iis.ShineRow {
+			if i.InxName == j.InxName && uint16(i.ID) == j.ID {
+				match = true
+				break
+			}
+
+			if i.InxName == j.InxName && uint16(i.ID) != j.ID {
+				break
+			}
+
+			if i.InxName != j.InxName && uint16(i.ID) == j.ID {
+				break
+			}
+		}
+
+		if !match {
+			res = append(res, fmt.Sprintf("%v %v", i.ID, i.InxName))
+		}
+	}
+
+	return res
+}
+
+
+func (s * ShineItemInfoServer) missingItemInfoIndex(iis * ShineItemInfo) []string {
+	var res []string
+
+	for _, i := range s.ShineRow {
+
+		hasIndex := false
+		for _, j := range iis.ShineRow {
+			if i.InxName == j.InxName {
+				hasIndex = true
+				break
+			}
+		}
+
+		if !hasIndex {
+			res = append(res, i.InxName)
+		}
+	}
+	return res
+}
+
+func (s * ShineItemInfoServer) missingItemInfoIDs(iis * ShineItemInfo) []uint16 {
+	var res []uint16
+
+	for _, i := range s.ShineRow {
+
+		hasID := false
+		for _, j := range iis.ShineRow {
+			if uint16(i.ID) == j.ID {
+				hasID = true
+				break
+			}
+		}
+
+		if !hasID {
+			res = append(res, uint16(i.ID))
+		}
+	}
+	return res
+}
