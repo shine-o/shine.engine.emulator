@@ -10,11 +10,11 @@ import (
 var targetFiles []interface{}
 
 func TestMain(m *testing.M) {
-	setLinkedFiles()
+	filesWithDependencies()
 	os.Exit(m.Run())
 }
 
-func setLinkedFiles()  {
+func filesWithDependencies()  {
 	var f1 = &ShineItemInfo{}
 	err := Load(filePath + "/shn/ItemInfo.shn", f1)
 	if err != nil {
