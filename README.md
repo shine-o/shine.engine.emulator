@@ -16,8 +16,23 @@ Videos showcase:
 - [zone  - entity interaction range 2](https://www.youtube.com/watch?v=roSZNHxg7o4)
 - [zone  - monsters!!](https://www.youtube.com/watch?v=f7nPVcIaKfw)
 
+## Dev setup
+    
+    git clone https://github.com/shine-o/shine.engine.emulator
+    
+    cd shine.engine.emulator
+    
+    go mod vendor
+    
+    cp .env.dist .env
+    
+    # if you have access
+    git submodule add  https://github.com/shine-o/files.git files
+        
+    docker-compose -f docker-compose.dev.yml up -d
 
-## Development setup
+
+## Deployment setup
     
 **NOTE**: Do check the ports used in **docker-compose.yml** are not in use on your machine!
 

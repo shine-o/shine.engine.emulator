@@ -135,7 +135,8 @@ func checkClientVersion(req *structs.NcUserClientVersionCheckReq) error {
 }
 
 // check against database that the user name and password combination are correct
-func checkCredentials(req *structs.NcUserUsLoginReq) error {
+//func checkCredentials(req *structs.NewUserLoginReq) error {
+func checkCredentials(req *structs.NewUserLoginReq) error {
 	var storedPassword string
 	err := db.Model((*User)(nil)).Column("password").Where("user_name = ?", req.UserName).Limit(1).Select(&storedPassword)
 

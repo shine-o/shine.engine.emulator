@@ -3,7 +3,8 @@ package zone
 import (
 	"fmt"
 	"github.com/go-pg/pg/v9"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/game"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
 	"time"
@@ -78,7 +79,7 @@ func (z *zone) playerSession() {
 
 				nc := structs.NcMapLinkSameCmd{
 					//MapID:    ev.next.data.Info.ID,
-					MapID:    ev.next.data.Info.ID,
+					MapID: ev.next.data.Info.ID,
 					Location: structs.ShineXYType{
 						X: uint32(newLocation.x),
 						Y: uint32(newLocation.y),
@@ -87,7 +88,7 @@ func (z *zone) playerSession() {
 
 				ev.s.mapID = ev.next.data.ID
 
-				ncMapLinkSameCmd(p, &nc)
+				networking.Send(p.conn.outboundData, networking.NC_MAP_LINKSAME_CMD, &nc)
 
 				ev.next.send[playerAppeared] <- &playerAppearedEvent{
 					handle: handle,
@@ -223,9 +224,68 @@ func playerMapLoginLogic(e event) {
 
 	select {
 	case <-phe.done:
-		ncCharClientBaseCmd(p)
-		ncCharClientShapeCmd(p)
-		ncMapLoginAck(p)
+
+		nc := &structs.NcCharClientBaseCmd{
+			ChrRegNum: uint32(p.char.ID),
+			CharName: structs.Name5{
+				Name: p.view.name,
+			},
+			Slot:       p.char.Slot,
+			Level:      p.state.level,
+			Experience: p.state.exp,
+			PwrStone:   0,
+			GrdStone:   0,
+			HPStone:    p.stats.hpStones,
+			SPStone:    p.stats.spStones,
+			CurHP:      p.stats.hp,
+			CurSP:      p.stats.sp,
+			CurLP:      p.stats.lp,
+			Unk:        1,
+			Fame:       p.money.fame,
+			Cen:        54983635, // ¿?
+			LoginInfo: structs.NcCharBaseCmdLoginLocation{
+				CurrentMap: structs.Name3{
+					Name: p.current.mapName,
+				},
+				CurrentCoord: structs.ShineCoordType{
+					XY: structs.ShineXYType{
+						X: uint32(p.current.x),
+						Y: uint32(p.current.y),
+					},
+					Direction: uint8(p.current.d),
+				},
+			},
+			Stats: structs.CharStats{
+				Strength:          p.stats.points.str,
+				Constitute:        p.stats.points.end,
+				Dexterity:         p.stats.points.dex,
+				Intelligence:      p.stats.points.int,
+				MentalPower:       p.stats.points.spr,
+				RedistributePoint: p.stats.points.redistributionPoints,
+			},
+			IdleTime:   0,
+			PkCount:    p.char.Attributes.KillPoints,
+			PrisonMin:  0,
+			AdminLevel: p.char.AdminLevel,
+			Flag: structs.NcCharBaseCmdFlag{
+				Val: 0,
+			},
+		}
+		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_BASE_CMD, nc)
+
+		shape :=  p.view.protoAvatarShapeInfo()
+		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_SHAPE_CMD, shape)
+
+		mapAck := &structs.NcMapLoginAck{
+			Handle: p.handle, // id of the entity inside this map
+			Params: p.charParameterData(),
+			LoginCoord: structs.ShineXYType{
+				X: uint32(p.current.x),
+				Y: uint32(p.current.y),
+			},
+		}
+		networking.Send(p.conn.outboundData, networking.NC_MAP_LOGIN_ACK, mapAck)
+
 	case err := <-phe.err:
 		log.Error(err)
 	}
@@ -389,7 +449,7 @@ func persistPLayerPositionLogic(e event, z *zone) {
 	c.Location.IsKQ = false
 	ev.p.Unlock()
 
-	err := character.UpdateLocation(z.worldDB, c)
+	err := game.UpdateLocation(z.worldDB, c)
 
 	if err != nil {
 		log.Error(err)

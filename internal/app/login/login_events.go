@@ -11,7 +11,8 @@ type clientVersionEvent struct {
 }
 
 type credentialsLoginEvent struct {
-	nc *structs.NcUserUsLoginReq
+	//nc *structs.NcUserUsLoginReq
+	nc *structs.NewUserLoginReq
 	np *networking.Parameters
 }
 

@@ -2,8 +2,9 @@ package world
 
 import (
 	"context"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/game"
 	zm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
 )
@@ -54,7 +55,8 @@ func characterSelectLogic(e event, w *world) {
 		return
 	}
 
-	ncUserLoginWorldAck(ev.np, &nc)
+	//networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGOUT_DB, &nc)
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGINWORLD_ACK, &nc)
 }
 
 func characterLoginLogic(e event, w *world) {
@@ -71,7 +73,7 @@ func characterLoginLogic(e event, w *world) {
 		return
 	}
 
-	char, err := character.GetBySlot(w.db, ev.nc.Slot, s.UserID)
+	char, err := game.GetBySlot(w.db, ev.nc.Slot, s.UserID)
 	if err != nil {
 		log.Error(err)
 		return
@@ -83,8 +85,7 @@ func characterLoginLogic(e event, w *world) {
 		return
 	}
 
-
-	ncCharLoginAck(ev.np, &nc)
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_CHAR_LOGIN_ACK, &nc)
 
 	go worldTimeNotification(ev.np)
 
@@ -107,7 +108,7 @@ func characterLoginLogic(e event, w *world) {
 	worldEvents[characterSettings] <- &cs
 }
 
-func zoneConnectionInfo(char character.Character) (structs.NcCharLoginAck, error) {
+func zoneConnectionInfo(char game.Character) (structs.NcCharLoginAck, error) {
 	var nc structs.NcCharLoginAck
 	conn, err := newRPCClient("zone_master")
 	if err != nil {
@@ -149,7 +150,7 @@ func createCharacterLogic(e event, w *world) {
 		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
 	}
 
-	err := character.Validate(w.db, s.UserID, ev.nc)
+	err := game.Validate(w.db, s.UserID, ev.nc)
 
 	if err != nil {
 		log.Error(err)
@@ -157,7 +158,7 @@ func createCharacterLogic(e event, w *world) {
 		return
 	}
 
-	char, err := character.New(w.db, s.UserID, ev.nc)
+	char, err := game.New(w.db, s.UserID, ev.nc)
 
 	if err != nil {
 		log.Error(err)
@@ -170,7 +171,7 @@ func createCharacterLogic(e event, w *world) {
 		Avatar:      char.NcRepresentation(),
 	}
 
-	ncAvatarCreateSuccAck(ev.np, &nc)
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_AVATAR_CREATESUCC_ACK, &nc)
 }
 
 func deleteCharacterLogic(e event, w *world) {
@@ -186,15 +187,17 @@ func deleteCharacterLogic(e event, w *world) {
 		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
 	}
 
-	err := character.Delete(w.db, s.UserID, ev.nc)
+	err := game.Delete(w.db, s.UserID, ev.nc)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	avatarEraseSuccAck(ev.np, &structs.NcAvatarEraseSuccAck{
+	nc := &structs.NcAvatarEraseSuccAck{
 		Slot: ev.nc.Slot,
-	})
+	}
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_AVATAR_ERASESUCC_ACK, nc)
+
 }
 
 func characterSettingsLogic(e event) {
@@ -205,30 +208,31 @@ func characterSettingsLogic(e event) {
 		return
 	}
 
-	gameOptions, err := character.NcGameOptions(ev.char.Options.GameOptions)
+	gameOptions, err := game.NcGameOptions(ev.char.Options.GameOptions)
 
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	keyMap, err := character.NcKeyMap(ev.char.Options.Keymap)
+	keyMap, err := game.NcKeyMap(ev.char.Options.Keymap)
 
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	shortcuts, err := character.NcShortcutData(ev.char.Options.Shortcuts)
+	shortcuts, err := game.NcShortcutData(ev.char.Options.Shortcuts)
 
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	ncCharOptionImproveGetGameOptionCmd(ev.np, &gameOptions)
-	ncCharOptionImproveGetKeymapCmd(ev.np, &keyMap)
-	ncCharOptionImproveGetShortcutDataCmd(ev.np, &shortcuts)
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_CHAR_OPTION_IMPROVE_GET_GAMEOPTION_CMD, &gameOptions)
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_CHAR_OPTION_IMPROVE_GET_KEYMAP_CMD, &keyMap)
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_CHAR_OPTION_IMPROVE_GET_SHORTCUTDATA_CMD, &shortcuts)
+
 }
 
 func updateShortcutsLogic(w *world, e event) {
@@ -239,7 +243,7 @@ func updateShortcutsLogic(w *world, e event) {
 		return
 	}
 
-	c, err := character.Get(w.db, ev.characterID)
+	c, err := game.Get(w.db, ev.characterID)
 
 	if err != nil {
 		log.Error(err)
@@ -283,12 +287,13 @@ func updateShortcutsLogic(w *world, e event) {
 
 	c.Options.Shortcuts = data
 
-	err = character.Update(w.db, &c)
+	err = game.Update(w.db, &c)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
 	nc := structs.NcCharOptionImproveShortcutDataAck{ErrCode: 8448}
-	ncCharOptionImproveSetShortcutDataAck(ev.np, &nc)
+
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_ACK, &nc)
 }

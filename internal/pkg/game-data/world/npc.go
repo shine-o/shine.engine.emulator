@@ -32,7 +32,7 @@ type ShinePortal struct {
 	RoleArg        string // use it later to assign ShinePortal to ShineNPC
 	ServerMapIndex string
 	ClientMapIndex string
-	X, Y, D          int // landing coordinates
+	X, Y, D        int // landing coordinates
 	FromLevel      int
 	Party          bool
 }

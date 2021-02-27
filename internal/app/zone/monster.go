@@ -32,7 +32,6 @@ func (m *monster) alive() {
 }
 
 func (m *monster) dead() {
-
 	// initial removal from monsters...
 	// trigger monsterDied event
 	// create ticker so it can respawn again

@@ -6,11 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
-	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -38,7 +33,7 @@ type Department struct {
 type Command struct {
 	Base CommandBase // common data in every command, like operation code and length
 	//NcStruct interface{} // any kind of structure that is the representation in bytes of the network packet
-	NcStruct structs.NC // any kind of structure that is the representation in bytes of the network packet
+	NcStruct interface{} // any kind of structure that is the representation in bytes of the network packet
 }
 
 // CommandBase type used to store decoded data from a packet
@@ -47,8 +42,10 @@ type CommandBase struct {
 	Department       uint16
 	Command          uint16
 	OperationCode    uint16
-	ClientStructName string
-	Data             []byte
+	OperationCodeName    OperationCode
+	//ClientStructName string
+	//OperationCodeString OperationCode
+	Data []byte
 }
 
 // RawData of a packet that contains the length, operation code and packet data
@@ -116,12 +113,11 @@ func (pcb *CommandBase) String() string {
 	}
 	ePcb := exportedPcb{
 		Length:        pcb.PacketLength(),
-		Department:    pcb.OperationCode >> 10,
+		Department:    uint16(pcb.OperationCode) >> 10,
 		Command:       fmt.Sprintf("%X", pcb.OperationCode&1023),
-		OperationCode: pcb.OperationCode,
+		OperationCode: uint16(pcb.OperationCode),
 		Data:          hex.EncodeToString(pcb.Data),
 		RawData:       hex.EncodeToString(pcb.RawData()),
-		FriendlyName:  pcb.ClientStructName,
 	}
 	if pcb.PacketLength() > 255 {
 		ePcb.PacketType = "big"
@@ -156,65 +152,73 @@ func (pcb *CommandBase) JSON() ExportedPcb {
 	//command = opCode & 1023
 	ePcb := ExportedPcb{
 		Length:        pcb.PacketLength(),
-		Department:    pcb.OperationCode >> 10,
+		Department:    uint16(pcb.OperationCode) >> 10,
 		Command:       fmt.Sprintf("%X", pcb.OperationCode&1023),
-		OperationCode: pcb.OperationCode,
+		OperationCode: uint16(pcb.OperationCode),
 		Data:          hex.EncodeToString(pcb.Data),
 		RawData:       hex.EncodeToString(pcb.RawData()),
-		FriendlyName:  pcb.ClientStructName,
 	}
 	return ePcb
 }
 
 // InitCommandList from protocol commands file
-func InitCommandList(filePath string) error {
-	pcl := PCList{
-		Departments: make(map[uint8]Department),
-	}
+//func InitCommandList(filePath string) error {
+//	pcl, err := LoadCommandList(filePath)
+//	if err != nil {
+//		return err
+//	}
+//	commandList = pcl
+//	return nil
+//}
 
-	d, err := ioutil.ReadFile(filePath)
-
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	rPcl := &RawPCList{}
-
-	if err = yaml.Unmarshal(d, rPcl); err != nil {
-		log.Error(err)
-		return err
-	}
-
-	for _, d := range rPcl.Departments {
-
-		dptHexVal := strings.ReplaceAll(d.HexID, "0x", "")
-
-		dptIntVal, _ := strconv.ParseUint(dptHexVal, 16, 32)
-
-		department := Department{
-			HexID:             d.HexID,
-			Name:              d.Name,
-			ProcessedCommands: make(map[string]string),
-		}
-		cmdsRaw := d.RawCommands
-		cmdsRaw = strings.ReplaceAll(cmdsRaw, "\n", "")
-		cmdsRaw = strings.ReplaceAll(cmdsRaw, " ", "")
-		cmdsRaw = strings.ReplaceAll(cmdsRaw, "0x", "")
-		cmdsRaw = strings.ReplaceAll(cmdsRaw, "\t", "")
-
-		cmds := strings.Split(cmdsRaw, ",")
-
-		for _, c := range cmds {
-			if c == "" {
-				continue
-			}
-			cs := strings.Split(c, "=")
-			department.ProcessedCommands[cs[1]] = cs[0]
-		}
-		pcl.Departments[uint8(dptIntVal)] = department
-	}
-
-	commandList = &pcl
-	return nil
-}
+// InitCommandList from protocol commands file
+//func LoadCommandList(filePath string) (*PCList, error) {
+//	pcl := PCList{
+//		Departments: make(map[uint8]Department),
+//	}
+//
+//	d, err := ioutil.ReadFile(filePath)
+//
+//	if err != nil {
+//		log.Error(err)
+//		return &pcl, err
+//	}
+//
+//	rPcl := &RawPCList{}
+//
+//	if err = yaml.Unmarshal(d, rPcl); err != nil {
+//		log.Error(err)
+//		return &pcl, err
+//	}
+//
+//	for _, d := range rPcl.Departments {
+//
+//		dptHexVal := strings.ReplaceAll(d.HexID, "0x", "")
+//
+//		dptIntVal, _ := strconv.ParseUint(dptHexVal, 16, 32)
+//
+//		department := Department{
+//			HexID:             d.HexID,
+//			Name:              d.Name,
+//			ProcessedCommands: make(map[string]string),
+//		}
+//		commandsRaw := d.RawCommands
+//		commandsRaw = strings.ReplaceAll(commandsRaw, "\n", "")
+//		commandsRaw = strings.ReplaceAll(commandsRaw, " ", "")
+//		commandsRaw = strings.ReplaceAll(commandsRaw, "0x", "")
+//		commandsRaw = strings.ReplaceAll(commandsRaw, "\t", "")
+//
+//		commands := strings.Split(commandsRaw, ",")
+//
+//		for _, c := range commands {
+//			if c == "" {
+//				continue
+//			}
+//			cs := strings.Split(c, "=")
+//			department.ProcessedCommands[cs[1]] = cs[0]
+//		}
+//		pcl.Departments[uint8(dptIntVal)] = department
+//	}
+//
+//	return &pcl, nil
+//}

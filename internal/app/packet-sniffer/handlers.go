@@ -233,7 +233,6 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 	if err != nil {
 		log.Error(err)
 	}
-	dp.packet.Base.ClientStructName = networking.CommandName(dp.packet)
 
 	pv := PacketView{
 		PacketID:      packetID.String(),
@@ -262,18 +261,22 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 	}
 
 	if viper.GetBool("protocol.log.verbose") {
-		log.Infof("\n%v\n%v\n%v\n%v\n%v\nunpacked data: %v \n%v", dp.packet.Base.ClientStructName, dp.seen, tPorts, dp.direction, dp.packet.Base.String(), pv.NcRepresentation.UnpackedData, hex.Dump(dp.packet.Base.Data))
+		log.Infof("\n%v\n%v\n%v\n%v\n%v\nunpacked data: %v \n%v", dp.packet.Base.OperationCodeName, dp.seen, tPorts, dp.direction, dp.packet.Base.String(), pv.NcRepresentation.UnpackedData, hex.Dump(dp.packet.Base.Data))
 	} else {
-		log.Infof("%v %v %v %v %v", dp.seen, tPorts, dp.direction, dp.packet.Base.ClientStructName, dp.packet.Base.String())
+		log.Infof("%v %v %v %v %v", dp.seen, tPorts, dp.direction, dp.packet.Base.OperationCodeName, dp.packet.Base.String())
 	}
 
 	pv.ConnectionKey = fmt.Sprintf("%v %v", ss.net.String(), ss.transport.String())
 	ocs.mu.Lock()
-	ocs.structs[dp.packet.Base.OperationCode] = dp.packet.Base.ClientStructName
+	ocs.structs[dp.packet.Base.OperationCode] = fmt.Sprint(dp.packet.Base.OperationCodeName)
 	ocs.mu.Unlock()
 
 	persistMovement(dp)
+	persistPacketData(dp)
 	if viper.GetBool("websocket.active") {
 		sendPacketToUI(pv)
 	}
+
+	// log packet
+
 }

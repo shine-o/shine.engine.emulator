@@ -15,7 +15,7 @@ type npc struct {
 	mobInfo       *shn.MobInfo
 	mobInfoServer *shn.MobInfoServer
 	regenData     *mobs.RegenEntry
-	npcData		  *world.ShineNPC
+	npcData       *world.ShineNPC
 	tickers       []*time.Ticker
 	status
 	sync.RWMutex

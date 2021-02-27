@@ -22,3 +22,4 @@ vendor/*
 output/*
 /build/databases/
 /build/output/
+files

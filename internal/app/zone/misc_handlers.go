@@ -20,21 +20,9 @@ func ncMiscSeedAck(ctx context.Context, np *networking.Parameters) {
 		Seed: xorOffset,
 	}
 
-	np.Command.NcStruct = &nc
-
-	np.Command.Send(np.OutboundSegments.Send)
+	networking.Send(np.OutboundSegments.Send, networking.NC_MISC_SEED_ACK, &nc)
 
 	xc <- xorOffset
-}
-
-// for the zone service it is the server that makes use of this handler
-func ncMiscHeartBeatReq(p *player) {
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 2052,
-		},
-	}
-	pc.Send(p.conn.outboundData)
 }
 
 // for the zone service it is the client that makes use of this handler

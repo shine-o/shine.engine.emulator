@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"sync"
 )
@@ -74,7 +75,7 @@ func adjacentMonstersInform(p *player, zm *zoneMap) {
 			if !knownMonster(p, m.getHandle()) {
 				if monsterInRange(p, m) {
 					nc := m.ncBriefInfoRegenMobCmd()
-					ncBriefInfoRegenMobCmd(p, &nc)
+					networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
 				}
 			}
 		}(p, m)

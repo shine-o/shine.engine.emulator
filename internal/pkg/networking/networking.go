@@ -19,7 +19,7 @@ var log = shinelog.NewLogger("networking default", "./output", logrus.DebugLevel
 
 type ShineService struct {
 	Settings
-	ShineHandler
+	ShinePacketRegistry
 	SessionFactory
 	ExtraParameters interface{}
 	Name            string
@@ -29,6 +29,7 @@ type InboundSegments struct {
 	Recv <-chan []byte
 	Send chan<- []byte
 }
+
 type OutboundSegments struct {
 	Recv <-chan []byte
 	Send chan<- []byte
@@ -74,10 +75,10 @@ var logOutboundPackets chan<- *Command
 
 // Set Settings specified by the shine service
 func (s *Settings) Set() {
-	err := InitCommandList(s.CommandsFilePath)
-	if err != nil {
-		log.Fatal(err)
-	}
+	//err := InitCommandList(s.CommandsFilePath)
+	//if err != nil {
+	//	log.Fatal(err)
+	//}
 	xorKey = s.XorKey
 	xorLimit = s.XorLimit
 }
@@ -190,9 +191,27 @@ func (ss *ShineService) handleConnection(conn net.Conn) {
 	}
 }
 
-func (pc *Command) Send(outboundStream chan<- []byte) {
-	if pc.NcStruct != nil {
-		data, err := structs.Pack(pc.NcStruct)
+//func (pc *Command) Send(outboundStream chan<- []byte) {
+//	if pc.NcStruct != nil {
+//		data, err := structs.Pack(pc.NcStruct)
+//		if err != nil {
+//			log.Errorf("%v, %v", err, pc)
+//			return
+//		}
+//		pc.Base.Data = data
+//	}
+//	outboundStream <- pc.Base.RawData()
+//	logOutboundPackets <- pc
+//}
+
+func Send(outboundStream chan<- []byte, opCode OperationCode, ncStruct interface{})  {
+	pc := Command{
+		Base: CommandBase{
+			OperationCode: uint16(opCode),
+		},
+	}
+	if ncStruct != nil {
+		data, err := structs.Pack(ncStruct)
 		if err != nil {
 			log.Errorf("%v, %v", err, pc)
 			return
@@ -200,7 +219,7 @@ func (pc *Command) Send(outboundStream chan<- []byte) {
 		pc.Base.Data = data
 	}
 	outboundStream <- pc.Base.RawData()
-	logOutboundPackets <- pc
+	logOutboundPackets <- &pc
 }
 
 func logPackets(ctx context.Context, in <-chan *Command, out <-chan *Command) {
@@ -219,7 +238,10 @@ func logPackets(ctx context.Context, in <-chan *Command, out <-chan *Command) {
 func logDirection(pc Command, direction string) {
 	//pc.RLock()
 	//defer pc.RUnlock()
-	cn := CommandName(&pc)
+	if pc.Base.OperationCodeName == 0 {
+		pc.Base.OperationCodeName = OperationCode(pc.Base.OperationCode)
+	}
+	cn := fmt.Sprint(pc.Base.OperationCodeName)
 	log.Infof("%v %v packet metadata: %v", direction, cn, pc.Base.String())
 	if pc.NcStruct != nil {
 		sd, err := json.Marshal(pc.NcStruct)
@@ -230,22 +252,6 @@ func logDirection(pc Command, direction string) {
 			log.Infof("%v %v packet structure data: %v %v", direction, cn, reflect.TypeOf(pc.NcStruct).String(), string(sd))
 		}
 	}
-}
-
-func CommandName(pc *Command) string {
-	commandList.mu.Lock()
-	defer commandList.mu.Unlock()
-	if (&PCList{}) != commandList { // should be commented out on production to increase performance
-		opCode := pc.Base.OperationCode
-		department := opCode >> 10
-		command := fmt.Sprintf("%X", opCode&1023)
-		if dpt, ok := commandList.Departments[uint8(department)]; ok {
-			return dpt.ProcessedCommands[command]
-		} else {
-			log.Warningf("Missing friendly name for command with: operationCode %v,  department %v, command %v, ", opCode, department, command)
-		}
-	}
-	return ""
 }
 
 func waitForClose(n *Network) {

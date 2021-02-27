@@ -26,17 +26,3 @@ func ncCharLoginReq(ctx context.Context, np *networking.Parameters) {
 
 	worldEvents[characterLogin] <- &cl
 }
-
-// NcCharLoginAck sends zone connection info to the client
-// NC_CHAR_LOGIN_ACK
-func ncCharLoginAck(np *networking.Parameters, nc *structs.NcCharLoginAck) {
-	// query the zone master for connection info for the map
-	// send it to the client
-	pc := networking.Command{
-		Base: networking.CommandBase{
-			OperationCode: 4099,
-		},
-		NcStruct: nc,
-	}
-	pc.Send(np.OutboundSegments.Send)
-}

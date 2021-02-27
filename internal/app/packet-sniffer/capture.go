@@ -97,6 +97,8 @@ func ExtendedCapture(p *Params) {
 	go capturePackets(ctx, a)
 
 	em.Entities = make(map[uint16][]Movement)
+	pd.Packets = make(map[uint16][]string)
+
 
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM) // subscribe to system signals
@@ -106,6 +108,7 @@ func ExtendedCapture(p *Params) {
 			cancel()
 			//generateOpCodeSwitch()
 			exportEntitiesMovements()
+			exportPackets()
 		}
 	}
 }

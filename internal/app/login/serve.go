@@ -17,19 +17,23 @@ import (
 
 var log = shinelog.NewLogger("login", "./output", logrus.DebugLevel)
 
+
+func metrics() {
+	enabled := viper.GetBool("metrics.enabled")
+	if enabled {
+		port := viper.GetString("metrics.prometheus.port")
+		log.Infof("metrics enabled at :%v/metrics", port)
+		http.Handle("/metrics", promhttp.Handler())
+		log.Info(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
+	}
+}
+
 // Start the login service
 // that is, use networking library to handle TCP connection
 // configure networking library to use handlers implemented in this package for packets
 func Start(cmd *cobra.Command, args []string) {
-	go func() {
-		enabled := viper.GetBool("metrics.enabled")
-		if enabled {
-			port := viper.GetString("metrics.prometheus.port")
-			log.Infof("metrics enabled at :%v/metrics", port)
-			http.Handle("/metrics", promhttp.Handler())
-			log.Info(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
-		}
-	}()
+	go metrics()
+
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -66,15 +70,41 @@ func Start(cmd *cobra.Command, args []string) {
 	ss := networking.ShineService{
 		Name:     "login",
 		Settings: s,
-		ShineHandler: networking.ShineHandler{
-			2055: ncMiscSeedAck,
-			3173: ncUserClientVersionCheckReq,
-			3162: ncUserUsLoginReq,
-			3076: ncUserXtrapReq,
-			3099: ncUserWorldStatusReq,
-			3083: ncUserWorldSelectReq,
-			3096: ncUserNormalLogoutCmd,
-			3127: ncUserLoginWithOtpReq,
+		ShinePacketRegistry: networking.ShinePacketRegistry{
+			//2055: ncMiscSeedAck,
+			//3173: ncUserClientVersionCheckReq,
+			//3162: ncUserUsLoginReq,
+			//3076: ncUserXtrapReq,
+			//3099: ncUserWorldStatusReq,
+			//3083: ncUserWorldSelectReq,
+			//3096: ncUserNormalLogoutCmd,
+			//3127: ncUserLoginWithOtpReq,
+			networking.NC_MISC_SEED_ACK: {
+				Handler: ncMiscSeedAck,
+			},
+			networking.NC_USER_CLIENT_VERSION_CHECK_REQ: {
+				Handler:  ncUserClientVersionCheckReq,
+			},
+			networking.NC_USER_US_LOGIN_REQ: {
+				Handler:  ncUserUsLoginReq,
+			},
+			networking.NC_USER_XTRAP_REQ: {
+				Handler: ncUserXtrapReq,
+			},
+			networking.NC_USER_WORLD_STATUS_REQ: {
+				Handler:  ncUserWorldStatusReq,
+			},
+			networking.NC_USER_WORLDSELECT_REQ: {
+			//networking.NC_USER_WORLDSELECT_ACK: {
+				Handler:  ncUserWorldSelectReq,
+			},
+			networking.NC_USER_NORMALLOGOUT_CMD: {
+				Handler:  ncUserNormalLogoutCmd,
+			},
+			// this no longer works
+			networking.NC_USER_LOGIN_WITH_OTP_REQ: {
+				Handler:  ncUserLoginWithOtpReq,
+			},
 		},
 		SessionFactory: sessionFactory{},
 	}

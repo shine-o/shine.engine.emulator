@@ -8,8 +8,10 @@ import (
 const (
 	//lengthX = 512
 	//lengthY = 512
-	lengthX = 256
-	lengthY = 256
+	//lengthX = 256
+	//lengthY = 256
+	lengthX = 2256
+	lengthY = 2256
 )
 
 type entity interface {
@@ -86,7 +88,7 @@ type baseEntity struct {
 	handle   uint16
 	fallback location
 	current  location
-	next    * location
+	next     *location
 	events
 }
 

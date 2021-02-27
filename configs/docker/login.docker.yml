@@ -33,7 +33,7 @@ database:
 session:
   redis:
     host: redis
-    port: 6379
+    port: 60000
     db: 0
 
 metrics:

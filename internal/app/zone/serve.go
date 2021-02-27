@@ -33,7 +33,9 @@ func Start(cmd *cobra.Command, args []string) {
 			http.Handle("/metrics", promhttp.Handler())
 			log.Info(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
 		}
+
 	}()
+
 	ctx := context.Background()
 
 	zonePort := viper.GetString("serve.port")
@@ -80,23 +82,57 @@ func Start(cmd *cobra.Command, args []string) {
 	ss := networking.ShineService{
 		Name:     "zone",
 		Settings: s,
-		ShineHandler: networking.ShineHandler{
-			2055: ncMiscSeedAck,
-			2053: ncMiscHeartBeatAck,
-			6145: ncMapLoginReq,
-			6147: ncMapLoginCompleteCmd,
-			4209: ncCharLogoutReadyCmd,
-			4210: ncCharLogoutCancelCmd,
-			8215: ncActMoveWalkCmd,
-			8217: ncActMoveRunCmd,
-			8228: ncActJumpCmd,
-			8210: ncActStopReq,
-			7169: ncBriefInfoInformCmd,
-			9217: ncBatTargetingReq,
-			9224: ncBatUntargetReq,
-			3096: ncUserNormalLogoutCmd,
-			8202: ncActNpcClickCmd,
-			15362: ncMenuServerMenuAck,
+		ShinePacketRegistry: networking.ShinePacketRegistry{
+			// inbound
+			networking.NC_MISC_SEED_ACK: networking.ShinePacket{
+				Handler: ncMiscSeedAck,
+			},
+			networking.NC_MISC_HEARTBEAT_ACK: networking.ShinePacket{
+				Handler: ncMiscHeartBeatAck,
+				//NcStruct: nil,
+			},
+			networking.NC_MAP_LOGIN_REQ: networking.ShinePacket{
+				Handler: ncMapLoginReq,
+			},
+			networking.NC_MAP_LOGINCOMPLETE_CMD: networking.ShinePacket{
+				Handler: ncMapLoginCompleteCmd,
+			},
+			networking.NC_CHAR_LOGOUTREADY_CMD: networking.ShinePacket{
+				Handler: ncCharLogoutReadyCmd,
+			},
+			networking.NC_CHAR_LOGOUTCANCEL_CMD: networking.ShinePacket{
+				Handler: ncCharLogoutCancelCmd,
+			},
+			networking.NC_ACT_MOVEWALK_CMD: networking.ShinePacket{
+				Handler: ncActMoveWalkCmd,
+			},
+			networking.NC_ACT_MOVERUN_CMD: networking.ShinePacket{
+				Handler: ncActMoveRunCmd,
+			},
+			networking.NC_ACT_JUMP_CMD: networking.ShinePacket{
+				Handler: ncActJumpCmd,
+			},
+			networking.NC_ACT_STOP_REQ: networking.ShinePacket{
+				Handler: ncActStopReq,
+			},
+			networking.NC_BRIEFINFO_INFORM_CMD: networking.ShinePacket{
+				Handler: ncBriefInfoInformCmd,
+			},
+			networking.NC_BAT_TARGETTING_REQ: networking.ShinePacket{
+				Handler: ncBatTargetingReq,
+			},
+			networking.NC_BAT_UNTARGET_REQ: networking.ShinePacket{
+				Handler: ncBatUntargetReq,
+			},
+			networking.NC_USER_NORMALLOGOUT_CMD: networking.ShinePacket{
+				Handler: ncUserNormalLogoutCmd,
+			},
+			networking.NC_ACT_NPCCLICK_CMD: networking.ShinePacket{
+				Handler: ncActNpcClickCmd,
+			},
+			networking.NC_MENU_SERVERMENU_ACK: networking.ShinePacket{
+				Handler: ncMenuServerMenuAck,
+			},
 		},
 		SessionFactory: sessionFactory{},
 	}
