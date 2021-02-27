@@ -1,10 +1,10 @@
-package character
+package game
 
 import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/go-pg/pg"
+	"github.com/go-pg/pg/v10"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
@@ -25,8 +25,7 @@ func TestMain(m *testing.M) {
 	db = database.Connection(ctx, database.ConnectionParams{
 		User:     "user",
 		Password: "password",
-		Host:     "postgres",
-		//Host:     "192.168.1.238",
+		Host:     "127.0.0.1",
 		Port:     "5432",
 		Database: "shine",
 		Schema:   "world",

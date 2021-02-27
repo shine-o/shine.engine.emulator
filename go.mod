@@ -7,6 +7,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/glycerine/go-unsnap-stream v0.0.0-20190901134440-81cf024a9e0a // indirect
 	github.com/go-pg/pg v8.0.7+incompatible
+	github.com/go-pg/pg/v10 v10.0.0-beta.5
 	github.com/go-pg/pg/v9 v9.1.7
 	github.com/go-pg/urlstruct v0.5.1 // indirect
 	github.com/go-redis/redis/v7 v7.4.0
@@ -41,5 +42,5 @@ require (
 	google.golang.org/genproto v0.0.0-20200815001618-f69a88009b70 // indirect
 	google.golang.org/grpc v1.31.0
 	gopkg.in/ini.v1 v1.60.0 // indirect
-	gopkg.in/yaml.v2 v2.3.0
+	gopkg.in/yaml.v2 v2.3.0 // indirect
 )

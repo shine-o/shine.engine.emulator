@@ -1,7 +1,7 @@
 package world
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/game"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 )
@@ -22,7 +22,7 @@ type characterLoginEvent struct {
 }
 
 type characterSettingsEvent struct {
-	char *character.Character
+	char *game.Character
 	np   *networking.Parameters
 }
 

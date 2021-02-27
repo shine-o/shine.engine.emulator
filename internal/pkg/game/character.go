@@ -1,9 +1,9 @@
-package character
+package game
 
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	"github.com/google/logger"
 	"github.com/google/uuid"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
@@ -62,17 +62,17 @@ type EquippedItems struct {
 type Character struct {
 	tableName     struct{} `pg:"world.characters"`
 	ID            uint64
-	UserID        uint64 `pg:",notnull"`
-	Name          string `pg:",notnull,unique"`
-	Appearance    *Appearance
-	Attributes    *Attributes
-	Location      *Location
-	Options       *ClientOptions
-	Items         []Items
-	EquippedItems *EquippedItems
-	AdminLevel    uint8 `pg:",notnull,use_zero"`
-	Slot          uint8 `pg:",notnull,use_zero"`
-	IsDeleted     bool  `pg:",use_zero"`
+	UserID        uint64         `pg:",notnull"`
+	Name          string         `pg:",notnull,unique"`
+	Appearance    *Appearance    `pg:"rel:has-one"`
+	Attributes    *Attributes    `pg:"rel:has-one"`
+	Location      *Location      `pg:"rel:has-one"`
+	Options       *ClientOptions `pg:"rel:has-one"`
+	Items         []Items        `pg:"rel:has-many"`
+	EquippedItems *EquippedItems `pg:"rel:has-one"`
+	AdminLevel    uint8          `pg:",notnull,use_zero"`
+	Slot          uint8          `pg:",notnull,use_zero"`
+	IsDeleted     bool           `pg:",use_zero"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	DeletedAt     time.Time `pg:",soft_delete"`

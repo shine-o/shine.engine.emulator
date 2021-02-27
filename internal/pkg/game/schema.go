@@ -1,9 +1,9 @@
-package character
+package game
 
 import (
 	"fmt"
-	"github.com/go-pg/pg/v9"
-	"github.com/go-pg/pg/v9/orm"
+	"github.com/go-pg/pg/v10"
+	"github.com/go-pg/pg/v10/orm"
 )
 
 // CreateTables if not yet created
@@ -39,6 +39,7 @@ func DeleteTables(db *pg.DB) error {
 	if err != nil {
 		return err
 	}
+
 	defer deleteTx.Close()
 
 	for _, model := range []interface{}{

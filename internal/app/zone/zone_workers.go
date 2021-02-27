@@ -3,7 +3,7 @@ package zone
 import (
 	"fmt"
 	"github.com/go-pg/pg/v9"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/game"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
@@ -449,7 +449,7 @@ func persistPLayerPositionLogic(e event, z *zone) {
 	c.Location.IsKQ = false
 	ev.p.Unlock()
 
-	err := character.UpdateLocation(z.worldDB, c)
+	err := game.UpdateLocation(z.worldDB, c)
 
 	if err != nil {
 		log.Error(err)

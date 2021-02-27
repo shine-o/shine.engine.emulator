@@ -40,7 +40,7 @@ protocol:
   xorLimit: 499
 
   log:
-    verbose: true
+    verbose: false
     client: true
     server: true
   commands: "configs/network-commands.yml"

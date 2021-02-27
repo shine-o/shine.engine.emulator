@@ -2,7 +2,7 @@ package zone
 
 import (
 	"github.com/go-pg/pg/v9"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/game"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"sync"
 	"time"
@@ -13,7 +13,7 @@ type player struct {
 	players  map[uint16]*player
 	monsters map[uint16]*monster
 	npcs     map[uint16]*npc
-	char     *character.Character
+	char     *game.Character
 	conn     playerConnection
 	view     playerView
 	stats    playerStats
@@ -371,7 +371,7 @@ type stat struct {
 
 func (p *player) load(name string, worldDB *pg.DB) error {
 
-	char, err := character.GetByName(worldDB, name)
+	char, err := game.GetByName(worldDB, name)
 
 	if err != nil {
 		return err
@@ -463,7 +463,7 @@ func (p *player) load(name string, worldDB *pg.DB) error {
 	// for p launch routines to create player inner structs view, state, stats
 }
 
-func (p *player) viewData(view chan<- playerView, c *character.Character, err chan error) {
+func (p *player) viewData(view chan<- playerView, c *game.Character, err chan error) {
 	v := playerView{ // todo: validation just in case, so we don't log a bad player that could potentially bin other player
 		name:       c.Name,
 		class:      c.Appearance.Class,
@@ -475,7 +475,7 @@ func (p *player) viewData(view chan<- playerView, c *character.Character, err ch
 	view <- v
 }
 
-func (p *player) stateData(state chan<- playerState, c *character.Character, err chan<- error) {
+func (p *player) stateData(state chan<- playerState, c *game.Character, err chan<- error) {
 	s := playerState{
 		prevExp: 100,
 		exp:     150,
@@ -491,7 +491,7 @@ func (p *player) stateData(state chan<- playerState, c *character.Character, err
 	state <- s
 }
 
-func (p *player) statsData(stats chan<- playerStats, c *character.Character, err chan<- error) {
+func (p *player) statsData(stats chan<- playerStats, c *game.Character, err chan<- error) {
 	// given all:
 	//  class base stats for current level, equipped items, charged buffs, buffs/debuffs, assigned stat points
 	// calculate base stats (class base stats for current level, assigned stat points) , and stats with gear on (equipped items, charged buffs, buffs/debuffs)
@@ -579,7 +579,7 @@ func (p *player) statsData(stats chan<- playerStats, c *character.Character, err
 	stats <- s
 }
 
-func (p *player) itemData(items chan<- playerItems, c *character.Character, err chan<- error) {
+func (p *player) itemData(items chan<- playerItems, c *game.Character, err chan<- error) {
 	// for this character, load all items in each respective box
 	// each item loaded should be validated so that, best way is to iterate all items and for each item launch a routine that validates it and returns the valid item through a channel
 	// we also forward the error channel in case there is an error
@@ -600,7 +600,7 @@ func (p *player) itemData(items chan<- playerItems, c *character.Character, err 
 	items <- i
 }
 
-func (p *player) titleData(titles chan<- playerTitles, c *character.Character, err chan<- error) {
+func (p *player) titleData(titles chan<- playerTitles, c *game.Character, err chan<- error) {
 	// bit operation for titles u.u
 	t := playerTitles{
 		current: struct {
@@ -616,7 +616,7 @@ func (p *player) titleData(titles chan<- playerTitles, c *character.Character, e
 	titles <- t
 }
 
-func (p *player) moneyData(money chan<- playerMoney, c *character.Character, err chan<- error) {
+func (p *player) moneyData(money chan<- playerMoney, c *game.Character, err chan<- error) {
 	m := playerMoney{
 		coins:       100000,
 		fame:        100000,
@@ -626,13 +626,13 @@ func (p *player) moneyData(money chan<- playerMoney, c *character.Character, err
 	money <- m
 }
 
-func (p *player) skillData(skills chan<- []skill, c *character.Character, err chan<- error) {
+func (p *player) skillData(skills chan<- []skill, c *game.Character, err chan<- error) {
 	// all learned skills stored in the database
 	var s []skill
 	skills <- s
 }
 
-func (p *player) passiveData(passives chan<- []passive, c *character.Character, err chan<- error) {
+func (p *player) passiveData(passives chan<- []passive, c *game.Character, err chan<- error) {
 	var pa []passive
 	passives <- pa
 }

@@ -3,8 +3,8 @@ package world
 import (
 	"context"
 	"errors"
-	"github.com/go-pg/pg/v9"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game/character"
+	"github.com/go-pg/pg/v10"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/game"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/login"
 	wm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world-master"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
@@ -133,7 +133,7 @@ func userCharacters(db *pg.DB, ws *session) (structs.NcUserLoginWorldAck, error)
 	worldID := viper.GetInt("service.id")
 
 	var avatars []structs.AvatarInformation
-	var chars []character.Character
+	var chars []game.Character
 
 	err := db.Model(&chars).
 		Relation("Appearance").
