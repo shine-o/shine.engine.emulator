@@ -3,7 +3,7 @@ package world
 import (
 	"context"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -33,16 +33,16 @@ func Migrate(cmd *cobra.Command, args []string) {
 		log.Error(err)
 	} else {
 		if yes {
-			err := game.DeleteTables(db)
+			err := persistence.DeleteTables(db)
 			if err != nil {
 				log.Fatal(err)
 			}
-			err = game.CreateTables(db)
+			err = persistence.CreateTables(db)
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else {
-			err = game.CreateTables(db)
+			err = persistence.CreateTables(db)
 			if err != nil {
 				log.Fatal(err)
 			}

@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-func netPackets() utils.TargetPackets  {
+func netPackets() utils.TargetPackets {
 	tp := utils.TargetPackets{
 		networking.NC_MISC_SEED_ACK: {
 			NcStruct: &structs.NcMiscSeedAck{},
@@ -18,22 +18,22 @@ func netPackets() utils.TargetPackets  {
 		networking.NC_USER_LOGINWORLD_REQ: {
 			NcStruct: &structs.NcUserLoginWorldReq{},
 		},
-		networking.NC_MISC_GAMETIME_REQ:{
+		networking.NC_MISC_GAMETIME_REQ: {
 			NcStruct: &structs.NcMiscGameTimeAck{},
 		},
-		networking.NC_USER_WILL_WORLD_SELECT_REQ:{
+		networking.NC_USER_WILL_WORLD_SELECT_REQ: {
 			NcStruct: &structs.NcUserWorldSelectReq{},
 		},
-		networking.NC_AVATAR_CREATE_REQ:{
+		networking.NC_AVATAR_CREATE_REQ: {
 			NcStruct: &structs.NcAvatarCreateReq{},
 		},
-		networking.NC_AVATAR_ERASE_REQ:{
+		networking.NC_AVATAR_ERASE_REQ: {
 			NcStruct: &structs.NcAvatarEraseReq{},
 		},
-		networking.NC_CHAR_LOGIN_REQ:{
+		networking.NC_CHAR_LOGIN_REQ: {
 			NcStruct: &structs.NcCharLoginReq{},
 		},
-		networking.NC_CHAR_OPTION_GET_WINDOWPOS_REQ:{
+		networking.NC_CHAR_OPTION_GET_WINDOWPOS_REQ: {
 			NcStruct: &structs.NcCharOptionWindowPos{},
 		},
 		//networking.NC_CHAR_OPTION_GET_SHORTCUTSIZE_REQ:{
@@ -42,7 +42,7 @@ func netPackets() utils.TargetPackets  {
 		//networking.NC_PRISON_GET_REQ:{
 		//	NcStruct: &structs.NcPrisonG
 		//},
-		networking.NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_REQ:{
+		networking.NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_REQ: {
 			NcStruct: &structs.NcCharOptionSetShortcutDataReq{},
 		},
 
@@ -91,7 +91,7 @@ func TestPackets(t *testing.T) {
 	for _, f := range files {
 		packetData := utils.LoadPacketData(f)
 		for opCode, packet := range netPackets {
-			dataStrings, ok :=  packetData[uint16(opCode)]
+			dataStrings, ok := packetData[uint16(opCode)]
 			if ok {
 				for _, dataString := range dataStrings {
 					if dataString == "" {

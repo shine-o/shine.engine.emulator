@@ -133,13 +133,13 @@ const (
 	MAX_ISETYPE
 )
 
-func (s * ShineItemInfoServer) MissingIndexes(filePath string) (map[string][]string, error) {
+func (s *ShineItemInfoServer) MissingIndexes(filePath string) (map[string][]string, error) {
 	// have a function for each dependent file separately
 	// ItemInfoServer
 	var res = make(map[string][]string)
 
 	var iis ShineItemInfo
-	err := Load(filePath + "/shn/ItemInfo.shn", &iis)
+	err := Load(filePath+"/shn/ItemInfo.shn", &iis)
 	if err != nil {
 		return res, err
 	}
@@ -149,10 +149,10 @@ func (s * ShineItemInfoServer) MissingIndexes(filePath string) (map[string][]str
 	return res, nil
 }
 
-func (s * ShineItemInfoServer) MissingIDs(filePath string) ( map[string][]uint16, error) {
+func (s *ShineItemInfoServer) MissingIDs(filePath string) (map[string][]uint16, error) {
 	var res = make(map[string][]uint16)
 	var iis ShineItemInfo
-	err := Load(filePath + "/shn/ItemInfo.shn", &iis)
+	err := Load(filePath+"/shn/ItemInfo.shn", &iis)
 	if err != nil {
 		return res, err
 	}
@@ -160,11 +160,11 @@ func (s * ShineItemInfoServer) MissingIDs(filePath string) ( map[string][]uint16
 	return res, nil
 }
 
-func (s * ShineItemInfoServer) MismatchedIndexAndID(filePath string) (map[string][]string, error){
+func (s *ShineItemInfoServer) MismatchedIndexAndID(filePath string) (map[string][]string, error) {
 	var res = make(map[string][]string)
 
 	var iis ShineItemInfo
-	err := Load(filePath + "/shn/ItemInfo.shn", &iis)
+	err := Load(filePath+"/shn/ItemInfo.shn", &iis)
 	if err != nil {
 		return res, err
 	}
@@ -173,7 +173,7 @@ func (s * ShineItemInfoServer) MismatchedIndexAndID(filePath string) (map[string
 	return res, nil
 }
 
-func (s * ShineItemInfoServer) itemInfoServerMismatchedIndexID(iis * ShineItemInfo) []string {
+func (s *ShineItemInfoServer) itemInfoServerMismatchedIndexID(iis *ShineItemInfo) []string {
 	var res []string
 
 	for _, i := range s.ShineRow {
@@ -206,8 +206,7 @@ func (s * ShineItemInfoServer) itemInfoServerMismatchedIndexID(iis * ShineItemIn
 	return res
 }
 
-
-func (s * ShineItemInfoServer) missingItemInfoIndex(iis * ShineItemInfo) []string {
+func (s *ShineItemInfoServer) missingItemInfoIndex(iis *ShineItemInfo) []string {
 	var res []string
 
 	for _, i := range s.ShineRow {
@@ -227,7 +226,7 @@ func (s * ShineItemInfoServer) missingItemInfoIndex(iis * ShineItemInfo) []strin
 	return res
 }
 
-func (s * ShineItemInfoServer) missingItemInfoIDs(iis * ShineItemInfo) []uint16 {
+func (s *ShineItemInfoServer) missingItemInfoIDs(iis *ShineItemInfo) []uint16 {
 	var res []uint16
 
 	for _, i := range s.ShineRow {

@@ -14,15 +14,15 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func filesWithDependencies()  {
+func filesWithDependencies() {
 	var f1 = &ShineItemInfo{}
-	err := Load(filePath + "/shn/ItemInfo.shn", f1)
+	err := Load(filePath+"/shn/ItemInfo.shn", f1)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	var f2 = &ShineItemInfoServer{}
-	err = Load(filePath + "/shn/ItemInfoServer.shn", f2)
+	err = Load(filePath+"/shn/ItemInfoServer.shn", f2)
 	if err != nil {
 		log.Fatal(err)
 	}

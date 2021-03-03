@@ -31,7 +31,7 @@ type PacketData struct {
 
 var pd PacketData
 
-func persistPacketData(dp decodedPacket)  {
+func persistPacketData(dp decodedPacket) {
 	ds := hex.EncodeToString(dp.packet.Base.Data)
 	pd.Lock()
 	pd.Packets[dp.packet.Base.OperationCode] = append(pd.Packets[dp.packet.Base.OperationCode], ds)
@@ -156,7 +156,7 @@ func persistMovement(dp decodedPacket) {
 	}
 }
 
-func exportPackets()  {
+func exportPackets() {
 	pathName, err := filepath.Abs(fmt.Sprintf("output/packets-%v.json", time.Now().Unix()))
 	if err != nil {
 		log.Fatal(err)

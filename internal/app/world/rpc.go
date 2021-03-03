@@ -63,6 +63,7 @@ func newRPCServer(name string) {
 		if err != nil {
 			log.Errorf("failed to listen on port %v for service %v : %v", name, port, err)
 		}
+
 		s := grpc.NewServer()
 		w.RegisterWorldServer(s, &server{})
 

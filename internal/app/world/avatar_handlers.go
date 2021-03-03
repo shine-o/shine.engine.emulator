@@ -2,8 +2,8 @@ package world
 
 import (
 	"context"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 )
 
@@ -62,7 +62,7 @@ func ncAvatarEraseReq(ctx context.Context, np *networking.Parameters) {
 }
 
 func createCharErr(np *networking.Parameters, err error) {
-	errChar, ok := err.(*game.ErrCharacter)
+	errChar, ok := err.(*persistence.ErrCharacter)
 	if !ok {
 		return
 	}

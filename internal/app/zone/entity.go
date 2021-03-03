@@ -17,7 +17,7 @@ const (
 type entity interface {
 	basicActions
 	getHandle() uint16
-	getLocation() (uint32, uint32)
+	getLocation() (int, int)
 }
 
 type handler struct {
@@ -69,7 +69,7 @@ func (h *handler) new() (uint16, error) {
 }
 
 type basicActions interface {
-	move(x, y int) error
+	move(m *zoneMap, x, y int) error
 }
 
 type location struct {

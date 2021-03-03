@@ -11,11 +11,10 @@ import (
 	"testing"
 )
 
-
-func netPackets() utils.TargetPackets  {
+func netPackets() utils.TargetPackets {
 	tp := utils.TargetPackets{
 		networking.NC_MISC_SEED_ACK: {
-			NcStruct:   &structs.NcMiscSeedAck{},
+			NcStruct: &structs.NcMiscSeedAck{},
 			Assert: func(i interface{}) error {
 				ncS, ok := i.(*structs.NcMiscSeedAck)
 				if !ok {
@@ -134,7 +133,7 @@ func TestPackets(t *testing.T) {
 	for _, f := range files {
 		packetData := utils.LoadPacketData(f)
 		for opCode, packet := range netPackets {
-			dataStrings, ok :=  packetData[uint16(opCode)]
+			dataStrings, ok := packetData[uint16(opCode)]
 			if ok {
 				for _, dataString := range dataStrings {
 					if dataString == "" {

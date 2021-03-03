@@ -669,14 +669,13 @@ const (
 	MaxItemFuncEnum
 )
 
-
-func (s * ShineItemInfo) MissingIndexes(filePath string) (map[string][]string, error) {
+func (s *ShineItemInfo) MissingIndexes(filePath string) (map[string][]string, error) {
 	// have a function for each dependent file separately
 	// ItemInfoServer
 	var res = make(map[string][]string)
 
 	var iis ShineItemInfoServer
-	err := Load(filePath + "/shn/ItemInfoServer.shn", &iis)
+	err := Load(filePath+"/shn/ItemInfoServer.shn", &iis)
 	if err != nil {
 		return res, err
 	}
@@ -686,10 +685,10 @@ func (s * ShineItemInfo) MissingIndexes(filePath string) (map[string][]string, e
 	return res, nil
 }
 
-func (s * ShineItemInfo) MissingIDs(filePath string) ( map[string][]uint16, error) {
+func (s *ShineItemInfo) MissingIDs(filePath string) (map[string][]uint16, error) {
 	var res = make(map[string][]uint16)
 	var iis ShineItemInfoServer
-	err := Load(filePath + "/shn/ItemInfoServer.shn", &iis)
+	err := Load(filePath+"/shn/ItemInfoServer.shn", &iis)
 	if err != nil {
 		return res, err
 	}
@@ -697,7 +696,7 @@ func (s * ShineItemInfo) MissingIDs(filePath string) ( map[string][]uint16, erro
 	return res, nil
 }
 
-func (s * ShineItemInfo) missingItemInfoServerIndex(iis * ShineItemInfoServer) []string {
+func (s *ShineItemInfo) missingItemInfoServerIndex(iis *ShineItemInfoServer) []string {
 	var res []string
 
 	for _, i := range s.ShineRow {
@@ -717,7 +716,7 @@ func (s * ShineItemInfo) missingItemInfoServerIndex(iis * ShineItemInfoServer) [
 	return res
 }
 
-func (s * ShineItemInfo) missingItemInfoServerIDs(iis * ShineItemInfoServer) []uint16 {
+func (s *ShineItemInfo) missingItemInfoServerIDs(iis *ShineItemInfoServer) []uint16 {
 	var res []uint16
 
 	for _, i := range s.ShineRow {

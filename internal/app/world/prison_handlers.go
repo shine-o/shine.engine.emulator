@@ -15,4 +15,3 @@ func ncPrisonGetReq(ctx context.Context, np *networking.Parameters) {
 	}
 	networking.Send(np.OutboundSegments.Send, networking.NC_PRISON_GET_ACK, &nc)
 }
-

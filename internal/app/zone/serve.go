@@ -9,7 +9,6 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
 	"github.com/sirupsen/logrus"
-	//"github.com/google/logger"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"net/http"

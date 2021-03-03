@@ -14,7 +14,7 @@ import (
 
 type TestablePacket struct {
 	NcStruct interface{}
-	Assert func(interface{}) error
+	Assert   func(interface{}) error
 }
 
 type TargetPackets map[networking.OperationCode]TestablePacket

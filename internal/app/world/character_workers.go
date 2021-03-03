@@ -2,9 +2,9 @@ package world
 
 import (
 	"context"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game"
 	zm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
 )
@@ -73,7 +73,7 @@ func characterLoginLogic(e event, w *world) {
 		return
 	}
 
-	char, err := game.GetBySlot(w.db, ev.nc.Slot, s.UserID)
+	char, err := persistence.GetBySlot(w.db, ev.nc.Slot, s.UserID)
 	if err != nil {
 		log.Error(err)
 		return
@@ -108,7 +108,7 @@ func characterLoginLogic(e event, w *world) {
 	worldEvents[characterSettings] <- &cs
 }
 
-func zoneConnectionInfo(char game.Character) (structs.NcCharLoginAck, error) {
+func zoneConnectionInfo(char persistence.Character) (structs.NcCharLoginAck, error) {
 	var nc structs.NcCharLoginAck
 	conn, err := newRPCClient("zone_master")
 	if err != nil {
@@ -150,7 +150,7 @@ func createCharacterLogic(e event, w *world) {
 		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
 	}
 
-	err := game.Validate(w.db, s.UserID, ev.nc)
+	err := persistence.Validate(w.db, s.UserID, ev.nc)
 
 	if err != nil {
 		log.Error(err)
@@ -158,7 +158,7 @@ func createCharacterLogic(e event, w *world) {
 		return
 	}
 
-	char, err := game.New(w.db, s.UserID, ev.nc)
+	char, err := persistence.New(w.db, s.UserID, ev.nc)
 
 	if err != nil {
 		log.Error(err)
@@ -187,7 +187,7 @@ func deleteCharacterLogic(e event, w *world) {
 		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
 	}
 
-	err := game.Delete(w.db, s.UserID, ev.nc)
+	err := persistence.Delete(w.db, s.UserID, ev.nc)
 	if err != nil {
 		log.Error(err)
 		return
@@ -208,21 +208,21 @@ func characterSettingsLogic(e event) {
 		return
 	}
 
-	gameOptions, err := game.NcGameOptions(ev.char.Options.GameOptions)
+	gameOptions, err := persistence.NcGameOptions(ev.char.Options.GameOptions)
 
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	keyMap, err := game.NcKeyMap(ev.char.Options.Keymap)
+	keyMap, err := persistence.NcKeyMap(ev.char.Options.Keymap)
 
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	shortcuts, err := game.NcShortcutData(ev.char.Options.Shortcuts)
+	shortcuts, err := persistence.NcShortcutData(ev.char.Options.Shortcuts)
 
 	if err != nil {
 		log.Error(err)
@@ -243,7 +243,7 @@ func updateShortcutsLogic(w *world, e event) {
 		return
 	}
 
-	c, err := game.Get(w.db, ev.characterID)
+	c, err := persistence.Get(w.db, ev.characterID)
 
 	if err != nil {
 		log.Error(err)
@@ -287,7 +287,7 @@ func updateShortcutsLogic(w *world, e event) {
 
 	c.Options.Shortcuts = data
 
-	err = game.Update(w.db, &c)
+	err = persistence.Update(w.db, &c)
 	if err != nil {
 		log.Error(err)
 		return

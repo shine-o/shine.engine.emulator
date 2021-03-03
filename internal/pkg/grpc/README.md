@@ -6,5 +6,4 @@
 
 
 
-
     $ protoc -I ./ login-world.proto --go_out=plugins=grpc:./

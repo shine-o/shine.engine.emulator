@@ -17,7 +17,6 @@ import (
 
 var log = shinelog.NewLogger("login", "./output", logrus.DebugLevel)
 
-
 func metrics() {
 	enabled := viper.GetBool("metrics.enabled")
 	if enabled {
@@ -83,27 +82,27 @@ func Start(cmd *cobra.Command, args []string) {
 				Handler: ncMiscSeedAck,
 			},
 			networking.NC_USER_CLIENT_VERSION_CHECK_REQ: {
-				Handler:  ncUserClientVersionCheckReq,
+				Handler: ncUserClientVersionCheckReq,
 			},
 			networking.NC_USER_US_LOGIN_REQ: {
-				Handler:  ncUserUsLoginReq,
+				Handler: ncUserUsLoginReq,
 			},
 			networking.NC_USER_XTRAP_REQ: {
 				Handler: ncUserXtrapReq,
 			},
 			networking.NC_USER_WORLD_STATUS_REQ: {
-				Handler:  ncUserWorldStatusReq,
+				Handler: ncUserWorldStatusReq,
 			},
 			networking.NC_USER_WORLDSELECT_REQ: {
-			//networking.NC_USER_WORLDSELECT_ACK: {
-				Handler:  ncUserWorldSelectReq,
+				//networking.NC_USER_WORLDSELECT_ACK: {
+				Handler: ncUserWorldSelectReq,
 			},
 			networking.NC_USER_NORMALLOGOUT_CMD: {
-				Handler:  ncUserNormalLogoutCmd,
+				Handler: ncUserNormalLogoutCmd,
 			},
 			// this no longer works
 			networking.NC_USER_LOGIN_WITH_OTP_REQ: {
-				Handler:  ncUserLoginWithOtpReq,
+				Handler: ncUserLoginWithOtpReq,
 			},
 		},
 		SessionFactory: sessionFactory{},

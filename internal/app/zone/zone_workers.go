@@ -2,9 +2,9 @@ package zone
 
 import (
 	"fmt"
-	"github.com/go-pg/pg/v9"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game"
+	"github.com/go-pg/pg/v10"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
 	"time"
@@ -273,7 +273,7 @@ func playerMapLoginLogic(e event) {
 		}
 		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_BASE_CMD, nc)
 
-		shape :=  p.view.protoAvatarShapeInfo()
+		shape := p.view.protoAvatarShapeInfo()
 		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_SHAPE_CMD, shape)
 
 		mapAck := &structs.NcMapLoginAck{
@@ -449,7 +449,7 @@ func persistPLayerPositionLogic(e event, z *zone) {
 	c.Location.IsKQ = false
 	ev.p.Unlock()
 
-	err := game.UpdateLocation(z.worldDB, c)
+	err := persistence.UpdateLocation(z.worldDB, c)
 
 	if err != nil {
 		log.Error(err)

@@ -98,10 +98,10 @@ func Start(cmd *cobra.Command, args []string) {
 	//}
 	sh := networking.ShinePacketRegistry{
 		networking.NC_MISC_SEED_ACK: networking.ShinePacket{
-			Handler:  ncMiscSeedAck,
+			Handler: ncMiscSeedAck,
 		},
 		networking.NC_USER_LOGINWORLD_REQ: networking.ShinePacket{
-		//networking.NC_USER_LOGIN_DB: networking.ShinePacket{
+			//networking.NC_USER_LOGIN_DB: networking.ShinePacket{
 			Handler: ncUserLoginWorldReq,
 		},
 		networking.NC_MISC_GAMETIME_REQ: networking.ShinePacket{
@@ -132,13 +132,13 @@ func Start(cmd *cobra.Command, args []string) {
 			Handler: ncCharOptionImproveSetShortcutDataReq,
 		},
 		networking.NC_USER_AVATAR_LIST_REQ: networking.ShinePacket{
-		//networking.NC_USER_WORLD_STATUS_ACK: networking.ShinePacket{
+			//networking.NC_USER_WORLD_STATUS_ACK: networking.ShinePacket{
 			Handler: ncUserAvatarListReq,
 		},
 	}
 	ss := networking.ShineService{
-		Name:         "world",
-		Settings:     s,
+		Name:                "world",
+		Settings:            s,
 		ShinePacketRegistry: sh,
 		SessionFactory: sessionFactory{
 			worldID: viper.GetInt("world.id"),

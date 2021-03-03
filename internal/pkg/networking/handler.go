@@ -20,7 +20,7 @@ type Parameters struct {
 type ShinePacketRegistry map[OperationCode]ShinePacket
 
 type ShinePacket struct {
-	Handler func(context.Context, *Parameters)
+	Handler  func(context.Context, *Parameters)
 	NcStruct interface{}
 }
 

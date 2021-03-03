@@ -2,9 +2,9 @@ package shn
 
 import "testing"
 
-func TestItemInfoServer(t *testing.T)  {
+func TestItemInfoServer(t *testing.T) {
 	var file ShineItemInfoServer
-	err := Load(filePath + "/shn/ItemInfoServer.shn", &file)
+	err := Load(filePath+"/shn/ItemInfoServer.shn", &file)
 	if err != nil {
 		t.Error(err)
 	}

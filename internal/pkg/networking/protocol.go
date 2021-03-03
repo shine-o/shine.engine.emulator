@@ -38,11 +38,11 @@ type Command struct {
 
 // CommandBase type used to store decoded data from a packet
 type CommandBase struct {
-	Length           int
-	Department       uint16
-	Command          uint16
-	OperationCode    uint16
-	OperationCodeName    OperationCode
+	Length            int
+	Department        uint16
+	Command           uint16
+	OperationCode     uint16
+	OperationCodeName OperationCode
 	//ClientStructName string
 	//OperationCodeString OperationCode
 	Data []byte

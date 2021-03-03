@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-func TestItemInfo(t *testing.T)  {
+func TestItemInfo(t *testing.T) {
 	var file ShineItemInfo
-	err := Load(filePath + "/shn/ItemInfo.shn", &file)
+	err := Load(filePath+"/shn/ItemInfo.shn", &file)
 	if err != nil {
 		t.Error(err)
 	}

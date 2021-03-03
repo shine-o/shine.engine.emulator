@@ -1,7 +1,7 @@
 package login
 
 import (
-"encoding/hex"
+	"encoding/hex"
 	"fmt"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/utils"
@@ -10,9 +10,9 @@ import (
 	"testing"
 )
 
-func netPackets() utils.TargetPackets  {
+func netPackets() utils.TargetPackets {
 	tp := utils.TargetPackets{
-		networking.NC_MISC_SEED_ACK : {
+		networking.NC_MISC_SEED_ACK: {
 			NcStruct: &structs.NcMiscSeedAck{},
 		},
 		networking.NC_USER_CLIENT_VERSION_CHECK_REQ: {
@@ -24,7 +24,7 @@ func netPackets() utils.TargetPackets  {
 		networking.NC_USER_WORLDSELECT_REQ: {
 			NcStruct: &structs.NcUserWorldSelectReq{},
 		},
-		networking.NC_USER_NORMALLOGOUT_CMD: {},
+		networking.NC_USER_NORMALLOGOUT_CMD:   {},
 		networking.NC_USER_LOGIN_WITH_OTP_REQ: {},
 
 		networking.NC_USER_LOGIN_ACK: {
@@ -50,13 +50,12 @@ func TestPackets(t *testing.T) {
 	files := []string{
 		"../../../test-data/packets-1612910284-version-1.02.295.json",
 		"../../../test-data/packets-1613170127-version-1.02.295.json",
-
 	}
 
 	for _, f := range files {
 		packetData := utils.LoadPacketData(f)
 		for opCode, packet := range netPackets {
-			dataStrings, ok :=  packetData[uint16(opCode)]
+			dataStrings, ok := packetData[uint16(opCode)]
 			if ok {
 				for _, dataString := range dataStrings {
 					if dataString == "" {

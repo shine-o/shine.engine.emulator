@@ -99,7 +99,6 @@ func ExtendedCapture(p *Params) {
 	em.Entities = make(map[uint16][]Movement)
 	pd.Packets = make(map[uint16][]string)
 
-
 	c := make(chan os.Signal, 2)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM) // subscribe to system signals
 	for {

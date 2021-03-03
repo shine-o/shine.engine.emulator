@@ -31,10 +31,10 @@ type NcUserUsLoginReq struct {
 }
 
 type NewUserLoginReq struct {
-	Unk1 [32]byte
-	UserName  string `struct:"[260]byte"`
-	Password  string `struct:"[37]byte"`
-	Unk2  string `struct:"[20]byte"`
+	Unk1     [32]byte
+	UserName string `struct:"[260]byte"`
+	Password string `struct:"[37]byte"`
+	Unk2     string `struct:"[20]byte"`
 }
 
 //struct PROTO_NC_USER_LOGIN_ACK

@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-pg/pg/v9"
+	"github.com/go-pg/pg/v10"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	mobs "github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/monsters"
@@ -112,7 +112,7 @@ func (z *zone) addMap(mapId int) {
 	// if
 	for _, m := range z.rm {
 		if m.data.MapInfoIndex == md.Info.MapName.Name {
-			log.Errorf("duplicate shn map index id %v %v, skipping", mapId,  m.data.MapInfoIndex )
+			log.Errorf("duplicate shn map index id %v %v, skipping", mapId, m.data.MapInfoIndex)
 			return
 		}
 	}
@@ -140,17 +140,17 @@ func (z *zone) addMap(mapId int) {
 			recv: make(recvEvents),
 		},
 		metrics: metrics{
-			players:  promauto.NewGauge(prometheus.GaugeOpts{
-				Name:        fmt.Sprintf("players_in_%v", md.Info.MapName.Name),
-				Help:        "Total number of active players.",
+			players: promauto.NewGauge(prometheus.GaugeOpts{
+				Name: fmt.Sprintf("players_in_%v", md.Info.MapName.Name),
+				Help: "Total number of active players.",
 			}),
 			monsters: promauto.NewGauge(prometheus.GaugeOpts{
-				Name:        fmt.Sprintf("monsters_in_%v", md.Info.MapName.Name),
-				Help:        "Total number of active monsters.",
+				Name: fmt.Sprintf("monsters_in_%v", md.Info.MapName.Name),
+				Help: "Total number of active monsters.",
 			}),
-			npcs:     promauto.NewGauge(prometheus.GaugeOpts{
-				Name:        fmt.Sprintf("npcs_in_%v", md.Info.MapName.Name),
-				Help:        "Total number of active non player characters.",
+			npcs: promauto.NewGauge(prometheus.GaugeOpts{
+				Name: fmt.Sprintf("npcs_in_%v", md.Info.MapName.Name),
+				Help: "Total number of active non player characters.",
 			}),
 		},
 	}

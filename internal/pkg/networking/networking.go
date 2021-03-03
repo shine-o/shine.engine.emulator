@@ -204,7 +204,7 @@ func (ss *ShineService) handleConnection(conn net.Conn) {
 //	logOutboundPackets <- pc
 //}
 
-func Send(outboundStream chan<- []byte, opCode OperationCode, ncStruct interface{})  {
+func Send(outboundStream chan<- []byte, opCode OperationCode, ncStruct interface{}) {
 	pc := Command{
 		Base: CommandBase{
 			OperationCode: uint16(opCode),

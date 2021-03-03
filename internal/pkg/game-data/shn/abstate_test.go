@@ -5,7 +5,7 @@ import "testing"
 // load data path
 //
 
-func TestAbstateFile(t *testing.T)  {
+func TestAbstateFile(t *testing.T) {
 	var file ShineAbState
 	err := Load("AbState.shn", &file)
 	if err != nil {
