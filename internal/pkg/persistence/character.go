@@ -68,7 +68,7 @@ type Character struct {
 	Attributes    *Attributes    `pg:"rel:has-one"`
 	Location      *Location      `pg:"rel:has-one"`
 	Options       *ClientOptions `pg:"rel:has-one"`
-	Items         []Items        `pg:"rel:has-many"`
+	Items         []Item         `pg:"rel:has-many"`
 	EquippedItems *EquippedItems `pg:"rel:has-one"`
 	AdminLevel    uint8          `pg:",notnull,use_zero"`
 	Slot          uint8          `pg:",notnull,use_zero"`
@@ -148,32 +148,8 @@ type ClientOptions struct {
 	UpdatedAt   time.Time
 }
 
-// todo: move to inventory package
-type Items struct {
-	tableName struct{} `pg:"world.character_items"`
-	//ID          uint64
-	CharacterID uint64 `pg:",pk,use_zero"`
-	Character   *Character
-	// box 2 = reward inventory
-	// box 3 = mini house furniture
-	// box 8 = equipped items
-	// box 9 = inventory, storage
-	// box 12 = mini houses
-	// box 13 = mini house accessories
-	// box 14 = mini house tile all inventory
-	// box 15 = premium actions inventory(dances)
-	// box 16 = mini house mini game inventory
-	InventoryType int    `pg:",pk,use_zero"`
-	Slot          uint16 `pg:",pk,use_zero"`
-	ShnID         uint16 `pg:",notnull"`
-	Stackable     bool   `pg:",notnull,use_zero"`
-	Amount        uint32
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
-	DeletedAt     time.Time `pg:",soft_delete"`
-}
-
 const (
+	// move to global config
 	startLevel   = 1
 	startMapID   = 1
 	startMapName = "Rou"
@@ -331,6 +307,7 @@ func Get(db *pg.DB, characterID uint64) (Character, error) {
 		WherePK().
 		Relation("Appearance").
 		Relation("Attributes").
+		Relation("Items").
 		Relation("Options").
 		Relation("Location").
 		Select()
@@ -340,10 +317,6 @@ func Get(db *pg.DB, characterID uint64) (Character, error) {
 func GetByName(db *pg.DB, name string) (Character, error) {
 	var c Character
 	err := db.Model(&c).
-		//Relation("Appearance").
-		//Relation("Attributes").
-		//Relation("Options").
-		//Relation("Location").
 		Where("name = ?", name).
 		Select() // query the world for a character with name
 
@@ -351,6 +324,7 @@ func GetByName(db *pg.DB, name string) (Character, error) {
 		WherePK().
 		Relation("Appearance").
 		Relation("Attributes").
+		Relation("Items").
 		Relation("Options").
 		Relation("Location").
 		Select() // query the world for a character with name
@@ -361,8 +335,11 @@ func GetByName(db *pg.DB, name string) (Character, error) {
 func GetBySlot(db *pg.DB, slot byte, userID uint64) (Character, error) {
 	var c Character
 	err := db.Model(&c).
-		Relation("Location").
+		Relation("Appearance").
+		Relation("Attributes").
+		Relation("Items").
 		Relation("Options").
+		Relation("Location").
 		Where("user_id = ?", userID).
 		Where("slot = ?", slot).Select()
 	return c, err
@@ -392,8 +369,7 @@ func Update(db *pg.DB, c *Character) error {
 		WherePK().Returning("*").Update()
 
 	if err != nil {
-		updateTx.Rollback()
-		return err
+		return updateTx.Rollback()
 	}
 
 	return updateTx.Commit()
@@ -490,6 +466,7 @@ func Delete(db *pg.DB, userID uint64, req *structs.NcAvatarEraseReq) error {
 	return deleteTx.Commit()
 }
 
+// TODO: All NC related stuff should be moved to related service
 func (c *Character) AllEquippedItems(db *pg.DB) *structs.NcCharClientItemCmd {
 	return c.getItemsByInventory(db, 8)
 }
@@ -613,8 +590,11 @@ func (c *Character) getItemsByInventory(db *pg.DB, inventoryType uint8) *structs
 			BF0: 183,
 		},
 	}
-	var items []Items
-	err := db.Model(&items).Where("character_id = ?", c.ID).Where("inventory_type = ?", inventoryType).Select()
+	var items []Item
+	err := db.Model(&items).
+		Where("character_id = ?", c.ID).
+		Where("inventory_type = ?", inventoryType).
+		Select()
 
 	switch inventoryType {
 	case 8:

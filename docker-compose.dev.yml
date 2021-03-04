@@ -18,7 +18,7 @@ services:
     volumes:
       - ${DATA_PATH_HOST}/data:/var/lib/postgresql/data
     ports:
-    - "5432:5432"
+    - "54320:5432"
     networks:
       - intranet
     environment:

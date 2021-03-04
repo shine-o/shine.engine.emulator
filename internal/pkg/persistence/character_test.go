@@ -26,7 +26,7 @@ func TestMain(m *testing.M) {
 		User:     "user",
 		Password: "password",
 		Host:     "127.0.0.1",
-		Port:     "5432",
+		Port:     "54320",
 		Database: "shine",
 		Schema:   "world",
 	})
@@ -274,4 +274,196 @@ func TestInvalidGenderClassBinaryOperation(t *testing.T) {
 			t.Error("expected an error but got nil")
 		}
 	}
+}
+
+func TestNewCharacter_DefaultItems(t *testing.T) {
+	defer cleanDB()
+	createDummyCharacters()
+	// assert user has an inventory
+	characters, err := getCharacters(db, false)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	// 31000	House_MushRoom	Mushroom House
+	var miniHouseID uint16 = 31000
+	for _, character := range characters {
+
+		clauses := make(map[string]interface{})
+
+		clauses["character_id = ?"] = character.ID
+		clauses["shn_id = ?"] = miniHouseID
+
+		item, err := getItemWhere(db, clauses, false)
+
+		if err != nil {
+			t.Error(err)
+		}
+
+		if item == nil {
+			t.Error("no item")
+		}
+	}
+
+}
+
+func TestLoadNewCharacter_Mage_EquippedItems(t *testing.T) {
+	defer cleanDB()
+	// should have 1 staff
+	// 1750	ShortStaff	Short Staff
+	var rightHand uint16 = 1750
+	character := newCharacter("mage")
+
+	if character.EquippedItems.RightHand != rightHand {
+		t.Errorf("id =%v, expected id =%v", character.EquippedItems.RightHand, rightHand)
+	}
+
+	clauses := make(map[string]interface{})
+
+	clauses["character_id = ?"] = character.ID
+	clauses["shn_id = ?"] = rightHand
+
+	_, err := getItemWhere(db, clauses, false)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+}
+
+func TestLoadNewCharacter_Fighter_EquippedItems(t *testing.T) {
+	defer cleanDB()
+	//250	ShortSword	Short Sword
+	// bitField := 1 | 1 << 2 | 1 << 7
+
+	var rightHand uint16 = 250
+	character := newCharacter("fighter")
+
+	if character.EquippedItems.RightHand != rightHand {
+		t.Errorf("id =%v, expected id =%v", character.EquippedItems.RightHand, rightHand)
+	}
+
+	clauses := make(map[string]interface{})
+
+	clauses["character_id = ?"] = character.ID
+	clauses["shn_id = ?"] = rightHand
+
+	_, err := getItemWhere(db, clauses, false)
+
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestLoadNewCharacter_Archer_EquippedItems(t *testing.T) {
+	defer cleanDB()
+	// 1250	ShortBow	Short Bow
+	// bitField := 1 | 11 << 2 | 1 << 7
+	var rightHand uint16 = 1250
+	character := newCharacter("archer")
+
+	if character.EquippedItems.RightHand != rightHand {
+		t.Errorf("id =%v, expected id =%v", character.EquippedItems.RightHand, rightHand)
+	}
+
+	clauses := make(map[string]interface{})
+
+	clauses["character_id = ?"] = character.ID
+	clauses["shn_id = ?"] = rightHand
+
+	_, err := getItemWhere(db, clauses, false)
+
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestLoadNewCharacter_Cleric_EquippedItems(t *testing.T) {
+	defer cleanDB()
+	//750	ShortMace	Short Mace
+	// bitField := 1 | 6 << 2 | 1 << 7
+	var rightHand uint16 = 750
+	character := newCharacter("cleric")
+
+	if character.EquippedItems.RightHand != rightHand {
+		t.Errorf("id =%v, expected id =%v", character.EquippedItems.RightHand, rightHand)
+	}
+
+	clauses := make(map[string]interface{})
+
+	clauses["character_id = ?"] = character.ID
+	clauses["shn_id = ?"] = rightHand
+
+	_, err := getItemWhere(db, clauses, false)
+
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func getCharacters(db *pg.DB, deleted bool) ([]*Character, error) {
+	var chars []*Character
+
+	query := db.Model(&chars)
+
+	if !deleted {
+		query.Where("character.deleted_at IS NULL")
+	}
+
+	err := query.
+		Relation("Appearance").
+		Relation("Attributes").
+		Relation("Items").
+		Relation("Options").
+		Relation("Location").
+		Select()
+
+	return chars, err
+}
+
+func newCharacter(class string) *Character {
+	var (
+		bitField byte
+		name     string
+	)
+
+	switch class {
+	case "mage":
+		bitField = byte(1 | 16<<2 | 1<<7)
+		name = fmt.Sprintf("mage%v", 1)
+		break
+	case "fighter":
+		bitField = byte(1 | 1<<2 | 1<<7)
+		name = fmt.Sprintf("fighter%v", 1)
+		break
+	case "archer":
+		bitField = byte(1 | 11<<2 | 1<<7)
+		name = fmt.Sprintf("archer%v", 1)
+		break
+	case "cleric":
+		bitField = byte(1 | 6<<2 | 1<<7)
+		name = fmt.Sprintf("cleric%v", 1)
+		break
+	}
+
+	c := structs.NcAvatarCreateReq{
+		SlotNum: byte(0),
+		Name: structs.Name5{
+			Name: name,
+		},
+		Shape: structs.ProtoAvatarShapeInfo{
+			BF:        bitField,
+			HairType:  6,
+			HairColor: 0,
+			FaceShape: 0,
+		},
+	}
+
+	char, err := New(db, 1, &c)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return char
 }

@@ -91,7 +91,7 @@ normal_maps:
 
 world_database:
   host: 127.0.0.1
-  port: 5432
+  port: 54320
   db_name: shine
   db_user: user
   db_password: password

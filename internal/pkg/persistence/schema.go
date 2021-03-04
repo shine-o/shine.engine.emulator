@@ -19,8 +19,8 @@ func CreateTables(db *pg.DB) error {
 		(*Attributes)(nil),
 		(*Location)(nil),
 		(*ClientOptions)(nil),
-		(*Items)(nil),
 		(*EquippedItems)(nil),
+		(*Item)(nil),
 	} {
 		err := createTx.CreateTable(model, &orm.CreateTableOptions{
 			IfNotExists:   true,
@@ -48,8 +48,8 @@ func DeleteTables(db *pg.DB) error {
 		(*Attributes)(nil),
 		(*Location)(nil),
 		(*ClientOptions)(nil),
-		(*Items)(nil),
 		(*EquippedItems)(nil),
+		(*Item)(nil),
 	} {
 		err := deleteTx.DropTable(model, &orm.DropTableOptions{
 			IfExists: true,
