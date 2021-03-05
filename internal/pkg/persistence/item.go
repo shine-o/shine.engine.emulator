@@ -2,6 +2,7 @@ package persistence
 
 import (
 	"github.com/go-pg/pg/v10"
+	"github.com/google/logger"
 	"time"
 )
 
@@ -16,11 +17,9 @@ const (
 
 // todo: move to inventory package
 type Item struct {
-	tableName struct{} `pg:"world.character_items"`
-	ID         				 uint64
-	//UUID          string `pg:",pk,notnull,type:uuid,default:gen_random_uuid"`
-	CharacterID   uint64 `pg:",pk,notnull,unique:item" `
-	InventoryType int    `pg:",pk,notnull,unique:item"`
+	tableName     struct{} `pg:"world.character_items"`
+	ID            uint64
+	InventoryType int `pg:",notnull,unique:item"`
 	// box 2 = reward  inventory
 	// box 3 = mini house furniture
 	// box 8 = equipped items  / 1-29
@@ -30,15 +29,17 @@ type Item struct {
 	// box 14 = mini house tile all inventory
 	// box 15 = premium actions inventory(dances)
 	// box 16 = mini house mini game inventory
-	Slot      uint16     `pg:",pk,notnull,unique:item"`
-	Character *Character `pg:"rel:belongs-to"`
+	Slot        uint16     `pg:",notnull,unique:item"`
+	CharacterID uint64     `pg:",notnull,unique:item" `
+	Character   *Character `pg:"rel:belongs-to"`
+	ShnID       uint16     `pg:",notnull"`
+	Stackable   bool       `pg:",notnull,use_zero"`
+	Amount      uint32
+	//Attributes *ItemAttributes
+	//Enchantments *ItemEnchantments
+	//Licences *ItemLicences
+	Attributes *ItemAttributes `pg:"rel:has-one"`
 
-	ShnID     uint16 `pg:",notnull"`
-	Stackable bool   `pg:",notnull,use_zero"`
-	Amount    uint32
-	Attributes *ItemAttributes
-	Enchantments *ItemEnchantments
-	Licences *ItemLicences
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time `pg:",soft_delete"`
@@ -46,24 +47,10 @@ type Item struct {
 
 type ItemAttributes struct {
 	tableName struct{} `pg:"world.item_attributes"`
-	ID         				 uint64
-	ItemID uint64
-	Item *Item `pg:"rel:belongs-to"`
-}
-
-type ItemEnchantments struct {
-	tableName struct{} `pg:"world.item_enchantments"`
-	ID         				 uint64
-	ItemID uint64
-	Item *Item `pg:"rel:belongs-to"`
-}
-
-type ItemLicences struct {
-	tableName struct{} `pg:"world.item_licences"`
-	ID         				 uint64
-	ItemID uint64
-	Item *Item `pg:"rel:belongs-to"`
-	ShnID uint16
+	ID        uint64
+	ItemID    uint64
+	Item      *Item
+	Strength  int
 }
 
 type ItemParams struct {
@@ -71,30 +58,14 @@ type ItemParams struct {
 	ShnID       uint16
 	Stackable   bool
 	Amount      uint32
-	Attributes *ItemAttributes
-	Enchantments *ItemEnchantments
-	Licences * ItemLicences
+	Attributes  *ItemAttributes
 }
 
-type ErrItem struct {
-	Code    int
-	Message string
-}
-
-func (ei *ErrItem) Error() string {
-	return ei.Message
-}
-
-// ErrNameTaken name is reserved or in use
-var ErrInventoryFull = &ErrItem{
-	Code:    1,
-	Message: "inventory full",
-}
-
-// ErrNameTaken name is reserved or in use
-var ErrInvalidAmount = &ErrItem{
-	Code:    2,
-	Message: "invalid amount specified",
+func txCloseLog(tx *pg.Tx) {
+	err := tx.Close()
+	if err != nil {
+		logger.Error(err)
+	}
 }
 
 func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
@@ -103,7 +74,21 @@ func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
 	)
 
 	if params.Amount == 0 {
-		return item, ErrInvalidAmount
+		return item, Err{
+			Code: ErrItemInvalidAmount,
+		}
+	}
+
+	if params.ShnID == 0 {
+		return item, Err{
+			Code: ErrItemInvalidShnId,
+		}
+	}
+
+	if params.CharacterID == 0 {
+		return item, Err{
+			Code: ErrItemInvalidCharacterId,
+		}
 	}
 
 	slot, err := freeSlot(db, params.CharacterID)
@@ -112,8 +97,15 @@ func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
 		return item, err
 	}
 
+	tx, err := db.Begin()
+
+	if err != nil {
+		return item, err
+	}
+
+	defer txCloseLog(tx)
+
 	item = &Item{
-		//UUID:           uuid.New().String(),
 		CharacterID:   params.CharacterID,
 		InventoryType: BagInventory,
 		Slot:          slot,
@@ -124,9 +116,45 @@ func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
 		UpdatedAt:     time.Now(),
 	}
 
-	_, err = db.Model(item).Insert()
+	_, err = tx.Model(item).
+		Returning("*").
+		Insert()
 
-	return item, err
+	if err != nil {
+		return item, err
+	}
+
+	if params.Attributes != nil {
+		var attr = *params.Attributes
+		attr.ItemID = item.ID
+		attr.Item = item
+
+		_, err = tx.Model(&attr).
+			Returning("*").
+			Insert()
+
+		if err != nil {
+			return item, Err{
+				Code: ErrDB,
+				Details: ErrDetails{
+					"err":   err,
+					"txErr": tx.Rollback(),
+				},
+			}
+		}
+	}
+
+	err = tx.Model(item).
+		WherePK().
+		Returning("*").
+		Relation("Attributes").
+		Select()
+
+	if err != nil {
+		return item, err
+	}
+
+	return item, tx.Commit()
 
 }
 
@@ -148,7 +176,7 @@ func getItemWhere(db *pg.DB, clauses map[string]interface{}, deleted bool) (*Ite
 	return &item, err
 }
 
-func freeSlot(db * pg.DB, characterID uint64) (uint16, error) {
+func freeSlot(db *pg.DB, characterID uint64) (uint16, error) {
 	var (
 		slots []uint16
 		slot  uint16
@@ -176,7 +204,9 @@ func freeSlot(db * pg.DB, characterID uint64) (uint16, error) {
 				slot = s + 1
 				break
 			}
-			return slot, ErrInventoryFull
+			return slot, Err{
+				Code: ErrInventoryFull,
+			}
 		}
 		if slots[i+1] > s+1 {
 			slot = s + 1

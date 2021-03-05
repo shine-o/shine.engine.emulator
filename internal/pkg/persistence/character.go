@@ -18,16 +18,6 @@ func init() {
 	log = logger.Init("character logger", true, false, ioutil.Discard)
 }
 
-// ErrCharacter is used to handle known errors
-type ErrCharacter struct {
-	Code    int
-	Message string
-}
-
-func (ec *ErrCharacter) Error() string {
-	return ec.Message
-}
-
 // EquippedItems model for the database layer
 type EquippedItems struct {
 	tableName        struct{} `pg:"world.character_equipped_items"`
@@ -155,41 +145,18 @@ const (
 	startMapName = "Rou"
 )
 
-// ErrInvalidSlot happens if the client tries to bypass client side verification
-var ErrInvalidSlot = &ErrCharacter{
-	Code:    0,
-	Message: "invalid slot",
-}
-
-// ErrNameTaken name is reserved or in use
-var ErrNameTaken = &ErrCharacter{
-	Code:    1,
-	Message: "name taken",
-}
-
-// ErrNoSlot happens if the client tries to bypass client side verification
-var ErrNoSlot = &ErrCharacter{
-	Code:    2,
-	Message: "no slot available",
-}
-
-// ErrInvalidName happens if the client tries to bypass client side verification
-var ErrInvalidName = &ErrCharacter{
-	Code:    3,
-	Message: "invalid name",
-}
-
-// ErrInvalidClassGender happens if the client tries to bypass client side verification
-var ErrInvalidClassGender = &ErrCharacter{
-	Code:    4,
-	Message: "invalid class gender data",
-}
-
 // Validate checks data sent by the client is valid
 func Validate(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) error {
 
 	if req.SlotNum > 5 {
-		return ErrInvalidSlot
+		return Err{
+			Code: ErrCharInvalidSlot,
+			Details: ErrDetails{
+				"userID":   userID,
+				"slotNum":  req.SlotNum,
+				"charName": req.Name.Name,
+			},
+		}
 	}
 
 	name := req.Name.Name
@@ -198,19 +165,37 @@ func Validate(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) error {
 	err := db.Model((*Character)(nil)).Column("name").Where("name = ?", name).Select(&charName)
 
 	if err == nil {
-		return ErrNameTaken
+		//return ErrNameTaken
+		return Err{
+			Code: ErrCharNameTaken,
+			Details: ErrDetails{
+				"userID":   userID,
+				"charName": req.Name.Name,
+			},
+		}
 	}
 
 	var chars []Character
 	err = db.Model(&chars).Where("user_id = ?", userID).Select()
 
 	if len(chars) == 6 {
-		return ErrNoSlot
+		return Err{
+			Code: ErrCharNoSlot,
+			Details: ErrDetails{
+				"userID": userID,
+			},
+		}
 	}
 
 	alphaNumeric := regexp.MustCompile(`^[A-Za-z0-9]+$`).MatchString
 	if !alphaNumeric(name) {
-		return ErrInvalidName
+		return Err{
+			Code: ErrCharInvalidName,
+			Details: ErrDetails{
+				"userID":   userID,
+				"charName": req.Name.Name,
+			},
+		}
 	}
 
 	// todo: missing validation: default hair, color, face values
@@ -219,11 +204,29 @@ func Validate(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) error {
 	class := (req.Shape.BF >> 2) & 31
 
 	if isMale > 1 || isMale < 0 {
-		return ErrInvalidClassGender
+		return Err{
+			Code: ErrCharInvalidClassGender,
+			Details: ErrDetails{
+				"userID":   userID,
+				"charName": req.Name.Name,
+				"bfValue":  req.Shape.BF,
+				"isMale":   isMale,
+				"class":    class,
+			},
+		}
 	}
 
 	if class < 1 || class > 27 {
-		return ErrInvalidClassGender
+		return Err{
+			Code: ErrCharInvalidClassGender,
+			Details: ErrDetails{
+				"userID":   userID,
+				"charName": req.Name.Name,
+				"bfValue":  req.Shape.BF,
+				"isMale":   isMale,
+				"class":    class,
+			},
+		}
 	}
 
 	return nil
@@ -232,13 +235,13 @@ func Validate(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) error {
 // New creates character for the User with userID and returns data the client can understand
 func New(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
 	var char *Character
-	newTx, err := db.Begin()
+	tx, err := db.Begin()
 
 	if err != nil {
 		return char, err
 	}
 
-	defer newTx.Close()
+	defer tx.Close()
 
 	char = &Character{
 		UserID:     userID,
@@ -247,12 +250,15 @@ func New(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) (*Character, 
 		Slot:       req.SlotNum,
 	}
 
-	_, err = newTx.Model(char).Returning("*").Insert()
+	_, err = tx.Model(char).Returning("*").Insert()
 
 	if err != nil {
-		return char, &ErrCharacter{
-			Code:    7,
-			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
+		return char, Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
 		}
 	}
 
@@ -263,41 +269,56 @@ func New(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) (*Character, 
 		initialClientOptions().
 		initialEquippedItems()
 
-	if _, err = newTx.Model(char.Appearance).Returning("*").Insert(); err != nil {
-		return char, &ErrCharacter{
-			Code:    7,
-			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
+	if _, err = tx.Model(char.Appearance).Returning("*").Insert(); err != nil {
+		return char, Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
 		}
 	}
 
-	if _, err = newTx.Model(char.Attributes).Returning("*").Insert(); err != nil {
-		return char, &ErrCharacter{
-			Code:    7,
-			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
+	if _, err = tx.Model(char.Attributes).Returning("*").Insert(); err != nil {
+		return char, Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
 		}
 	}
 
-	if _, err = newTx.Model(char.Location).Returning("*").Insert(); err != nil {
-		return char, &ErrCharacter{
-			Code:    7,
-			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
+	if _, err = tx.Model(char.Location).Returning("*").Insert(); err != nil {
+		return char, Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
 		}
 	}
 
-	if _, err = newTx.Model(char.Options).Returning("*").Insert(); err != nil {
-		return char, &ErrCharacter{
-			Code:    7,
-			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
+	if _, err = tx.Model(char.Options).Returning("*").Insert(); err != nil {
+		return char, Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
 		}
 	}
 
-	if _, err = newTx.Model(char.EquippedItems).Returning("*").Insert(); err != nil {
-		return char, &ErrCharacter{
-			Code:    7,
-			Message: fmt.Sprintf("%v:%v", err, newTx.Rollback()),
+	if _, err = tx.Model(char.EquippedItems).Returning("*").Insert(); err != nil {
+		return char, Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
 		}
 	}
-	return char, newTx.Commit()
+	return char, tx.Commit()
 }
 
 func Get(db *pg.DB, characterID uint64) (Character, error) {
@@ -397,73 +418,94 @@ func UpdateLocation(db *pg.DB, c *Character) error {
 // Delete character for User with userID
 // soft deletion is performed
 func Delete(db *pg.DB, userID uint64, req *structs.NcAvatarEraseReq) error {
-	deleteTx, err := db.Begin()
+	tx, err := db.Begin()
 	if err != nil {
-		return &ErrCharacter{
-			Code:    1,
-			Message: fmt.Sprintf("database error, could not start transaction: %v", err),
+		return Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err": err,
+			},
 		}
 	}
 
-	defer deleteTx.Close()
+	defer tx.Close()
 
 	var char Character
-	err = deleteTx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", req.Slot).Select()
+	err = tx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", req.Slot).Select()
 
 	if err != nil {
-		txErr := deleteTx.Rollback()
-		return &ErrCharacter{
-			Code:    2,
-			Message: fmt.Sprintf("database error, character not found: %v, %v", err, txErr),
+		return Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
 		}
 	}
 
 	name := fmt.Sprintf("%v@%v", char.Name, uuid.New().String())
-	_, err = deleteTx.Model((*Character)(nil)).Set("name = ?", name).Where("user_id = ?", userID).Where("slot = ? ", req.Slot).Update()
+	_, err = tx.Model((*Character)(nil)).Set("name = ?", name).Where("user_id = ?", userID).Where("slot = ? ", req.Slot).Update()
 	if err != nil {
-		txErr := deleteTx.Rollback()
-		return &ErrCharacter{
-			Code:    3,
-			Message: fmt.Sprintf("database error: %v, %v", err, txErr),
+		return Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
 		}
 	}
 
-	if _, err = deleteTx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", req.Slot).Delete(); err != nil {
-		return &ErrCharacter{
-			Code:    7,
-			Message: fmt.Sprintf("%v:%v", err, deleteTx.Rollback()),
+	if _, err = tx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", req.Slot).Delete(); err != nil {
+		return Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
 		}
 	}
 
-	if _, err = deleteTx.Model(char.Appearance).Where("character_id = ?", char.ID).Delete(); err != nil {
-		return &ErrCharacter{
-			Code:    7,
-			Message: fmt.Sprintf("%v:%v", err, deleteTx.Rollback()),
+	if _, err = tx.Model(char.Appearance).Where("character_id = ?", char.ID).Delete(); err != nil {
+		return Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
 		}
 	}
 
-	if _, err = deleteTx.Model(char.Attributes).Where("character_id = ?", char.ID).Delete(); err != nil {
-		return &ErrCharacter{
-			Code:    7,
-			Message: fmt.Sprintf("%v:%v", err, deleteTx.Rollback()),
+	if _, err = tx.Model(char.Attributes).Where("character_id = ?", char.ID).Delete(); err != nil {
+		return Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
 		}
 	}
 
-	if _, err = deleteTx.Model(char.Location).Where("character_id = ?", char.ID).Delete(); err != nil {
-		return &ErrCharacter{
-			Code:    7,
-			Message: fmt.Sprintf("%v:%v", err, deleteTx.Rollback()),
+	if _, err = tx.Model(char.Location).Where("character_id = ?", char.ID).Delete(); err != nil {
+		return Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
 		}
 	}
 
-	if _, err = deleteTx.Model(char.EquippedItems).Where("character_id = ?", char.ID).Delete(); err != nil {
-		return &ErrCharacter{
-			Code:    7,
-			Message: fmt.Sprintf("%v:%v", err, deleteTx.Rollback()),
+	if _, err = tx.Model(char.EquippedItems).Where("character_id = ?", char.ID).Delete(); err != nil {
+		return Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
 		}
 	}
 
-	return deleteTx.Commit()
+	return tx.Commit()
 }
 
 // TODO: All NC related stuff should be moved to related service

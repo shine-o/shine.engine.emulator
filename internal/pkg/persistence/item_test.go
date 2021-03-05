@@ -1,7 +1,6 @@
 package persistence
 
 import (
-	"errors"
 	"github.com/go-pg/pg/v10"
 	"testing"
 	"time"
@@ -24,10 +23,6 @@ func TestGetCharacterItems(t *testing.T) {
 //	// box 12 = mini houses // 12288 equipped minihouse, 12299-12322 available slots
 func TestCreateItem(t *testing.T) {
 	cleanDB()
-	// create character
-	// create item for that character
-	// check that it was stored correctly
-
 	newCharacter("mage")
 
 	item, err := NewItem(db, ItemParams{
@@ -45,6 +40,46 @@ func TestCreateItem(t *testing.T) {
 		t.Errorf("slot = %v, expected slot = %v", item.Slot, 9216)
 	}
 
+	item2, err := NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Stackable:   false,
+		Amount:      1,
+		Attributes: &ItemAttributes{
+			Strength: 15,
+		},
+	})
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if item2.Slot != 9217 {
+		t.Errorf("slot = %v, expected slot = %v", item2.Slot, 9217)
+	}
+}
+
+func TestCreateItem_Relations(t *testing.T) {
+	cleanDB()
+	newCharacter("mage")
+
+	item, err := NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Stackable:   false,
+		Amount:      1,
+		Attributes: &ItemAttributes{
+			Strength: 15,
+		},
+	})
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if item.Attributes.ID == 0 {
+		t.Error("id should not be 0")
+	}
 }
 
 func TestCreateItem_MissingValues(t *testing.T) {
@@ -56,7 +91,7 @@ func TestCreateItem_MissingValues(t *testing.T) {
 		CharacterID: 1,
 		ShnID:       1,
 		//Amount:      1,
-		Stackable:    false,
+		Stackable: false,
 	})
 
 	if err == nil {
@@ -67,8 +102,8 @@ func TestCreateItem_MissingValues(t *testing.T) {
 	_, err = NewItem(db, ItemParams{
 		CharacterID: 1,
 		//ShnID:       1,
-		Amount:      1,
-		Stackable:   false,
+		Amount:    1,
+		Stackable: false,
 	})
 
 	if err == nil {
@@ -78,33 +113,9 @@ func TestCreateItem_MissingValues(t *testing.T) {
 	// missing character_id
 	_, err = NewItem(db, ItemParams{
 		//CharacterID: 1,
-		ShnID:       1,
-		Amount:      1,
-		Stackable:   false,
-	})
-
-	if err == nil {
-		t.Error("expected error, got none")
-	}
-
-	// missing stackable
-	_, err = NewItem(db, ItemParams{
-		CharacterID: 1,
-		ShnID:       1,
-		Amount:      1,
-		//Stackable:   false,
-	})
-
-	if err == nil {
-		t.Error("expected error, got none")
-	}
-
-	// missing stackable
-	_, err = NewItem(db, ItemParams{
-		CharacterID: 1,
-		ShnID:       1,
-		Amount:      1,
-		Stackable:   false,
+		ShnID:     1,
+		Amount:    1,
+		Stackable: false,
 	})
 
 	if err == nil {
@@ -114,7 +125,6 @@ func TestCreateItem_MissingValues(t *testing.T) {
 
 func TestCreateItem_BadPKeys(t *testing.T) {
 	cleanDB()
-	// du
 	newCharacter("mage")
 
 	item0 := &Item{
@@ -137,7 +147,6 @@ func TestCreateItem_BadPKeys(t *testing.T) {
 
 	// second try should fail
 	item1 := &Item{
-		//UUID:           uuid.New().String(),
 		CharacterID:   1,
 		InventoryType: BagInventory,
 		Slot:          9216,
@@ -165,28 +174,110 @@ func TestUpdateItem(t *testing.T) {
 		ShnID:       1,
 		Amount:      1,
 		Stackable:   false,
-		//ItemData:    &ItemData{},
 	})
 
 	if err != nil {
 		t.Error(err)
 	}
 
-	_, err = UpdateItem(db, item, ItemParams{
+	uItem, err := UpdateItem(db, *item, ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
-		Amount:      1,
 		Stackable:   false,
+		Amount:      1,
+		Attributes:  &ItemAttributes{
+			Strength:  15,
+		},
 	})
 
 	if err != nil {
 		t.Error(err)
+	}
+
+	if uItem.Attributes.Strength != 15 {
+		t.Errorf("expected value %v, got %v", 15, uItem.Attributes.Strength)
 	}
 }
 
-func UpdateItem(db *pg.DB, item *Item, params ItemParams) (*Item, error) {
-	var uItem Item
-	return &uItem, errors.New("unimplemented")
+// UpdateItem attributes, etc...
+// should not handle inventory location
+func UpdateItem(db *pg.DB, item Item, params ItemParams) (*Item, error) {
+
+	var uItem = item
+
+	tx, err := db.Begin()
+
+	if err != nil {
+		return &item, err
+	}
+
+	defer txCloseLog(tx)
+
+	uItem.CharacterID = params.CharacterID
+
+	if uItem.Stackable {
+		uItem.Amount = params.Amount
+	}
+
+	uItem.Attributes = &ItemAttributes{
+		ItemID:    item.ID,
+		Item:      &item,
+		Strength:  params.Attributes.Strength,
+	}
+
+	uItem.UpdatedAt = time.Now()
+
+	_, err = tx.Model(&uItem).
+		WherePK().
+		Update()
+
+	if err != nil {
+		return &uItem, Err{
+			Code:    ErrDB,
+			Details: ErrDetails{
+				"err": err,
+				"txErr": tx.Rollback(),
+			},
+		}
+	}
+
+	// if not exists, update
+	if item.Attributes == nil {
+		_, err = tx.Model(uItem.Attributes).
+			Insert()
+	} else {
+		_, err = tx.Model(uItem.Attributes).
+			WherePK().
+			Update()
+	}
+
+
+	if err != nil {
+		return &uItem, Err{
+			Code:    ErrDB,
+			Details: ErrDetails{
+				"err": err,
+				"txErr": tx.Rollback(),
+			},
+		}
+	}
+
+	err = tx.Model(uItem).
+		WherePK().
+		Relation("Attributes").
+		Select()
+
+	if err != nil {
+		return &uItem, Err{
+			Code:    ErrDB,
+			Details: ErrDetails{
+				"err": err,
+				"txErr": tx.Rollback(),
+			},
+		}
+	}
+
+	return &uItem, tx.Commit()
 }
 
 func TestUpdateItem_BadData(t *testing.T) {

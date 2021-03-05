@@ -161,17 +161,12 @@ func TestCharacterNameInUseError(t *testing.T) {
 		log.Error(err)
 	}
 
-	errChar, ok := err.(*ErrCharacter)
-
+	errChar, ok := err.(Err)
 	if !ok {
-		log.Error(err)
-		t.Error("expected error of type ErrCharacter")
-		return
+		t.Error("expected an error of type Err")
 	}
-
-	if errChar.Code != 1 {
-		log.Error(err)
-		t.Errorf("expected errorCharacter with code %v, instead got %v", 1, errChar.Code)
+	if errChar.Code != ErrCharNameTaken {
+		t.Errorf("expected error %v, got %v", ErrCharNameTaken, errChar.Code)
 	}
 }
 
@@ -191,8 +186,12 @@ func TestNoSlotAvailableError(t *testing.T) {
 
 		err = Validate(db, 1, &nc)
 		if err != nil {
-			if err.Error() != "no slot available" {
-				t.Errorf("unexpected error message %v", err.Error())
+			cErr, ok := err.(Err)
+			if !ok {
+				t.Error("unexpected error type")
+			}
+			if cErr.Code != ErrCharNoSlot {
+				t.Errorf("expected error %v, got %v", ErrCharNoSlot, cErr.Code)
 			}
 			return
 		}
@@ -213,8 +212,12 @@ func TestInvalidSlotError(t *testing.T) {
 
 		err = Validate(db, 1, &nc)
 		if err != nil {
-			if err.Error() != "invalid slot" {
-				t.Errorf("unexpected error message %v", err.Error())
+			cErr, ok := err.(Err)
+			if !ok {
+				t.Error("unexpected error type")
+			}
+			if cErr.Code != ErrCharInvalidSlot {
+				t.Errorf("expected error %v, got %v", ErrCharInvalidSlot, cErr.Code)
 			}
 			return
 		}
@@ -237,8 +240,12 @@ func TestInvalidNameError(t *testing.T) {
 
 		err = Validate(db, 1, &nc)
 		if err != nil {
-			if err.Error() != "invalid name" {
-				t.Errorf("unexpected error message: %v", err.Error())
+			cErr, ok := err.(Err)
+			if !ok {
+				t.Error("unexpected error type")
+			}
+			if cErr.Code != ErrCharInvalidName {
+				t.Errorf("expected error %v, got %v", ErrCharInvalidName, cErr.Code)
 			}
 			return
 		}
@@ -263,12 +270,12 @@ func TestInvalidGenderClassBinaryOperation(t *testing.T) {
 
 		err = Validate(db, 1, &nc)
 		if err != nil {
-			errChar, ok := err.(*ErrCharacter)
+			errChar, ok := err.(Err)
 			if !ok {
-				t.Error("expected an error of type ErrCharacter")
+				t.Error("expected an error of type Err")
 			}
-			if errChar.Code != 4 {
-				t.Errorf("expected errorCharacter with code %v, instead got %v", 4, errChar.Code)
+			if errChar.Code != ErrCharInvalidClassGender {
+				t.Errorf("expected error %v, got %v", ErrCharInvalidClassGender, errChar.Code)
 			}
 		} else {
 			t.Error("expected an error but got nil")
