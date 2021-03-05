@@ -91,7 +91,7 @@ func TestValidateCharacterRequest(t *testing.T) {
 
 // foolishly assuming data is okay
 func TestCreateCharacter(t *testing.T) {
-	defer cleanDB()
+	cleanDB()
 	// {"packetType":"small","length":27,"department":5,"command":"1","opCode":5121,"data":"0046696768747265726f6f0000000000000000000085060000","rawData":"1b01140046696768747265726f6f0000000000000000000085060000","friendlyName":"NC_AVATAR_CREATE_REQ"}
 	if data, err := hex.DecodeString("0046696768747265726f6f0000000000000000000085060000"); err != nil {
 		t.Error(err)
@@ -109,7 +109,7 @@ func TestCreateCharacter(t *testing.T) {
 }
 
 func TestDeleteCharacter(t *testing.T) {
-	defer cleanDB()
+	cleanDB()
 
 	createDummyCharacters()
 
@@ -139,7 +139,7 @@ func TestDeleteCharacter(t *testing.T) {
 }
 
 func TestCharacterNameInUseError(t *testing.T) {
-	defer cleanDB()
+	cleanDB()
 
 	createDummyCharacters()
 
@@ -176,7 +176,7 @@ func TestCharacterNameInUseError(t *testing.T) {
 }
 
 func TestNoSlotAvailableError(t *testing.T) {
-	defer cleanDB()
+	cleanDB()
 	createDummyCharacters()
 
 	// {"packetType":"small","length":27,"department":5,"command":"1","opCode":5121,"data":"0046696768747265726f6f0000000000000000000085060000","rawData":"1b01140046696768747265726f6f0000000000000000000085060000","friendlyName":"NC_AVATAR_CREATE_REQ"}
@@ -223,7 +223,7 @@ func TestInvalidSlotError(t *testing.T) {
 }
 
 func TestInvalidNameError(t *testing.T) {
-	defer cleanDB()
+	cleanDB()
 
 	// {"packetType":"small","length":27,"department":5,"command":"1","opCode":5121,"data":"0046325B5D747265726F6F0000000000000000000085060000","rawData":"1b01140046325B5D747265726F6F0000000000000000000085060000","friendlyName":"NC_AVATAR_CREATE_REQ"}
 	if data, err := hex.DecodeString("0046325B5D747265726F6F0000000000000000000085060000"); err != nil {
@@ -249,7 +249,7 @@ func TestInvalidNameError(t *testing.T) {
 // KOREAN MONKEYS!
 // test that correct gender and class are extracted using binary operators
 func TestInvalidGenderClassBinaryOperation(t *testing.T) {
-	defer cleanDB()
+	cleanDB()
 
 	// {"packetType":"small","length":27,"department":5,"command":"1","opCode":5121,"data":"0946696768747265726f6f0000000000000000000085060000","rawData":"1b01140046325B5D747265726F6F0000000000000000000085060000","friendlyName":"NC_AVATAR_CREATE_REQ"}
 	if data, err := hex.DecodeString("0246696768747265726f6f00000000000000000000ff060000"); err != nil {
@@ -277,7 +277,7 @@ func TestInvalidGenderClassBinaryOperation(t *testing.T) {
 }
 
 func TestNewCharacter_DefaultItems(t *testing.T) {
-	defer cleanDB()
+	cleanDB()
 	createDummyCharacters()
 	// assert user has an inventory
 	characters, err := getCharacters(db, false)
@@ -309,7 +309,7 @@ func TestNewCharacter_DefaultItems(t *testing.T) {
 }
 
 func TestLoadNewCharacter_Mage_EquippedItems(t *testing.T) {
-	defer cleanDB()
+	cleanDB()
 	// should have 1 staff
 	// 1750	ShortStaff	Short Staff
 	var rightHand uint16 = 1750
@@ -333,7 +333,7 @@ func TestLoadNewCharacter_Mage_EquippedItems(t *testing.T) {
 }
 
 func TestLoadNewCharacter_Fighter_EquippedItems(t *testing.T) {
-	defer cleanDB()
+	cleanDB()
 	//250	ShortSword	Short Sword
 	// bitField := 1 | 1 << 2 | 1 << 7
 
@@ -357,7 +357,7 @@ func TestLoadNewCharacter_Fighter_EquippedItems(t *testing.T) {
 }
 
 func TestLoadNewCharacter_Archer_EquippedItems(t *testing.T) {
-	defer cleanDB()
+	cleanDB()
 	// 1250	ShortBow	Short Bow
 	// bitField := 1 | 11 << 2 | 1 << 7
 	var rightHand uint16 = 1250
@@ -380,7 +380,7 @@ func TestLoadNewCharacter_Archer_EquippedItems(t *testing.T) {
 }
 
 func TestLoadNewCharacter_Cleric_EquippedItems(t *testing.T) {
-	defer cleanDB()
+	cleanDB()
 	//750	ShortMace	Short Mace
 	// bitField := 1 | 6 << 2 | 1 << 7
 	var rightHand uint16 = 750

@@ -1,8 +1,8 @@
 package persistence
 
 import (
+	"errors"
 	"github.com/go-pg/pg/v10"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"testing"
 	"time"
 )
@@ -19,23 +19,6 @@ func TestGetCharacterItems(t *testing.T) {
 
 }
 
-type NewItemParams struct {
-	CharacterID uint64
-	ItemData    *ItemData
-	ShnID       uint16
-	Stackable   bool
-	Amount      uint32
-}
-
-const (
-	EquippedInventory  = 8
-	BagInventory       = 9
-	MiniHouseInventory = 12
-
-	BagInventoryMin = 9216
-	BagInventoryMax = 9377
-)
-
 // 	// box 8 = equipped items  / 1-29
 //	// box 9 = inventory, storage  // 9216 - 9377 (24 slots per page)
 //	// box 12 = mini houses // 12288 equipped minihouse, 12299-12322 available slots
@@ -46,14 +29,12 @@ func TestCreateItem(t *testing.T) {
 	// check that it was stored correctly
 
 	newCharacter("mage")
-	newCharacter("archer")
 
-	item, err := NewItem(db, NewItemParams{
+	item, err := NewItem(db, ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Amount:      1,
 		Stackable:   false,
-		ItemData:    &ItemData{},
 	})
 
 	if err != nil {
@@ -64,106 +45,148 @@ func TestCreateItem(t *testing.T) {
 		t.Errorf("slot = %v, expected slot = %v", item.Slot, 9216)
 	}
 
-	if len(item.Data) == 0 {
-		t.Error("item data should not be empty")
+}
+
+func TestCreateItem_MissingValues(t *testing.T) {
+	cleanDB()
+	newCharacter("mage")
+
+	// missing amount
+	_, err := NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		//Amount:      1,
+		Stackable:    false,
+	})
+
+	if err == nil {
+		t.Error("expected error, got none")
 	}
 
-	var itemData ItemData
-	err = structs.Unpack(item.Data, &itemData)
+	// missing shn_id
+	_, err = NewItem(db, ItemParams{
+		CharacterID: 1,
+		//ShnID:       1,
+		Amount:      1,
+		Stackable:   false,
+	})
+
+	if err == nil {
+		t.Error("expected error, got none")
+	}
+
+	// missing character_id
+	_, err = NewItem(db, ItemParams{
+		//CharacterID: 1,
+		ShnID:       1,
+		Amount:      1,
+		Stackable:   false,
+	})
+
+	if err == nil {
+		t.Error("expected error, got none")
+	}
+
+	// missing stackable
+	_, err = NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Amount:      1,
+		//Stackable:   false,
+	})
+
+	if err == nil {
+		t.Error("expected error, got none")
+	}
+
+	// missing stackable
+	_, err = NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Amount:      1,
+		Stackable:   false,
+	})
+
+	if err == nil {
+		t.Error("expected error, got none")
+	}
+}
+
+func TestCreateItem_BadPKeys(t *testing.T) {
+	cleanDB()
+	// du
+	newCharacter("mage")
+
+	item0 := &Item{
+		//UUID:           uuid.New().String(),
+		CharacterID:   1,
+		InventoryType: BagInventory,
+		Slot:          9216,
+		ShnID:         1,
+		Stackable:     false,
+		Amount:        1,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+
+	_, err := db.Model(item0).Insert()
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	// second try should fail
+	item1 := &Item{
+		//UUID:           uuid.New().String(),
+		CharacterID:   1,
+		InventoryType: BagInventory,
+		Slot:          9216,
+		ShnID:         1,
+		Stackable:     false,
+		Amount:        1,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+
+	_, err = db.Model(item1).Insert()
+
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+
+}
+
+func TestUpdateItem(t *testing.T) {
+	cleanDB()
+	newCharacter("mage")
+
+	item, err := NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Amount:      1,
+		Stackable:   false,
+		//ItemData:    &ItemData{},
+	})
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = UpdateItem(db, item, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Amount:      1,
+		Stackable:   false,
+	})
+
 	if err != nil {
 		t.Error(err)
 	}
 }
 
-type ErrItem struct {
-	Code    int
-	Message string
-}
-
-func (ei *ErrItem) Error() string {
-	return ei.Message
-}
-
-
-// ErrNameTaken name is reserved or in use
-var ErrInventoryFull = &ErrItem{
-	Code:    1,
-	Message: "inventory full",
-}
-
-func NewItem(db *pg.DB, params NewItemParams) (*Item, error) {
-
-	var (
-		item  *Item
-		slot  uint16
-		slots []uint16
-	)
-
-	data, err := structs.Pack(params.ItemData)
-
-	if err != nil {
-		return item, err
-	}
-
-	err = db.Model((*Item)(nil)).
-		Column("slot").
-		Where("character_id = ?", params.CharacterID).
-		Where("inventory_type = ?", BagInventory).
-		Select(&slots)
-
-	if err != nil {
-		return item, err
-	}
-
-	// for each slot
-	// if nextSlot is last one
-	//		if nextSlot+1 <= BagInventoryMax
-	//		availableSlot = nextSlot+1
-	// if nextSlot > currentSlot+1
-	//		availableSlot = currentSlot+1
-	for i, s := range slots {
-		if i+1 == len(slots) {
-			if s + 1 <= BagInventoryMax {
-				slot = s + 1
-				break
-			}
-			return item, ErrInventoryFull
-		}
-		if slots[i+1] > s+1 {
-			slot = s+ 1
-			break
-		}
-	}
-
-	if len(slots) == 0 {
-		slot = BagInventoryMin
-	}
-
-	item = &Item{
-		//UUID:           uuid.New().String(),
-		CharacterID:   params.CharacterID,
-		InventoryType: BagInventory,
-		Slot:          slot,
-		ShnID:         params.ShnID,
-		Stackable:     params.Stackable,
-		Amount:        params.Amount,
-		Data:          data,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
-	}
-
-	_, err = db.Model(item).Insert()
-
-	return item, err
-
-}
-
-func TestCreateItem_BadPKeys(t *testing.T) {
-	// du
-}
-
-func TestUpdateItem(t *testing.T) {
-
+func UpdateItem(db *pg.DB, item *Item, params ItemParams) (*Item, error) {
+	var uItem Item
+	return &uItem, errors.New("unimplemented")
 }
 
 func TestUpdateItem_BadData(t *testing.T) {
