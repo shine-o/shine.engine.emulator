@@ -1,7 +1,6 @@
 package persistence
 
 import (
-	"github.com/go-pg/pg/v10"
 	"testing"
 	"time"
 )
@@ -199,89 +198,16 @@ func TestUpdateItem(t *testing.T) {
 	}
 }
 
-// UpdateItem attributes, etc...
-// should not handle inventory location
-func UpdateItem(db *pg.DB, item Item, params ItemParams) (*Item, error) {
-
-	var uItem = item
-
-	tx, err := db.Begin()
-
-	if err != nil {
-		return &item, err
-	}
-
-	defer txCloseLog(tx)
-
-	uItem.CharacterID = params.CharacterID
-
-	if uItem.Stackable {
-		uItem.Amount = params.Amount
-	}
-
-	uItem.Attributes = &ItemAttributes{
-		ItemID:    item.ID,
-		Item:      &item,
-		Strength:  params.Attributes.Strength,
-	}
-
-	uItem.UpdatedAt = time.Now()
-
-	_, err = tx.Model(&uItem).
-		WherePK().
-		Update()
-
-	if err != nil {
-		return &uItem, Err{
-			Code:    ErrDB,
-			Details: ErrDetails{
-				"err": err,
-				"txErr": tx.Rollback(),
-			},
-		}
-	}
-
-	// if not exists, update
-	if item.Attributes == nil {
-		_, err = tx.Model(uItem.Attributes).
-			Insert()
-	} else {
-		_, err = tx.Model(uItem.Attributes).
-			WherePK().
-			Update()
-	}
-
-
-	if err != nil {
-		return &uItem, Err{
-			Code:    ErrDB,
-			Details: ErrDetails{
-				"err": err,
-				"txErr": tx.Rollback(),
-			},
-		}
-	}
-
-	err = tx.Model(uItem).
-		WherePK().
-		Relation("Attributes").
-		Select()
-
-	if err != nil {
-		return &uItem, Err{
-			Code:    ErrDB,
-			Details: ErrDetails{
-				"err": err,
-				"txErr": tx.Rollback(),
-			},
-		}
-	}
-
-	return &uItem, tx.Commit()
-}
-
 func TestUpdateItem_BadData(t *testing.T) {
 
+}
+
+func TestItemSlot_MoveToUnusedSlot(t *testing.T) {
+	
+}
+
+func TestItemSlot_MoveToUsedSlot(t *testing.T) {
+	// switch places for both items
 }
 
 func TestSoftDeleteItem(t *testing.T) {

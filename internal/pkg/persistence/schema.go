@@ -8,11 +8,13 @@ import (
 
 // CreateTables if not yet created
 func CreateTables(db *pg.DB) error {
-	createTx, err := db.Begin()
+	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
-	defer createTx.Close()
+
+	defer closeTx(tx)
+
 	for _, model := range []interface{}{
 		(*Character)(nil),
 		(*Appearance)(nil),
@@ -23,25 +25,25 @@ func CreateTables(db *pg.DB) error {
 		(*Item)(nil),
 		(*ItemAttributes)(nil),
 	} {
-		err := createTx.CreateTable(model, &orm.CreateTableOptions{
+		err := tx.CreateTable(model, &orm.CreateTableOptions{
 			IfNotExists:   true,
 			FKConstraints: true,
 		})
 		if err != nil {
-			return fmt.Errorf("%v, %v", err, createTx.Rollback())
+			return fmt.Errorf("%v, %v", err, tx.Rollback())
 		}
 	}
-	return createTx.Commit()
+	return tx.Commit()
 }
 
 // DeleteTables if they exist
 func DeleteTables(db *pg.DB) error {
-	deleteTx, err := db.Begin()
+	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 
-	defer deleteTx.Close()
+	defer tx.Close()
 
 	for _, model := range []interface{}{
 		(*Character)(nil),
@@ -53,13 +55,20 @@ func DeleteTables(db *pg.DB) error {
 		(*Item)(nil),
 		(*ItemAttributes)(nil),
 	} {
-		err := deleteTx.DropTable(model, &orm.DropTableOptions{
+		err := tx.DropTable(model, &orm.DropTableOptions{
 			IfExists: true,
 			Cascade:  true,
 		})
 		if err != nil {
-			return fmt.Errorf("%v, %v", err, deleteTx.Rollback())
+			return fmt.Errorf("%v, %v", err, tx.Rollback())
 		}
 	}
-	return deleteTx.Commit()
+	return tx.Commit()
+}
+
+func closeTx(tx *pg.Tx) {
+	err := tx.Close()
+	if err != nil {
+		log.Error(err)
+	}
 }

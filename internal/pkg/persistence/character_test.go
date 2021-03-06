@@ -302,7 +302,7 @@ func TestNewCharacter_DefaultItems(t *testing.T) {
 		clauses["character_id = ?"] = character.ID
 		clauses["shn_id = ?"] = miniHouseID
 
-		item, err := getItemWhere(db, clauses, false)
+		item, err := GetItemWhere(db, clauses, false)
 
 		if err != nil {
 			t.Error(err)
@@ -331,7 +331,7 @@ func TestLoadNewCharacter_Mage_EquippedItems(t *testing.T) {
 	clauses["character_id = ?"] = character.ID
 	clauses["shn_id = ?"] = rightHand
 
-	_, err := getItemWhere(db, clauses, false)
+	_, err := GetItemWhere(db, clauses, false)
 
 	if err != nil {
 		t.Error(err)
@@ -356,7 +356,7 @@ func TestLoadNewCharacter_Fighter_EquippedItems(t *testing.T) {
 	clauses["character_id = ?"] = character.ID
 	clauses["shn_id = ?"] = rightHand
 
-	_, err := getItemWhere(db, clauses, false)
+	_, err := GetItemWhere(db, clauses, false)
 
 	if err != nil {
 		t.Error(err)
@@ -379,7 +379,7 @@ func TestLoadNewCharacter_Archer_EquippedItems(t *testing.T) {
 	clauses["character_id = ?"] = character.ID
 	clauses["shn_id = ?"] = rightHand
 
-	_, err := getItemWhere(db, clauses, false)
+	_, err := GetItemWhere(db, clauses, false)
 
 	if err != nil {
 		t.Error(err)
@@ -402,7 +402,7 @@ func TestLoadNewCharacter_Cleric_EquippedItems(t *testing.T) {
 	clauses["character_id = ?"] = character.ID
 	clauses["shn_id = ?"] = rightHand
 
-	_, err := getItemWhere(db, clauses, false)
+	_, err := GetItemWhere(db, clauses, false)
 
 	if err != nil {
 		t.Error(err)

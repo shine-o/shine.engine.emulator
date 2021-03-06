@@ -2,7 +2,6 @@ package persistence
 
 import (
 	"github.com/go-pg/pg/v10"
-	"github.com/google/logger"
 	"time"
 )
 
@@ -15,7 +14,6 @@ const (
 	BagInventoryMax = 9377
 )
 
-// todo: move to inventory package
 type Item struct {
 	tableName     struct{} `pg:"world.character_items"`
 	ID            uint64
@@ -35,9 +33,6 @@ type Item struct {
 	ShnID       uint16     `pg:",notnull"`
 	Stackable   bool       `pg:",notnull,use_zero"`
 	Amount      uint32
-	//Attributes *ItemAttributes
-	//Enchantments *ItemEnchantments
-	//Licences *ItemLicences
 	Attributes *ItemAttributes `pg:"rel:has-one"`
 
 	CreatedAt time.Time
@@ -59,13 +54,6 @@ type ItemParams struct {
 	Stackable   bool
 	Amount      uint32
 	Attributes  *ItemAttributes
-}
-
-func txCloseLog(tx *pg.Tx) {
-	err := tx.Close()
-	if err != nil {
-		logger.Error(err)
-	}
 }
 
 func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
@@ -103,7 +91,7 @@ func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
 		return item, err
 	}
 
-	defer txCloseLog(tx)
+	defer closeTx(tx)
 
 	item = &Item{
 		CharacterID:   params.CharacterID,
@@ -158,7 +146,85 @@ func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
 
 }
 
-func getItemWhere(db *pg.DB, clauses map[string]interface{}, deleted bool) (*Item, error) {
+// UpdateItem attributes, etc...
+// should not handle inventory location
+func UpdateItem(db *pg.DB, item Item, params ItemParams) (*Item, error) {
+
+	tx, err := db.Begin()
+
+	if err != nil {
+		return &item, err
+	}
+
+	defer closeTx(tx)
+
+	item.CharacterID = params.CharacterID
+
+	if item.Stackable {
+		item.Amount = params.Amount
+	}
+
+	item.UpdatedAt = time.Now()
+
+	_, err = tx.Model(&item).
+		WherePK().
+		Update()
+
+	if err != nil {
+		return &item, Err{
+			Code:    ErrDB,
+			Details: ErrDetails{
+				"err": err,
+				"txErr": tx.Rollback(),
+			},
+		}
+	}
+
+	attr := &ItemAttributes{
+		ItemID:    item.ID,
+		Item:      &item,
+		Strength:  params.Attributes.Strength,
+	}
+
+	// if not exists, update
+	if item.Attributes == nil {
+		_, err = tx.Model(attr).Insert()
+	} else {
+		_, err = tx.Model(attr).
+			WherePK().
+			Update()
+	}
+
+
+	if err != nil {
+		return &item, Err{
+			Code:    ErrDB,
+			Details: ErrDetails{
+				"err": err,
+				"txErr": tx.Rollback(),
+			},
+		}
+	}
+
+	err = tx.Model(&item).
+		WherePK().
+		Relation("Attributes").
+		Select()
+
+	if err != nil {
+		return &item, Err{
+			Code:    ErrDB,
+			Details: ErrDetails{
+				"err": err,
+				"txErr": tx.Rollback(),
+			},
+		}
+	}
+
+	return &item, tx.Commit()
+}
+
+func GetItemWhere(db *pg.DB, clauses map[string]interface{}, deleted bool) (*Item, error) {
 	var item Item
 
 	query := db.Model(&item)
