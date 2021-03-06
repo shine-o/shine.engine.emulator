@@ -56,27 +56,74 @@ type ItemParams struct {
 	Attributes  *ItemAttributes
 }
 
+func validateItemParams(db *pg.DB, params ItemParams) error {
+	if params.Amount == 0 {
+		return Err{
+			Code:    ErrItemInvalidAmount,
+			Details: ErrDetails{
+				"stackable": params.Stackable,
+				"amount": params.Amount,
+			},
+		}
+	}
+
+	if params.ShnID == 0 {
+		return  Err{
+			Code: ErrItemInvalidShnId,
+			Details: ErrDetails{
+				"shineID": params.ShnID,
+			},
+		}
+	}
+
+	if params.CharacterID == 0 {
+		return Err{
+			Code: ErrItemInvalidCharacterId,
+			Details: ErrDetails{
+				"characterID": params.CharacterID,
+			},
+		}
+	}
+
+
+	if !params.Stackable {
+		if params.Amount > 1 {
+			return Err{
+				Code:    ErrItemInvalidAmount,
+				Details: ErrDetails{
+					"stackable": params.Stackable,
+					"amount":    params.Amount,
+				},
+			}
+		}
+	}
+
+	var cId uint64 = 0
+	err := db.Model((*Character)(nil)).Column("id").Where("id = ?", params.CharacterID).Select(&cId)
+
+	if err != nil {
+		return Err{
+			Code:    ErrCharNotExists,
+			Message: "could not fetch character with id",
+			Details: ErrDetails{
+				"err": err,
+				"character_id": params.CharacterID,
+			},
+		}
+	}
+
+	return nil
+}
+
 func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
 	var (
 		item *Item
 	)
 
-	if params.Amount == 0 {
-		return item, Err{
-			Code: ErrItemInvalidAmount,
-		}
-	}
+	err := validateItemParams(db, params)
 
-	if params.ShnID == 0 {
-		return item, Err{
-			Code: ErrItemInvalidShnId,
-		}
-	}
-
-	if params.CharacterID == 0 {
-		return item, Err{
-			Code: ErrItemInvalidCharacterId,
-		}
+	if err != nil {
+		return item, err
 	}
 
 	slot, err := freeSlot(db, params.CharacterID)
@@ -149,6 +196,11 @@ func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
 // UpdateItem attributes, etc...
 // should not handle inventory location
 func UpdateItem(db *pg.DB, item Item, params ItemParams) (*Item, error) {
+	err := validateItemParams(db, params)
+
+	if err != nil {
+		return &item, err
+	}
 
 	tx, err := db.Begin()
 
@@ -160,9 +212,9 @@ func UpdateItem(db *pg.DB, item Item, params ItemParams) (*Item, error) {
 
 	item.CharacterID = params.CharacterID
 
-	if item.Stackable {
-		item.Amount = params.Amount
-	}
+	item.Stackable = params.Stackable
+
+	item.Amount = params.Amount
 
 	item.UpdatedAt = time.Now()
 
@@ -207,6 +259,7 @@ func UpdateItem(db *pg.DB, item Item, params ItemParams) (*Item, error) {
 	}
 
 	err = tx.Model(&item).
+		Returning("*").
 		WherePK().
 		Relation("Attributes").
 		Select()

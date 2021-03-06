@@ -20,7 +20,7 @@ func TestGetCharacterItems(t *testing.T) {
 // 	// box 8 = equipped items  / 1-29
 //	// box 9 = inventory, storage  // 9216 - 9377 (24 slots per page)
 //	// box 12 = mini houses // 12288 equipped minihouse, 12299-12322 available slots
-func TestCreateItem(t *testing.T) {
+func TestCreateItem_Ok(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
@@ -32,11 +32,11 @@ func TestCreateItem(t *testing.T) {
 	})
 
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if item.Slot != 9216 {
-		t.Errorf("slot = %v, expected slot = %v", item.Slot, 9216)
+		t.Fatalf("slot = %v, expected slot = %v", item.Slot, 9216)
 	}
 
 	item2, err := NewItem(db, ItemParams{
@@ -54,7 +54,7 @@ func TestCreateItem(t *testing.T) {
 	}
 
 	if item2.Slot != 9217 {
-		t.Errorf("slot = %v, expected slot = %v", item2.Slot, 9217)
+		t.Fatalf("slot = %v, expected slot = %v", item2.Slot, 9217)
 	}
 }
 
@@ -122,6 +122,66 @@ func TestCreateItem_MissingValues(t *testing.T) {
 	}
 }
 
+func TestCreateItem_CharacterNotExist(t *testing.T) {
+	cleanDB()
+	//newCharacter("mage")
+
+	_, err := NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Stackable:   false,
+		Amount:      1,
+		Attributes: &ItemAttributes{
+			Strength: 15,
+		},
+	})
+
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+
+	cErr, ok := err.(Err)
+
+	if !ok {
+		t.Error("expected custom error type Err")
+	}
+
+	if cErr.Code != ErrCharNotExists {
+		t.Fatalf("expected error code %v, got %v", ErrCharNotExists, cErr.Code)
+	}
+
+}
+
+func TestCreateItem_BadAmount(t *testing.T) {
+	cleanDB()
+	newCharacter("mage")
+
+	_, err := NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Stackable:   false,
+		Amount:      5,
+		Attributes: &ItemAttributes{
+			Strength: 15,
+		},
+	})
+
+	if err == nil {
+		t.Error("expected error, got nil")
+	}
+
+	cErr, ok := err.(Err)
+
+	if !ok {
+		t.Error("expected custom error type Err")
+	}
+
+	if cErr.Code != ErrItemInvalidAmount {
+		t.Fatalf("expected error code %v, got %v", ErrItemInvalidAmount, cErr.Code)
+	}
+
+}
+
 func TestCreateItem_BadPKeys(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
@@ -164,7 +224,7 @@ func TestCreateItem_BadPKeys(t *testing.T) {
 
 }
 
-func TestUpdateItem(t *testing.T) {
+func TestUpdateItem_Ok(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
@@ -182,8 +242,8 @@ func TestUpdateItem(t *testing.T) {
 	uItem, err := UpdateItem(db, *item, ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
-		Stackable:   false,
-		Amount:      1,
+		Stackable:   true,
+		Amount:      5,
 		Attributes:  &ItemAttributes{
 			Strength:  15,
 		},
@@ -194,7 +254,11 @@ func TestUpdateItem(t *testing.T) {
 	}
 
 	if uItem.Attributes.Strength != 15 {
-		t.Errorf("expected value %v, got %v", 15, uItem.Attributes.Strength)
+		t.Fatalf("expected value %v, got %v", 15, uItem.Attributes.Strength)
+	}
+
+	if uItem.Amount != 5 {
+		t.Fatalf("expected value %v, got %v", 5, uItem.Amount)
 	}
 }
 

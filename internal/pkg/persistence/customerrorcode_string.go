@@ -18,11 +18,12 @@ func _() {
 	_ = x[ErrCharNoSlot-7]
 	_ = x[ErrCharInvalidName-8]
 	_ = x[ErrCharInvalidClassGender-9]
+	_ = x[ErrCharNotExists-10]
 }
 
-const _CustomErrorCode_name = "ErrDBErrItemInvalidAmountErrItemInvalidShnIdErrItemInvalidCharacterIdErrInventoryFullErrCharInvalidSlotErrCharNameTakenErrCharNoSlotErrCharInvalidNameErrCharInvalidClassGender"
+const _CustomErrorCode_name = "ErrDBErrItemInvalidAmountErrItemInvalidShnIdErrItemInvalidCharacterIdErrInventoryFullErrCharInvalidSlotErrCharNameTakenErrCharNoSlotErrCharInvalidNameErrCharInvalidClassGenderErrCharNotExists"
 
-var _CustomErrorCode_index = [...]uint8{0, 5, 25, 44, 69, 85, 103, 119, 132, 150, 175}
+var _CustomErrorCode_index = [...]uint8{0, 5, 25, 44, 69, 85, 103, 119, 132, 150, 175, 191}
 
 func (i CustomErrorCode) String() string {
 	if i < 0 || i >= CustomErrorCode(len(_CustomErrorCode_index)-1) {
