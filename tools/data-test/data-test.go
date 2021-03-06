@@ -10,7 +10,6 @@ import (
 	ps "github.com/shine-o/shine.engine.emulator/internal/app/packet-sniffer"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/blocks"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/world"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"math"
 )
@@ -20,16 +19,46 @@ func main() {
 	//shn sample
 	//shnTest()
 	//packet data sample
-	packetDataTest()
-	//shbdTest()
+	//packetDataTest()
+	////shbdTest()
+	//
+	//npcData, err := world.LoadNPCData("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files")
+	//
+	//if err != nil {
+	//	logger.Error(err)
+	//}
+	//// problem: Sea of Greed portals all point to Forest Of Mist
+	//logger.Info(npcData)
 
-	npcData, err := world.LoadNPCData("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files")
-
-	if err != nil {
-		logger.Error(err)
-	}
-	// problem: Sea of Greed portals all point to Forest Of Mist
-	logger.Info(npcData)
+	//ds := "17240024"
+	//
+	//data, _ := hex.DecodeString(ds)
+	//
+	//nc := structs.NcitemRelocateReq{}
+	//
+	//structs.Unpack(data, &nc)
+	//
+	//inventoryType := 9216 >> 10
+	//
+	//itemSlot := 9216 & 1023
+	//
+	//reverse := inventoryType << 10 | itemSlot & 1023
+	//
+	//fmt.Println(inventoryType, itemSlot)
+	//
+	//// box 2 = reward  inventory
+	//// box 3 = mini house furniture
+	//// box 8 = equipped items  / 1-29
+	//// box 9 = inventory, storage  // 9216 - 9377 (24 slots per page)
+	//// box 12 = mini houses // 12288 equipped minihouse, 12299-12322 available slots
+	//// box 13 = mini house accessories
+	//// box 14 = mini house tile all inventory
+	//// box 15 = premium actions inventory(dances)
+	//// box 16 = mini house mini game inventory
+	//
+	//inventoryTypes := []uint16{
+	//	2, 3, 8, 9, 12, 13, 14, 15, 16,
+	//}
 }
 
 func packetFilter() {

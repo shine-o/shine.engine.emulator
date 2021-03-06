@@ -13,17 +13,19 @@ func _() {
 	_ = x[ErrItemInvalidShnId-2]
 	_ = x[ErrItemInvalidCharacterId-3]
 	_ = x[ErrInventoryFull-4]
-	_ = x[ErrCharInvalidSlot-5]
-	_ = x[ErrCharNameTaken-6]
-	_ = x[ErrCharNoSlot-7]
-	_ = x[ErrCharInvalidName-8]
-	_ = x[ErrCharInvalidClassGender-9]
-	_ = x[ErrCharNotExists-10]
+	_ = x[ErrItemDistinctShnID-5]
+	_ = x[ErrItemSlotUpdate-6]
+	_ = x[ErrCharInvalidSlot-7]
+	_ = x[ErrCharNameTaken-8]
+	_ = x[ErrCharNoSlot-9]
+	_ = x[ErrCharInvalidName-10]
+	_ = x[ErrCharInvalidClassGender-11]
+	_ = x[ErrCharNotExists-12]
 }
 
-const _CustomErrorCode_name = "ErrDBErrItemInvalidAmountErrItemInvalidShnIdErrItemInvalidCharacterIdErrInventoryFullErrCharInvalidSlotErrCharNameTakenErrCharNoSlotErrCharInvalidNameErrCharInvalidClassGenderErrCharNotExists"
+const _CustomErrorCode_name = "ErrDBErrItemInvalidAmountErrItemInvalidShnIdErrItemInvalidCharacterIdErrInventoryFullErrItemDistinctShnIDErrItemSlotUpdateErrCharInvalidSlotErrCharNameTakenErrCharNoSlotErrCharInvalidNameErrCharInvalidClassGenderErrCharNotExists"
 
-var _CustomErrorCode_index = [...]uint8{0, 5, 25, 44, 69, 85, 103, 119, 132, 150, 175, 191}
+var _CustomErrorCode_index = [...]uint8{0, 5, 25, 44, 69, 85, 105, 122, 140, 156, 169, 187, 212, 228}
 
 func (i CustomErrorCode) String() string {
 	if i < 0 || i >= CustomErrorCode(len(_CustomErrorCode_index)-1) {

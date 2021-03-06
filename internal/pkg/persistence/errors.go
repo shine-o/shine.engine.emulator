@@ -9,6 +9,8 @@ const (
 	ErrItemInvalidShnId
 	ErrItemInvalidCharacterId
 	ErrInventoryFull
+	ErrItemDistinctShnID
+	ErrItemSlotUpdate
 
 	ErrCharInvalidSlot
 	ErrCharNameTaken
@@ -16,6 +18,7 @@ const (
 	ErrCharInvalidName
 	ErrCharInvalidClassGender
 	ErrCharNotExists
+
 )
 
 //go:generate stringer -type=CustomErrorCode

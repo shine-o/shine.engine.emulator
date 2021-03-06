@@ -6,16 +6,17 @@ import (
 )
 
 const (
+	BufferInventory    = 100
 	EquippedInventory  = 8
 	BagInventory       = 9
 	MiniHouseInventory = 12
 
-	BagInventoryMin = 9216
-	BagInventoryMax = 9377
+	BagInventoryMin = 0
+	BagInventoryMax = 117
 )
 
 type Item struct {
-	tableName     struct{} `pg:"world.character_items"`
+	tableName     struct{} `pg:"world.items"`
 	ID            uint64
 	InventoryType int `pg:",notnull,unique:item"`
 	// box 2 = reward  inventory
@@ -27,17 +28,95 @@ type Item struct {
 	// box 14 = mini house tile all inventory
 	// box 15 = premium actions inventory(dances)
 	// box 16 = mini house mini game inventory
-	Slot        uint16     `pg:",notnull,unique:item"`
+	Slot        int     `pg:",use_zero,notnull,unique:item"`
 	CharacterID uint64     `pg:",notnull,unique:item" `
 	Character   *Character `pg:"rel:belongs-to"`
 	ShnID       uint16     `pg:",notnull"`
 	Stackable   bool       `pg:",notnull,use_zero"`
 	Amount      uint32
-	Attributes *ItemAttributes `pg:"rel:has-one"`
+	Attributes  *ItemAttributes `pg:"rel:has-one"`
 
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	DeletedAt time.Time `pg:",soft_delete"`
+}
+
+func (i Item) MoveTo(db * pg.DB, inventoryType int, slot int) error {
+	var (
+		otherItem Item
+	)
+	tx, err := db.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer closeTx(tx)
+
+	err = tx.Model(&otherItem).
+		Where("character_id = ?", i.CharacterID).
+		Where("inventory_type = ?", inventoryType).
+		Where("slot = ?", slot).
+		Select()
+
+	if err == nil {
+		var (
+			// values to be used by otherItem
+			originalInventory = i.InventoryType
+			originalSlot = i.Slot
+		)
+
+		// to avoid unique constraint error, use buffer inventory
+		i.InventoryType = BufferInventory
+		i.Slot = 0
+		_, err := tx.Model(&i).WherePK().Update()
+		if err != nil {
+			return Err{
+				Code:    ErrItemSlotUpdate,
+				Details: ErrDetails{
+					"err": err,
+					"itemSlot": i.Slot,
+					"otherItemSlot": otherItem.Slot,
+				},
+			}
+		}
+
+		// there is an item there,
+		// switch slot ids
+		otherItem.InventoryType = originalInventory
+		otherItem.Slot = originalSlot
+
+		_, err = tx.Model(&otherItem).WherePK().Update()
+		if err != nil {
+			return Err{
+				Code:    ErrItemSlotUpdate,
+				Details: ErrDetails{
+					"err": err,
+					"itemSlot": i.Slot,
+					"otherItemSlot": otherItem.Slot,
+				},
+			}
+		}
+	}
+
+	i.InventoryType = inventoryType
+	i.Slot = slot
+
+	_, err = tx.Model(&i).WherePK().Update()
+
+	if err != nil {
+		return Err{
+			Code:    ErrItemSlotUpdate,
+			Details: ErrDetails{
+				"err": err,
+				"txErr": tx.Rollback(),
+				"itemSlot": i.Slot,
+				"otherItemSlot": otherItem.Slot,
+			},
+		}
+	}
+
+	return tx.Commit()
 }
 
 type ItemAttributes struct {
@@ -59,16 +138,16 @@ type ItemParams struct {
 func validateItemParams(db *pg.DB, params ItemParams) error {
 	if params.Amount == 0 {
 		return Err{
-			Code:    ErrItemInvalidAmount,
+			Code: ErrItemInvalidAmount,
 			Details: ErrDetails{
 				"stackable": params.Stackable,
-				"amount": params.Amount,
+				"amount":    params.Amount,
 			},
 		}
 	}
 
 	if params.ShnID == 0 {
-		return  Err{
+		return Err{
 			Code: ErrItemInvalidShnId,
 			Details: ErrDetails{
 				"shineID": params.ShnID,
@@ -85,11 +164,10 @@ func validateItemParams(db *pg.DB, params ItemParams) error {
 		}
 	}
 
-
 	if !params.Stackable {
 		if params.Amount > 1 {
 			return Err{
-				Code:    ErrItemInvalidAmount,
+				Code: ErrItemInvalidAmount,
 				Details: ErrDetails{
 					"stackable": params.Stackable,
 					"amount":    params.Amount,
@@ -106,7 +184,7 @@ func validateItemParams(db *pg.DB, params ItemParams) error {
 			Code:    ErrCharNotExists,
 			Message: "could not fetch character with id",
 			Details: ErrDetails{
-				"err": err,
+				"err":          err,
 				"character_id": params.CharacterID,
 			},
 		}
@@ -126,7 +204,7 @@ func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
 		return item, err
 	}
 
-	slot, err := freeSlot(db, params.CharacterID)
+	slot, err := freeSlot(db, params.CharacterID, BagInventory)
 
 	if err != nil {
 		return item, err
@@ -196,7 +274,18 @@ func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
 // UpdateItem attributes, etc...
 // should not handle inventory location
 func UpdateItem(db *pg.DB, item Item, params ItemParams) (*Item, error) {
+
 	err := validateItemParams(db, params)
+
+	if params.ShnID != item.ShnID {
+		return &item, Err{
+			Code: ErrItemDistinctShnID,
+			Details: ErrDetails{
+				"originalShnID": item.ShnID,
+				"newShnID":      params.ShnID,
+			},
+		}
+	}
 
 	if err != nil {
 		return &item, err
@@ -224,18 +313,18 @@ func UpdateItem(db *pg.DB, item Item, params ItemParams) (*Item, error) {
 
 	if err != nil {
 		return &item, Err{
-			Code:    ErrDB,
+			Code: ErrDB,
 			Details: ErrDetails{
-				"err": err,
+				"err":   err,
 				"txErr": tx.Rollback(),
 			},
 		}
 	}
 
 	attr := &ItemAttributes{
-		ItemID:    item.ID,
-		Item:      &item,
-		Strength:  params.Attributes.Strength,
+		ItemID:   item.ID,
+		Item:     &item,
+		Strength: params.Attributes.Strength,
 	}
 
 	// if not exists, update
@@ -247,12 +336,11 @@ func UpdateItem(db *pg.DB, item Item, params ItemParams) (*Item, error) {
 			Update()
 	}
 
-
 	if err != nil {
 		return &item, Err{
-			Code:    ErrDB,
+			Code: ErrDB,
 			Details: ErrDetails{
-				"err": err,
+				"err":   err,
 				"txErr": tx.Rollback(),
 			},
 		}
@@ -266,9 +354,9 @@ func UpdateItem(db *pg.DB, item Item, params ItemParams) (*Item, error) {
 
 	if err != nil {
 		return &item, Err{
-			Code:    ErrDB,
+			Code: ErrDB,
 			Details: ErrDetails{
-				"err": err,
+				"err":   err,
 				"txErr": tx.Rollback(),
 			},
 		}
@@ -295,16 +383,16 @@ func GetItemWhere(db *pg.DB, clauses map[string]interface{}, deleted bool) (*Ite
 	return &item, err
 }
 
-func freeSlot(db *pg.DB, characterID uint64) (uint16, error) {
+func freeSlot(db *pg.DB, characterID uint64, inventoryType uint64) (int, error) {
 	var (
-		slots []uint16
-		slot  uint16
+		slots []int
+		slot  int
 	)
 
 	err := db.Model((*Item)(nil)).
 		Column("slot").
 		Where("character_id = ?", characterID).
-		Where("inventory_type = ?", BagInventory).
+		Where("inventory_type = ?", inventoryType).
 		Select(&slots)
 
 	if err != nil {

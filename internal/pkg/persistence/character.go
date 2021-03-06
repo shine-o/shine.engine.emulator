@@ -241,7 +241,7 @@ func New(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) (*Character, 
 		return char, err
 	}
 
-	defer tx.Close()
+	defer closeTx(tx)
 
 	char = &Character{
 		UserID:     userID,
@@ -367,52 +367,52 @@ func GetBySlot(db *pg.DB, slot byte, userID uint64) (Character, error) {
 }
 
 func Update(db *pg.DB, c *Character) error {
-	updateTx, err := db.Begin()
+	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 
-	defer updateTx.Close()
+	defer closeTx(tx)
 
-	_, err = updateTx.Model(c).
+	_, err = tx.Model(c).
 		WherePK().Returning("*").Update()
 
-	_, err = updateTx.Model(c.Appearance).
+	_, err = tx.Model(c.Appearance).
 		WherePK().Returning("*").Update()
 
-	_, err = updateTx.Model(c.Attributes).
+	_, err = tx.Model(c.Attributes).
 		WherePK().Returning("*").Update()
 
-	_, err = updateTx.Model(c.Location).
+	_, err = tx.Model(c.Location).
 		WherePK().Returning("*").Update()
 
-	_, err = updateTx.Model(c.Options).
+	_, err = tx.Model(c.Options).
 		WherePK().Returning("*").Update()
 
 	if err != nil {
-		return updateTx.Rollback()
+		return tx.Rollback()
 	}
 
-	return updateTx.Commit()
+	return tx.Commit()
 }
 
 func UpdateLocation(db *pg.DB, c *Character) error {
-	updateTx, err := db.Begin()
+	tx, err := db.Begin()
 	if err != nil {
 		return err
 	}
 
-	defer updateTx.Close()
+	defer closeTx(tx)
 
-	_, err = updateTx.Model(c.Location).
+	_, err = tx.Model(c.Location).
 		WherePK().Returning("*").Update()
 
 	if err != nil {
-		updateTx.Rollback()
+		tx.Rollback()
 		return err
 	}
 
-	return updateTx.Commit()
+	return tx.Commit()
 }
 
 // Delete character for User with userID
@@ -428,7 +428,7 @@ func Delete(db *pg.DB, userID uint64, req *structs.NcAvatarEraseReq) error {
 		}
 	}
 
-	defer tx.Close()
+	defer closeTx(tx)
 
 	var char Character
 	err = tx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", req.Slot).Select()
