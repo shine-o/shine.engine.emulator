@@ -35,17 +35,18 @@ func TestMain(m *testing.M) {
 		log.Fatal(err)
 	}
 	cleanDB()
+
 	os.Exit(m.Run())
 }
 
 func cleanDB() {
 	err := DeleteTables(db)
 	if err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 	err = CreateTables(db)
 	if err != nil {
-		log.Error(err)
+		log.Fatal(err)
 	}
 }
 

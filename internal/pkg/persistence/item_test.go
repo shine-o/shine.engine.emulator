@@ -1,12 +1,65 @@
 package persistence
 
 import (
+	"github.com/go-pg/pg/v10"
 	"testing"
 	"time"
 )
 
 func TestGetCharacterItems(t *testing.T) {
-	t.Fail()
+
+	//db.AddQueryHook(pgdebug.DebugHook{
+	//	// Print all queries.
+	//	Verbose: true,
+	//})
+
+	cleanDB()
+
+	newCharacter("mage")
+
+	for i := BagInventoryMin; i < BagInventoryMax; i++ {
+		_, err := NewItem(db, ItemParams{
+			CharacterID: 1,
+			ShnID:       1,
+			Stackable:   false,
+			Amount:      1,
+		})
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+	}
+
+	items, err := GetCharacterItems(db, 1, BagInventory)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(items) != 117 {
+		t.Fatalf("expected value %v, got %v", 117, len(items))
+	}
+
+	for _, item := range items {
+		if item.Attributes == nil {
+			t.Fatalf("item attributes should not be nil, item_id=%v", item.ID)
+		}
+	}
+
+	//t.Fail()
+}
+
+func GetCharacterItems(db *pg.DB, characterID int, inventoryType int) ([]*Item, error) {
+	var items []*Item
+
+	err := db.Model(&items).
+		Where("character_id = ?", characterID).
+		Where("inventory_type = ?", inventoryType).
+		Relation("Attributes").
+		Select()
+
+	return items, err
 }
 
 func TestCreateItem_Ok(t *testing.T) {
@@ -252,13 +305,13 @@ func TestUpdateItem_Ok(t *testing.T) {
 		t.Error(err)
 	}
 
-	uItem, err := UpdateItem(db, *item, ItemParams{
+	uItem, err := item.Update(db, ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   true,
 		Amount:      5,
-		Attributes:  &ItemAttributes{
-			Strength:  15,
+		Attributes: &ItemAttributes{
+			Strength: 15,
 		},
 	})
 
@@ -272,6 +325,33 @@ func TestUpdateItem_Ok(t *testing.T) {
 
 	if uItem.Amount != 5 {
 		t.Fatalf("expected value %v, got %v", 5, uItem.Amount)
+	}
+}
+
+func TestUpdateItem_NoAttributes(t *testing.T) {
+	cleanDB()
+	newCharacter("mage")
+
+	item, err := NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Amount:      1,
+		Stackable:   false,
+	})
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = item.Update(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Stackable:   true,
+		Amount:      5,
+	})
+
+	if err != nil {
+		t.Error(err)
 	}
 }
 
@@ -290,13 +370,13 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = UpdateItem(db, *item, ItemParams{
+	_, err = item.Update(db, ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
 		Amount:      5,
-		Attributes:  &ItemAttributes{
-			Strength:  15,
+		Attributes: &ItemAttributes{
+			Strength: 15,
 		},
 	})
 
@@ -315,13 +395,13 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 	}
 
 	// zero amount
-	_, err = UpdateItem(db, *item, ItemParams{
+	_, err = item.Update(db, ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
 		Amount:      0,
-		Attributes:  &ItemAttributes{
-			Strength:  15,
+		Attributes: &ItemAttributes{
+			Strength: 15,
 		},
 	})
 
@@ -355,13 +435,13 @@ func TestUpdateItem_DistinctShnID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = UpdateItem(db, *item, ItemParams{
+	_, err = item.Update(db, ItemParams{
 		CharacterID: 1,
 		ShnID:       2,
 		Stackable:   false,
 		Amount:      1,
-		Attributes:  &ItemAttributes{
-			Strength:  15,
+		Attributes: &ItemAttributes{
+			Strength: 15,
 		},
 	})
 
@@ -395,7 +475,7 @@ func TestItemSlot_MoveToUnusedSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = item0.MoveTo(db, BagInventory,1)
+	err = item0.MoveTo(db, BagInventory, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -484,19 +564,150 @@ func TestItemSlot_MoveToUsedSlot(t *testing.T) {
 
 func TestSoftDeleteItem(t *testing.T) {
 	// new entry should be made in another table for deleted items
-	t.Fail()
+	cleanDB()
 
+	newCharacter("mage")
+
+	// item 1, slot 0
+	_, err := NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Stackable:   false,
+		Amount:      1,
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = DeleteItem(db, 1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var uItem1 Item
+
+	err = db.Model(&uItem1).
+		Where("id = ?", 1).
+		Select()
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
 }
 
 func TestInventoryFull(t *testing.T) {
-	t.Fail()
+	// new entry should be made in another table for deleted items
+	cleanDB()
+
+	newCharacter("mage")
+
+	for i := BagInventoryMin; i < BagInventoryMax; i++ {
+		_, err := NewItem(db, ItemParams{
+			CharacterID: 1,
+			ShnID:       1,
+			Stackable:   false,
+			Amount:      1,
+		})
+
+		if err != nil {
+			t.Fatal("expected error, got nil")
+		}
+
+	}
+
+	_, err := NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Stackable:   false,
+		Amount:      1,
+	})
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	cErr, ok := err.(Err)
+
+	if !ok {
+		t.Error("expected custom error type Err")
+	}
+
+	if cErr.Code != ErrInventoryFull {
+		t.Fatalf("expected error code %v, got %v", ErrInventoryFull, cErr.Code)
+	}
+
 }
 
 func TestInventory_AutomaticSlot(t *testing.T) {
+	cleanDB()
+
+	newCharacter("mage")
+
 	// create 3 items
 	// delete 2nd item
 	// try to create another item
 	// the slot should be the one freed up by deleting the 2nd item
-	t.Fail()
+	_, err := NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Stackable:   false,
+		Amount:      1,
+	})
 
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Stackable:   false,
+		Amount:      1,
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Stackable:   false,
+		Amount:      1,
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	//
+
+	err = DeleteItem(db, 2)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = NewItem(db, ItemParams{
+		CharacterID: 1,
+		ShnID:       1,
+		Stackable:   false,
+		Amount:      1,
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var uItem1 Item
+
+	err = db.Model(&uItem1).
+		Where("id = ?", 4).
+		Select()
+
+	if uItem1.Slot != 1 {
+		t.Fatalf("expected slot %v, got %v", 1, uItem1.Slot)
+	}
 }

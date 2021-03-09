@@ -8,6 +8,7 @@ import (
 
 // CreateTables if not yet created
 func CreateTables(db *pg.DB) error {
+
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -25,7 +26,7 @@ func CreateTables(db *pg.DB) error {
 		(*Item)(nil),
 		(*ItemAttributes)(nil),
 	} {
-		err := tx.CreateTable(model, &orm.CreateTableOptions{
+		err := tx.Model(model).CreateTable(&orm.CreateTableOptions{
 			IfNotExists:   true,
 			FKConstraints: true,
 		})
@@ -55,7 +56,7 @@ func DeleteTables(db *pg.DB) error {
 		(*Item)(nil),
 		(*ItemAttributes)(nil),
 	} {
-		err := tx.DropTable(model, &orm.DropTableOptions{
+		err := tx.Model(model).DropTable(&orm.DropTableOptions{
 			IfExists: true,
 			Cascade:  true,
 		})

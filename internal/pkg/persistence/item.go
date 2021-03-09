@@ -28,20 +28,253 @@ type Item struct {
 	// box 14 = mini house tile all inventory
 	// box 15 = premium actions inventory(dances)
 	// box 16 = mini house mini game inventory
-	Slot        int     `pg:",use_zero,notnull,unique:item"`
+	Slot        int        `pg:",use_zero,notnull,unique:item"`
 	CharacterID uint64     `pg:",notnull,unique:item" `
 	Character   *Character `pg:"rel:belongs-to"`
 	ShnID       uint16     `pg:",notnull"`
 	Stackable   bool       `pg:",notnull,use_zero"`
 	Amount      uint32
-	Attributes  *ItemAttributes `pg:"rel:has-one"`
-
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt time.Time `pg:",soft_delete"`
+	Attributes  *ItemAttributes `pg:"rel:belongs-to"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	//DeletedAt time.Time `pg:",soft_delete"`
 }
 
-func (i Item) MoveTo(db * pg.DB, inventoryType int, slot int) error {
+type ItemAttributes struct {
+	tableName struct{} `pg:"world.item_attributes"`
+	ID        uint64   `pg:",unique:item"`
+	ItemID    uint64   `pg:",use_zero,notnull,unique:item"`
+	Strength  int
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	//DeletedAt time.Time `pg:",soft_delete"`
+}
+
+type ItemParams struct {
+	CharacterID uint64
+	ShnID       uint16
+	Stackable   bool
+	Amount      uint32
+	Attributes  *ItemAttributes
+}
+
+func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
+	var (
+		item *Item
+		attr *ItemAttributes
+	)
+
+	err := validateItemParams(db, params)
+
+	if err != nil {
+		return item, err
+	}
+
+	slot, err := freeSlot(db, params.CharacterID, BagInventory)
+
+	if err != nil {
+		return item, err
+	}
+
+	tx, err := db.Begin()
+
+	if err != nil {
+		return item, err
+	}
+
+	defer closeTx(tx)
+
+	item = &Item{
+		CharacterID:   params.CharacterID,
+		InventoryType: BagInventory,
+		Slot:          slot,
+		ShnID:         params.ShnID,
+		Stackable:     params.Stackable,
+		Amount:        params.Amount,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+
+	_, err = tx.Model(item).
+		Returning("*").
+		Insert()
+
+	if err != nil {
+		return item, err
+	}
+
+	if params.Attributes != nil {
+		attr = params.Attributes
+	} else {
+		attr = &ItemAttributes{}
+	}
+
+	attr.ItemID = item.ID
+	attr.CreatedAt = time.Now()
+	attr.UpdatedAt = time.Now()
+
+	_, err = tx.Model(attr).
+		Returning("*").
+		Insert()
+
+	if err != nil {
+		return item, Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
+		}
+	}
+
+	err = tx.Model(item).
+		WherePK().
+		Returning("*").
+		Relation("Attributes").
+		Select()
+
+	if err != nil {
+		return item, err
+	}
+
+	return item, tx.Commit()
+
+}
+
+func DeleteItem(db *pg.DB, itemID int) error {
+	tx, err := db.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer closeTx(tx)
+
+	_, err = tx.Model((*ItemAttributes)(nil)).Where("item_id = ?", itemID).Delete()
+
+	if err != nil {
+		return Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":    err,
+				"txErr":  tx.Rollback(),
+				"itemID": itemID,
+			},
+		}
+	}
+
+	_, err = tx.Model((*Item)(nil)).Where("id = ?", itemID).Delete()
+
+	if err != nil {
+		return Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":    err,
+				"txErr":  tx.Rollback(),
+				"itemID": itemID,
+			},
+		}
+	}
+
+	return tx.Commit()
+}
+
+// UpdateItem attributes, etc...
+// should not handle inventory location
+func (i Item) Update(db *pg.DB, params ItemParams) (*Item, error) {
+
+	err := validateItemParams(db, params)
+
+	if params.ShnID != i.ShnID {
+		return &i, Err{
+			Code: ErrItemDistinctShnID,
+			Details: ErrDetails{
+				"originalShnID": i.ShnID,
+				"newShnID":      params.ShnID,
+			},
+		}
+	}
+
+	if err != nil {
+		return &i, err
+	}
+
+	tx, err := db.Begin()
+
+	if err != nil {
+		return &i, err
+	}
+
+	defer closeTx(tx)
+
+	i.CharacterID = params.CharacterID
+
+	i.Stackable = params.Stackable
+
+	i.Amount = params.Amount
+
+	i.UpdatedAt = time.Now()
+
+	_, err = tx.Model(&i).
+		WherePK().
+		Update()
+
+	if err != nil {
+		return &i, Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
+		}
+	}
+
+	// if not exists, update
+	if i.Attributes == nil {
+		attr := &ItemAttributes{}
+		attr.ID = i.ID
+		_, err = tx.Model(attr).Insert()
+	} else {
+
+		if params.Attributes != nil {
+			i.Attributes.Strength = params.Attributes.Strength
+		}
+
+		_, err = tx.Model(i.Attributes).
+			WherePK().
+			Update()
+	}
+
+	if err != nil {
+		return &i, Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
+		}
+	}
+
+	err = tx.Model(&i).
+		Returning("*").
+		WherePK().
+		Relation("Attributes").
+		Select()
+
+	if err != nil {
+		return &i, Err{
+			Code: ErrDB,
+			Details: ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
+		}
+	}
+
+	return &i, tx.Commit()
+}
+
+func (i Item) MoveTo(db *pg.DB, inventoryType int, slot int) error {
 	var (
 		otherItem Item
 	)
@@ -63,7 +296,7 @@ func (i Item) MoveTo(db * pg.DB, inventoryType int, slot int) error {
 		var (
 			// values to be used by otherItem
 			originalInventory = i.InventoryType
-			originalSlot = i.Slot
+			originalSlot      = i.Slot
 		)
 
 		// to avoid unique constraint error, use buffer inventory
@@ -72,10 +305,10 @@ func (i Item) MoveTo(db * pg.DB, inventoryType int, slot int) error {
 		_, err := tx.Model(&i).WherePK().Update()
 		if err != nil {
 			return Err{
-				Code:    ErrItemSlotUpdate,
+				Code: ErrItemSlotUpdate,
 				Details: ErrDetails{
-					"err": err,
-					"itemSlot": i.Slot,
+					"err":           err,
+					"itemSlot":      i.Slot,
 					"otherItemSlot": otherItem.Slot,
 				},
 			}
@@ -89,10 +322,10 @@ func (i Item) MoveTo(db * pg.DB, inventoryType int, slot int) error {
 		_, err = tx.Model(&otherItem).WherePK().Update()
 		if err != nil {
 			return Err{
-				Code:    ErrItemSlotUpdate,
+				Code: ErrItemSlotUpdate,
 				Details: ErrDetails{
-					"err": err,
-					"itemSlot": i.Slot,
+					"err":           err,
+					"itemSlot":      i.Slot,
 					"otherItemSlot": otherItem.Slot,
 				},
 			}
@@ -106,11 +339,11 @@ func (i Item) MoveTo(db * pg.DB, inventoryType int, slot int) error {
 
 	if err != nil {
 		return Err{
-			Code:    ErrItemSlotUpdate,
+			Code: ErrItemSlotUpdate,
 			Details: ErrDetails{
-				"err": err,
-				"txErr": tx.Rollback(),
-				"itemSlot": i.Slot,
+				"err":           err,
+				"txErr":         tx.Rollback(),
+				"itemSlot":      i.Slot,
 				"otherItemSlot": otherItem.Slot,
 			},
 		}
@@ -119,20 +352,67 @@ func (i Item) MoveTo(db * pg.DB, inventoryType int, slot int) error {
 	return tx.Commit()
 }
 
-type ItemAttributes struct {
-	tableName struct{} `pg:"world.item_attributes"`
-	ID        uint64
-	ItemID    uint64
-	Item      *Item
-	Strength  int
+func GetItemWhere(db *pg.DB, clauses map[string]interface{}, deleted bool) (*Item, error) {
+	var item Item
+
+	query := db.Model(&item)
+
+	for k, v := range clauses {
+		query.Where(k, v)
+	}
+
+	if !deleted {
+		query.Where("deleted_at = null")
+	}
+
+	err := query.Select()
+
+	return &item, err
 }
 
-type ItemParams struct {
-	CharacterID uint64
-	ShnID       uint16
-	Stackable   bool
-	Amount      uint32
-	Attributes  *ItemAttributes
+func freeSlot(db *pg.DB, characterID uint64, inventoryType uint64) (int, error) {
+	var (
+		slots []int
+		slot  int
+	)
+
+	err := db.Model((*Item)(nil)).
+		Column("slot").
+		Where("character_id = ?", characterID).
+		Where("inventory_type = ?", inventoryType).
+		Select(&slots)
+
+	if err != nil {
+		return slot, err
+	}
+
+	// for each slot
+	// if nextSlot is last one
+	//		if nextSlot+1 <= BagInventoryMax
+	//		availableSlot = nextSlot+1
+	// if nextSlot > currentSlot+1
+	//		availableSlot = currentSlot+1
+	for i, s := range slots {
+		if i+1 == len(slots) {
+			if s+1 < BagInventoryMax {
+				slot = s + 1
+				break
+			}
+			return slot, Err{
+				Code: ErrInventoryFull,
+			}
+		}
+		if slots[i+1] > s+1 {
+			slot = s + 1
+			break
+		}
+	}
+
+	if len(slots) == 0 {
+		slot = BagInventoryMin
+	}
+
+	return slot, nil
 }
 
 func validateItemParams(db *pg.DB, params ItemParams) error {
@@ -191,239 +471,4 @@ func validateItemParams(db *pg.DB, params ItemParams) error {
 	}
 
 	return nil
-}
-
-func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
-	var (
-		item *Item
-	)
-
-	err := validateItemParams(db, params)
-
-	if err != nil {
-		return item, err
-	}
-
-	slot, err := freeSlot(db, params.CharacterID, BagInventory)
-
-	if err != nil {
-		return item, err
-	}
-
-	tx, err := db.Begin()
-
-	if err != nil {
-		return item, err
-	}
-
-	defer closeTx(tx)
-
-	item = &Item{
-		CharacterID:   params.CharacterID,
-		InventoryType: BagInventory,
-		Slot:          slot,
-		ShnID:         params.ShnID,
-		Stackable:     params.Stackable,
-		Amount:        params.Amount,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
-	}
-
-	_, err = tx.Model(item).
-		Returning("*").
-		Insert()
-
-	if err != nil {
-		return item, err
-	}
-
-	if params.Attributes != nil {
-		var attr = *params.Attributes
-		attr.ItemID = item.ID
-		attr.Item = item
-
-		_, err = tx.Model(&attr).
-			Returning("*").
-			Insert()
-
-		if err != nil {
-			return item, Err{
-				Code: ErrDB,
-				Details: ErrDetails{
-					"err":   err,
-					"txErr": tx.Rollback(),
-				},
-			}
-		}
-	}
-
-	err = tx.Model(item).
-		WherePK().
-		Returning("*").
-		Relation("Attributes").
-		Select()
-
-	if err != nil {
-		return item, err
-	}
-
-	return item, tx.Commit()
-
-}
-
-// UpdateItem attributes, etc...
-// should not handle inventory location
-func UpdateItem(db *pg.DB, item Item, params ItemParams) (*Item, error) {
-
-	err := validateItemParams(db, params)
-
-	if params.ShnID != item.ShnID {
-		return &item, Err{
-			Code: ErrItemDistinctShnID,
-			Details: ErrDetails{
-				"originalShnID": item.ShnID,
-				"newShnID":      params.ShnID,
-			},
-		}
-	}
-
-	if err != nil {
-		return &item, err
-	}
-
-	tx, err := db.Begin()
-
-	if err != nil {
-		return &item, err
-	}
-
-	defer closeTx(tx)
-
-	item.CharacterID = params.CharacterID
-
-	item.Stackable = params.Stackable
-
-	item.Amount = params.Amount
-
-	item.UpdatedAt = time.Now()
-
-	_, err = tx.Model(&item).
-		WherePK().
-		Update()
-
-	if err != nil {
-		return &item, Err{
-			Code: ErrDB,
-			Details: ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
-	}
-
-	attr := &ItemAttributes{
-		ItemID:   item.ID,
-		Item:     &item,
-		Strength: params.Attributes.Strength,
-	}
-
-	// if not exists, update
-	if item.Attributes == nil {
-		_, err = tx.Model(attr).Insert()
-	} else {
-		_, err = tx.Model(attr).
-			WherePK().
-			Update()
-	}
-
-	if err != nil {
-		return &item, Err{
-			Code: ErrDB,
-			Details: ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
-	}
-
-	err = tx.Model(&item).
-		Returning("*").
-		WherePK().
-		Relation("Attributes").
-		Select()
-
-	if err != nil {
-		return &item, Err{
-			Code: ErrDB,
-			Details: ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
-	}
-
-	return &item, tx.Commit()
-}
-
-func GetItemWhere(db *pg.DB, clauses map[string]interface{}, deleted bool) (*Item, error) {
-	var item Item
-
-	query := db.Model(&item)
-
-	for k, v := range clauses {
-		query.Where(k, v)
-	}
-
-	if !deleted {
-		query.Where("deleted_at = null")
-	}
-
-	err := query.Select()
-
-	return &item, err
-}
-
-func freeSlot(db *pg.DB, characterID uint64, inventoryType uint64) (int, error) {
-	var (
-		slots []int
-		slot  int
-	)
-
-	err := db.Model((*Item)(nil)).
-		Column("slot").
-		Where("character_id = ?", characterID).
-		Where("inventory_type = ?", inventoryType).
-		Select(&slots)
-
-	if err != nil {
-		return slot, err
-	}
-
-	// for each slot
-	// if nextSlot is last one
-	//		if nextSlot+1 <= BagInventoryMax
-	//		availableSlot = nextSlot+1
-	// if nextSlot > currentSlot+1
-	//		availableSlot = currentSlot+1
-	for i, s := range slots {
-		if i+1 == len(slots) {
-			if s+1 <= BagInventoryMax {
-				slot = s + 1
-				break
-			}
-			return slot, Err{
-				Code: ErrInventoryFull,
-			}
-		}
-		if slots[i+1] > s+1 {
-			slot = s + 1
-			break
-		}
-	}
-
-	if len(slots) == 0 {
-		slot = BagInventoryMin
-	}
-
-	return slot, nil
 }

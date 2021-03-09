@@ -54,12 +54,12 @@ type Character struct {
 	ID            uint64
 	UserID        uint64         `pg:",notnull"`
 	Name          string         `pg:",notnull,unique"`
-	Appearance    *Appearance    `pg:"rel:has-one"`
-	Attributes    *Attributes    `pg:"rel:has-one"`
-	Location      *Location      `pg:"rel:has-one"`
-	Options       *ClientOptions `pg:"rel:has-one"`
+	Appearance    *Appearance    `pg:"rel:belongs-to"`
+	Attributes    *Attributes    `pg:"rel:belongs-to"`
+	Location      *Location      `pg:"rel:belongs-to"`
+	Options       *ClientOptions `pg:"rel:belongs-to"`
 	Items         []Item         `pg:"rel:has-many"`
-	EquippedItems *EquippedItems `pg:"rel:has-one"`
+	EquippedItems *EquippedItems `pg:"rel:belongs-to"`
 	AdminLevel    uint8          `pg:",notnull,use_zero"`
 	Slot          uint8          `pg:",notnull,use_zero"`
 	IsDeleted     bool           `pg:",use_zero"`
@@ -73,23 +73,23 @@ type Appearance struct {
 	tableName   struct{} `pg:"world.character_appearance"`
 	ID          uint64
 	CharacterID uint64 //
-	Character   *Character
-	Class       uint8 `pg:",notnull"`
-	Gender      uint8 `pg:",notnull,use_zero"`
-	HairType    uint8 `pg:",notnull,use_zero"`
-	HairColor   uint8 `pg:",notnull,use_zero"`
-	FaceType    uint8 `pg:",notnull,use_zero"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   time.Time `pg:",soft_delete"`
+	//Character   *Character
+	Class     uint8 `pg:",notnull"`
+	Gender    uint8 `pg:",notnull,use_zero"`
+	HairType  uint8 `pg:",notnull,use_zero"`
+	HairColor uint8 `pg:",notnull,use_zero"`
+	FaceType  uint8 `pg:",notnull,use_zero"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt time.Time `pg:",soft_delete"`
 }
 
 // Attributes model for the database layer
 type Attributes struct {
-	tableName    struct{} `pg:"world.character_attributes"`
-	ID           uint64
-	CharacterID  uint64
-	Character    *Character
+	tableName   struct{} `pg:"world.character_attributes"`
+	ID          uint64
+	CharacterID uint64
+	//Character    *Character
 	Level        uint8  `pg:",notnull"`
 	Experience   uint64 `pg:",notnull,use_zero"`
 	Fame         uint32 `pg:",notnull,use_zero"`
@@ -114,23 +114,23 @@ type Location struct {
 	tableName   struct{} `pg:"world.character_location"`
 	ID          uint64
 	CharacterID uint64 //
-	Character   *Character
-	MapID       uint32 `pg:",notnull"`
-	MapName     string `pg:",notnull"`
-	X           int    `pg:",notnull"`
-	Y           int    `pg:",notnull"`
-	D           int    `pg:",notnull,use_zero"`
-	IsKQ        bool   `pg:",notnull,use_zero"`
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   time.Time `pg:",soft_delete"`
+	//Character   *Character
+	MapID     uint32 `pg:",notnull"`
+	MapName   string `pg:",notnull"`
+	X         int    `pg:",notnull"`
+	Y         int    `pg:",notnull"`
+	D         int    `pg:",notnull,use_zero"`
+	IsKQ      bool   `pg:",notnull,use_zero"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt time.Time `pg:",soft_delete"`
 }
 
 type ClientOptions struct {
 	tableName   struct{} `pg:"world.client_options"`
 	ID          uint64
 	CharacterID uint64 //
-	Character   *Character
+	//Character   *Character
 	GameOptions []byte `pg:",notnull"`
 	Keymap      []byte `pg:",notnull"`
 	Shortcuts   []byte `pg:",notnull"`

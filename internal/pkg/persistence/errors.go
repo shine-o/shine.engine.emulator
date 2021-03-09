@@ -18,7 +18,6 @@ const (
 	ErrCharInvalidName
 	ErrCharInvalidClassGender
 	ErrCharNotExists
-
 )
 
 //go:generate stringer -type=CustomErrorCode
