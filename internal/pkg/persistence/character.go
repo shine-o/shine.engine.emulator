@@ -146,7 +146,7 @@ const (
 )
 
 // Validate checks data sent by the client is valid
-func Validate(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) error {
+func Validate(userID uint64, req *structs.NcAvatarCreateReq) error {
 
 	if req.SlotNum > 5 {
 		return Err{
@@ -233,7 +233,7 @@ func Validate(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) error {
 }
 
 // New creates character for the User with userID and returns data the client can understand
-func New(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
+func New(userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
 	var char *Character
 	tx, err := db.Begin()
 
@@ -321,7 +321,7 @@ func New(db *pg.DB, userID uint64, req *structs.NcAvatarCreateReq) (*Character, 
 	return char, tx.Commit()
 }
 
-func Get(db *pg.DB, characterID uint64) (Character, error) {
+func Get(characterID uint64) (Character, error) {
 	var c Character
 	c.ID = characterID
 	err := db.Model(&c).
@@ -335,7 +335,7 @@ func Get(db *pg.DB, characterID uint64) (Character, error) {
 	return c, err
 }
 
-func GetByName(db *pg.DB, name string) (Character, error) {
+func GetByName(name string) (Character, error) {
 	var c Character
 	err := db.Model(&c).
 		Where("name = ?", name).
@@ -353,7 +353,7 @@ func GetByName(db *pg.DB, name string) (Character, error) {
 	return c, err
 }
 
-func GetBySlot(db *pg.DB, slot byte, userID uint64) (Character, error) {
+func GetBySlot(slot byte, userID uint64) (Character, error) {
 	var c Character
 	err := db.Model(&c).
 		Relation("Appearance").
@@ -366,7 +366,21 @@ func GetBySlot(db *pg.DB, slot byte, userID uint64) (Character, error) {
 	return c, err
 }
 
-func Update(db *pg.DB, c *Character) error {
+func UserCharacters(id uint64) ([] * Character, error) {
+	var chars []*Character
+
+	err := db.Model(&chars).
+		Relation("Appearance").
+		Relation("Attributes").
+		Relation("Location").
+		Relation("EquippedItems").
+		Where("user_id = ?", id).
+		Select()
+
+	return chars, err
+}
+
+func Update(c *Character) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -396,7 +410,8 @@ func Update(db *pg.DB, c *Character) error {
 	return tx.Commit()
 }
 
-func UpdateLocation(db *pg.DB, c *Character) error {
+// todo: switch to method
+func UpdateLocation(c *Character) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -417,7 +432,7 @@ func UpdateLocation(db *pg.DB, c *Character) error {
 
 // Delete character for User with userID
 // soft deletion is performed
-func Delete(db *pg.DB, userID uint64, req *structs.NcAvatarEraseReq) error {
+func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return Err{
@@ -510,19 +525,19 @@ func Delete(db *pg.DB, userID uint64, req *structs.NcAvatarEraseReq) error {
 
 // TODO: All NC related stuff should be moved to related service
 func (c *Character) AllEquippedItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(db, 8)
+	return c.getItemsByInventory(8)
 }
 
 func (c *Character) InventoryItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(db, 9)
+	return c.getItemsByInventory(9)
 }
 
 func (c *Character) MiniHouseItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(db, 12)
+	return c.getItemsByInventory(12)
 }
 
 func (c *Character) PremiumActionItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(db, 15)
+	return c.getItemsByInventory(15)
 }
 
 func (c *Character) initialAppearance(shape structs.ProtoAvatarShapeInfo) *Character {
@@ -624,7 +639,7 @@ func (c *Character) initialEquippedItems() *Character {
 // if not 65535, add item to the list
 // todo: shn item processing
 // get all items where character id and inventory type (8 for equipped items) match
-func (c *Character) getItemsByInventory(db *pg.DB, inventoryType uint8) *structs.NcCharClientItemCmd {
+func (c *Character) getItemsByInventory(inventoryType uint8) *structs.NcCharClientItemCmd {
 	nc := &structs.NcCharClientItemCmd{
 		NumOfItem: 0,
 		Box:       inventoryType,

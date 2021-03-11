@@ -3,7 +3,6 @@ package world
 import (
 	"context"
 	"errors"
-	"github.com/go-pg/pg/v10"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/login"
 	wm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world-master"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
@@ -13,7 +12,7 @@ import (
 )
 
 type world struct {
-	db *pg.DB
+	//db *pg.DB
 	events
 	dynamic
 }
@@ -129,19 +128,12 @@ func verifyUser(ws *session, req *structs.NcUserLoginWorldReq) error {
 	return nil
 }
 
-func userCharacters(db *pg.DB, ws *session) (structs.NcUserLoginWorldAck, error) {
+func userCharacters(ws *session) (structs.NcUserLoginWorldAck, error) {
+	var avatars []structs.AvatarInformation
+
 	worldID := viper.GetInt("service.id")
 
-	var avatars []structs.AvatarInformation
-	var chars []persistence.Character
-
-	err := db.Model(&chars).
-		Relation("Appearance").
-		Relation("Attributes").
-		Relation("Location").
-		Relation("EquippedItems").
-		Where("user_id = ?", ws.UserID).
-		Select()
+	chars, err := persistence.UserCharacters(ws.UserID)
 
 	if err != nil {
 		return structs.NcUserLoginWorldAck{}, err

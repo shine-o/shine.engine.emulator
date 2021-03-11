@@ -7,6 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -43,7 +44,7 @@ func Start(cmd *cobra.Command, args []string) {
 
 	go newRPCServer("world")
 
-	db := database.Connection(ctx, database.ConnectionParams{
+	persistence.InitDB(database.ConnectionParams{
 		User:     viper.GetString("database.postgres.db_user"),
 		Password: viper.GetString("database.postgres.db_password"),
 		Host:     viper.GetString("database.postgres.host"),
@@ -52,9 +53,7 @@ func Start(cmd *cobra.Command, args []string) {
 		Schema:   viper.GetString("database.postgres.schema"),
 	})
 
-	defer db.Close()
-
-	w.db = db
+	defer persistence.CloseDB()
 
 	worldName := viper.GetString("world.name")
 	worldPort := viper.GetString("world.port")

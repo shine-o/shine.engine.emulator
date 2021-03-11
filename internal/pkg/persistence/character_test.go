@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/go-pg/pg/v10"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
@@ -14,15 +13,14 @@ import (
 	"time"
 )
 
-var db *pg.DB
-
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	log = logger.Init("test logger", true, false, ioutil.Discard)
 	log.Info("test logger")
-	db = database.Connection(ctx, database.ConnectionParams{
+
+	InitDB(database.ConnectionParams{
 		User:     "user",
 		Password: "password",
 		Host:     "127.0.0.1",
@@ -30,21 +28,24 @@ func TestMain(m *testing.M) {
 		Database: "shine",
 		Schema:   "world",
 	})
+
 	err := database.CreateSchema(db, "world")
+
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	cleanDB()
 
 	os.Exit(m.Run())
 }
 
 func cleanDB() {
-	err := DeleteTables(db)
+	err := DeleteTables()
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = CreateTables(db)
+	err = CreateTables()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,7 +66,7 @@ func createDummyCharacters() {
 				FaceShape: 0,
 			},
 		}
-		_, err := New(db, 1, &c)
+		_, err := New( 1, &c)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -83,7 +84,7 @@ func TestValidateCharacterRequest(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		err = Validate(db, 1, &nc)
+		err = Validate( 1, &nc)
 		if err != nil {
 			t.Error(err)
 		}
@@ -102,7 +103,7 @@ func TestCreateCharacter(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		_, err = New(db, 1, &nc)
+		_, err = New( 1, &nc)
 		if err != nil {
 			t.Error(err)
 		}
@@ -119,7 +120,7 @@ func TestDeleteCharacter(t *testing.T) {
 		Slot: 0,
 	}
 
-	err := Delete(db, 1, &nc)
+	err := Delete( 1, &nc)
 
 	if err != nil {
 		log.Error(err)
@@ -157,7 +158,7 @@ func TestCharacterNameInUseError(t *testing.T) {
 			FaceShape: 0,
 		},
 	}
-	err := Validate(db, 1, &c)
+	err := Validate( 1, &c)
 	if err == nil {
 		log.Error(err)
 	}
@@ -185,7 +186,7 @@ func TestNoSlotAvailableError(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate(db, 1, &nc)
+		err = Validate( 1, &nc)
 		if err != nil {
 			cErr, ok := err.(Err)
 			if !ok {
@@ -211,7 +212,7 @@ func TestInvalidSlotError(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate(db, 1, &nc)
+		err = Validate( 1, &nc)
 		if err != nil {
 			cErr, ok := err.(Err)
 			if !ok {
@@ -239,7 +240,7 @@ func TestInvalidNameError(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate(db, 1, &nc)
+		err = Validate( 1, &nc)
 		if err != nil {
 			cErr, ok := err.(Err)
 			if !ok {
@@ -269,7 +270,7 @@ func TestInvalidGenderClassBinaryOperation(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate(db, 1, &nc)
+		err = Validate( 1, &nc)
 		if err != nil {
 			errChar, ok := err.(Err)
 			if !ok {
@@ -288,7 +289,7 @@ func TestNewCharacter_DefaultItems(t *testing.T) {
 	cleanDB()
 	createDummyCharacters()
 	// assert user has an inventory
-	characters, err := getCharacters(db, false)
+	characters, err := getCharacters( false)
 
 	if err != nil {
 		t.Error(err)
@@ -303,7 +304,7 @@ func TestNewCharacter_DefaultItems(t *testing.T) {
 		clauses["character_id = ?"] = character.ID
 		clauses["shn_id = ?"] = miniHouseID
 
-		item, err := GetItemWhere(db, clauses, false)
+		item, err := GetItemWhere( clauses, false)
 
 		if err != nil {
 			t.Error(err)
@@ -332,7 +333,7 @@ func TestLoadNewCharacter_Mage_EquippedItems(t *testing.T) {
 	clauses["character_id = ?"] = character.ID
 	clauses["shn_id = ?"] = rightHand
 
-	_, err := GetItemWhere(db, clauses, false)
+	_, err := GetItemWhere( clauses, false)
 
 	if err != nil {
 		t.Error(err)
@@ -357,7 +358,7 @@ func TestLoadNewCharacter_Fighter_EquippedItems(t *testing.T) {
 	clauses["character_id = ?"] = character.ID
 	clauses["shn_id = ?"] = rightHand
 
-	_, err := GetItemWhere(db, clauses, false)
+	_, err := GetItemWhere( clauses, false)
 
 	if err != nil {
 		t.Error(err)
@@ -380,7 +381,7 @@ func TestLoadNewCharacter_Archer_EquippedItems(t *testing.T) {
 	clauses["character_id = ?"] = character.ID
 	clauses["shn_id = ?"] = rightHand
 
-	_, err := GetItemWhere(db, clauses, false)
+	_, err := GetItemWhere( clauses, false)
 
 	if err != nil {
 		t.Error(err)
@@ -403,14 +404,14 @@ func TestLoadNewCharacter_Cleric_EquippedItems(t *testing.T) {
 	clauses["character_id = ?"] = character.ID
 	clauses["shn_id = ?"] = rightHand
 
-	_, err := GetItemWhere(db, clauses, false)
+	_, err := GetItemWhere( clauses, false)
 
 	if err != nil {
 		t.Error(err)
 	}
 }
 
-func getCharacters(db *pg.DB, deleted bool) ([]*Character, error) {
+func getCharacters(deleted bool) ([]*Character, error) {
 	var chars []*Character
 
 	query := db.Model(&chars)
@@ -468,7 +469,7 @@ func newCharacter(class string) *Character {
 		},
 	}
 
-	char, err := New(db, 1, &c)
+	char, err := New( 1, &c)
 	if err != nil {
 		log.Fatal(err)
 	}

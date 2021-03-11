@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/go-pg/pg/v10"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	mobs "github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/monsters"
@@ -20,7 +19,7 @@ type zone struct {
 	rm runningMaps
 	*events
 	*dynamicEvents
-	worldDB *pg.DB
+	//worldDB *pg.DB
 	sync.RWMutex
 	*handler
 }

@@ -1,14 +1,30 @@
 package persistence
 
 import (
+	"context"
 	"fmt"
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 )
 
-// CreateTables if not yet created
-func CreateTables(db *pg.DB) error {
+var db * pg.DB
 
+func InitDB(cp database.ConnectionParams) {
+	ctx := context.Background()
+	db = database.Connection(ctx, cp)
+}
+
+func DB(cp database.ConnectionParams) *pg.DB {
+	return db
+}
+
+func CloseDB()  {
+	log.Info(db.Close())
+}
+
+// CreateTables if not yet created
+func CreateTables() error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -38,7 +54,7 @@ func CreateTables(db *pg.DB) error {
 }
 
 // DeleteTables if they exist
-func DeleteTables(db *pg.DB) error {
+func DeleteTables() error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -65,6 +81,17 @@ func DeleteTables(db *pg.DB) error {
 		}
 	}
 	return tx.Commit()
+}
+
+func CleanDB(db *pg.DB) {
+	err := DeleteTables()
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = CreateTables()
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
 func closeTx(tx *pg.Tx) {

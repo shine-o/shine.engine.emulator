@@ -1,7 +1,6 @@
 package persistence
 
 import (
-	"github.com/go-pg/pg/v10"
 	"time"
 )
 
@@ -58,19 +57,19 @@ type ItemParams struct {
 	Attributes  *ItemAttributes
 }
 
-func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
+func NewItem(params ItemParams) (*Item, error) {
 	var (
 		item *Item
 		attr *ItemAttributes
 	)
 
-	err := validateItemParams(db, params)
+	err := validateItemParams(params)
 
 	if err != nil {
 		return item, err
 	}
 
-	slot, err := freeSlot(db, params.CharacterID, BagInventory)
+	slot, err := freeSlot(params.CharacterID, BagInventory)
 
 	if err != nil {
 		return item, err
@@ -141,7 +140,7 @@ func NewItem(db *pg.DB, params ItemParams) (*Item, error) {
 
 }
 
-func DeleteItem(db *pg.DB, itemID int) error {
+func DeleteItem(itemID int) error {
 	tx, err := db.Begin()
 
 	if err != nil {
@@ -179,11 +178,9 @@ func DeleteItem(db *pg.DB, itemID int) error {
 	return tx.Commit()
 }
 
-// UpdateItem attributes, etc...
-// should not handle inventory location
-func (i Item) Update(db *pg.DB, params ItemParams) (*Item, error) {
+func (i Item) Update(params ItemParams) (*Item, error) {
 
-	err := validateItemParams(db, params)
+	err := validateItemParams(params)
 
 	if params.ShnID != i.ShnID {
 		return &i, Err{
@@ -274,14 +271,14 @@ func (i Item) Update(db *pg.DB, params ItemParams) (*Item, error) {
 	return &i, tx.Commit()
 }
 
-func (i Item) MoveTo(db *pg.DB, inventoryType int, slot int) error {
+func (i Item) MoveTo(inventoryType int, slot int) (*Item, error) {
 	var (
 		otherItem Item
 	)
 	tx, err := db.Begin()
 
 	if err != nil {
-		return err
+		return &i, err
 	}
 
 	defer closeTx(tx)
@@ -304,12 +301,15 @@ func (i Item) MoveTo(db *pg.DB, inventoryType int, slot int) error {
 		i.Slot = 0
 		_, err := tx.Model(&i).WherePK().Update()
 		if err != nil {
-			return Err{
+			return &i, Err{
 				Code: ErrItemSlotUpdate,
 				Details: ErrDetails{
 					"err":           err,
-					"itemSlot":      i.Slot,
-					"otherItemSlot": otherItem.Slot,
+					"from":      i.Slot,
+					"to": otherItem.Slot,
+					"fromInventory": i.InventoryType,
+					"toInventory": inventoryType,
+					"shnID": i.ShnID,
 				},
 			}
 		}
@@ -321,12 +321,15 @@ func (i Item) MoveTo(db *pg.DB, inventoryType int, slot int) error {
 
 		_, err = tx.Model(&otherItem).WherePK().Update()
 		if err != nil {
-			return Err{
+			return &i, Err{
 				Code: ErrItemSlotUpdate,
 				Details: ErrDetails{
 					"err":           err,
-					"itemSlot":      i.Slot,
-					"otherItemSlot": otherItem.Slot,
+					"from":      i.Slot,
+					"to": otherItem.Slot,
+					"fromInventory": i.InventoryType,
+					"toInventory": inventoryType,
+					"shnID": i.ShnID,
 				},
 			}
 		}
@@ -338,21 +341,24 @@ func (i Item) MoveTo(db *pg.DB, inventoryType int, slot int) error {
 	_, err = tx.Model(&i).WherePK().Update()
 
 	if err != nil {
-		return Err{
+		return &i, Err{
 			Code: ErrItemSlotUpdate,
 			Details: ErrDetails{
 				"err":           err,
 				"txErr":         tx.Rollback(),
-				"itemSlot":      i.Slot,
-				"otherItemSlot": otherItem.Slot,
+				"from":      i.Slot,
+				"to": otherItem.Slot,
+				"fromInventory": i.InventoryType,
+				"toInventory": inventoryType,
+				"shnID": i.ShnID,
 			},
 		}
 	}
 
-	return tx.Commit()
+	return &i, tx.Commit()
 }
 
-func GetItemWhere(db *pg.DB, clauses map[string]interface{}, deleted bool) (*Item, error) {
+func GetItemWhere(clauses map[string]interface{}, deleted bool) (*Item, error) {
 	var item Item
 
 	query := db.Model(&item)
@@ -361,16 +367,28 @@ func GetItemWhere(db *pg.DB, clauses map[string]interface{}, deleted bool) (*Ite
 		query.Where(k, v)
 	}
 
-	if !deleted {
-		query.Where("deleted_at = null")
-	}
+	//if !deleted {
+	//	query.Where("deleted_at = null")
+	//}
 
 	err := query.Select()
 
 	return &item, err
 }
 
-func freeSlot(db *pg.DB, characterID uint64, inventoryType uint64) (int, error) {
+func GetCharacterItems(characterID int, inventoryType int) ([]*Item, error) {
+	var items []*Item
+
+	err := db.Model(&items).
+		Where("character_id = ?", characterID).
+		Where("inventory_type = ?", inventoryType).
+		Relation("Attributes").
+		Select()
+
+	return items, err
+}
+
+func freeSlot(characterID uint64, inventoryType uint64) (int, error) {
 	var (
 		slots []int
 		slot  int
@@ -415,7 +433,7 @@ func freeSlot(db *pg.DB, characterID uint64, inventoryType uint64) (int, error) 
 	return slot, nil
 }
 
-func validateItemParams(db *pg.DB, params ItemParams) error {
+func validateItemParams(params ItemParams) error {
 	if params.Amount == 0 {
 		return Err{
 			Code: ErrItemInvalidAmount,

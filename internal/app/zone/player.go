@@ -1,41 +1,12 @@
 package zone
 
 import (
-	"github.com/go-pg/pg/v10"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"sync"
 	"time"
 )
-
-type player struct {
-	baseEntity
-	players  map[uint16]*player
-	monsters map[uint16]*monster
-	npcs     map[uint16]*npc
-	char     *persistence.Character
-	conn     playerConnection
-	view     playerView
-	stats    playerStats
-	state    playerState
-	items    playerItems
-	money    playerMoney
-	titles   playerTitles
-	quests   playerQuests
-	skills   []skill
-	passives []passive
-	tickers  []*time.Ticker
-	targeting
-	sync.RWMutex
-	justSpawned bool
-	*prompt
-}
-
-var _ entity = (*player)(nil)
-var _ entity = (*monster)(nil)
-var _ entity = (*npc)(nil)
-
-type promptAction int
 
 const (
 	portal promptAction = iota
@@ -50,6 +21,31 @@ const (
 	duel
 	enhanceItem
 )
+
+type player struct {
+	baseEntity
+	players  map[uint16]*player
+	monsters map[uint16]*monster
+	npcs     map[uint16]*npc
+	char     *persistence.Character
+	conn     playerConnection
+	view     playerView
+	stats    playerStats
+	state    playerState
+	inventories    playerInventories
+	money    playerMoney
+	titles   playerTitles
+	quests   playerQuests
+	skills   []skill
+	passives []passive
+	tickers  []*time.Ticker
+	targeting
+	sync.RWMutex
+	justSpawned bool
+	*prompt
+}
+
+type promptAction int
 
 type prompt struct {
 	action int
@@ -301,14 +297,6 @@ type playerState struct {
 	miniPet     uint8
 }
 
-type playerItems struct {
-	equipped  itemBox
-	inventory itemBox
-	miniHouse itemBox
-	reward    itemBox
-	premium   itemBox
-}
-
 type playerMoney struct {
 	coins       uint64
 	fame        uint32
@@ -358,24 +346,14 @@ type title struct {
 	bitOperation uint8
 }
 
-type itemBox struct {
-	box   uint8
-	items []item
-}
-
-type item struct {
-	slot uint16
-	id   uint16
-}
-
 type stat struct {
 	base       uint32
 	withExtras uint32
 }
 
-func (p *player) load(name string, worldDB *pg.DB) error {
+func (p *player) load(name string) error {
 
-	char, err := persistence.GetByName(worldDB, name)
+	char, err := persistence.GetByName(name)
 
 	if err != nil {
 		return err
@@ -400,7 +378,7 @@ func (p *player) load(name string, worldDB *pg.DB) error {
 	view := make(chan playerView)
 	state := make(chan playerState)
 	stats := make(chan playerStats)
-	items := make(chan playerItems)
+	inventories := make(chan playerInventories)
 	money := make(chan playerMoney)
 	titles := make(chan playerTitles)
 	quests := make(chan playerQuests)
@@ -411,12 +389,13 @@ func (p *player) load(name string, worldDB *pg.DB) error {
 	go p.viewData(view, &char, pErr)
 	go p.stateData(state, &char, pErr)
 	go p.statsData(stats, &char, pErr)
-	go p.itemData(items, &char, pErr)
+	go p.itemData(inventories, &char, pErr)
 	go p.moneyData(money, &char, pErr)
 	go p.titleData(titles, &char, pErr)
 	go p.skillData(skills, &char, pErr)
 	go p.passiveData(passives, &char, pErr)
 
+	// TODO: remove this time bomb
 	done := 0
 	for {
 		select {
@@ -432,9 +411,9 @@ func (p *player) load(name string, worldDB *pg.DB) error {
 			p.stats = s
 			stats = nil
 			done++
-		case i := <-items:
-			p.items = i
-			items = nil
+		case i := <-inventories:
+			p.inventories = i
+			inventories = nil
 			done++
 		case m := <-money:
 			p.money = m
@@ -581,27 +560,6 @@ func (p *player) statsData(stats chan<- playerStats, c *persistence.Character, e
 	}
 
 	stats <- s
-}
-
-func (p *player) itemData(items chan<- playerItems, c *persistence.Character, err chan<- error) {
-	// for this character, load all items in each respective box
-	// each item loaded should be validated so that, best way is to iterate all items and for each item launch a routine that validates it and returns the valid item through a channel
-	// we also forward the error channel in case there is an error
-	i := playerItems{
-		equipped: itemBox{
-			box: 8,
-		},
-		inventory: itemBox{
-			box: 9,
-		},
-		miniHouse: itemBox{
-			box: 12,
-		},
-		premium: itemBox{
-			box: 15,
-		},
-	}
-	items <- i
 }
 
 func (p *player) titleData(titles chan<- playerTitles, c *persistence.Character, err chan<- error) {
@@ -782,6 +740,50 @@ func (p *player) charParameterData() structs.CharParameterData {
 		},
 	}
 }
+func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
+	return &structs.ProtoAvatarShapeInfo{
+		BF:        1 | pv.class<<2 | pv.gender<<7,
+		HairType:  pv.hairType,
+		HairColor: pv.hairColour,
+		FaceShape: pv.faceType,
+	}
+}
+
+
+type itemSlotChange struct {
+	from int
+	to int
+}
+
+func (p *player) equip(i item, slot shn.ItemEquipEnum) (itemSlotChange, error) {
+	//p.RLock()
+	//defer p.RUnlock()
+
+	slotChange := itemSlotChange{
+		from: i.pItem.Slot,
+		to:   0,
+	}
+
+	uItem, err := i.pItem.MoveTo(persistence.EquippedInventory, int(slot))
+
+	if err != nil {
+		return itemSlotChange{}, Err{
+			Code:    ItemEquipFailed,
+			Details: ErrDetails{
+				"err": err,
+				"pHandle": p.handle,
+			},
+		}
+	}
+
+	slotChange.to = int(slot)
+
+	p.Lock()
+	i.pItem = uItem
+	p.Unlock()
+
+	return slotChange, nil
+}
 
 func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
 	return &structs.ProtoAvatarShapeInfo{
@@ -792,7 +794,7 @@ func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
 	}
 }
 
-func (pi *playerItems) ncCharClientItemCmd() []structs.NcCharClientItemCmd {
+func (pi *playerInventories) ncCharClientItemCmd() []structs.NcCharClientItemCmd {
 	var ncs []structs.NcCharClientItemCmd
 	// for now empty, later on process each box type item
 	ncs = []structs.NcCharClientItemCmd{

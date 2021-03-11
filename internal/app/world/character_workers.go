@@ -49,7 +49,7 @@ func characterSelectLogic(e event, w *world) {
 		return
 	}
 
-	nc, err := userCharacters(w.db, ev.session)
+	nc, err := userCharacters(ev.session)
 	if err != nil {
 		log.Error(err)
 		return
@@ -73,7 +73,7 @@ func characterLoginLogic(e event, w *world) {
 		return
 	}
 
-	char, err := persistence.GetBySlot(w.db, ev.nc.Slot, s.UserID)
+	char, err := persistence.GetBySlot(ev.nc.Slot, s.UserID)
 	if err != nil {
 		log.Error(err)
 		return
@@ -150,7 +150,7 @@ func createCharacterLogic(e event, w *world) {
 		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
 	}
 
-	err := persistence.Validate(w.db, s.UserID, ev.nc)
+	err := persistence.Validate(s.UserID, ev.nc)
 
 	if err != nil {
 		log.Error(err)
@@ -158,7 +158,7 @@ func createCharacterLogic(e event, w *world) {
 		return
 	}
 
-	char, err := persistence.New(w.db, s.UserID, ev.nc)
+	char, err := persistence.New(s.UserID, ev.nc)
 
 	if err != nil {
 		log.Error(err)
@@ -187,7 +187,7 @@ func deleteCharacterLogic(e event, w *world) {
 		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
 	}
 
-	err := persistence.Delete(w.db, s.UserID, ev.nc)
+	err := persistence.Delete(s.UserID, ev.nc)
 	if err != nil {
 		log.Error(err)
 		return
@@ -243,7 +243,7 @@ func updateShortcutsLogic(w *world, e event) {
 		return
 	}
 
-	c, err := persistence.Get(w.db, ev.characterID)
+	c, err := persistence.Get(ev.characterID)
 
 	if err != nil {
 		log.Error(err)
@@ -287,7 +287,7 @@ func updateShortcutsLogic(w *world, e event) {
 
 	c.Options.Shortcuts = data
 
-	err = persistence.Update(w.db, &c)
+	err = persistence.Update(&c)
 	if err != nil {
 		log.Error(err)
 		return

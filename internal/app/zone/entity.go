@@ -10,8 +10,9 @@ const (
 	//lengthY = 512
 	//lengthX = 256
 	//lengthY = 256
-	lengthX = 2256
-	lengthY = 2256
+	lengthX = 225
+	lengthY = 225
+	maxAttempts = 1500
 )
 
 type entity interface {
@@ -26,19 +27,21 @@ type handler struct {
 	sync.RWMutex
 }
 
-func (n *handler) remove(h uint16) {
-	n.Lock()
-	delete(n.usedHandles, h)
-	n.Unlock()
+func (h *handler) remove(hid uint16) {
+	h.Lock()
+	delete(h.usedHandles, hid)
+	h.Unlock()
 }
 
-func (n *handler) add(ap *npc) {
-	n.Lock()
-	n.usedHandles[ap.handle] = true
-	n.Unlock()
+func (h *handler) add(ap *npc) {
+	h.Lock()
+	h.usedHandles[ap.handle] = true
+	h.Unlock()
 }
 
-const maxAttempts = 1500
+var _ entity = (*player)(nil)
+var _ entity = (*monster)(nil)
+var _ entity = (*npc)(nil)
 
 func (h *handler) new() (uint16, error) {
 	h.RLock()

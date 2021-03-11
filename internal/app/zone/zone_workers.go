@@ -2,7 +2,6 @@ package zone
 
 import (
 	"fmt"
-	"github.com/go-pg/pg/v10"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/pkg/structs"
@@ -27,7 +26,7 @@ func (z *zone) playerSession() {
 		case e := <-z.recv[playerMapLogin]:
 			go playerMapLoginLogic(e)
 		case e := <-z.recv[playerData]:
-			go playerDataLogic(e, z.worldDB)
+			go playerDataLogic(e)
 		case e := <-z.recv[heartbeatUpdate]:
 			go hearbeatUpdateLogic(e)
 		case e := <-z.recv[playerLogoutStart]:
@@ -291,7 +290,7 @@ func playerMapLoginLogic(e event) {
 	}
 }
 
-func playerDataLogic(e event, db *pg.DB) {
+func playerDataLogic(e event) {
 	ev, ok := e.(*playerDataEvent)
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerDataEvent{}).String(), reflect.TypeOf(ev).String())
@@ -305,7 +304,7 @@ func playerDataLogic(e event, db *pg.DB) {
 		},
 	}
 
-	err := p.load(ev.playerName, db)
+	err := p.load(ev.playerName)
 
 	if err != nil {
 		log.Error(err)
@@ -449,7 +448,7 @@ func persistPLayerPositionLogic(e event, z *zone) {
 	c.Location.IsKQ = false
 	ev.p.Unlock()
 
-	err := persistence.UpdateLocation(z.worldDB, c)
+	err := persistence.UpdateLocation(c)
 
 	if err != nil {
 		log.Error(err)

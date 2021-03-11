@@ -1,7 +1,6 @@
 package persistence
 
 import (
-	"github.com/go-pg/pg/v10"
 	"testing"
 	"time"
 )
@@ -18,7 +17,7 @@ func TestGetCharacterItems(t *testing.T) {
 	newCharacter("mage")
 
 	for i := BagInventoryMin; i < BagInventoryMax; i++ {
-		_, err := NewItem(db, ItemParams{
+		_, err := NewItem(ItemParams{
 			CharacterID: 1,
 			ShnID:       1,
 			Stackable:   false,
@@ -31,7 +30,7 @@ func TestGetCharacterItems(t *testing.T) {
 
 	}
 
-	items, err := GetCharacterItems(db, 1, BagInventory)
+	items, err := GetCharacterItems(1, BagInventory)
 
 	if err != nil {
 		t.Fatal(err)
@@ -50,23 +49,11 @@ func TestGetCharacterItems(t *testing.T) {
 	//t.Fail()
 }
 
-func GetCharacterItems(db *pg.DB, characterID int, inventoryType int) ([]*Item, error) {
-	var items []*Item
-
-	err := db.Model(&items).
-		Where("character_id = ?", characterID).
-		Where("inventory_type = ?", inventoryType).
-		Relation("Attributes").
-		Select()
-
-	return items, err
-}
-
 func TestCreateItem_Ok(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
-	item, err := NewItem(db, ItemParams{
+	item, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Amount:      1,
@@ -81,7 +68,7 @@ func TestCreateItem_Ok(t *testing.T) {
 		t.Fatalf("slot = %v, expected slot = %v", item.Slot, 0)
 	}
 
-	item2, err := NewItem(db, ItemParams{
+	item2, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -104,7 +91,7 @@ func TestCreateItem_WithAttributes(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
-	item, err := NewItem(db, ItemParams{
+	item, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -128,7 +115,7 @@ func TestCreateItem_MissingValues(t *testing.T) {
 	newCharacter("mage")
 
 	// missing amount
-	_, err := NewItem(db, ItemParams{
+	_, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		//Amount:      1,
@@ -140,7 +127,7 @@ func TestCreateItem_MissingValues(t *testing.T) {
 	}
 
 	// missing shn_id
-	_, err = NewItem(db, ItemParams{
+	_, err = NewItem(ItemParams{
 		CharacterID: 1,
 		//ShnID:       1,
 		Amount:    1,
@@ -152,7 +139,7 @@ func TestCreateItem_MissingValues(t *testing.T) {
 	}
 
 	// missing character_id
-	_, err = NewItem(db, ItemParams{
+	_, err = NewItem(ItemParams{
 		//CharacterID: 1,
 		ShnID:     1,
 		Amount:    1,
@@ -168,7 +155,7 @@ func TestCreateItem_CharacterNotExist(t *testing.T) {
 	cleanDB()
 	//newCharacter("mage")
 
-	_, err := NewItem(db, ItemParams{
+	_, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -198,7 +185,7 @@ func TestCreateItem_BadAmount(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
-	_, err := NewItem(db, ItemParams{
+	_, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -223,7 +210,7 @@ func TestCreateItem_BadAmount(t *testing.T) {
 	}
 
 	// 0 amount
-	_, err = NewItem(db, ItemParams{
+	_, err = NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -294,7 +281,7 @@ func TestUpdateItem_Ok(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
-	item, err := NewItem(db, ItemParams{
+	item, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Amount:      1,
@@ -305,7 +292,7 @@ func TestUpdateItem_Ok(t *testing.T) {
 		t.Error(err)
 	}
 
-	uItem, err := item.Update(db, ItemParams{
+	uItem, err := item.Update(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   true,
@@ -332,7 +319,7 @@ func TestUpdateItem_NoAttributes(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
-	item, err := NewItem(db, ItemParams{
+	item, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Amount:      1,
@@ -343,7 +330,7 @@ func TestUpdateItem_NoAttributes(t *testing.T) {
 		t.Error(err)
 	}
 
-	_, err = item.Update(db, ItemParams{
+	_, err = item.Update(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   true,
@@ -359,7 +346,7 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
-	item, err := NewItem(db, ItemParams{
+	item, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -370,7 +357,7 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = item.Update(db, ItemParams{
+	_, err = item.Update(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -395,7 +382,7 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 	}
 
 	// zero amount
-	_, err = item.Update(db, ItemParams{
+	_, err = item.Update(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -424,7 +411,7 @@ func TestUpdateItem_DistinctShnID(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
-	item, err := NewItem(db, ItemParams{
+	item, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -435,7 +422,7 @@ func TestUpdateItem_DistinctShnID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = item.Update(db, ItemParams{
+	_, err = item.Update(ItemParams{
 		CharacterID: 1,
 		ShnID:       2,
 		Stackable:   false,
@@ -464,7 +451,7 @@ func TestItemSlot_MoveToUnusedSlot(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
-	item0, err := NewItem(db, ItemParams{
+	item0, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -475,18 +462,7 @@ func TestItemSlot_MoveToUnusedSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = item0.MoveTo(db, BagInventory, 1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var uItem0 Item
-	err = db.Model(&uItem0).
-		Where("character_id = ?", 1).
-		Where("inventory_type = ?", BagInventory).
-		Where("slot = ?", 1).
-		Select()
-
+	uItem0, err := item0.MoveTo(BagInventory, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -494,8 +470,6 @@ func TestItemSlot_MoveToUnusedSlot(t *testing.T) {
 	if uItem0.ID != item0.ID {
 		t.Fatalf("expected id %v, got %v", item0.ID, uItem0.ID)
 	}
-
-	//t.Fail()
 }
 
 func TestItemSlot_MoveToUsedSlot(t *testing.T) {
@@ -503,7 +477,7 @@ func TestItemSlot_MoveToUsedSlot(t *testing.T) {
 	newCharacter("mage")
 
 	// item 1, slot 0
-	item0, err := NewItem(db, ItemParams{
+	item0, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -515,7 +489,7 @@ func TestItemSlot_MoveToUsedSlot(t *testing.T) {
 	}
 
 	// item 2, slot 1
-	item1, err := NewItem(db, ItemParams{
+	item1, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -526,7 +500,7 @@ func TestItemSlot_MoveToUsedSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = item0.MoveTo(db, BagInventory, 1)
+	_, err = item0.MoveTo(BagInventory, 1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -569,7 +543,7 @@ func TestSoftDeleteItem(t *testing.T) {
 	newCharacter("mage")
 
 	// item 1, slot 0
-	_, err := NewItem(db, ItemParams{
+	_, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -580,7 +554,7 @@ func TestSoftDeleteItem(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = DeleteItem(db, 1)
+	err = DeleteItem(1)
 
 	if err != nil {
 		t.Fatal(err)
@@ -604,7 +578,7 @@ func TestInventoryFull(t *testing.T) {
 	newCharacter("mage")
 
 	for i := BagInventoryMin; i < BagInventoryMax; i++ {
-		_, err := NewItem(db, ItemParams{
+		_, err := NewItem(ItemParams{
 			CharacterID: 1,
 			ShnID:       1,
 			Stackable:   false,
@@ -617,7 +591,7 @@ func TestInventoryFull(t *testing.T) {
 
 	}
 
-	_, err := NewItem(db, ItemParams{
+	_, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -649,7 +623,7 @@ func TestInventory_AutomaticSlot(t *testing.T) {
 	// delete 2nd item
 	// try to create another item
 	// the slot should be the one freed up by deleting the 2nd item
-	_, err := NewItem(db, ItemParams{
+	_, err := NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -660,7 +634,7 @@ func TestInventory_AutomaticSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = NewItem(db, ItemParams{
+	_, err = NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -671,7 +645,7 @@ func TestInventory_AutomaticSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = NewItem(db, ItemParams{
+	_, err = NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,
@@ -684,13 +658,13 @@ func TestInventory_AutomaticSlot(t *testing.T) {
 
 	//
 
-	err = DeleteItem(db, 2)
+	err = DeleteItem(2)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = NewItem(db, ItemParams{
+	_, err = NewItem(ItemParams{
 		CharacterID: 1,
 		ShnID:       1,
 		Stackable:   false,

@@ -7,6 +7,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -15,7 +16,9 @@ import (
 	"path/filepath"
 )
 
-var log = shinelog.NewLogger("zone", "./output", logrus.DebugLevel)
+var (
+	log = shinelog.NewLogger("zone", "./output", logrus.DebugLevel)
+)
 
 // Start initializes the TCP server and all the needed services and configuration for the zone
 func Start(cmd *cobra.Command, args []string) {
@@ -45,7 +48,7 @@ func Start(cmd *cobra.Command, args []string) {
 
 	z.load()
 
-	db := database.Connection(ctx, database.ConnectionParams{
+	persistence.InitDB(database.ConnectionParams{
 		User:     viper.GetString("world_database.db_user"),
 		Password: viper.GetString("world_database.db_password"),
 		Host:     viper.GetString("world_database.host"),
@@ -54,9 +57,10 @@ func Start(cmd *cobra.Command, args []string) {
 		Schema:   viper.GetString("world_database.schema"),
 	})
 
-	defer db.Close()
+	defer persistence.CloseDB()
 
-	z.worldDB = db
+
+	//z.worldDB = db
 
 	s := networking.Settings{}
 
