@@ -1,6 +1,7 @@
 package shn
 
 import (
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/loader"
 	"log"
 	"os"
 	"reflect"
@@ -36,7 +37,7 @@ func TestLinkedFiles(t *testing.T) {
 		t.Run(reflect.TypeOf(file).String(), func(t *testing.T) {
 			//t.Parallel()
 
-			f, ok := file.(FileDependency)
+			f, ok := file.(loader.FileDependency)
 
 			if !ok {
 				t.Error("file type does not implement interface FileDependency")

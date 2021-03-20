@@ -178,10 +178,6 @@ func (s *ShineItemInfoServer) itemInfoServerMismatchedIndexID(iis *ShineItemInfo
 
 	for _, i := range s.ShineRow {
 
-		//var (
-		//	id uint16
-		//	index string
-		//)
 		match := false
 		for _, j := range iis.ShineRow {
 			if i.InxName == j.InxName && uint16(i.ID) == j.ID {

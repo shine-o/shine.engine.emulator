@@ -5,6 +5,7 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"io/ioutil"
 	"os"
@@ -13,6 +14,8 @@ import (
 
 type testParams struct {
 	db * pg.DB
+	itemInfo * shn.ShineItemInfo
+	itemInfoServer * shn.ShineItemInfoServer
 }
 
 var tp = testParams{}

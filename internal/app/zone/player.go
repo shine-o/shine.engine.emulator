@@ -32,7 +32,7 @@ type player struct {
 	view     playerView
 	stats    playerStats
 	state    playerState
-	inventories    playerInventories
+	inventories   * playerInventories
 	money    playerMoney
 	titles   playerTitles
 	quests   playerQuests
@@ -378,7 +378,7 @@ func (p *player) load(name string) error {
 	view := make(chan playerView)
 	state := make(chan playerState)
 	stats := make(chan playerStats)
-	inventories := make(chan playerInventories)
+	inventories := make(chan *playerInventories)
 	money := make(chan playerMoney)
 	titles := make(chan playerTitles)
 	quests := make(chan playerQuests)
@@ -755,10 +755,7 @@ type itemSlotChange struct {
 	to int
 }
 
-func (p *player) equip(i item, slot shn.ItemEquipEnum) (itemSlotChange, error) {
-	//p.RLock()
-	//defer p.RUnlock()
-
+func (p *player) equip(i * item, slot shn.ItemEquipEnum) (itemSlotChange, error) {
 	slotChange := itemSlotChange{
 		from: i.pItem.Slot,
 		to:   0,
@@ -778,21 +775,13 @@ func (p *player) equip(i item, slot shn.ItemEquipEnum) (itemSlotChange, error) {
 
 	slotChange.to = int(slot)
 
-	p.Lock()
+	p.inventories.Lock()
 	i.pItem = uItem
-	p.Unlock()
+	p.inventories.Unlock()
 
 	return slotChange, nil
 }
 
-func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
-	return &structs.ProtoAvatarShapeInfo{
-		BF:        1 | pv.class<<2 | pv.gender<<7,
-		HairType:  pv.hairType,
-		HairColor: pv.hairColour,
-		FaceShape: pv.faceType,
-	}
-}
 
 func (pi *playerInventories) ncCharClientItemCmd() []structs.NcCharClientItemCmd {
 	var ncs []structs.NcCharClientItemCmd

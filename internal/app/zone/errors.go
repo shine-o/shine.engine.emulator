@@ -4,7 +4,6 @@ import "fmt"
 
 const (
 	ItemEquipFailed ErrorCodeZone = iota
-
 )
 
 //go:generate stringer -type=ErrorCodeZone

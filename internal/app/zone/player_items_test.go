@@ -57,32 +57,54 @@ func newCharacter(class string) *persistence.Character {
 func TestLoadPlayerInventory_BagInventory(t *testing.T) {
 	// p.loadInventory(BagInventory)
 }
-
-func TestNewItem_Success(t *testing.T) {
-	//char := newCharacter("mage")
-	//
-	//player := &player{
-	//	baseEntity: baseEntity{
-	//		handle:   1,
-	//	},
-	//	char: char,
-	//}
-	//
-	//item := item{
-	//	pItem: &persistence.Item{
-	//		InventoryType: persistence.EquippedInventory,
-	//		//Slot:          0,
-	//		CharacterID:   char.ID,
-	//		ShnID:         1,
-	//		Stackable:     false,
-	//		Amount:        1,
-	//	},
-	//}
-	//
-	//p.newItem()
-}
-
-
+//
+//func TestNewItem_Success(t *testing.T) {
+//	char := newCharacter("mage")
+//
+//	player := &player{
+//		baseEntity: baseEntity{
+//			handle:   1,
+//		},
+//		char: char,
+//	}
+//
+//	item := item{
+//		pItem: &persistence.Item{
+//			InventoryType: persistence.EquippedInventory,
+//			//Slot:          0,
+//			CharacterID:   char.ID,
+//			ShnID:         1,
+//			Stackable:     false,
+//			Amount:        1,
+//		},
+//	}
+//
+//	player.newItem(item)
+//}
+//
+//func TestNewItem_WithAttributes(t *testing.T) {
+//	char := newCharacter("mage")
+//
+//	player := &player{
+//		baseEntity: baseEntity{
+//			handle:   1,
+//		},
+//		char: char,
+//	}
+//
+//	item := item{
+//		pItem: &persistence.Item{
+//			InventoryType: persistence.EquippedInventory,
+//			//Slot:          0,
+//			CharacterID:   char.ID,
+//			ShnID:         1,
+//			Stackable:     false,
+//			Amount:        1,
+//		},
+//	}
+//
+//	player.newItem(item)
+//}
 
 func TestNewItem_BadItemID(t *testing.T) {
 
@@ -165,7 +187,7 @@ func TestItemEquip_Success(t *testing.T) {
 		},
 	}
 
-	item := item{}
+	item := &item{}
 
 	itemSlotChange, err := player.equip(item, shn.ItemEquipHat)
 
@@ -181,7 +203,7 @@ func TestItemEquip_Success(t *testing.T) {
 		t.Fail()
 	}
 
-	equippedItem, ok := player.inventories.equipped.items[uint32(shn.ItemEquipHat)]
+	equippedItem, ok := player.inventories.equipped.items[int(shn.ItemEquipHat)]
 
 	if !ok {
 		t.Fail()
