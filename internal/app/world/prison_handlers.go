@@ -3,7 +3,7 @@ package world
 import (
 	"context"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
 // NcPrisonGetReq client asks for how much time in prison ô_o

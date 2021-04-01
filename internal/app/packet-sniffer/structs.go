@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/go-restruct/restruct"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"io/ioutil"
 	"os"
 	"path/filepath"

@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
 // NcAvatarCreateReq handles character creation request

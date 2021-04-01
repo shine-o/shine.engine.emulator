@@ -1,8 +1,8 @@
-package blocks
+package data
 
 import (
 	"bytes"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"golang.org/x/image/bmp"
 	"image"
 	"image/color"

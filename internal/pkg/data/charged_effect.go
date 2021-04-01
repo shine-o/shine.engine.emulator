@@ -1,4 +1,4 @@
-package shn
+package data
 
 type ShineChargedEffect struct {
 	DataSize    uint32

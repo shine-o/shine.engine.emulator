@@ -5,7 +5,7 @@ import (
 	zm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"reflect"
 )
 

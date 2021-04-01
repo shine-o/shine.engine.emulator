@@ -3,7 +3,7 @@ package zone
 import "testing"
 
 func TestLoadNpcItemList(t *testing.T) {
-	
+
 }
 
 func TestLoadNpcItemList_IteratePages(t *testing.T) {

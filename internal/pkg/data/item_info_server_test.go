@@ -1,12 +1,10 @@
-package shn
+package data
 
-import (
-	"testing"
-)
+import "testing"
 
-func TestItemInfo(t *testing.T) {
-	var file ShineItemInfo
-	err := Load(filePath+"/shn/ItemInfo.shn", &file)
+func TestItemInfoServer(t *testing.T) {
+	var file ShineItemInfoServer
+	err := Load(filePath+"/shn/ItemInfoServer.shn", &file)
 	if err != nil {
 		t.Error(err)
 	}

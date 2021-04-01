@@ -1,5 +1,4 @@
-package loader
-
+package data
 
 // Some files have linked data in other files
 // Related data is linked using an identifier (ID, InxName, ItemID, ItemOptions, MobID, etc..)

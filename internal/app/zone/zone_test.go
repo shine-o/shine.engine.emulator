@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/utils"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"reflect"
 	"testing"
 )

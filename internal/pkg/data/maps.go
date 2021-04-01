@@ -1,28 +1,16 @@
-package world
+package data
 
 import (
-	"encoding/csv"
 	"fmt"
-	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/blocks"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/utils"
-	"os"
 	"strconv"
 	"sync"
 )
 
-var log *logger.Logger
-
-func init() {
-	log = logger.Init("maps logger", true, false, os.Stdout)
-}
-
 type Map struct {
 	ID int `struct:"int32"`
 	*Attributes
-	Info *shn.MapInfo
-	SHBD *blocks.SHBD
+	Info *MapInfo
+	SHBD *SHBD
 }
 
 type Attributes struct {
@@ -64,7 +52,7 @@ type Attributes struct {
 
 type data struct {
 	attributes  map[int]Attributes
-	mapInfo     *shn.ShineMapInfo
+	mapInfo     *ShineMapInfo
 	shineFolder string
 }
 
@@ -81,23 +69,23 @@ func LoadMapData(shineFolder string) (map[int]*Map, error) {
 	}
 
 	var attributes map[int]Attributes
-	var mapInfo shn.ShineMapInfo
+	var mapInfo ShineMapInfo
 
 	mapFiles := []string{"NormalMaps.txt", "DungeonMaps.txt", "KingdomQuestMaps.txt", "GuildTournamentMaps.txt"}
 
-	attributesPath, err := utils.ValidPath(shineFolder + "/world/" + "MapAttributes.txt")
+	attributesPath, err := ValidPath(shineFolder + "/world/" + "MapAttributes.txt")
 
 	attributes, err = loadAttributes(attributesPath)
 	if err != nil {
 		return allMaps.data, err
 	}
 
-	mapInfoPath, err := utils.ValidPath(shineFolder + "/shn/" + "MapInfo.shn")
+	mapInfoPath, err := ValidPath(shineFolder + "/shn/" + "MapInfo.shn")
 	if err != nil {
 		return allMaps.data, err
 	}
 
-	err = shn.Load(mapInfoPath, &mapInfo)
+	err = Load(mapInfoPath, &mapInfo)
 	if err != nil {
 		return allMaps.data, err
 	}
@@ -112,7 +100,7 @@ func LoadMapData(shineFolder string) (map[int]*Map, error) {
 
 	for _, file := range mapFiles {
 		var maps []Map
-		mapsPath, err := utils.ValidPath(shineFolder + "/world/" + file)
+		mapsPath, err := ValidPath(shineFolder + "/world/" + file)
 		maps, err = loadMaps(mapsPath)
 
 		if err != nil {
@@ -151,15 +139,15 @@ func (md *data) loadData(wg *sync.WaitGroup, m Map, allMaps *maps) {
 	}
 
 	// load shbd
-	var s *blocks.SHBD
+	var s *SHBD
 
-	shbdPath, err := utils.ValidPath(md.shineFolder + "/blocks/" + m.Info.MapName.Name + ".shbd")
+	shbdPath, err := ValidPath(md.shineFolder + "/blocks/" + m.Info.MapName.Name + ".shbd")
 	if err != nil {
 		log.Errorf("shbd file found for normal map entry with ID %v, ignoring map %v", m.ID, err)
 		return
 	}
 
-	s, err = blocks.LoadSHBDFile(shbdPath)
+	s, err = LoadSHBDFile(shbdPath)
 	if err != nil {
 		log.Errorf("failed to load shbd file for map entry with ID %v, ignoring map %v", m.ID, err)
 	}
@@ -169,24 +157,6 @@ func (md *data) loadData(wg *sync.WaitGroup, m Map, allMaps *maps) {
 	allMaps.Lock()
 	allMaps.data[m.ID] = &m
 	allMaps.Unlock()
-}
-
-func loadTxtFile(filePath string) ([][]string, error) {
-	var data [][]string
-	txtFile, err := os.Open(filePath)
-	if err != nil {
-		return data, err
-	}
-	reader := csv.NewReader(txtFile)
-
-	reader.Comma = '\t'
-	reader.FieldsPerRecord = -1
-
-	data, err = reader.ReadAll()
-	if err != nil {
-		return data, err
-	}
-	return data, err
 }
 
 func loadMaps(filePath string) ([]Map, error) {

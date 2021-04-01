@@ -10,8 +10,8 @@ const (
 	//lengthY = 512
 	//lengthX = 256
 	//lengthY = 256
-	lengthX = 225
-	lengthY = 225
+	lengthX     = 225
+	lengthY     = 225
 	maxAttempts = 1500
 )
 

@@ -1,6 +1,6 @@
 package zone
 
-import "github.com/shine-o/shine.engine.emulator/pkg/structs"
+import "github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 
 type playerHandleEvent struct {
 	player  *player

@@ -1,4 +1,4 @@
-package shn
+package data
 
 type ShineMiniHouse struct {
 	DataSize    uint32

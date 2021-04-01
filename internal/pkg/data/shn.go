@@ -1,6 +1,4 @@
-package shn
-
-var filePath = "../../../../files"
+package data
 
 //enum SHN_DATA_FILE_INDEX
 //{

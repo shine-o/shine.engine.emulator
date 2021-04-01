@@ -1,7 +1,7 @@
 package zone
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"sync"
 )
@@ -22,13 +22,13 @@ type itemBox struct {
 
 type item struct {
 	//slot uint16
-	pItem * persistence.Item
+	pItem    *persistence.Item
 	itemData itemData
 }
 
 type itemData struct {
-	itemInfo       *shn.ItemInfo
-	itemInfoServer *shn.ItemInfoServer
+	itemInfo       *data.ItemInfo
+	itemInfoServer *data.ItemInfoServer
 	// gradeItemOptions
 	// itemUseEffect
 	// ... etc
@@ -54,4 +54,3 @@ func (p *player) itemData(items chan<- *playerInventories, c *persistence.Charac
 	}
 	items <- i
 }
-

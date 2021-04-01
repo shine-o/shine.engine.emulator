@@ -1,9 +1,9 @@
 package zone
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"sync"
 	"time"
 )
@@ -24,21 +24,21 @@ const (
 
 type player struct {
 	baseEntity
-	players  map[uint16]*player
-	monsters map[uint16]*monster
-	npcs     map[uint16]*npc
-	char     *persistence.Character
-	conn     playerConnection
-	view     playerView
-	stats    playerStats
-	state    playerState
-	inventories   * playerInventories
-	money    playerMoney
-	titles   playerTitles
-	quests   playerQuests
-	skills   []skill
-	passives []passive
-	tickers  []*time.Ticker
+	players     map[uint16]*player
+	monsters    map[uint16]*monster
+	npcs        map[uint16]*npc
+	char        *persistence.Character
+	conn        playerConnection
+	view        playerView
+	stats       playerStats
+	state       playerState
+	inventories *playerInventories
+	money       playerMoney
+	titles      playerTitles
+	quests      playerQuests
+	skills      []skill
+	passives    []passive
+	tickers     []*time.Ticker
 	targeting
 	sync.RWMutex
 	justSpawned bool
@@ -749,13 +749,12 @@ func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
 	}
 }
 
-
 type itemSlotChange struct {
 	from int
-	to int
+	to   int
 }
 
-func (p *player) equip(i * item, slot shn.ItemEquipEnum) (itemSlotChange, error) {
+func (p *player) equip(i *item, slot data.ItemEquipEnum) (itemSlotChange, error) {
 	slotChange := itemSlotChange{
 		from: i.pItem.Slot,
 		to:   0,
@@ -765,9 +764,9 @@ func (p *player) equip(i * item, slot shn.ItemEquipEnum) (itemSlotChange, error)
 
 	if err != nil {
 		return itemSlotChange{}, Err{
-			Code:    ItemEquipFailed,
+			Code: ItemEquipFailed,
 			Details: ErrDetails{
-				"err": err,
+				"err":     err,
 				"pHandle": p.handle,
 			},
 		}
@@ -781,7 +780,6 @@ func (p *player) equip(i * item, slot shn.ItemEquipEnum) (itemSlotChange, error)
 
 	return slotChange, nil
 }
-
 
 func (pi *playerInventories) ncCharClientItemCmd() []structs.NcCharClientItemCmd {
 	var ncs []structs.NcCharClientItemCmd

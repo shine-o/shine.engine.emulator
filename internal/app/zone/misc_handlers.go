@@ -3,7 +3,7 @@ package zone
 import (
 	"context"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"github.com/spf13/viper"
 )
 

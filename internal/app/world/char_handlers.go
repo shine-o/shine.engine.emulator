@@ -3,7 +3,7 @@ package world
 import (
 	"context"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
 // NcCharLoginReq handles a petition to login to the zone where the character's location map is running

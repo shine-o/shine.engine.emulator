@@ -2,9 +2,9 @@ package zone
 
 import (
 	"fmt"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/world"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"reflect"
 	"strings"
 	"sync"
@@ -127,7 +127,7 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 			nc.MobID = n.mobInfo.ID
 			if isPortal(n) {
 
-				var md *world.Map
+				var md *data.Map
 
 				for i, m := range mapData {
 					if m.Info.MapName.Name == n.npcData.ShinePortal.ServerMapIndex {
@@ -948,8 +948,8 @@ func isPortal(n *npc) bool {
 	return false
 }
 
-func portalMatchesLocation(portal *world.ShinePortal, next *location) bool {
-	var md *world.Map
+func portalMatchesLocation(portal *data.ShinePortal, next *location) bool {
+	var md *data.Map
 	for i, m := range mapData {
 		if m.MapInfoIndex == portal.ClientMapIndex {
 			md = mapData[i]

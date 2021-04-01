@@ -1,8 +1,4 @@
-package shn
-
-import (
-	"reflect"
-)
+package data
 
 type ShineItemInfo struct {
 	DataSize    uint32
@@ -669,69 +665,38 @@ const (
 	MaxItemFuncEnum
 )
 
-func (s *ShineItemInfo) MissingIndexes(filePath string) (map[string][]string, error) {
-	// have a function for each dependent file separately
-	// ItemInfoServer
-	var res = make(map[string][]string)
+func (s *ShineItemInfo) MissingIdentifiers(filePath string) (Files, error) {
+	var (
+		res = Files{}
+		iis = &ShineItemInfoServer{}
+	)
 
-	var iis ShineItemInfoServer
-	err := Load(filePath+"/shn/ItemInfoServer.shn", &iis)
+	res["ItemInfoServer.shn"] = Identifiers{}
+	err := Load(filePath+"/shn/ItemInfoServer.shn", iis)
+
 	if err != nil {
 		return res, err
 	}
 
-	res[reflect.TypeOf(iis).String()] = s.missingItemInfoServerIndex(&iis)
+	itemInfoServerDeps(s, iis, res)
 
 	return res, nil
 }
 
-func (s *ShineItemInfo) MissingIDs(filePath string) (map[string][]uint16, error) {
-	var res = make(map[string][]uint16)
-	var iis ShineItemInfoServer
-	err := Load(filePath+"/shn/ItemInfoServer.shn", &iis)
-	if err != nil {
-		return res, err
-	}
-	res[reflect.TypeOf(iis).String()] = s.missingItemInfoServerIDs(&iis)
-	return res, nil
-}
-
-func (s *ShineItemInfo) missingItemInfoServerIndex(iis *ShineItemInfoServer) []string {
-	var res []string
-
+func itemInfoServerDeps(s *ShineItemInfo, iis *ShineItemInfoServer, res Files) {
 	for _, i := range s.ShineRow {
 
-		hasIndex := false
+		ok := false
 		for _, j := range iis.ShineRow {
-			if i.InxName == j.InxName {
-				hasIndex = true
+			if i.InxName == j.InxName && i.ID == uint16(j.ID) {
+				ok = true
 				break
 			}
 		}
 
-		if !hasIndex {
-			res = append(res, i.InxName)
+		if !ok {
+			res["ItemInfoServer.shn"]["ID"] = append(res["ItemInfoServer.shn"]["ID"], i.ID)
+			res["ItemInfoServer.shn"]["InxName"] = append(res["ItemInfoServer.shn"]["InxName"], i.InxName)
 		}
 	}
-	return res
-}
-
-func (s *ShineItemInfo) missingItemInfoServerIDs(iis *ShineItemInfoServer) []uint16 {
-	var res []uint16
-
-	for _, i := range s.ShineRow {
-
-		hasID := false
-		for _, j := range iis.ShineRow {
-			if i.ID == uint16(j.ID) {
-				hasID = true
-				break
-			}
-		}
-
-		if !hasID {
-			res = append(res, i.ID)
-		}
-	}
-	return res
 }

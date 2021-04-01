@@ -1,26 +1,16 @@
-package mobs
+package data
 
 import (
-	"encoding/csv"
-	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/utils"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 )
 
-var log *logger.Logger
-
-func init() {
-	log = logger.Init("maps logger", true, false, os.Stdout)
-}
-
 type MonsterData struct {
 	MapRegens     map[string]MonsterRegenTable
-	MobInfo       shn.ShineMobInfo
-	MobInfoServer shn.ShineMobInfoServer
+	MobInfo       ShineMobInfo
+	MobInfoServer ShineMobInfoServer
 }
 
 type MonsterRegenTable struct {
@@ -46,27 +36,27 @@ type RegenEntryMob struct {
 // persist monsterData
 func LoadMonsterData(shineFolder string) (MonsterData, error) {
 	var monsterData MonsterData
-	var mobInfo shn.ShineMobInfo
-	var mobInfoServer shn.ShineMobInfoServer
+	var mobInfo ShineMobInfo
+	var mobInfoServer ShineMobInfoServer
 
-	mobInfoPath, err := utils.ValidPath(shineFolder + "/shn/" + "MobInfo.shn")
+	mobInfoPath, err := ValidPath(shineFolder + "/shn/" + "MobInfo.shn")
 	if err != nil {
 		return monsterData, err
 	}
 
-	err = shn.Load(mobInfoPath, &mobInfo)
-
-	if err != nil {
-		return monsterData, err
-	}
-
-	mobInfoServerPath, err := utils.ValidPath(shineFolder + "/shn/" + "MobInfoServer.shn")
+	err = Load(mobInfoPath, &mobInfo)
 
 	if err != nil {
 		return monsterData, err
 	}
 
-	err = shn.Load(mobInfoServerPath, &mobInfoServer)
+	mobInfoServerPath, err := ValidPath(shineFolder + "/shn/" + "MobInfoServer.shn")
+
+	if err != nil {
+		return monsterData, err
+	}
+
+	err = Load(mobInfoServerPath, &mobInfoServer)
 
 	if err != nil {
 		return monsterData, err
@@ -94,7 +84,7 @@ func loadRegenData(shineFolder string) (map[string]MonsterRegenTable, error) {
 	var files []string
 	root := shineFolder + "/monsters/regens"
 
-	root, err := utils.ValidPath(root)
+	root, err := ValidPath(root)
 
 	if err != nil {
 		return mapRegens, err
@@ -280,20 +270,3 @@ func loadRegenData(shineFolder string) (map[string]MonsterRegenTable, error) {
 	return mapRegens, err
 }
 
-func loadTxtFile(filePath string) ([][]string, error) {
-	var data [][]string
-	txtFile, err := os.Open(filePath)
-	if err != nil {
-		return data, err
-	}
-	reader := csv.NewReader(txtFile)
-
-	reader.Comma = '\t'
-	reader.FieldsPerRecord = -1
-
-	data, err = reader.ReadAll()
-	if err != nil {
-		return data, err
-	}
-	return data, err
-}

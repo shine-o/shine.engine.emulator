@@ -6,7 +6,8 @@ import (
 	"github.com/go-pg/pg/v10"
 	"github.com/google/logger"
 	"github.com/google/uuid"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"io/ioutil"
 	"regexp"
 	"time"
@@ -149,9 +150,9 @@ const (
 func Validate(userID uint64, req *structs.NcAvatarCreateReq) error {
 
 	if req.SlotNum > 5 {
-		return Err{
-			Code: ErrCharInvalidSlot,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrCharInvalidSlot,
+			Details: errors.ErrDetails{
 				"userID":   userID,
 				"slotNum":  req.SlotNum,
 				"charName": req.Name.Name,
@@ -166,9 +167,9 @@ func Validate(userID uint64, req *structs.NcAvatarCreateReq) error {
 
 	if err == nil {
 		//return ErrNameTaken
-		return Err{
-			Code: ErrCharNameTaken,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrCharNameTaken,
+			Details: errors.ErrDetails{
 				"userID":   userID,
 				"charName": req.Name.Name,
 			},
@@ -179,9 +180,9 @@ func Validate(userID uint64, req *structs.NcAvatarCreateReq) error {
 	err = db.Model(&chars).Where("user_id = ?", userID).Select()
 
 	if len(chars) == 6 {
-		return Err{
-			Code: ErrCharNoSlot,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrCharNoSlot,
+			Details: errors.ErrDetails{
 				"userID": userID,
 			},
 		}
@@ -189,9 +190,9 @@ func Validate(userID uint64, req *structs.NcAvatarCreateReq) error {
 
 	alphaNumeric := regexp.MustCompile(`^[A-Za-z0-9]+$`).MatchString
 	if !alphaNumeric(name) {
-		return Err{
-			Code: ErrCharInvalidName,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrCharInvalidName,
+			Details: errors.ErrDetails{
 				"userID":   userID,
 				"charName": req.Name.Name,
 			},
@@ -204,9 +205,9 @@ func Validate(userID uint64, req *structs.NcAvatarCreateReq) error {
 	class := (req.Shape.BF >> 2) & 31
 
 	if isMale > 1 || isMale < 0 {
-		return Err{
-			Code: ErrCharInvalidClassGender,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrCharInvalidClassGender,
+			Details: errors.ErrDetails{
 				"userID":   userID,
 				"charName": req.Name.Name,
 				"bfValue":  req.Shape.BF,
@@ -217,9 +218,9 @@ func Validate(userID uint64, req *structs.NcAvatarCreateReq) error {
 	}
 
 	if class < 1 || class > 27 {
-		return Err{
-			Code: ErrCharInvalidClassGender,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrCharInvalidClassGender,
+			Details: errors.ErrDetails{
 				"userID":   userID,
 				"charName": req.Name.Name,
 				"bfValue":  req.Shape.BF,
@@ -253,9 +254,9 @@ func New(userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
 	_, err = tx.Model(char).Returning("*").Insert()
 
 	if err != nil {
-		return char, Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return char, errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -270,9 +271,9 @@ func New(userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
 		initialEquippedItems()
 
 	if _, err = tx.Model(char.Appearance).Returning("*").Insert(); err != nil {
-		return char, Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return char, errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -280,9 +281,9 @@ func New(userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
 	}
 
 	if _, err = tx.Model(char.Attributes).Returning("*").Insert(); err != nil {
-		return char, Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return char, errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -290,9 +291,9 @@ func New(userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
 	}
 
 	if _, err = tx.Model(char.Location).Returning("*").Insert(); err != nil {
-		return char, Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return char, errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -300,9 +301,9 @@ func New(userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
 	}
 
 	if _, err = tx.Model(char.Options).Returning("*").Insert(); err != nil {
-		return char, Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return char, errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -310,9 +311,9 @@ func New(userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
 	}
 
 	if _, err = tx.Model(char.EquippedItems).Returning("*").Insert(); err != nil {
-		return char, Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return char, errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -366,7 +367,7 @@ func GetBySlot(slot byte, userID uint64) (Character, error) {
 	return c, err
 }
 
-func UserCharacters(id uint64) ([] * Character, error) {
+func UserCharacters(id uint64) ([]*Character, error) {
 	var chars []*Character
 
 	err := db.Model(&chars).
@@ -435,9 +436,9 @@ func UpdateLocation(c *Character) error {
 func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
 	tx, err := db.Begin()
 	if err != nil {
-		return Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err": err,
 			},
 		}
@@ -449,9 +450,9 @@ func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
 	err = tx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", req.Slot).Select()
 
 	if err != nil {
-		return Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -461,9 +462,9 @@ func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
 	name := fmt.Sprintf("%v@%v", char.Name, uuid.New().String())
 	_, err = tx.Model((*Character)(nil)).Set("name = ?", name).Where("user_id = ?", userID).Where("slot = ? ", req.Slot).Update()
 	if err != nil {
-		return Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -471,9 +472,9 @@ func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
 	}
 
 	if _, err = tx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", req.Slot).Delete(); err != nil {
-		return Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -481,9 +482,9 @@ func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
 	}
 
 	if _, err = tx.Model(char.Appearance).Where("character_id = ?", char.ID).Delete(); err != nil {
-		return Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -491,9 +492,9 @@ func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
 	}
 
 	if _, err = tx.Model(char.Attributes).Where("character_id = ?", char.ID).Delete(); err != nil {
-		return Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -501,9 +502,9 @@ func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
 	}
 
 	if _, err = tx.Model(char.Location).Where("character_id = ?", char.ID).Delete(); err != nil {
-		return Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -511,9 +512,9 @@ func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
 	}
 
 	if _, err = tx.Model(char.EquippedItems).Where("character_id = ?", char.ID).Delete(); err != nil {
-		return Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},

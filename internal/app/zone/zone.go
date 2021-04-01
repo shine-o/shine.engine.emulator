@@ -6,8 +6,7 @@ import (
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	mobs "github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/monsters"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/world"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	zm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	"github.com/spf13/viper"
 	"sync"
@@ -195,9 +194,9 @@ func (z *zone) run() {
 // fire a query event struct, which will be populated with the requested data by a worker (event receiver)
 var (
 	zoneEvents  sendEvents
-	monsterData mobs.MonsterData
-	mapData     map[int]*world.Map
-	npcData     *world.NPC
+	monsterData data.MonsterData
+	mapData     map[int]*data.Map
+	npcData     *data.NPC
 )
 
 func loadGameData() {
@@ -209,7 +208,7 @@ func loadGameData() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		md, err := mobs.LoadMonsterData(shinePath)
+		md, err := data.LoadMonsterData(shinePath)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -219,7 +218,7 @@ func loadGameData() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		md, err := world.LoadMapData(shinePath)
+		md, err := data.LoadMapData(shinePath)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -229,7 +228,7 @@ func loadGameData() {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		nd, err := world.LoadNPCData(shinePath)
+		nd, err := data.LoadNPCData(shinePath)
 		if err != nil {
 			log.Fatal(err)
 		}

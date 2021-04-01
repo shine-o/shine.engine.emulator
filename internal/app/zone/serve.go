@@ -59,9 +59,6 @@ func Start(cmd *cobra.Command, args []string) {
 
 	defer persistence.CloseDB()
 
-
-	//z.worldDB = db
-
 	s := networking.Settings{}
 
 	xk, err := hex.DecodeString(viper.GetString("crypt.xorKey"))

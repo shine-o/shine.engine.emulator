@@ -1,7 +1,6 @@
-package world
+package data
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/utils"
 	"strconv"
 	"strings"
 )
@@ -46,7 +45,7 @@ func LoadNPCData(shineFolder string) (*NPC, error) {
 		portals []*ShinePortal
 	)
 
-	filePath, err := utils.ValidPath(shineFolder + "/world/" + "NPC.txt")
+	filePath, err := ValidPath(shineFolder + "/world/" + "NPC.txt")
 
 	if err != nil {
 		return npc, err

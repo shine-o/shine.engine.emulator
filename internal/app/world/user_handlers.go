@@ -3,7 +3,7 @@ package world
 import (
 	"context"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
 // NcUserLoginWorldReq handles the player's attempt to login to the server

@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"time"
 )
 
@@ -117,9 +118,9 @@ func NewItem(params ItemParams) (*Item, error) {
 		Insert()
 
 	if err != nil {
-		return item, Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return item, errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -152,9 +153,9 @@ func DeleteItem(itemID int) error {
 	_, err = tx.Model((*ItemAttributes)(nil)).Where("item_id = ?", itemID).Delete()
 
 	if err != nil {
-		return Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":    err,
 				"txErr":  tx.Rollback(),
 				"itemID": itemID,
@@ -165,9 +166,9 @@ func DeleteItem(itemID int) error {
 	_, err = tx.Model((*Item)(nil)).Where("id = ?", itemID).Delete()
 
 	if err != nil {
-		return Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":    err,
 				"txErr":  tx.Rollback(),
 				"itemID": itemID,
@@ -183,9 +184,9 @@ func (i Item) Update(params ItemParams) (*Item, error) {
 	err := validateItemParams(params)
 
 	if params.ShnID != i.ShnID {
-		return &i, Err{
-			Code: ErrItemDistinctShnID,
-			Details: ErrDetails{
+		return &i, errors.Err{
+			Code: errors.PersistenceErrItemDistinctShnID,
+			Details: errors.ErrDetails{
 				"originalShnID": i.ShnID,
 				"newShnID":      params.ShnID,
 			},
@@ -217,9 +218,9 @@ func (i Item) Update(params ItemParams) (*Item, error) {
 		Update()
 
 	if err != nil {
-		return &i, Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return &i, errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -243,9 +244,9 @@ func (i Item) Update(params ItemParams) (*Item, error) {
 	}
 
 	if err != nil {
-		return &i, Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return &i, errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -259,9 +260,9 @@ func (i Item) Update(params ItemParams) (*Item, error) {
 		Select()
 
 	if err != nil {
-		return &i, Err{
-			Code: ErrDB,
-			Details: ErrDetails{
+		return &i, errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -301,15 +302,15 @@ func (i Item) MoveTo(inventoryType int, slot int) (*Item, error) {
 		i.Slot = 0
 		_, err := tx.Model(&i).WherePK().Update()
 		if err != nil {
-			return &i, Err{
-				Code: ErrItemSlotUpdate,
-				Details: ErrDetails{
+			return &i, errors.Err{
+				Code: errors.PersistenceErrItemSlotUpdate,
+				Details: errors.ErrDetails{
 					"err":           err,
-					"from":      i.Slot,
-					"to": otherItem.Slot,
+					"from":          i.Slot,
+					"to":            otherItem.Slot,
 					"fromInventory": i.InventoryType,
-					"toInventory": inventoryType,
-					"shnID": i.ShnID,
+					"toInventory":   inventoryType,
+					"shnID":         i.ShnID,
 				},
 			}
 		}
@@ -321,15 +322,15 @@ func (i Item) MoveTo(inventoryType int, slot int) (*Item, error) {
 
 		_, err = tx.Model(&otherItem).WherePK().Update()
 		if err != nil {
-			return &i, Err{
-				Code: ErrItemSlotUpdate,
-				Details: ErrDetails{
+			return &i, errors.Err{
+				Code: errors.PersistenceErrItemSlotUpdate,
+				Details: errors.ErrDetails{
 					"err":           err,
-					"from":      i.Slot,
-					"to": otherItem.Slot,
+					"from":          i.Slot,
+					"to":            otherItem.Slot,
 					"fromInventory": i.InventoryType,
-					"toInventory": inventoryType,
-					"shnID": i.ShnID,
+					"toInventory":   inventoryType,
+					"shnID":         i.ShnID,
 				},
 			}
 		}
@@ -341,16 +342,16 @@ func (i Item) MoveTo(inventoryType int, slot int) (*Item, error) {
 	_, err = tx.Model(&i).WherePK().Update()
 
 	if err != nil {
-		return &i, Err{
-			Code: ErrItemSlotUpdate,
-			Details: ErrDetails{
+		return &i, errors.Err{
+			Code: errors.PersistenceErrItemSlotUpdate,
+			Details: errors.ErrDetails{
 				"err":           err,
 				"txErr":         tx.Rollback(),
-				"from":      i.Slot,
-				"to": otherItem.Slot,
+				"from":          i.Slot,
+				"to":            otherItem.Slot,
 				"fromInventory": i.InventoryType,
-				"toInventory": inventoryType,
-				"shnID": i.ShnID,
+				"toInventory":   inventoryType,
+				"shnID":         i.ShnID,
 			},
 		}
 	}
@@ -416,8 +417,8 @@ func freeSlot(characterID uint64, inventoryType uint64) (int, error) {
 				slot = s + 1
 				break
 			}
-			return slot, Err{
-				Code: ErrInventoryFull,
+			return slot, errors.Err{
+				Code: errors.PersistenceErrInventoryFull,
 			}
 		}
 		if slots[i+1] > s+1 {
@@ -435,9 +436,9 @@ func freeSlot(characterID uint64, inventoryType uint64) (int, error) {
 
 func validateItemParams(params ItemParams) error {
 	if params.Amount == 0 {
-		return Err{
-			Code: ErrItemInvalidAmount,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrItemInvalidAmount,
+			Details: errors.ErrDetails{
 				"stackable": params.Stackable,
 				"amount":    params.Amount,
 			},
@@ -445,18 +446,18 @@ func validateItemParams(params ItemParams) error {
 	}
 
 	if params.ShnID == 0 {
-		return Err{
-			Code: ErrItemInvalidShnId,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrItemInvalidShnId,
+			Details: errors.ErrDetails{
 				"shineID": params.ShnID,
 			},
 		}
 	}
 
 	if params.CharacterID == 0 {
-		return Err{
-			Code: ErrItemInvalidCharacterId,
-			Details: ErrDetails{
+		return errors.Err{
+			Code: errors.PersistenceErrItemInvalidCharacterId,
+			Details: errors.ErrDetails{
 				"characterID": params.CharacterID,
 			},
 		}
@@ -464,9 +465,9 @@ func validateItemParams(params ItemParams) error {
 
 	if !params.Stackable {
 		if params.Amount > 1 {
-			return Err{
-				Code: ErrItemInvalidAmount,
-				Details: ErrDetails{
+			return errors.Err{
+				Code: errors.PersistenceErrItemInvalidAmount,
+				Details: errors.ErrDetails{
 					"stackable": params.Stackable,
 					"amount":    params.Amount,
 				},
@@ -478,10 +479,10 @@ func validateItemParams(params ItemParams) error {
 	err := db.Model((*Character)(nil)).Column("id").Where("id = ?", params.CharacterID).Select(&cId)
 
 	if err != nil {
-		return Err{
-			Code:    ErrCharNotExists,
+		return errors.Err{
+			Code:    errors.PersistenceErrCharNotExists,
 			Message: "could not fetch character with id",
-			Details: ErrDetails{
+			Details: errors.ErrDetails{
 				"err":          err,
 				"character_id": params.CharacterID,
 			},

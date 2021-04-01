@@ -1,4 +1,4 @@
-package shn
+package data
 
 type ShineAbState struct {
 	DataSize    uint32

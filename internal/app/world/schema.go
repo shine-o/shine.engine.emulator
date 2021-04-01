@@ -15,7 +15,7 @@ func Migrate(cmd *cobra.Command, args []string) {
 	defer cancel()
 
 	log.Info("Database Logger Migrate()")
-	db := database.Connection(ctx, database.ConnectionParams{
+	persistence.InitDB(database.ConnectionParams{
 		User:     viper.GetString("database.postgres.db_user"),
 		Password: viper.GetString("database.postgres.db_password"),
 		Host:     viper.GetString("database.postgres.host"),
@@ -24,25 +24,26 @@ func Migrate(cmd *cobra.Command, args []string) {
 		Schema:   viper.GetString("database.postgres.schema"),
 	})
 
-	if err := database.CreateSchema(db, "world"); err != nil {
+	if err := database.CreateSchema(persistence.DB(), "world"); err != nil {
 		log.Fatal(err)
 	}
 
-	defer db.Close()
+	defer persistence.CloseDB()
+
 	if yes, err := cmd.Flags().GetBool("purge"); err != nil {
 		log.Error(err)
 	} else {
 		if yes {
-			err := persistence.DeleteTables(db)
+			err := persistence.DeleteTables()
 			if err != nil {
 				log.Fatal(err)
 			}
-			err = persistence.CreateTables(db)
+			err = persistence.CreateTables()
 			if err != nil {
 				log.Fatal(err)
 			}
 		} else {
-			err = persistence.CreateTables(db)
+			err = persistence.CreateTables()
 			if err != nil {
 				log.Fatal(err)
 			}

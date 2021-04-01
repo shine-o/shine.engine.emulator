@@ -2,9 +2,9 @@ package zone
 
 import (
 	"fmt"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"testing"
 )
 
@@ -46,7 +46,7 @@ func newCharacter(class string) *persistence.Character {
 		},
 	}
 
-	char, err := persistence.New( 1, &c)
+	char, err := persistence.New(1, &c)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -57,6 +57,7 @@ func newCharacter(class string) *persistence.Character {
 func TestLoadPlayerInventory_BagInventory(t *testing.T) {
 	// p.loadInventory(BagInventory)
 }
+
 //
 //func TestNewItem_Success(t *testing.T) {
 //	char := newCharacter("mage")
@@ -173,23 +174,15 @@ func TestPlayer_DeletesItem(t *testing.T) {
 func TestItemEquip_Success(t *testing.T) {
 	//    SUCCESS = 641, // 0x0281
 	//    FAILED = 645, // 0x0285
-	// itemSlotChange, err := p.equipItem(item{}) (itemSlotChange{}, error)
-	// itemSlotChange.From
-	// itemSlotChange.To
-
-	// character exists
-	// load player
-	// create hat item for player
-
 	player := &player{
 		baseEntity: baseEntity{
-			handle:   1,
+			handle: 1,
 		},
 	}
 
 	item := &item{}
 
-	itemSlotChange, err := player.equip(item, shn.ItemEquipHat)
+	itemSlotChange, err := player.equip(item, data.ItemEquipHat)
 
 	if err != nil {
 		t.Fatal(err)
@@ -203,7 +196,7 @@ func TestItemEquip_Success(t *testing.T) {
 		t.Fail()
 	}
 
-	equippedItem, ok := player.inventories.equipped.items[int(shn.ItemEquipHat)]
+	equippedItem, ok := player.inventories.equipped.items[int(data.ItemEquipHat)]
 
 	if !ok {
 		t.Fail()
@@ -229,6 +222,7 @@ func TestItemEquip_Success(t *testing.T) {
 func TestItemEquip_NC_Success(t *testing.T) {
 
 }
+
 func TestItemEquip_Failed(t *testing.T) {
 	// p.equipItem(item{}) (itemSlotChange{}, error)
 	// err := error.(ErrorCodeZone)

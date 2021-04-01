@@ -1,7 +1,7 @@
-package shn
+package data
 
 import (
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
 type ShineMapInfo struct {

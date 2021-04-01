@@ -8,9 +8,8 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/logger"
 	ps "github.com/shine-o/shine.engine.emulator/internal/app/packet-sniffer"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/blocks"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"math"
 )
 
@@ -137,8 +136,8 @@ func packetData(data []byte, nc interface{}) string {
 
 //
 func shnTest() {
-	var mi shn.ShineMobInfoServer
-	err := shn.Load("assets/MobInfoServer.shn", &mi)
+	var mi data.ShineMobInfoServer
+	err := data.Load("assets/MobInfoServer.shn", &mi)
 	if err != nil {
 		logger.Error(err)
 	}
@@ -166,27 +165,27 @@ func packetDataTest() {
 
 func shbdTest() {
 	m := "EldPri01"
-	var s *blocks.SHBD
-	s, err := blocks.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files\\blocks\\%v.shbd", m))
+	var s *data.SHBD
+	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files\\blocks\\%v.shbd", m))
 
 	if err != nil {
 		logger.Error(err)
 	}
 
-	img, err := blocks.SHBDToImage(s)
+	img, err := data.SHBDToImage(s)
 	if err != nil {
 		logger.Error(err)
 	}
 
-	err = blocks.SaveBmpFile(img, "./", m)
+	err = data.SaveBmpFile(img, "./", m)
 
 	if err != nil {
 		logger.Error(err)
 	}
 
-	rs := blocks.ImageToSHBD(img)
+	rs := data.ImageToSHBD(img)
 
-	blocks.SaveSHBDFile(&rs, "./", m)
+	data.SaveSHBDFile(&rs, "./", m)
 
 	xbm, ybm, err := walkingPositions(s)
 
@@ -224,7 +223,7 @@ func testWalk(walkableX *roaring.Bitmap, walkableY *roaring.Bitmap) {
 }
 
 // WalkingPositions creates two X,Y roaring bitmaps with walkable coordinates
-func walkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) {
+func walkingPositions(s *data.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) {
 	walkableX := roaring.BitmapOf()
 	walkableY := roaring.BitmapOf()
 

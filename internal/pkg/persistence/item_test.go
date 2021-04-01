@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"testing"
 	"time"
 )
@@ -169,14 +170,14 @@ func TestCreateItem_CharacterNotExist(t *testing.T) {
 		t.Error("expected error, got nil")
 	}
 
-	cErr, ok := err.(Err)
+	cErr, ok := err.(errors.Err)
 
 	if !ok {
 		t.Error("expected custom error type Err")
 	}
 
-	if cErr.Code != ErrCharNotExists {
-		t.Fatalf("expected error code %v, got %v", ErrCharNotExists, cErr.Code)
+	if cErr.Code != errors.PersistenceErrCharNotExists {
+		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrCharNotExists, cErr.Code)
 	}
 
 }
@@ -199,14 +200,14 @@ func TestCreateItem_BadAmount(t *testing.T) {
 		t.Error("expected error, got nil")
 	}
 
-	cErr, ok := err.(Err)
+	cErr, ok := err.(errors.Err)
 
 	if !ok {
 		t.Error("expected custom error type Err")
 	}
 
-	if cErr.Code != ErrItemInvalidAmount {
-		t.Fatalf("expected error code %v, got %v", ErrItemInvalidAmount, cErr.Code)
+	if cErr.Code != errors.PersistenceErrItemInvalidAmount {
+		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrItemInvalidAmount, cErr.Code)
 	}
 
 	// 0 amount
@@ -224,14 +225,14 @@ func TestCreateItem_BadAmount(t *testing.T) {
 		t.Error("expected error, got nil")
 	}
 
-	cErr, ok = err.(Err)
+	cErr, ok = err.(errors.Err)
 
 	if !ok {
 		t.Error("expected custom error type Err")
 	}
 
-	if cErr.Code != ErrItemInvalidAmount {
-		t.Fatalf("expected error code %v, got %v", ErrItemInvalidAmount, cErr.Code)
+	if cErr.Code != errors.PersistenceErrItemInvalidAmount {
+		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrItemInvalidAmount, cErr.Code)
 	}
 
 }
@@ -371,14 +372,14 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 		t.Fatal("expected error, got none")
 	}
 
-	cErr, ok := err.(Err)
+	cErr, ok := err.(errors.Err)
 
 	if !ok {
 		t.Fatal("expected custom error type Err")
 	}
 
-	if cErr.Code != ErrItemInvalidAmount {
-		t.Fatalf("expected error code %v, got %v", ErrItemInvalidAmount, cErr.Code)
+	if cErr.Code != errors.PersistenceErrItemInvalidAmount {
+		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrItemInvalidAmount, cErr.Code)
 	}
 
 	// zero amount
@@ -396,14 +397,14 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 
-	cErr, ok = err.(Err)
+	cErr, ok = err.(errors.Err)
 
 	if !ok {
 		t.Fatal("expected custom error type Err")
 	}
 
-	if cErr.Code != ErrItemInvalidAmount {
-		t.Fatalf("expected error code %v, got %v", ErrItemInvalidAmount, cErr.Code)
+	if cErr.Code != errors.PersistenceErrItemInvalidAmount {
+		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrItemInvalidAmount, cErr.Code)
 	}
 }
 
@@ -436,14 +437,14 @@ func TestUpdateItem_DistinctShnID(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 
-	cErr, ok := err.(Err)
+	cErr, ok := err.(errors.Err)
 
 	if !ok {
 		t.Fatal("expected custom error type Err")
 	}
 
-	if cErr.Code != ErrItemDistinctShnID {
-		t.Fatalf("expected error code %v, got %v", ErrItemDistinctShnID, cErr.Code)
+	if cErr.Code != errors.PersistenceErrItemDistinctShnID {
+		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrItemDistinctShnID, cErr.Code)
 	}
 }
 
@@ -602,14 +603,14 @@ func TestInventoryFull(t *testing.T) {
 		t.Fatal("expected error, got nil")
 	}
 
-	cErr, ok := err.(Err)
+	cErr, ok := err.(errors.Err)
 
 	if !ok {
 		t.Error("expected custom error type Err")
 	}
 
-	if cErr.Code != ErrInventoryFull {
-		t.Fatalf("expected error code %v, got %v", ErrInventoryFull, cErr.Code)
+	if cErr.Code != errors.PersistenceErrInventoryFull {
+		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrInventoryFull, cErr.Code)
 	}
 
 }

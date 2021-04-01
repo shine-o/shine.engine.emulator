@@ -1,9 +1,44 @@
-package shn
+package data
 
 import (
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"encoding/csv"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 )
+
+// check if path is correct and return absolute path
+func ValidPath(path string) (string, error) {
+	var absPath string
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return absPath, err
+	}
+	if _, err := os.Stat(path); err == os.ErrNotExist {
+		return absPath, err
+	}
+	return absPath, nil
+}
+
+func loadTxtFile(filePath string) ([][]string, error) {
+	var data [][]string
+	txtFile, err := os.Open(filePath)
+	if err != nil {
+		return data, err
+	}
+	reader := csv.NewReader(txtFile)
+
+	reader.Comma = '\t'
+	reader.FieldsPerRecord = -1
+
+	data, err = reader.ReadAll()
+	if err != nil {
+		return data, err
+	}
+	return data, err
+}
+
 
 func Load(filePath string, shn interface{}) error {
 	data, err := loadRawData(filePath)
@@ -53,3 +88,4 @@ func decryptSHN(data []byte, length int) {
 		l = nl
 	}
 }
+

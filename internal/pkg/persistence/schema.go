@@ -8,22 +8,23 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 )
 
-var db * pg.DB
+var db *pg.DB
 
 func InitDB(cp database.ConnectionParams) {
 	ctx := context.Background()
 	db = database.Connection(ctx, cp)
 }
 
-func DB(cp database.ConnectionParams) *pg.DB {
+func DB() *pg.DB {
 	return db
 }
 
-func CloseDB()  {
+func CloseDB() {
 	log.Info(db.Close())
 }
 
 // CreateTables if not yet created
+// TODO: https://github.com/go-pg/migrations#example
 func CreateTables() error {
 	tx, err := db.Begin()
 	if err != nil {
@@ -54,6 +55,7 @@ func CreateTables() error {
 }
 
 // DeleteTables if they exist
+// TODO: https://github.com/go-pg/migrations#example
 func DeleteTables() error {
 	tx, err := db.Begin()
 	if err != nil {
@@ -83,7 +85,8 @@ func DeleteTables() error {
 	return tx.Commit()
 }
 
-func CleanDB(db *pg.DB) {
+// // TODO: https://github.com/go-pg/migrations#example
+func CleanDB() {
 	err := DeleteTables()
 	if err != nil {
 		log.Fatal(err)

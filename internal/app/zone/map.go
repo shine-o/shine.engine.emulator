@@ -4,10 +4,7 @@ import (
 	"bytes"
 	"github.com/RoaringBitmap/roaring"
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/blocks"
-	mobs "github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/monsters"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/shn"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/game-data/world"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/viper"
 	"math"
@@ -15,7 +12,7 @@ import (
 )
 
 type zoneMap struct {
-	data      *world.Map
+	data      *data.Map
 	walkableX *roaring.Bitmap
 	walkableY *roaring.Bitmap
 	entities  *entities
@@ -76,8 +73,8 @@ func (zm *zoneMap) spawnNPCs() {
 		var (
 			sem     = make(chan int, 100)
 			wg      sync.WaitGroup
-			portals []*world.ShineNPC
-			normal  []*world.ShineNPC
+			portals []*data.ShineNPC
+			normal  []*data.ShineNPC
 		)
 
 		for _, data := range npcs {
@@ -91,7 +88,7 @@ func (zm *zoneMap) spawnNPCs() {
 		for _, data := range portals {
 			wg.Add(1)
 			sem <- 1
-			go func(sn *world.ShineNPC) {
+			go func(sn *data.ShineNPC) {
 				defer wg.Done()
 				spawnNPC(sn, zm)
 				<-sem
@@ -101,7 +98,7 @@ func (zm *zoneMap) spawnNPCs() {
 		for _, data := range normal {
 			wg.Add(1)
 			sem <- 1
-			go func(sn *world.ShineNPC) {
+			go func(sn *data.ShineNPC) {
 				defer wg.Done()
 				spawnNPC(sn, zm)
 				<-sem
@@ -111,7 +108,7 @@ func (zm *zoneMap) spawnNPCs() {
 	}
 }
 
-func spawnNPC(sn *world.ShineNPC, zm *zoneMap) {
+func spawnNPC(sn *data.ShineNPC, zm *zoneMap) {
 
 	mi, mis := mobDataPointers(sn.MobIndex)
 
@@ -188,7 +185,7 @@ func (zm *zoneMap) spawnMobs() {
 		for _, group := range spawnData.Groups {
 			wg.Add(1)
 			sem <- 1
-			go func(g mobs.RegenEntry) {
+			go func(g data.RegenEntry) {
 				defer wg.Done()
 				spawnMob(zm, g)
 				<-sem
@@ -199,10 +196,10 @@ func (zm *zoneMap) spawnMobs() {
 }
 
 // maybe in the future create a wrapping struct for this, as more monster shine files will be loaded
-func mobDataPointers(mobIndex string) (*shn.MobInfo, *shn.MobInfoServer) {
+func mobDataPointers(mobIndex string) (*data.MobInfo, *data.MobInfoServer) {
 	var (
-		mi  *shn.MobInfo
-		mis *shn.MobInfoServer
+		mi  *data.MobInfo
+		mis *data.MobInfoServer
 	)
 
 	for i, row := range monsterData.MobInfo.ShineRow {
@@ -220,7 +217,7 @@ func mobDataPointers(mobIndex string) (*shn.MobInfo, *shn.MobInfoServer) {
 	return mi, mis
 }
 
-func spawnMob(zm *zoneMap, re mobs.RegenEntry) {
+func spawnMob(zm *zoneMap, re data.RegenEntry) {
 
 	var iwg sync.WaitGroup
 
@@ -228,8 +225,8 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry) {
 
 	for _, mob := range re.Mobs {
 		var (
-			mi  *shn.MobInfo
-			mis *shn.MobInfoServer
+			mi  *data.MobInfo
+			mis *data.MobInfoServer
 		)
 
 		for i, row := range monsterData.MobInfo.ShineRow {
@@ -269,7 +266,7 @@ func spawnMob(zm *zoneMap, re mobs.RegenEntry) {
 
 }
 
-func spawnMonster(zm *zoneMap, re mobs.RegenEntry, mi *shn.MobInfo, mis *shn.MobInfoServer) {
+func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.MobInfoServer) {
 	var (
 		x, y, d       int
 		maxTries      = 1000 // todo: use goroutines for this, with a maximum of 50 routines, first one to get a spot wins the spawn
@@ -426,7 +423,7 @@ func canWalk(x, y *roaring.Bitmap, rX, rY int) bool {
 }
 
 // creates two X,Y roaring bitmaps with walkable coordinates
-func walkingPositions(s *blocks.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) {
+func walkingPositions(s *data.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) {
 	walkableX := roaring.BitmapOf()
 	walkableY := roaring.BitmapOf()
 

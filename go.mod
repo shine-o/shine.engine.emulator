@@ -9,7 +9,8 @@ require (
 	github.com/benbjohnson/clock v1.0.3 // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/glycerine/go-unsnap-stream v0.0.0-20210130063903-47dfef350d96 // indirect
-	github.com/go-pg/pg/extra/pgdebug v0.2.0
+	github.com/go-pg/migrations/v8 v8.0.2 // indirect
+	github.com/go-pg/pg/extra/pgdebug v0.2.0 // indirect
 	github.com/go-pg/pg/v10 v10.8.0
 	github.com/go-pg/pg/v9 v9.2.0
 	github.com/go-pg/urlstruct v1.0.1 // indirect

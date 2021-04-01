@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -66,7 +67,7 @@ func createDummyCharacters() {
 				FaceShape: 0,
 			},
 		}
-		_, err := New( 1, &c)
+		_, err := New(1, &c)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -84,7 +85,7 @@ func TestValidateCharacterRequest(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		err = Validate( 1, &nc)
+		err = Validate(1, &nc)
 		if err != nil {
 			t.Error(err)
 		}
@@ -103,7 +104,7 @@ func TestCreateCharacter(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		_, err = New( 1, &nc)
+		_, err = New(1, &nc)
 		if err != nil {
 			t.Error(err)
 		}
@@ -120,7 +121,7 @@ func TestDeleteCharacter(t *testing.T) {
 		Slot: 0,
 	}
 
-	err := Delete( 1, &nc)
+	err := Delete(1, &nc)
 
 	if err != nil {
 		log.Error(err)
@@ -158,17 +159,17 @@ func TestCharacterNameInUseError(t *testing.T) {
 			FaceShape: 0,
 		},
 	}
-	err := Validate( 1, &c)
+	err := Validate(1, &c)
 	if err == nil {
 		log.Error(err)
 	}
 
-	errChar, ok := err.(Err)
+	errChar, ok := err.(errors.Err)
 	if !ok {
 		t.Error("expected an error of type Err")
 	}
-	if errChar.Code != ErrCharNameTaken {
-		t.Errorf("expected error %v, got %v", ErrCharNameTaken, errChar.Code)
+	if errChar.Code != errors.PersistenceErrCharNameTaken {
+		t.Errorf("expected error %v, got %v", errors.PersistenceErrCharNameTaken, errChar.Code)
 	}
 }
 
@@ -186,14 +187,14 @@ func TestNoSlotAvailableError(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate( 1, &nc)
+		err = Validate(1, &nc)
 		if err != nil {
-			cErr, ok := err.(Err)
+			cErr, ok := err.(errors.Err)
 			if !ok {
 				t.Error("unexpected error type")
 			}
-			if cErr.Code != ErrCharNoSlot {
-				t.Errorf("expected error %v, got %v", ErrCharNoSlot, cErr.Code)
+			if cErr.Code != errors.PersistenceErrCharNoSlot {
+				t.Errorf("expected error %v, got %v", errors.PersistenceErrCharNoSlot, cErr.Code)
 			}
 			return
 		}
@@ -212,14 +213,14 @@ func TestInvalidSlotError(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate( 1, &nc)
+		err = Validate(1, &nc)
 		if err != nil {
-			cErr, ok := err.(Err)
+			cErr, ok := err.(errors.Err)
 			if !ok {
 				t.Error("unexpected error type")
 			}
-			if cErr.Code != ErrCharInvalidSlot {
-				t.Errorf("expected error %v, got %v", ErrCharInvalidSlot, cErr.Code)
+			if cErr.Code != errors.PersistenceErrCharInvalidSlot {
+				t.Errorf("expected error %v, got %v", errors.PersistenceErrCharInvalidSlot, cErr.Code)
 			}
 			return
 		}
@@ -240,14 +241,14 @@ func TestInvalidNameError(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate( 1, &nc)
+		err = Validate(1, &nc)
 		if err != nil {
-			cErr, ok := err.(Err)
+			cErr, ok := err.(errors.Err)
 			if !ok {
 				t.Error("unexpected error type")
 			}
-			if cErr.Code != ErrCharInvalidName {
-				t.Errorf("expected error %v, got %v", ErrCharInvalidName, cErr.Code)
+			if cErr.Code != errors.PersistenceErrCharInvalidName {
+				t.Errorf("expected error %v, got %v", errors.PersistenceErrCharInvalidName, cErr.Code)
 			}
 			return
 		}
@@ -270,14 +271,14 @@ func TestInvalidGenderClassBinaryOperation(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate( 1, &nc)
+		err = Validate(1, &nc)
 		if err != nil {
-			errChar, ok := err.(Err)
+			errChar, ok := err.(errors.Err)
 			if !ok {
 				t.Error("expected an error of type Err")
 			}
-			if errChar.Code != ErrCharInvalidClassGender {
-				t.Errorf("expected error %v, got %v", ErrCharInvalidClassGender, errChar.Code)
+			if errChar.Code != errors.PersistenceErrCharInvalidClassGender {
+				t.Errorf("expected error %v, got %v", errors.PersistenceErrCharInvalidClassGender, errChar.Code)
 			}
 		} else {
 			t.Error("expected an error but got nil")
@@ -289,7 +290,7 @@ func TestNewCharacter_DefaultItems(t *testing.T) {
 	cleanDB()
 	createDummyCharacters()
 	// assert user has an inventory
-	characters, err := getCharacters( false)
+	characters, err := getCharacters(false)
 
 	if err != nil {
 		t.Error(err)
@@ -304,7 +305,7 @@ func TestNewCharacter_DefaultItems(t *testing.T) {
 		clauses["character_id = ?"] = character.ID
 		clauses["shn_id = ?"] = miniHouseID
 
-		item, err := GetItemWhere( clauses, false)
+		item, err := GetItemWhere(clauses, false)
 
 		if err != nil {
 			t.Error(err)
@@ -333,7 +334,7 @@ func TestLoadNewCharacter_Mage_EquippedItems(t *testing.T) {
 	clauses["character_id = ?"] = character.ID
 	clauses["shn_id = ?"] = rightHand
 
-	_, err := GetItemWhere( clauses, false)
+	_, err := GetItemWhere(clauses, false)
 
 	if err != nil {
 		t.Error(err)
@@ -358,7 +359,7 @@ func TestLoadNewCharacter_Fighter_EquippedItems(t *testing.T) {
 	clauses["character_id = ?"] = character.ID
 	clauses["shn_id = ?"] = rightHand
 
-	_, err := GetItemWhere( clauses, false)
+	_, err := GetItemWhere(clauses, false)
 
 	if err != nil {
 		t.Error(err)
@@ -381,7 +382,7 @@ func TestLoadNewCharacter_Archer_EquippedItems(t *testing.T) {
 	clauses["character_id = ?"] = character.ID
 	clauses["shn_id = ?"] = rightHand
 
-	_, err := GetItemWhere( clauses, false)
+	_, err := GetItemWhere(clauses, false)
 
 	if err != nil {
 		t.Error(err)
@@ -404,7 +405,7 @@ func TestLoadNewCharacter_Cleric_EquippedItems(t *testing.T) {
 	clauses["character_id = ?"] = character.ID
 	clauses["shn_id = ?"] = rightHand
 
-	_, err := GetItemWhere( clauses, false)
+	_, err := GetItemWhere(clauses, false)
 
 	if err != nil {
 		t.Error(err)
@@ -469,7 +470,7 @@ func newCharacter(class string) *Character {
 		},
 	}
 
-	char, err := New( 1, &c)
+	char, err := New(1, &c)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -1,4 +1,4 @@
-package shn
+package data
 
 type ShineMobInfoServer struct {
 	DataSize    uint32

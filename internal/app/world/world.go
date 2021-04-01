@@ -6,7 +6,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/login"
 	wm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world-master"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"github.com/spf13/viper"
 	"time"
 )
