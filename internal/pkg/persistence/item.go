@@ -32,6 +32,7 @@ type Item struct {
 	CharacterID uint64     `pg:",notnull,unique:item" `
 	Character   *Character `pg:"rel:belongs-to"`
 	ShnID       uint16     `pg:",notnull"`
+	ShnInxName  string     `pg:",notnull"`
 	Stackable   bool       `pg:",notnull,use_zero"`
 	Amount      int
 	Attributes  *ItemAttributes `pg:"rel:belongs-to"`
@@ -44,8 +45,8 @@ type ItemAttributes struct {
 	tableName     struct{} `pg:"world.item_attributes"`
 	ID            uint64   `pg:",unique:item"`
 	ItemID        uint64   `pg:",use_zero,notnull,unique:item"`
-	StrengthBase  int
-	StrengthExtra int
+	StrengthBase  int      `pg:",use_zero"`
+	StrengthExtra int      `pg:",use_zero"`
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 	//DeletedAt time.Time `pg:",soft_delete"`

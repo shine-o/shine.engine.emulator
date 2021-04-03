@@ -370,14 +370,11 @@ type itemSlotChange struct {
 }
 
 func (p *player) load(name string) error {
-
 	char, err := persistence.GetCharacterByName(name)
 
 	if err != nil {
 		return err
 	}
-	p.Lock()
-	defer p.Unlock()
 
 	p.char = &char
 
@@ -395,6 +392,9 @@ func (p *player) load(name string) error {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(8)
+
+	errC := make(chan error, 8)
+
 	go func() {
 		defer wg.Done()
 		p.viewData()
@@ -407,10 +407,10 @@ func (p *player) load(name string) error {
 		defer wg.Done()
 		p.statsData()
 	}()
-	go func() {
+	go func(err chan <- error) {
 		defer wg.Done()
-		p.itemData()
-	}()
+		err <- p.itemData()
+	}(errC)
 	go func() {
 		defer wg.Done()
 		p.moneyData()
@@ -429,7 +429,8 @@ func (p *player) load(name string) error {
 	}()
 
 	wg.Wait()
-	return nil
+
+	return <- errC
 }
 
 func (p *player) viewData() {
@@ -737,6 +738,7 @@ func (p *player) charParameterData() structs.CharParameterData {
 		},
 	}
 }
+
 func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
 	return &structs.ProtoAvatarShapeInfo{
 		BF:        1 | pv.class<<2 | pv.gender<<7,
@@ -777,6 +779,7 @@ func (p *player) newItem(i *item) error {
 	i.pItem = &persistence.Item{}
 	i.pItem.CharacterID = p.char.ID
 	i.pItem.ShnID = i.itemData.itemInfo.ID
+	i.pItem.ShnInxName = i.itemData.itemInfo.InxName
 	i.pItem.Amount = i.amount
 	i.pItem.Stackable = i.stackable
 
@@ -785,7 +788,17 @@ func (p *player) newItem(i *item) error {
 	i.pItem.Attributes.StrengthBase = i.stats.strength.base
 	i.pItem.Attributes.StrengthExtra = i.stats.strength.extra
 
-	return i.pItem.Insert()
+	err := i.pItem.Insert()
+
+	if err != nil {
+		return err
+	}
+
+	p.inventories.Lock()
+	p.inventories.inventory.items[i.pItem.Slot] = i
+	p.inventories.Unlock()
+
+	return nil
 }
 
 func (pi *playerInventories) ncCharClientItemCmd() []structs.NcCharClientItemCmd {

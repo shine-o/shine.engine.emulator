@@ -138,12 +138,12 @@ func spawnNPC(sn *data.ShineNPC, zm *zoneMap) {
 	n := &npc{
 		baseEntity: baseEntity{
 			handle: h,
-			fallback: location{
+			fallback: &location{
 				x: sn.X,
 				y: sn.Y,
 				d: shineD,
 			},
-			current: location{
+			current: &location{
 				mapID:     zm.data.ID,
 				mapName:   zm.data.MapInfoIndex,
 				x:         sn.X,
@@ -318,12 +318,12 @@ func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.M
 		m := &monster{
 			baseEntity: baseEntity{
 				handle: h,
-				fallback: location{
+				fallback: &location{
 					x: x,
 					y: y,
 					d: d,
 				},
-				current: location{
+				current: &location{
 					mapID:     zm.data.ID,
 					mapName:   zm.data.MapInfoIndex,
 					x:         x,

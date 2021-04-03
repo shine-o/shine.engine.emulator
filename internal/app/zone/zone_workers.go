@@ -65,8 +65,8 @@ func (z *zone) playerSession() {
 				p.Lock()
 				newLocation := *p.next
 
-				p.fallback = newLocation
-				p.current = newLocation
+				p.fallback = &newLocation
+				p.current = &newLocation
 
 				p.next = nil
 
@@ -297,7 +297,12 @@ func playerDataLogic(e event) {
 	}
 
 	p := &player{
-		conn: playerConnection{
+		baseEntity: baseEntity{
+			fallback: &location{},
+			current:  &location{},
+			next:     &location{},
+		},
+		conn: &playerConnection{
 			lastHeartBeat: time.Now(),
 			close:         ev.net.CloseConnection,
 			outboundData:  ev.net.OutboundSegments.Send,

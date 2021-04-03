@@ -78,9 +78,9 @@ type basicActions interface {
 type location struct {
 	mapID     int
 	mapName   string
-	x, y      int
-	d         int
+	x, y, d   int
 	movements [15]movement
+	sync.RWMutex
 }
 
 type movement struct {
@@ -89,8 +89,8 @@ type movement struct {
 
 type baseEntity struct {
 	handle   uint16
-	fallback location
-	current  location
+	fallback *location
+	current  *location
 	next     *location
 	events
 }

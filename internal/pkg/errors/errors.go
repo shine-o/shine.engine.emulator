@@ -22,6 +22,7 @@ const (
 
 	ZoneItemEquipFailed
 	ZoneItemMissingData
+	ZoneInventorySlotOccupied
 )
 
 //go:generate stringer -type=ShineErrorCode
