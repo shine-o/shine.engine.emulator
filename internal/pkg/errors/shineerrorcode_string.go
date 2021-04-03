@@ -22,11 +22,13 @@ func _() {
 	_ = x[PersistenceErrCharInvalidClassGender-11]
 	_ = x[PersistenceErrCharNotExists-12]
 	_ = x[ZoneItemEquipFailed-13]
+	_ = x[ZoneItemMissingData-14]
+	_ = x[ZoneInventorySlotOccupied-15]
 }
 
-const _ShineErrorCode_name = "PersistenceErrDBPersistenceErrItemInvalidAmountPersistenceErrItemInvalidShnIdPersistenceErrItemInvalidCharacterIdPersistenceErrItemDistinctShnIDPersistenceErrItemSlotUpdatePersistenceErrInventoryFullPersistenceErrCharInvalidSlotPersistenceErrCharNameTakenPersistenceErrCharNoSlotPersistenceErrCharInvalidNamePersistenceErrCharInvalidClassGenderPersistenceErrCharNotExistsZoneItemEquipFailed"
+const _ShineErrorCode_name = "PersistenceErrDBPersistenceErrItemInvalidAmountPersistenceErrItemInvalidShnIdPersistenceErrItemInvalidCharacterIdPersistenceErrItemDistinctShnIDPersistenceErrItemSlotUpdatePersistenceErrInventoryFullPersistenceErrCharInvalidSlotPersistenceErrCharNameTakenPersistenceErrCharNoSlotPersistenceErrCharInvalidNamePersistenceErrCharInvalidClassGenderPersistenceErrCharNotExistsZoneItemEquipFailedZoneItemMissingDataZoneInventorySlotOccupied"
 
-var _ShineErrorCode_index = [...]uint16{0, 16, 47, 77, 113, 144, 172, 199, 228, 255, 279, 308, 344, 371, 390}
+var _ShineErrorCode_index = [...]uint16{0, 16, 47, 77, 113, 144, 172, 199, 228, 255, 279, 308, 344, 371, 390, 409, 434}
 
 func (i ShineErrorCode) String() string {
 	if i < 0 || i >= ShineErrorCode(len(_ShineErrorCode_index)-1) {
