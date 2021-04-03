@@ -67,7 +67,7 @@ func (zm *zoneMap) run() {
 }
 
 func (zm *zoneMap) spawnNPCs() {
-	npcs, ok := npcData.Data[zm.data.MapInfoIndex]
+	npcs, ok := npcData.MapNPCs[zm.data.MapInfoIndex]
 
 	if ok {
 		var (
@@ -77,32 +77,32 @@ func (zm *zoneMap) spawnNPCs() {
 			normal  []*data.ShineNPC
 		)
 
-		for _, data := range npcs {
-			if data.ShinePortal != nil {
-				portals = append(portals, data)
+		for _, mNpc := range npcs {
+			if mNpc.ShinePortal != nil {
+				portals = append(portals, mNpc)
 			} else {
-				normal = append(normal, data)
+				normal = append(normal, mNpc)
 			}
 		}
 
-		for _, data := range portals {
+		for _, mNpc := range portals {
 			wg.Add(1)
 			sem <- 1
 			go func(sn *data.ShineNPC) {
 				defer wg.Done()
 				spawnNPC(sn, zm)
 				<-sem
-			}(data)
+			}(mNpc)
 		}
 
-		for _, data := range normal {
+		for _, mNpc := range normal {
 			wg.Add(1)
 			sem <- 1
 			go func(sn *data.ShineNPC) {
 				defer wg.Done()
 				spawnNPC(sn, zm)
 				<-sem
-			}(data)
+			}(mNpc)
 		}
 
 	}

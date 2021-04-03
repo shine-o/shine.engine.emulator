@@ -5,17 +5,20 @@ import (
 	"strings"
 )
 
-//#Table	ShineNPC
-//#ColumnType			STRING[33]	STRING[20]	DWRD	DWRD	WORD	BYTE	INDEX	INDEX
-//#ColumnName			MobName	Map	Coord-X	Coord-Y	Direct	NPCMenu	Role	RoleArg0
-//
-//#Table	ShinePortal
-//#ColumnType		Index	String[33]	String[33]	DWRD	DWRD	WORD	WORD	WORD	BYTE
-//#ColumnName		argument	MapServer	MapClient	Coord-X	Coord-Y	Direct	LevelFrom	LevelTo	Party
-
-type NPC struct {
-	Data map[string][]*ShineNPC
+type NpcData struct {
+	MapNPCs map[string][]*ShineNPC
+	VendorNPCs map[string]*VendorItems
 }
+
+type VendorItems struct {
+	Tabs map[string]VendorTab
+}
+
+type VendorTab struct {
+	Pages []VendorGrid
+}
+
+type VendorGrid [8][6]string
 
 type ShineNPC struct {
 	MobIndex string
@@ -36,24 +39,39 @@ type ShinePortal struct {
 	Party          bool
 }
 
-func LoadNPCData(shineFolder string) (*NPC, error) {
+func LoadNPCData(shineFolder string) (*NpcData, error) {
 	var (
-		npc = &NPC{
-			Data: make(map[string][]*ShineNPC),
+		npc = &NpcData{
+			MapNPCs: make(map[string][]*ShineNPC),
 		}
-		npcs    []*ShineNPC
-		portals []*ShinePortal
 	)
 
-	filePath, err := ValidPath(shineFolder + "/world/" + "NPC.txt")
+	err := loadMapNPCs(shineFolder, npc)
 
 	if err != nil {
 		return npc, err
 	}
 
-	data, err := loadTxtFile(filePath)
+	// load vendor npcs
+
+	return npc, nil
+}
+
+func loadMapNPCs(shineFolder string, npc *NpcData) error {
+	var (
+		npcs    []*ShineNPC
+		portals []*ShinePortal
+	)
+
+	filesPath, err := ValidPath(shineFolder + "/world/" + "NPC.txt")
+
 	if err != nil {
-		return npc, err
+		return err
+	}
+
+	data, err := loadTxtFile(filesPath)
+	if err != nil {
+		return  err
 	}
 
 	for _, row := range data {
@@ -74,22 +92,22 @@ func LoadNPCData(shineFolder string) (*NPC, error) {
 
 				x, err := strconv.Atoi(row[5])
 				if err != nil {
-					return npc, err
+					return err
 				}
 
 				y, err := strconv.Atoi(row[6])
 				if err != nil {
-					return npc, err
+					return err
 				}
 
 				d, err := strconv.Atoi(row[7])
 				if err != nil {
-					return npc, err
+					return err
 				}
 
 				npcMenu, err := strconv.ParseBool(row[8])
 				if err != nil {
-					return npc, err
+					return err
 				}
 
 				role := row[9]
@@ -107,7 +125,6 @@ func LoadNPCData(shineFolder string) (*NPC, error) {
 					RoleArg:  roleArg,
 				}
 
-				//npc.Data[sn.MapIndex] = sn
 				npcs = append(npcs, sn)
 
 			} else {
@@ -117,22 +134,22 @@ func LoadNPCData(shineFolder string) (*NPC, error) {
 
 				x, err := strconv.Atoi(row[13])
 				if err != nil {
-					return npc, err
+					return err
 				}
 
 				y, err := strconv.Atoi(row[14])
 				if err != nil {
-					return npc, err
+					return err
 				}
 
 				fromLevel, err := strconv.Atoi(row[15])
 				if err != nil {
-					return npc, err
+					return err
 				}
 
 				party, err := strconv.ParseBool(row[16])
 				if err != nil {
-					return npc, err
+					return err
 				}
 
 				portals = append(portals, &ShinePortal{
@@ -158,8 +175,7 @@ func LoadNPCData(shineFolder string) (*NPC, error) {
 				}
 			}
 		}
-		npc.Data[n.MapIndex] = append(npc.Data[n.MapIndex], n)
+		npc.MapNPCs[n.MapIndex] = append(npc.MapNPCs[n.MapIndex], n)
 	}
-
-	return npc, nil
+	return nil
 }

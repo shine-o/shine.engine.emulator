@@ -34,8 +34,8 @@ type RegenEntryMob struct {
 // load SHN files
 // load into MonsterData
 // persist monsterData
-func LoadMonsterData(shineFolder string) (MonsterData, error) {
-	var monsterData MonsterData
+func LoadMonsterData(shineFolder string) (*MonsterData, error) {
+	var monsterData = &MonsterData{}
 	var mobInfo ShineMobInfo
 	var mobInfoServer ShineMobInfoServer
 

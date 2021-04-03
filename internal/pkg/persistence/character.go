@@ -336,7 +336,7 @@ func Get(characterID uint64) (Character, error) {
 	return c, err
 }
 
-func GetByName(name string) (Character, error) {
+func GetCharacterByName(name string) (Character, error) {
 	var c Character
 	err := db.Model(&c).
 		Where("name = ?", name).

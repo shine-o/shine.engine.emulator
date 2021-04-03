@@ -129,9 +129,9 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 
 				var md *data.Map
 
-				for i, m := range mapData {
+				for i, m := range mapData.Maps {
 					if m.Info.MapName.Name == n.npcData.ShinePortal.ServerMapIndex {
-						md = mapData[i]
+						md = mapData.Maps[i]
 						break
 					}
 				}
@@ -936,7 +936,7 @@ func isPortal(n *npc) bool {
 	}
 
 	var loaded bool
-	for _, m := range mapData {
+	for _, m := range mapData.Maps {
 		if m.MapInfoIndex == n.npcData.ShinePortal.ServerMapIndex {
 			loaded = true
 			break
@@ -950,9 +950,9 @@ func isPortal(n *npc) bool {
 
 func portalMatchesLocation(portal *data.ShinePortal, next *location) bool {
 	var md *data.Map
-	for i, m := range mapData {
+	for i, m := range mapData.Maps {
 		if m.MapInfoIndex == portal.ClientMapIndex {
-			md = mapData[i]
+			md = mapData.Maps[i]
 			break
 		}
 	}

@@ -7,7 +7,7 @@ import (
 
 var (
 	log * logger.Logger
-	filePath = "../../files"
+    filesPath = "../../../files"
 )
 
 func init() {

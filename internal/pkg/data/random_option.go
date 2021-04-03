@@ -19,26 +19,6 @@ type RandomOption struct {
 	TypeDropRate     uint32
 }
 
-//enum RandomOptionType
-//{
-//  ROT_STR = 0x0,
-//  ROT_CON = 0x1,
-//  ROT_DEX = 0x2,
-//  ROT_INT = 0x3,
-//  ROT_MEN = 0x4,
-//  ROT_TH = 0x5,
-//  ROT_CRI = 0x6,
-//  ROT_WC = 0x7,
-//  ROT_AC = 0x8,
-//  ROT_MA = 0x9,
-//  ROT_MR = 0xA,
-//  ROT_TB = 0xB,
-//  ROT_CRITICAL_TB = 0xC,
-//  ROT_DEMANDLVDOWN = 0xD,
-//  ROT_MAXHP = 0xE,
-//  MAX_RANDOMOPTIONTYPE = 0xF,
-//};
-
 type RandomOptionType uint32
 
 const (

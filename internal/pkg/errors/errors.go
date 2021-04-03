@@ -21,6 +21,7 @@ const (
 	PersistenceErrCharNotExists
 
 	ZoneItemEquipFailed
+	ZoneItemMissingData
 )
 
 //go:generate stringer -type=ShineErrorCode

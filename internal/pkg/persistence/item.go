@@ -33,7 +33,7 @@ type Item struct {
 	Character   *Character `pg:"rel:belongs-to"`
 	ShnID       uint16     `pg:",notnull"`
 	Stackable   bool       `pg:",notnull,use_zero"`
-	Amount      uint32
+	Amount      int
 	Attributes  *ItemAttributes `pg:"rel:belongs-to"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
@@ -41,12 +41,13 @@ type Item struct {
 }
 
 type ItemAttributes struct {
-	tableName struct{} `pg:"world.item_attributes"`
-	ID        uint64   `pg:",unique:item"`
-	ItemID    uint64   `pg:",use_zero,notnull,unique:item"`
-	Strength  int
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	tableName     struct{} `pg:"world.item_attributes"`
+	ID            uint64   `pg:",unique:item"`
+	ItemID        uint64   `pg:",use_zero,notnull,unique:item"`
+	StrengthBase  int
+	StrengthExtra int
+	CreatedAt     time.Time
+	UpdatedAt     time.Time
 	//DeletedAt time.Time `pg:",soft_delete"`
 }
 
@@ -54,94 +55,30 @@ type ItemParams struct {
 	CharacterID uint64
 	ShnID       uint16
 	Stackable   bool
-	Amount      uint32
+	Amount      int
 	Attributes  *ItemAttributes
 }
 
-func NewItem(params ItemParams) (*Item, error) {
-	var (
-		item *Item
-		attr *ItemAttributes
-	)
+// Insert an Item
+// Items can only be persisted if they are linked to a character
+func (i *Item) Insert() error {
 
-	err := validateItemParams(params)
+	err := validateItem(i)
 
 	if err != nil {
-		return item, err
+		return err
 	}
 
-	slot, err := freeSlot(params.CharacterID, BagInventory)
+	i.InventoryType = BagInventory
+
+	slot, err := freeSlot(i.CharacterID, BagInventory)
 
 	if err != nil {
-		return item, err
+		return err
 	}
 
-	tx, err := db.Begin()
+	i.Slot = slot
 
-	if err != nil {
-		return item, err
-	}
-
-	defer closeTx(tx)
-
-	item = &Item{
-		CharacterID:   params.CharacterID,
-		InventoryType: BagInventory,
-		Slot:          slot,
-		ShnID:         params.ShnID,
-		Stackable:     params.Stackable,
-		Amount:        params.Amount,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
-	}
-
-	_, err = tx.Model(item).
-		Returning("*").
-		Insert()
-
-	if err != nil {
-		return item, err
-	}
-
-	if params.Attributes != nil {
-		attr = params.Attributes
-	} else {
-		attr = &ItemAttributes{}
-	}
-
-	attr.ItemID = item.ID
-	attr.CreatedAt = time.Now()
-	attr.UpdatedAt = time.Now()
-
-	_, err = tx.Model(attr).
-		Returning("*").
-		Insert()
-
-	if err != nil {
-		return item, errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
-	}
-
-	err = tx.Model(item).
-		WherePK().
-		Returning("*").
-		Relation("Attributes").
-		Select()
-
-	if err != nil {
-		return item, err
-	}
-
-	return item, tx.Commit()
-
-}
-
-func DeleteItem(itemID int) error {
 	tx, err := db.Begin()
 
 	if err != nil {
@@ -150,75 +87,74 @@ func DeleteItem(itemID int) error {
 
 	defer closeTx(tx)
 
-	_, err = tx.Model((*ItemAttributes)(nil)).Where("item_id = ?", itemID).Delete()
+	i.CreatedAt = time.Now()
+
+	_, err = tx.Model(i).
+		Returning("*").
+		Insert()
 
 	if err != nil {
-		return errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":    err,
-				"txErr":  tx.Rollback(),
-				"itemID": itemID,
-			},
-		}
+		return err
 	}
 
-	_, err = tx.Model((*Item)(nil)).Where("id = ?", itemID).Delete()
+	if i.Attributes == nil {
+		i.Attributes = &ItemAttributes{}
+	}
+
+	i.Attributes.ItemID = i.ID
+	i.Attributes.CreatedAt = time.Now()
+
+	_, err = tx.Model(i.Attributes).
+		Returning("*").
+		Insert()
 
 	if err != nil {
 		return errors.Err{
 			Code: errors.PersistenceErrDB,
 			Details: errors.ErrDetails{
-				"err":    err,
-				"txErr":  tx.Rollback(),
-				"itemID": itemID,
+				"err":   err,
+				"txErr": tx.Rollback(),
 			},
 		}
 	}
 
 	return tx.Commit()
+
 }
+func (i *Item) Update() error {
 
-func (i Item) Update(params ItemParams) (*Item, error) {
+	err := validateItem(i)
 
-	err := validateItemParams(params)
+	if err != nil {
+		return err
+	}
 
-	if params.ShnID != i.ShnID {
-		return &i, errors.Err{
+	if i.ShnID != i.ShnID {
+		return errors.Err{
 			Code: errors.PersistenceErrItemDistinctShnID,
 			Details: errors.ErrDetails{
 				"originalShnID": i.ShnID,
-				"newShnID":      params.ShnID,
+				"newShnID":      i.ShnID,
 			},
 		}
-	}
-
-	if err != nil {
-		return &i, err
 	}
 
 	tx, err := db.Begin()
 
 	if err != nil {
-		return &i, err
+		return err
 	}
 
 	defer closeTx(tx)
 
-	i.CharacterID = params.CharacterID
-
-	i.Stackable = params.Stackable
-
-	i.Amount = params.Amount
-
 	i.UpdatedAt = time.Now()
 
-	_, err = tx.Model(&i).
+	_, err = tx.Model(i).
 		WherePK().
 		Update()
 
 	if err != nil {
-		return &i, errors.Err{
+		return errors.Err{
 			Code: errors.PersistenceErrDB,
 			Details: errors.ErrDetails{
 				"err":   err,
@@ -233,18 +169,13 @@ func (i Item) Update(params ItemParams) (*Item, error) {
 		attr.ID = i.ID
 		_, err = tx.Model(attr).Insert()
 	} else {
-
-		if params.Attributes != nil {
-			i.Attributes.Strength = params.Attributes.Strength
-		}
-
 		_, err = tx.Model(i.Attributes).
 			WherePK().
 			Update()
 	}
 
 	if err != nil {
-		return &i, errors.Err{
+		return errors.Err{
 			Code: errors.PersistenceErrDB,
 			Details: errors.ErrDetails{
 				"err":   err,
@@ -253,25 +184,8 @@ func (i Item) Update(params ItemParams) (*Item, error) {
 		}
 	}
 
-	err = tx.Model(&i).
-		Returning("*").
-		WherePK().
-		Relation("Attributes").
-		Select()
-
-	if err != nil {
-		return &i, errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
-	}
-
-	return &i, tx.Commit()
+	return tx.Commit()
 }
-
 func (i Item) MoveTo(inventoryType int, slot int) (*Item, error) {
 	var (
 		otherItem Item
@@ -359,6 +273,44 @@ func (i Item) MoveTo(inventoryType int, slot int) (*Item, error) {
 	return &i, tx.Commit()
 }
 
+func DeleteItem(itemID int) error {
+	tx, err := db.Begin()
+
+	if err != nil {
+		return err
+	}
+
+	defer closeTx(tx)
+
+	_, err = tx.Model((*ItemAttributes)(nil)).Where("item_id = ?", itemID).Delete()
+
+	if err != nil {
+		return errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
+				"err":    err,
+				"txErr":  tx.Rollback(),
+				"itemID": itemID,
+			},
+		}
+	}
+
+	_, err = tx.Model((*Item)(nil)).Where("id = ?", itemID).Delete()
+
+	if err != nil {
+		return errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
+				"err":    err,
+				"txErr":  tx.Rollback(),
+				"itemID": itemID,
+			},
+		}
+	}
+
+	return tx.Commit()
+}
+
 func GetItemWhere(clauses map[string]interface{}, deleted bool) (*Item, error) {
 	var item Item
 
@@ -434,49 +386,49 @@ func freeSlot(characterID uint64, inventoryType uint64) (int, error) {
 	return slot, nil
 }
 
-func validateItemParams(params ItemParams) error {
-	if params.Amount == 0 {
+func validateItem(item *Item) error {
+	if item.Amount == 0 {
 		return errors.Err{
 			Code: errors.PersistenceErrItemInvalidAmount,
 			Details: errors.ErrDetails{
-				"stackable": params.Stackable,
-				"amount":    params.Amount,
+				"stackable": item.Stackable,
+				"amount":    item.Amount,
 			},
 		}
 	}
 
-	if params.ShnID == 0 {
+	if item.ShnID == 0 {
 		return errors.Err{
 			Code: errors.PersistenceErrItemInvalidShnId,
 			Details: errors.ErrDetails{
-				"shineID": params.ShnID,
+				"shineID": item.ShnID,
 			},
 		}
 	}
 
-	if params.CharacterID == 0 {
+	if item.CharacterID == 0 {
 		return errors.Err{
 			Code: errors.PersistenceErrItemInvalidCharacterId,
 			Details: errors.ErrDetails{
-				"characterID": params.CharacterID,
+				"characterID": item.CharacterID,
 			},
 		}
 	}
 
-	if !params.Stackable {
-		if params.Amount > 1 {
+	if !item.Stackable {
+		if item.Amount > 1 {
 			return errors.Err{
 				Code: errors.PersistenceErrItemInvalidAmount,
 				Details: errors.ErrDetails{
-					"stackable": params.Stackable,
-					"amount":    params.Amount,
+					"stackable": item.Stackable,
+					"amount":    item.Amount,
 				},
 			}
 		}
 	}
 
 	var cId uint64 = 0
-	err := db.Model((*Character)(nil)).Column("id").Where("id = ?", params.CharacterID).Select(&cId)
+	err := db.Model((*Character)(nil)).Column("id").Where("id = ?", item.CharacterID).Select(&cId)
 
 	if err != nil {
 		return errors.Err{
@@ -484,7 +436,7 @@ func validateItemParams(params ItemParams) error {
 			Message: "could not fetch character with id",
 			Details: errors.ErrDetails{
 				"err":          err,
-				"character_id": params.CharacterID,
+				"character_id": item.CharacterID,
 			},
 		}
 	}

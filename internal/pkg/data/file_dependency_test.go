@@ -14,13 +14,13 @@ var targetFiles []interface{}
 
 func filesWithDependencies() {
 	var f1 = &ShineItemInfo{}
-	err := Load(filePath+"/shn/ItemInfo.shn", f1)
+	err := Load(filesPath+"/shn/ItemInfo.shn", f1)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	var f2 = &ShineItemInfoServer{}
-	err = Load(filePath+"/shn/ItemInfoServer.shn", f2)
+	err = Load(filesPath+"/shn/ItemInfoServer.shn", f2)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -38,10 +38,10 @@ func TestLinkedFiles(t *testing.T) {
 			f, ok := file.(FileDependency)
 
 			if !ok {
-				t.Error("file type does not implement interface FileDependency")
+				t.Errorf("file type %v does not implement interface FileDependency", reflect.TypeOf(file).String())
 			}
 
-			idfs, err := f.MissingIdentifiers(filePath)
+			idfs, err := f.MissingIdentifiers(filesPath)
 
 			if err != nil {
 				t.Error(err)
@@ -52,7 +52,7 @@ func TestLinkedFiles(t *testing.T) {
 				for k1, v1 := range idfs {
 					for k2, v2 := range v1 {
 						for _, v3 := range v2 {
-							t.Logf("file=%v, identifier=%v, value=%v \n", k1, k2, v3)
+							t.Logf("targetFile=%v, identifier=%v, missingValue=%v \n", k1, k2, v3)
 						}
 						count++
 					}

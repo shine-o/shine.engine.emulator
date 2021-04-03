@@ -2,23 +2,13 @@ package zone
 
 import (
 	"context"
-	"github.com/go-pg/pg/v10"
 	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"io/ioutil"
 	"os"
 	"testing"
 )
-
-type testParams struct {
-	db             *pg.DB
-	itemInfo       *data.ShineItemInfo
-	itemInfoServer *data.ShineItemInfoServer
-}
-
-var tp = testParams{}
 
 func TestMain(m *testing.M) {
 
@@ -27,7 +17,8 @@ func TestMain(m *testing.M) {
 	defer cancel()
 	log = logger.Init("test logger", true, false, ioutil.Discard)
 	log.Info("test logger")
-	db := database.Connection(ctx, database.ConnectionParams{
+
+	persistence.InitDB(database.ConnectionParams{
 		User:     "user",
 		Password: "password",
 		Host:     "127.0.0.1",
@@ -35,11 +26,16 @@ func TestMain(m *testing.M) {
 		Database: "shine",
 		Schema:   "world",
 	})
-	err := database.CreateSchema(db, "world")
+
+	err := database.CreateSchema(persistence.DB(), "world")
+
 	if err != nil {
 		log.Fatal(err)
 	}
-	persistence.CleanDB(db)
-	tp.db = db
+
+	persistence.CleanDB()
+
+	loadGameData("../../../files")
+
 	os.Exit(m.Run())
 }

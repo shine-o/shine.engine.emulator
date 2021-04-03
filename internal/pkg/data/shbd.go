@@ -17,10 +17,10 @@ type SHBD struct {
 	Data []byte `struct-size:"X * Y"`
 }
 
-func LoadSHBDFile(filePath string) (*SHBD, error) {
+func LoadSHBDFile(filesPath string) (*SHBD, error) {
 	var s *SHBD
 
-	data, err := ioutil.ReadFile(filePath)
+	data, err := ioutil.ReadFile(filesPath)
 	if err != nil {
 		return s, err
 	}

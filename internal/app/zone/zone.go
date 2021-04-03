@@ -23,9 +23,19 @@ type zone struct {
 	*handler
 }
 
+var (
+	zoneEvents  sendEvents
+	monsterData *data.MonsterData
+	mapData     *data.MapData
+	npcData     *data.NpcData
+	itemsData   *data.ItemData
+)
+
 func (z *zone) load() {
 
-	loadGameData()
+	shinePath := viper.GetString("shine_folder")
+
+	loadGameData(shinePath)
 
 	z.rm = make(runningMaps)
 
@@ -95,7 +105,7 @@ func (z *zone) load() {
 }
 
 func (z *zone) addMap(mapId int) {
-	md, ok := mapData[mapId]
+	md, ok := mapData.Maps[mapId]
 
 	if !ok {
 		log.Fatalf("no map data for map with id %v", mapId)
@@ -107,7 +117,6 @@ func (z *zone) addMap(mapId int) {
 		log.Fatal(err)
 	}
 
-	// if
 	for _, m := range z.rm {
 		if m.data.MapInfoIndex == md.Info.MapName.Name {
 			log.Errorf("duplicate shn map index id %v %v, skipping", mapId, m.data.MapInfoIndex)
@@ -190,50 +199,46 @@ func (z *zone) run() {
 	}
 }
 
-// instead of accessing global variables for data
-// fire a query event struct, which will be populated with the requested data by a worker (event receiver)
-var (
-	zoneEvents  sendEvents
-	monsterData data.MonsterData
-	mapData     map[int]*data.Map
-	npcData     *data.NPC
-)
-
-func loadGameData() {
-
-	shinePath := viper.GetString("shine_folder")
+func loadGameData(filesPath string) {
 
 	var wg sync.WaitGroup
 
-	wg.Add(1)
-	go func() {
+	wg.Add(4)
+	go func(path string) {
 		defer wg.Done()
-		md, err := data.LoadMonsterData(shinePath)
+		md, err := data.LoadMonsterData(path)
 		if err != nil {
 			log.Fatal(err)
 		}
 		monsterData = md
-	}()
+	}(filesPath)
 
-	wg.Add(1)
-	go func() {
+	go func(path string) {
 		defer wg.Done()
-		md, err := data.LoadMapData(shinePath)
+		md, err := data.LoadMapData(path)
 		if err != nil {
 			log.Fatal(err)
 		}
 		mapData = md
-	}()
+	}(filesPath)
 
-	wg.Add(1)
-	go func() {
+	go func(path string) {
 		defer wg.Done()
-		nd, err := data.LoadNPCData(shinePath)
+		nd, err := data.LoadNPCData(path)
 		if err != nil {
 			log.Fatal(err)
 		}
 		npcData = nd
-	}()
+	}(filesPath)
+
+	go func(path string) {
+		defer wg.Done()
+		id, err := data.LoadItemData(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		itemsData = id
+	}(filesPath)
 
 	wg.Wait()
 }

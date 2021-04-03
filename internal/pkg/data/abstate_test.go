@@ -2,12 +2,9 @@ package data
 
 import "testing"
 
-// load data path
-//
-
 func TestAbstateFile(t *testing.T) {
 	var file ShineAbState
-	err := Load("AbState.shn", &file)
+	err := Load(filesPath+"/shn/AbState.shn", &file)
 	if err != nil {
 		t.Error(err)
 	}

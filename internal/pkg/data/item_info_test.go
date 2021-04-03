@@ -6,7 +6,7 @@ import (
 
 func TestItemInfo(t *testing.T) {
 	var file ShineItemInfo
-	err := Load(filePath+"/shn/ItemInfo.shn", &file)
+	err := Load(filesPath+"/shn/ItemInfo.shn", &file)
 	if err != nil {
 		t.Error(err)
 	}

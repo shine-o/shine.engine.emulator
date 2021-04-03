@@ -21,20 +21,34 @@ type itemBox struct {
 }
 
 type item struct {
-	//slot uint16
 	pItem    *persistence.Item
-	itemData itemData
+	itemData *itemData
+	stats itemStats
+	amount    int
+	stackable bool
+}
+
+type itemStats struct {
+	strength itemStat
+}
+
+type itemStat struct {
+	base    int
+	extra int
 }
 
 type itemData struct {
-	itemInfo       *data.ItemInfo
-	itemInfoServer *data.ItemInfoServer
-	// gradeItemOptions
+	itemInfo          *data.ItemInfo
+	itemInfoServer    *data.ItemInfoServer
+	gradeItemOption   *data.GradeItemOption
+	randomOption      *data.RandomOption
+	randomOptionCount *data.RandomOptionCount
 	// itemUseEffect
 	// ... etc
+	sync.Mutex
 }
 
-func (p *player) itemData(items chan<- *playerInventories, c *persistence.Character, err chan<- error) {
+func (p *player) itemData() {
 	// for this character, load all items in each respective box
 	// each item loaded should be validated so that, best way is to iterate all items and for each item launch a routine that validates it and returns the valid item through a channel
 	// we also forward the error channel in case there is an error
@@ -52,5 +66,7 @@ func (p *player) itemData(items chan<- *playerInventories, c *persistence.Charac
 			box: 15,
 		},
 	}
-	items <- i
+	p.Lock()
+	p.inventories = i
+	p.Unlock()
 }

@@ -2,6 +2,7 @@ package zone
 
 import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"sync"
@@ -22,27 +23,30 @@ const (
 	enhanceItem
 )
 
+// todo: use pointers for high use variables (state, skills, passives, targetting, etc..), locking the whole entity is gonna be costly for latency
 type player struct {
 	baseEntity
+	//todo: group into another struct that can be locked
 	players     map[uint16]*player
 	monsters    map[uint16]*monster
 	npcs        map[uint16]*npc
-	char        *persistence.Character
-	conn        playerConnection
-	view        playerView
-	stats       playerStats
-	state       playerState
+	conn        *playerConnection
+	view        *playerView
+	stats       *playerStats
+	state       *playerState
 	inventories *playerInventories
-	money       playerMoney
-	titles      playerTitles
-	quests      playerQuests
+	money       *playerMoney
+	titles      *playerTitles
+	quests      *playerQuests
 	skills      []skill
 	passives    []passive
-	tickers     []*time.Ticker
-	targeting
-	sync.RWMutex
-	justSpawned bool
+	*targeting
 	*prompt
+	justSpawned bool
+	tickers     []*time.Ticker
+	char        *persistence.Character
+	sync.RWMutex
+
 }
 
 type promptAction int
@@ -232,6 +236,8 @@ type playerConnection struct {
 	lastHeartBeat time.Time
 	close         chan<- bool
 	outboundData  chan<- []byte
+	sync.RWMutex
+
 }
 
 type playerView struct {
@@ -241,6 +247,7 @@ type playerView struct {
 	hairType   uint8
 	hairColour uint8
 	faceType   uint8
+	sync.RWMutex
 }
 
 type playerStats struct {
@@ -274,6 +281,7 @@ type playerStats struct {
 	restraintResistance stat
 	poisonResistance    stat
 	rollbackResistance  stat
+	sync.RWMutex
 }
 
 type playerStatPoints struct {
@@ -283,6 +291,7 @@ type playerStatPoints struct {
 	int                  uint8
 	spr                  uint8
 	redistributionPoints uint8
+	sync.RWMutex
 }
 
 type playerState struct {
@@ -295,6 +304,7 @@ type playerState struct {
 	moverHandle uint16
 	moverSlot   uint8
 	miniPet     uint8
+	sync.RWMutex
 }
 
 type playerMoney struct {
@@ -302,6 +312,7 @@ type playerMoney struct {
 	fame        uint32
 	wastedCoins uint64
 	wastedFame  uint64
+	sync.RWMutex
 }
 
 type playerTitles struct {
@@ -311,6 +322,7 @@ type playerTitles struct {
 		mobID   uint16
 	}
 	titles []title
+	sync.RWMutex
 }
 
 type playerQuests struct {
@@ -318,6 +330,7 @@ type playerQuests struct {
 	done       []quest
 	doing      []quest
 	repeatable []quest
+	sync.RWMutex
 }
 
 type skill struct {
@@ -351,9 +364,14 @@ type stat struct {
 	withExtras uint32
 }
 
+type itemSlotChange struct {
+	from int
+	to   int
+}
+
 func (p *player) load(name string) error {
 
-	char, err := persistence.GetByName(name)
+	char, err := persistence.GetCharacterByName(name)
 
 	if err != nil {
 		return err
@@ -375,95 +393,65 @@ func (p *player) load(name string) error {
 
 	p.prompt = &prompt{}
 
-	view := make(chan playerView)
-	state := make(chan playerState)
-	stats := make(chan playerStats)
-	inventories := make(chan *playerInventories)
-	money := make(chan playerMoney)
-	titles := make(chan playerTitles)
-	quests := make(chan playerQuests)
-	skills := make(chan []skill)
-	passives := make(chan []passive)
-	pErr := make(chan error)
+	wg := &sync.WaitGroup{}
+	wg.Add(8)
+	go func() {
+		defer wg.Done()
+		p.viewData()
+	}()
+	go func() {
+		defer wg.Done()
+		p.stateData()
+	}()
+	go func() {
+		defer wg.Done()
+		p.statsData()
+	}()
+	go func() {
+		defer wg.Done()
+		p.itemData()
+	}()
+	go func() {
+		defer wg.Done()
+		p.moneyData()
+	}()
+	go func() {
+		defer wg.Done()
+		p.titleData()
+	}()
+	go func() {
+		defer wg.Done()
+		p.skillData()
+	}()
+	go func() {
+		defer wg.Done()
+		p.passiveData()
+	}()
 
-	go p.viewData(view, &char, pErr)
-	go p.stateData(state, &char, pErr)
-	go p.statsData(stats, &char, pErr)
-	go p.itemData(inventories, &char, pErr)
-	go p.moneyData(money, &char, pErr)
-	go p.titleData(titles, &char, pErr)
-	go p.skillData(skills, &char, pErr)
-	go p.passiveData(passives, &char, pErr)
-
-	// TODO: remove this time bomb
-	done := 0
-	for {
-		select {
-		case v := <-view:
-			p.view = v
-			view = nil
-			done++
-		case st := <-state:
-			p.state = st
-			state = nil
-			done++
-		case s := <-stats:
-			p.stats = s
-			stats = nil
-			done++
-		case i := <-inventories:
-			p.inventories = i
-			inventories = nil
-			done++
-		case m := <-money:
-			p.money = m
-			money = nil
-			done++
-		case t := <-titles:
-			p.titles = t
-			titles = nil
-			done++
-		case q := <-quests:
-			p.quests = q
-			quests = nil
-			done++
-		case sk := <-skills:
-			p.skills = sk
-			skills = nil
-			done++
-		case pa := <-passives:
-			p.passives = pa
-			passives = nil
-			done++
-		case err := <-pErr:
-			return err
-		}
-
-		if done == 8 { // risky, checking if channels are nil is safer
-			return nil
-		}
-	}
-	// for p launch routines to create player inner structs view, state, stats
+	wg.Wait()
+	return nil
 }
 
-func (p *player) viewData(view chan<- playerView, c *persistence.Character, err chan error) {
-	v := playerView{ // todo: validation just in case, so we don't log a bad player that could potentially bin other player
-		name:       c.Name,
-		class:      c.Appearance.Class,
-		gender:     c.Appearance.Gender,
-		hairType:   c.Appearance.HairType,
-		hairColour: c.Appearance.HairColor,
-		faceType:   c.Appearance.FaceType,
+func (p *player) viewData() {
+	v := &playerView{ // todo: validation just in case, so we don't log a bad player that could potentially bin other player
+		name:       p.char.Name,
+		class:      p.char.Appearance.Class,
+		gender:     p.char.Appearance.Gender,
+		hairType:   p.char.Appearance.HairType,
+		hairColour: p.char.Appearance.HairColor,
+		faceType:   p.char.Appearance.FaceType,
 	}
-	view <- v
+	p.Lock()
+	p.view = v
+	p.Unlock()
 }
 
-func (p *player) stateData(state chan<- playerState, c *persistence.Character, err chan<- error) {
-	s := playerState{
+func (p *player) stateData() {
+	s := &playerState{
 		prevExp: 100,
 		exp:     150,
 		nextExp: 800,
-		level:   c.Attributes.Level,
+		level:   p.char.Attributes.Level,
 		// player state should also include buffs and debuffs in the future
 		autoPickup:  0,
 		polymorph:   65535,
@@ -471,15 +459,17 @@ func (p *player) stateData(state chan<- playerState, c *persistence.Character, e
 		moverSlot:   0,
 		miniPet:     0,
 	}
-	state <- s
+	p.Lock()
+	p.state = s
+	p.Unlock()
 }
 
-func (p *player) statsData(stats chan<- playerStats, c *persistence.Character, err chan<- error) {
+func (p *player) statsData() {
 	// given all:
 	//  class base stats for current level, equipped items, charged buffs, buffs/debuffs, assigned stat points
 	// calculate base stats (class base stats for current level, assigned stat points) , and stats with gear on (equipped items, charged buffs, buffs/debuffs)
 	// given that equipped
-	s := playerStats{
+	s := &playerStats{
 		str: stat{
 			base:       0,
 			withExtras: 0,
@@ -558,13 +548,14 @@ func (p *player) statsData(stats chan<- playerStats, c *persistence.Character, e
 			withExtras: 0,
 		},
 	}
-
-	stats <- s
+	p.Lock()
+	p.stats = s
+	p.Unlock()
 }
 
-func (p *player) titleData(titles chan<- playerTitles, c *persistence.Character, err chan<- error) {
+func (p *player) titleData() {
 	// bit operation for titles u.u
-	t := playerTitles{
+	t := &playerTitles{
 		current: struct {
 			id      uint8
 			element uint8
@@ -575,28 +566,34 @@ func (p *player) titleData(titles chan<- playerTitles, c *persistence.Character,
 			mobID:   0,
 		},
 	}
-	titles <- t
+	p.Lock()
+	p.titles = t
+	p.Unlock()
 }
 
-func (p *player) moneyData(money chan<- playerMoney, c *persistence.Character, err chan<- error) {
-	m := playerMoney{
+func (p *player) moneyData() {
+	m := &playerMoney{
 		coins:       100000,
 		fame:        100000,
 		wastedCoins: 0,
 		wastedFame:  0,
 	}
-	money <- m
+	p.Lock()
+	p.money = m
+	p.Unlock()
 }
 
-func (p *player) skillData(skills chan<- []skill, c *persistence.Character, err chan<- error) {
+func (p *player) skillData() {
 	// all learned skills stored in the database
-	var s []skill
-	skills <- s
+	p.Lock()
+	p.skills = []skill{}
+	p.Unlock()
 }
 
-func (p *player) passiveData(passives chan<- []passive, c *persistence.Character, err chan<- error) {
-	var pa []passive
-	passives <- pa
+func (p *player) passiveData() {
+	p.Lock()
+	p.passives = []passive{}
+	p.Unlock()
 }
 
 func (p *player) ncBriefInfoLoginCharacterCmd() structs.NcBriefInfoLoginCharacterCmd {
@@ -749,11 +746,6 @@ func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
 	}
 }
 
-type itemSlotChange struct {
-	from int
-	to   int
-}
-
 func (p *player) equip(i *item, slot data.ItemEquipEnum) (itemSlotChange, error) {
 	slotChange := itemSlotChange{
 		from: i.pItem.Slot,
@@ -763,9 +755,9 @@ func (p *player) equip(i *item, slot data.ItemEquipEnum) (itemSlotChange, error)
 	uItem, err := i.pItem.MoveTo(persistence.EquippedInventory, int(slot))
 
 	if err != nil {
-		return itemSlotChange{}, Err{
-			Code: ItemEquipFailed,
-			Details: ErrDetails{
+		return itemSlotChange{}, errors.Err{
+			Code: errors.ZoneItemEquipFailed,
+			Details: errors.ErrDetails{
 				"err":     err,
 				"pHandle": p.handle,
 			},
@@ -779,6 +771,21 @@ func (p *player) equip(i *item, slot data.ItemEquipEnum) (itemSlotChange, error)
 	p.inventories.Unlock()
 
 	return slotChange, nil
+}
+
+func (p *player) newItem(i *item) error {
+	i.pItem = &persistence.Item{}
+	i.pItem.CharacterID = p.char.ID
+	i.pItem.ShnID = i.itemData.itemInfo.ID
+	i.pItem.Amount = i.amount
+	i.pItem.Stackable = i.stackable
+
+	i.pItem.Attributes = &persistence.ItemAttributes{}
+
+	i.pItem.Attributes.StrengthBase = i.stats.strength.base
+	i.pItem.Attributes.StrengthExtra = i.stats.strength.extra
+
+	return i.pItem.Insert()
 }
 
 func (pi *playerInventories) ncCharClientItemCmd() []structs.NcCharClientItemCmd {

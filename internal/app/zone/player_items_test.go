@@ -3,85 +3,193 @@ package zone
 import (
 	"fmt"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
+	"sync"
 	"testing"
 )
 
-func newCharacter(class string) *persistence.Character {
-	var (
-		bitField byte
-		name     string
-	)
 
-	switch class {
-	case "mage":
-		bitField = byte(1 | 16<<2 | 1<<7)
-		name = fmt.Sprintf("mage%v", 1)
-		break
-	case "fighter":
-		bitField = byte(1 | 1<<2 | 1<<7)
-		name = fmt.Sprintf("fighter%v", 1)
-		break
-	case "archer":
-		bitField = byte(1 | 11<<2 | 1<<7)
-		name = fmt.Sprintf("archer%v", 1)
-		break
-	case "cleric":
-		bitField = byte(1 | 6<<2 | 1<<7)
-		name = fmt.Sprintf("cleric%v", 1)
-		break
-	}
-
-	c := structs.NcAvatarCreateReq{
-		SlotNum: byte(0),
-		Name: structs.Name5{
-			Name: name,
-		},
-		Shape: structs.ProtoAvatarShapeInfo{
-			BF:        bitField,
-			HairType:  6,
-			HairColor: 0,
-			FaceShape: 0,
-		},
-	}
-
-	char, err := persistence.New(1, &c)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return char
-}
 
 func TestLoadPlayerInventory_BagInventory(t *testing.T) {
 	// p.loadInventory(BagInventory)
 }
 
 //
-//func TestNewItem_Success(t *testing.T) {
-//	char := newCharacter("mage")
-//
-//	player := &player{
-//		baseEntity: baseEntity{
-//			handle:   1,
-//		},
-//		char: char,
-//	}
-//
-//	item := item{
-//		pItem: &persistence.Item{
-//			InventoryType: persistence.EquippedInventory,
-//			//Slot:          0,
-//			CharacterID:   char.ID,
-//			ShnID:         1,
-//			Stackable:     false,
-//			Amount:        1,
-//		},
-//	}
-//
-//	player.newItem(item)
-//}
+func TestNewItem_Success(t *testing.T) {
+	_ = persistence.NewCharacter("mage")
+
+	player := &player{
+		baseEntity: baseEntity{
+			handle: 1,
+		},
+		//char: char,
+	}
+
+
+	err := player.load("mage")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(item, player)
+	//// item is persisted here
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check if item is in player inventory
+	item1, ok := player.inventories.inventory.items[1]
+	if !ok {
+		t.Fail()
+	}
+
+	if item1.itemData.itemInfo.InxName != "ShortStaff" {
+		t.Fail()
+	}
+
+}
+
+func makeItem(itemIndex string) (*item, error) {
+	var i = &item{}
+
+	itemData := getItemData(itemIndex)
+
+	if itemData.itemInfo == nil {
+		return i, errors.Err{
+			Code:    errors.ZoneItemMissingData,
+			Details: errors.ErrDetails{
+				"itemIndex": itemIndex,
+				"type": "ItemInfo",
+			},
+		}
+	}
+
+	if itemData.itemInfoServer == nil {
+		return i, errors.Err{
+			Code:    errors.ZoneItemMissingData,
+			Details: errors.ErrDetails{
+				"itemIndex": itemIndex,
+				"type": "ItemInfoServer",
+			},
+		}
+	}
+	i.itemData = itemData
+	i.pItem = &persistence.Item{}
+
+	// first check if there are any random stats using (RandomOption / RandomOptionCount)
+	// apply those first, after that check GradeItemOption for fixed stats
+	i.stats = itemStats{}
+
+	if itemData.itemInfo.MaxLot > 1 {
+		i.stackable = true
+	}
+
+	// will vary when created through the ItemDropTables
+	// will vary when created through admin command with quantity parameter
+	// will not vary if stackable is false
+	i.amount = int(itemData.itemInfo.MaxLot)
+
+	return i, nil
+}
+
+func getItemData(itemIndex string) *itemData {
+	var (
+		id = &itemData{}
+		wg = &sync.WaitGroup{}
+	)
+
+	wg.Add(3)
+
+	go addItemInfoRow(itemIndex, id, wg)
+
+	go addItemInfoServerRow(itemIndex, id, wg)
+
+	go addGradeItemOptionRow(itemIndex, id, wg)
+
+	wg.Wait()
+
+	if id.itemInfoServer.RandomOptionDropGroup != "" {
+		wg.Add(2)
+		go addRandomOptionRow(id.itemInfoServer.RandomOptionDropGroup, id, wg)
+		go addRandomOptionCountRow(id.itemInfoServer.RandomOptionDropGroup, id, wg)
+	}
+
+	wg.Wait()
+
+	return id
+}
+
+func addItemInfoRow(itemIndex string, id *itemData, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for i, row := range itemsData.ItemInfo.ShineRow {
+		if row.InxName == itemIndex {
+			id.Lock()
+			id.itemInfo = &itemsData.ItemInfo.ShineRow[i]
+			id.Unlock()
+			return
+		}
+	}
+}
+
+func addItemInfoServerRow(itemIndex string, id *itemData, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for i, row := range itemsData.ItemInfoServer.ShineRow {
+		if row.InxName == itemIndex {
+			id.Lock()
+			id.itemInfoServer = &itemsData.ItemInfoServer.ShineRow[i]
+			id.Unlock()
+			return
+		}
+	}
+}
+
+func addGradeItemOptionRow(itemIndex string, id *itemData, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for i, row := range itemsData.GradeItemOptions.ShineRow {
+		if row.ItemIndex == itemIndex {
+			id.Lock()
+			id.gradeItemOption = &itemsData.GradeItemOptions.ShineRow[i]
+			id.Unlock()
+			return
+		}
+	}
+}
+
+func addRandomOptionRow(dropItemIndex string, id *itemData, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for i, row := range itemsData.RandomOption.ShineRow {
+		if row.DropItemIndex == dropItemIndex {
+			id.Lock()
+			id.randomOption = &itemsData.RandomOption.ShineRow[i]
+			id.Unlock()
+			return
+		}
+	}
+}
+
+func addRandomOptionCountRow(dropItemIndex string, id *itemData, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for i, row := range itemsData.RandomOptionCount.ShineRow {
+		if row.DropItemIndex == dropItemIndex {
+			id.Lock()
+			id.randomOptionCount = &itemsData.RandomOptionCount.ShineRow[i]
+			id.Unlock()
+			return
+		}
+	}
+}
+
 //
 //func TestNewItem_WithAttributes(t *testing.T) {
 //	char := newCharacter("mage")
@@ -106,10 +214,6 @@ func TestLoadPlayerInventory_BagInventory(t *testing.T) {
 //
 //	player.newItem(item)
 //}
-
-func TestNewItem_BadItemID(t *testing.T) {
-
-}
 
 func TestNewItem_BadItemIndex(t *testing.T) {
 

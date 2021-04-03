@@ -6,6 +6,11 @@ import (
 	"sync"
 )
 
+type MapData struct {
+	Maps map[int]*Map
+
+}
+
 type Map struct {
 	ID int `struct:"int32"`
 	*Attributes
@@ -61,7 +66,8 @@ type maps struct {
 	sync.Mutex
 }
 
-func LoadMapData(shineFolder string) (map[int]*Map, error) {
+func LoadMapData(shineFolder string) (*MapData, error) {
+	var mapData = &MapData{}
 
 	allMaps := maps{
 		data:  make(map[int]*Map),
@@ -76,18 +82,19 @@ func LoadMapData(shineFolder string) (map[int]*Map, error) {
 	attributesPath, err := ValidPath(shineFolder + "/world/" + "MapAttributes.txt")
 
 	attributes, err = loadAttributes(attributesPath)
+
 	if err != nil {
-		return allMaps.data, err
+		return mapData, err
 	}
 
 	mapInfoPath, err := ValidPath(shineFolder + "/shn/" + "MapInfo.shn")
 	if err != nil {
-		return allMaps.data, err
+		return mapData, err
 	}
 
 	err = Load(mapInfoPath, &mapInfo)
 	if err != nil {
-		return allMaps.data, err
+		return mapData, err
 	}
 
 	var wg sync.WaitGroup
@@ -104,7 +111,7 @@ func LoadMapData(shineFolder string) (map[int]*Map, error) {
 		maps, err = loadMaps(mapsPath)
 
 		if err != nil {
-			return allMaps.data, err
+			return mapData, err
 		}
 
 		for _, m := range maps {
@@ -114,8 +121,8 @@ func LoadMapData(shineFolder string) (map[int]*Map, error) {
 	}
 
 	wg.Wait()
-
-	return allMaps.data, err
+	mapData.Maps = allMaps.data
+	return mapData, err
 }
 
 func (md *data) loadData(wg *sync.WaitGroup, m Map, allMaps *maps) {
@@ -159,9 +166,9 @@ func (md *data) loadData(wg *sync.WaitGroup, m Map, allMaps *maps) {
 	allMaps.Unlock()
 }
 
-func loadMaps(filePath string) ([]Map, error) {
+func loadMaps(filesPath string) ([]Map, error) {
 	var maps []Map
-	data, err := loadTxtFile(filePath)
+	data, err := loadTxtFile(filesPath)
 	if err != nil {
 		return maps, err
 	}
@@ -187,10 +194,10 @@ func loadMaps(filePath string) ([]Map, error) {
 	return maps, nil
 }
 
-func loadAttributes(filePath string) (map[int]Attributes, error) {
+func loadAttributes(filesPath string) (map[int]Attributes, error) {
 	var attributes = make(map[int]Attributes, 0)
 
-	data, err := loadTxtFile(filePath)
+	data, err := loadTxtFile(filesPath)
 
 	if err != nil {
 		return attributes, err
