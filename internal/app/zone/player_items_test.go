@@ -58,30 +58,57 @@ func TestNewItem_Success(t *testing.T) {
 
 }
 
-//
-//func TestNewItem_WithAttributes(t *testing.T) {
-//	char := newCharacter("mage")
-//
-//	player := &player{
-//		baseEntity: baseEntity{
-//			handle:   1,
-//		},
-//		char: char,
-//	}
-//
-//	item := item{
-//		pItem: &persistence.Item{
-//			InventoryType: persistence.EquippedInventory,
-//			//Slot:          0,
-//			CharacterID:   char.ID,
-//			ShnID:         1,
-//			Stackable:     false,
-//			Amount:        1,
-//		},
-//	}
-//
-//	player.newItem(item)
-//}
+
+func TestNewItem_WithAttributes(t *testing.T) {
+	itemInxName := "KarenStaff"
+	char := persistence.NewCharacter("mage")
+
+	player := &player{
+		baseEntity: baseEntity{
+			handle: 1,
+			fallback: &location{},
+			current:  &location{},
+			next:     &location{},
+		},
+		char: char,
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, err := makeItem(itemInxName)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is persisted here
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// check if item is in player inventory
+	item1, ok := player.inventories.inventory.items[0]
+	if !ok {
+		t.Fail()
+	}
+
+	if item1.itemData.itemInfo.InxName != itemInxName {
+		t.Fail()
+	}
+
+	// should have at least 1 random stat
+
+
+	// should have 2 static stats (97 int, 500 HP through GradeItemOption)
+
+}
 
 func TestNewItem_BadItemIndex(t *testing.T) {
 

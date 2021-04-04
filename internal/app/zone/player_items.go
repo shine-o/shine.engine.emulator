@@ -24,7 +24,7 @@ type itemBox struct {
 type item struct {
 	pItem    *persistence.Item
 	itemData *itemData
-	stats itemStats
+	stats     itemStats
 	amount    int
 	stackable bool
 }
@@ -42,8 +42,8 @@ type itemData struct {
 	itemInfo          *data.ItemInfo
 	itemInfoServer    *data.ItemInfoServer
 	gradeItemOption   *data.GradeItemOption
-	randomOption      *data.RandomOption
-	randomOptionCount *data.RandomOptionCount
+	randomOption      map[data.RandomOptionType]*data.RandomOption
+	randomOptionCount map[uint16]*data.RandomOptionCount
 	// itemUseEffect
 	// ... etc
 	sync.Mutex
@@ -226,11 +226,14 @@ func addGradeItemOptionRow(itemIndex string, id *itemData, wg *sync.WaitGroup) {
 func addRandomOptionRow(dropItemIndex string, id *itemData, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for i, row := range itemsData.RandomOption.ShineRow {
+		if id.randomOption == nil {
+			id.randomOption = make(map[data.RandomOptionType]*data.RandomOption)
+		}
 		if row.DropItemIndex == dropItemIndex {
 			id.Lock()
-			id.randomOption = &itemsData.RandomOption.ShineRow[i]
+			id.randomOption[row.RandomOptionType] = &itemsData.RandomOption.ShineRow[i]
 			id.Unlock()
-			return
+			//return
 		}
 	}
 }
@@ -238,11 +241,14 @@ func addRandomOptionRow(dropItemIndex string, id *itemData, wg *sync.WaitGroup) 
 func addRandomOptionCountRow(dropItemIndex string, id *itemData, wg *sync.WaitGroup) {
 	defer wg.Done()
 	for i, row := range itemsData.RandomOptionCount.ShineRow {
+		if id.randomOptionCount == nil {
+			id.randomOptionCount = make(map[uint16]*data.RandomOptionCount)
+		}
 		if row.DropItemIndex == dropItemIndex {
 			id.Lock()
-			id.randomOptionCount = &itemsData.RandomOptionCount.ShineRow[i]
+			id.randomOptionCount[row.LimitCount] = &itemsData.RandomOptionCount.ShineRow[i]
 			id.Unlock()
-			return
+			//return
 		}
 	}
 }
