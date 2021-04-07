@@ -1,10 +1,13 @@
 package zone
 
 import (
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
+	"math/rand"
 	"sync"
+	"time"
 )
 
 type playerInventories struct {
@@ -27,10 +30,84 @@ type item struct {
 	stats     itemStats
 	amount    int
 	stackable bool
+	sync.RWMutex
 }
 
 type itemStats struct {
 	strength itemStat
+	dexterity itemStat
+	intelligence itemStat
+	endurance itemStat
+	spirit itemStat
+	aim itemStat
+	critical itemStat
+	physicalAttack itemStat
+	magicalAttack itemStat
+	physicalDefense itemStat
+	magicalDefense itemStat
+	evasion itemStat
+	hp itemStat
+}
+
+func (i * item) generateStats() {
+	// first check if there are any random stats using (RandomOption / RandomOptionCount)
+	// apply those first, after that check GradeItemOption for fixed stats
+	// RNG for the number of stats that should be generated
+	amount := amountStats(i.itemData)
+	types := chosenStatTypes(amount, i.itemData)
+
+	value := func(t data.RandomOptionType) int {
+		ro := i.itemData.randomOption[t]
+		return int(crypto.RandomUint32Between(ro.Min, ro.Max))
+	}
+
+	is := itemStats{}
+	for _, t := range types {
+		switch t {
+		case data.ROT_STR:
+			if is.strength.base > 0 {
+				is.strength.extra = value(t)
+			} else {
+				is.strength.base = value(t)
+			}
+		case data.ROT_CON:
+			is.endurance.base = value(t)
+		case data.ROT_DEX:
+			is.dexterity.base = value(t)
+		case data.ROT_INT:
+			is.intelligence.base = value(t)
+		case data.ROT_MEN:
+			is.spirit.base = value(t)
+		}
+	}
+
+	i.Lock()
+	i.stats = is
+	i.Unlock()
+}
+
+// todo: extend this beyond RNG using the player's session data for deciding amount of stats, e.g: how much damage he did to the mob that dropped it, how many kills before, etc
+func amountStats(id * itemData) int {
+	var keys []int
+	for k, _ := range id.randomOptionCount {
+		keys = append(keys, int(k))
+	}
+	return crypto.RandomIntBetween(0, len(keys))
+}
+
+func chosenStatTypes(amount int, id * itemData) []data.RandomOptionType  {
+	var types []data.RandomOptionType
+
+	for rot, _ := range id.randomOption {
+		types = append(types, rot)
+	}
+
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(types), func(i, j int) {
+		types[i], types[j] = types[j], types[i]
+	})
+	
+	return types[:amount]
 }
 
 type itemStat struct {
@@ -78,7 +155,9 @@ func makeItem(itemIndex string) (*item, error) {
 
 	// first check if there are any random stats using (RandomOption / RandomOptionCount)
 	// apply those first, after that check GradeItemOption for fixed stats
-	i.stats = itemStats{}
+	if i.itemData.randomOption != nil && i.itemData.randomOptionCount != nil {
+		i.generateStats()
+	}
 
 	if itemData.itemInfo.MaxLot > 1 {
 		i.stackable = true

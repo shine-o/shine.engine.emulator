@@ -103,10 +103,14 @@ func TestNewItem_WithAttributes(t *testing.T) {
 		t.Fail()
 	}
 
-	// should have at least 1 random stat
-
-
 	// should have 2 static stats (97 int, 500 HP through GradeItemOption)
+	if item1.stats.intelligence.base != 97 {
+		t.Fail()
+	}
+
+	if item1.stats.hp.base != 500 {
+		t.Fail()
+	}
 
 }
 

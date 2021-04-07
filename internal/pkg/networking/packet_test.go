@@ -2,6 +2,7 @@ package networking
 
 import (
 	"encoding/hex"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"os"
 	"testing"
 )
@@ -163,7 +164,7 @@ func TestDecodeInboundStream(t *testing.T) {
 
 		pd = append(pd, data[offset+skipBytes:nextOffset]...)
 
-		XorCipher(pd, &xorOffset)
+		crypto.XorCipher(pd, &xorOffset)
 
 		offset += skipBytes + int(pLen)
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
 	"github.com/sirupsen/logrus"
@@ -105,14 +106,16 @@ func (ss *ShineService) Listen(ctx context.Context, port string) {
 	}
 
 	log.Infof("listening for TCP connections on: %v", l.Addr())
+
 	defer l.Close()
-	var src cryptoSource
+
+	var src crypto.Source
 	rnd := rand.New(src)
 
 	rand.Seed(rnd.Int63n(time.Now().Unix()))
 
-	t1 := time.Tick(time.Duration(int64(RandomIntBetween(0, 15))) * time.Second)
-	t2 := time.Tick(time.Duration(int64(RandomIntBetween(0, 60))) * time.Second)
+	t1 := time.Tick(time.Duration(int64(crypto.RandomIntBetween(0, 15))) * time.Second)
+	t2 := time.Tick(time.Duration(int64(crypto.RandomIntBetween(0, 60))) * time.Second)
 
 	for {
 		select {

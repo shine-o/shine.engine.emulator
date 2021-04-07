@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"github.com/RoaringBitmap/roaring"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/viper"
 	"math"
 	"sync"
@@ -289,18 +289,18 @@ func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.M
 		}
 
 		if re.Width == 0 {
-			re.Width = networking.RandomIntBetween(20, 250)
+			re.Width = crypto.RandomIntBetween(20, 250)
 		}
 
 		if re.Height == 0 {
-			re.Height = networking.RandomIntBetween(20, 250)
+			re.Height = crypto.RandomIntBetween(20, 250)
 		}
 
-		x = networking.RandomIntBetween(re.X, re.X+re.Width)
+		x = crypto.RandomIntBetween(re.X, re.X+re.Width)
 
-		y = networking.RandomIntBetween(re.Y, re.Y+re.Height)
+		y = crypto.RandomIntBetween(re.Y, re.Y+re.Height)
 
-		d = networking.RandomIntBetween(1, 250)
+		d = crypto.RandomIntBetween(1, 250)
 
 		spawn = validateLocation(zm, x, y, numSteps, speed)
 

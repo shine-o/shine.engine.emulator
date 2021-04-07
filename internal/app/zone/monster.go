@@ -1,8 +1,8 @@
 package zone
 
 import (
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"sync"
 	"time"
@@ -44,7 +44,7 @@ func (m *monster) monsterActivity(c chan<- monsterLocationActivity, zm *zoneMap)
 		}
 	}()
 
-	tick := time.NewTicker(time.Duration(int64(networking.RandomIntBetween(5256, 21234))) * time.Millisecond)
+	tick := time.NewTicker(time.Duration(int64(crypto.RandomIntBetween(5256, 21234))) * time.Millisecond)
 loop:
 	for {
 		select {
@@ -64,39 +64,39 @@ loop:
 
 			rX, rY := igCoordToBitmap(x, y)
 
-			switch networking.RandomIntBetween(0, 8) {
+			switch crypto.RandomIntBetween(0, 8) {
 			case 1:
 				if rX < rX+walkSpeed {
-					lx = networking.RandomIntBetween(rX, rX+walkSpeed)
+					lx = crypto.RandomIntBetween(rX, rX+walkSpeed)
 				}
 				if rY < rY+walkSpeed {
-					ly = networking.RandomIntBetween(rY, rY+walkSpeed)
+					ly = crypto.RandomIntBetween(rY, rY+walkSpeed)
 				}
 			case 2:
 				if rX-(walkSpeed) < rX+walkSpeed {
-					lx = networking.RandomIntBetween(rX-(walkSpeed), rX+walkSpeed)
+					lx = crypto.RandomIntBetween(rX-(walkSpeed), rX+walkSpeed)
 				}
 				if rY-(walkSpeed) < rY+walkSpeed {
-					ly = networking.RandomIntBetween(rY-(walkSpeed), rY+walkSpeed)
+					ly = crypto.RandomIntBetween(rY-(walkSpeed), rY+walkSpeed)
 				}
 			case 3:
 				if rY-(walkSpeed) < rY {
 					lx = rX
-					ly = networking.RandomIntBetween(rY-(walkSpeed), rY)
+					ly = crypto.RandomIntBetween(rY-(walkSpeed), rY)
 				}
 			case 4:
 				if rY+(walkSpeed) < rY {
 					lx = rX
-					ly = networking.RandomIntBetween(rY+(walkSpeed), rY)
+					ly = crypto.RandomIntBetween(rY+(walkSpeed), rY)
 				}
 			case 5:
 				if rX-(walkSpeed) < rX {
-					lx = networking.RandomIntBetween(rX-(walkSpeed), rX)
+					lx = crypto.RandomIntBetween(rX-(walkSpeed), rX)
 					ly = rY
 				}
 			case 6:
 				if rX+(walkSpeed) < rX {
-					lx = networking.RandomIntBetween(rX+(walkSpeed), rX)
+					lx = crypto.RandomIntBetween(rX+(walkSpeed), rX)
 					ly = rY
 				}
 			case 7:

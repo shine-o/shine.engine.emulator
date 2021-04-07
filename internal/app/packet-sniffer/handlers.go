@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/segmentio/ksuid"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/viper"
 	"time"
@@ -90,7 +91,7 @@ loop:
 				copy(packetData, data[offset+skipBytes:nextOffset])
 
 				if !serverSideCapture {
-					networking.XorCipher(packetData, &xorOffset)
+					crypto.XorCipher(packetData, xorBytes, &xorOffset, 499)
 				}
 
 				p, _ := networking.DecodePacket(packetData)

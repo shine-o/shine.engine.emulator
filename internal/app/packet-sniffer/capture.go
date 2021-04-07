@@ -2,6 +2,7 @@ package packet_sniffer
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
@@ -68,11 +69,22 @@ type Params struct {
 	Send          chan<- CapturedPacket
 }
 
-var params *Params
+var (
+	params *Params
+	xorBytes []byte
+)
 
 func ExtendedCapture(p *Params) {
 	initConfig()
 	params = p
+
+	xb , err := hex.DecodeString(viper.GetString("protocol.xorKey"))
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	xorBytes = xb
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	ctx := context.Background()
