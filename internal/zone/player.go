@@ -40,8 +40,8 @@ type player struct {
 	quests      *playerQuests
 	skills      []skill
 	passives    []passive
-	*targeting
-	*prompt
+	targeting targeting
+	prompt *prompt
 	justSpawned bool
 	tickers     []*time.Ticker
 	char        *persistence.Character
