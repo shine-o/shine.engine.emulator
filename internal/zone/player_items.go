@@ -47,6 +47,7 @@ type itemStats struct {
 	magicalDefense  itemStat
 	aim             itemStat
 	evasion         itemStat
+	maxHP           itemStat
 
 	staticAttackSpeed       itemStat
 	staticMinPAttack        itemStat
@@ -364,52 +365,52 @@ func loadItem(pItem *persistence.Item) *item {
 				extra: pItem.Attributes.StrengthExtra,
 			},
 			dexterity:               itemStat{
-				//base:  pItem.Attributes.DexterityBase,
-				//extra: pItem.Attributes.DexterityExtra,
+				base:  pItem.Attributes.DexterityBase,
+				extra: pItem.Attributes.DexterityExtra,
 			},
 			intelligence:            itemStat{
-				base:  0,
-				extra: 0,
+				base:  pItem.Attributes.IntelligenceBase,
+				extra: pItem.Attributes.IntelligenceExtra,
 			},
-			endurance:               itemStat{},
-			spirit:                  itemStat{},
-			physicalAttack:          itemStat{},
-			magicalAttack:           itemStat{},
-			physicalDefense:         itemStat{},
-			magicalDefense:          itemStat{},
-			aim:                     itemStat{},
-			evasion:                 itemStat{},
-			staticAttackSpeed:       itemStat{},
-			staticMinPAttack:        itemStat{},
-			staticMaxPAttack:        itemStat{},
-			staticMinMAttack:        itemStat{},
-			staticMaxMAttack:        itemStat{},
-			staticMinPACriticalRate: itemStat{},
-			staticMaxPACriticalRate: itemStat{},
-			staticMinMACriticalRate: itemStat{},
-			staticMaxMACriticalRate: itemStat{},
-			staticMAttackRate:       itemStat{},
-			staticPAttackRate:       itemStat{},
-			staticMDefenseRate:      itemStat{},
-			staticPDefenseRate:      itemStat{},
-			staticShieldDefenseRate: itemStat{},
-			staticMDefense:          itemStat{},
-			staticPDefense:          itemStat{},
-			staticAim:               itemStat{},
-			staticEvasion:           itemStat{},
-			staticMaxHP:             itemStat{},
-			staticMaxSP:             itemStat{},
-			staticEvasionRate:       itemStat{},
-			staticAimRate:           itemStat{},
-			staticCriticalRate:      itemStat{},
-			staticPResistance:       itemStat{},
-			staticDResistance:       itemStat{},
-			staticCResistance:       itemStat{},
-			staticMResistance:       itemStat{},
+			endurance:               itemStat{
+				base:  pItem.Attributes.EnduranceBase,
+				extra: pItem.Attributes.EnduranceExtra,
+			},
+			spirit:                  itemStat{
+				base:  pItem.Attributes.SpiritBase,
+				extra: pItem.Attributes.SpiritExtra,
+			},
+			physicalAttack:          itemStat{
+				base:  pItem.Attributes.PAttackBase,
+				extra: pItem.Attributes.PAttackExtra,
+			},
+			magicalAttack:           itemStat{
+				base:  pItem.Attributes.MAttackBase,
+				extra: pItem.Attributes.MAttackExtra,
+			},
+			physicalDefense:         itemStat{
+				base:  pItem.Attributes.PDefenseBase,
+				extra: pItem.Attributes.PDefenseExtra,
+			},
+			magicalDefense:          itemStat{
+				base:  pItem.Attributes.MDefenseBase,
+				extra: pItem.Attributes.MDefenseExtra,
+			},
+			aim:                     itemStat{
+				base:  pItem.Attributes.AimBase,
+				extra: pItem.Attributes.AimExtra,
+			},
+			evasion:                 itemStat{
+				base:  pItem.Attributes.EvasionBase,
+				extra: pItem.Attributes.EvasionExtra,
+			},
 		},
 		amount:    pItem.Amount,
 		stackable: pItem.Stackable,
 	}
+
+	i.stats.staticStats(i.itemData)
+
 	return i
 }
 

@@ -38,7 +38,7 @@ func TestMain(m *testing.M) {
 	persistence.CleanDB()
 
 	//loadGameData("../../../files")
-	loadTestData("../../../files")
+	loadTestData("../../files")
 
 	os.Exit(m.Run())
 }

@@ -42,13 +42,35 @@ type Item struct {
 }
 
 type ItemAttributes struct {
-	tableName     struct{} `pg:"world.item_attributes"`
-	ID            uint64   `pg:",unique:item"`
-	ItemID        uint64   `pg:",use_zero,notnull,unique:item"`
-	StrengthBase  int      `pg:",use_zero"`
-	StrengthExtra int      `pg:",use_zero"`
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	tableName         struct{} `pg:"world.item_attributes"`
+	ID                uint64   `pg:",unique:item"`
+	ItemID            uint64   `pg:",use_zero,notnull,unique:item"`
+	StrengthBase      int      `pg:",use_zero"`
+	StrengthExtra     int      `pg:",use_zero"`
+	DexterityBase     int      `pg:",use_zero"`
+	DexterityExtra    int      `pg:",use_zero"`
+	IntelligenceBase  int      `pg:",use_zero"`
+	IntelligenceExtra int      `pg:",use_zero"`
+	EnduranceBase     int      `pg:",use_zero"`
+	EnduranceExtra    int      `pg:",use_zero"`
+	SpiritBase        int      `pg:",use_zero"`
+	SpiritExtra       int      `pg:",use_zero"`
+	PAttackBase       int      `pg:",use_zero"`
+	PAttackExtra      int      `pg:",use_zero"`
+	MAttackBase       int      `pg:",use_zero"`
+	MAttackExtra      int      `pg:",use_zero"`
+	MDefenseBase      int      `pg:",use_zero"`
+	MDefenseExtra     int      `pg:",use_zero"`
+	PDefenseBase      int      `pg:",use_zero"`
+	PDefenseExtra     int      `pg:",use_zero"`
+	AimBase           int      `pg:",use_zero"`
+	AimExtra          int      `pg:",use_zero"`
+	EvasionBase       int      `pg:",use_zero"`
+	EvasionExtra      int      `pg:",use_zero"`
+	MaxHPBase         int        `pg:",use_zero"`
+	MaxHPExtra        int        `pg:",use_zero"`
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
 	//DeletedAt time.Time `pg:",soft_delete"`
 }
 

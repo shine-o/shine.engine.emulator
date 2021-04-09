@@ -788,6 +788,39 @@ func (p *player) newItem(i *item) error {
 	i.pItem.Attributes.StrengthBase = i.stats.strength.base
 	i.pItem.Attributes.StrengthExtra = i.stats.strength.extra
 
+	i.pItem.Attributes.DexterityBase = i.stats.dexterity.base
+	i.pItem.Attributes.DexterityExtra = i.stats.dexterity.extra
+
+	i.pItem.Attributes.IntelligenceBase = i.stats.intelligence.base
+	i.pItem.Attributes.IntelligenceExtra = i.stats.intelligence.extra
+
+	i.pItem.Attributes.EnduranceBase = i.stats.endurance.base
+	i.pItem.Attributes.EnduranceExtra = i.stats.endurance.extra
+
+	i.pItem.Attributes.SpiritBase = i.stats.spirit.base
+	i.pItem.Attributes.SpiritExtra = i.stats.spirit.extra
+
+	i.pItem.Attributes.PAttackBase = i.stats.physicalAttack.base
+	i.pItem.Attributes.PAttackExtra = i.stats.physicalAttack.extra
+
+	i.pItem.Attributes.MAttackBase = i.stats.magicalAttack.base
+	i.pItem.Attributes.MAttackExtra = i.stats.magicalAttack.extra
+
+	i.pItem.Attributes.MDefenseBase = i.stats.magicalDefense.base
+	i.pItem.Attributes.MDefenseExtra = i.stats.magicalDefense.extra
+
+	i.pItem.Attributes.PDefenseBase = i.stats.physicalDefense.base
+	i.pItem.Attributes.PDefenseExtra = i.stats.physicalDefense.extra
+
+	i.pItem.Attributes.AimBase = i.stats.aim.base
+	i.pItem.Attributes.AimExtra = i.stats.aim.extra
+
+	i.pItem.Attributes.EvasionBase = i.stats.evasion.base
+	i.pItem.Attributes.EvasionExtra = i.stats.evasion.extra
+
+	i.pItem.Attributes.MaxHPBase = i.stats.maxHP.base
+	i.pItem.Attributes.MaxHPBase = i.stats.maxHP.extra
+
 	err := i.pItem.Insert()
 
 	if err != nil {

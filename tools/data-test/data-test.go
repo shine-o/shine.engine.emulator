@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/logger"
-	ps "github.com/shine-o/shine.engine.emulator/internal/app/packet-sniffer"
+	ps "github.com/shine-o/shine.engine.emulator/internal/packet-sniffer"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"math"

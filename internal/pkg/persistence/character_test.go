@@ -41,39 +41,6 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func cleanDB() {
-	err := DeleteTables()
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = CreateTables()
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func createDummyCharacters() {
-	for i := 0; i <= 5; i++ {
-		name := fmt.Sprintf("mob%v", i+1)
-		c := structs.NcAvatarCreateReq{
-			SlotNum: byte(i),
-			Name: structs.Name5{
-				Name: name,
-			},
-			Shape: structs.ProtoAvatarShapeInfo{
-				BF:        133,
-				HairType:  6,
-				HairColor: 0,
-				FaceShape: 0,
-			},
-		}
-		_, err := New(1, &c)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
 // test character data is valid
 func TestValidateCharacterRequest(t *testing.T) {
 	// {"packetType":"small","length":27,"department":5,"command":"1","opCode":5121,"data":"0046696768747265726f6f0000000000000000000085060000","rawData":"1b01140046696768747265726f6f0000000000000000000085060000","friendlyName":"NC_AVATAR_CREATE_REQ"}
@@ -476,4 +443,37 @@ func newCharacter(class string) *Character {
 	}
 
 	return char
+}
+
+func cleanDB() {
+	err := DeleteTables()
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = CreateTables()
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func createDummyCharacters() {
+	for i := 0; i <= 5; i++ {
+		name := fmt.Sprintf("mob%v", i+1)
+		c := structs.NcAvatarCreateReq{
+			SlotNum: byte(i),
+			Name: structs.Name5{
+				Name: name,
+			},
+			Shape: structs.ProtoAvatarShapeInfo{
+				BF:        133,
+				HairType:  6,
+				HairColor: 0,
+				FaceShape: 0,
+			},
+		}
+		_, err := New(1, &c)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }

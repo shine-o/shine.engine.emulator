@@ -2,7 +2,7 @@
 package cmd
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/app/login"
+	"github.com/shine-o/shine.engine.emulator/internal/login"
 	"github.com/spf13/cobra"
 )
 

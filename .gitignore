@@ -23,5 +23,5 @@ output/*
 /build/databases/
 /build/output/
 files
-/internal/app/zone/output/
-/internal/app/login/output/
+/internal/zone/output/
+/internal/login/output/

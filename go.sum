@@ -117,6 +117,8 @@ github.com/go-pg/migrations v1.0.2 h1:3vtMENDO0wt8ciFNyOWKWMT0pJz7J9S4B0H3cMMB++
 github.com/go-pg/migrations v6.7.3+incompatible h1:mKayeWTNGhYA9P9wzZNSDoumJRhfB4fEmfAlxNTVwtA=
 github.com/go-pg/migrations/v8 v8.0.2 h1:IF1g5VvGCTfe8Q1PbxvKN1nz2pTR4q9VzkTS4BA0+3U=
 github.com/go-pg/migrations/v8 v8.0.2/go.mod h1:o+CN1u572XHphEHZyK6tqyg2GDkRvL2bIoLNyGIewus=
+github.com/go-pg/migrations/v8 v8.1.0 h1:bc1wQwFoWRKvLdluXCRFRkeaw9xDU4qJ63uCAagh66w=
+github.com/go-pg/migrations/v8 v8.1.0/go.mod h1:o+CN1u572XHphEHZyK6tqyg2GDkRvL2bIoLNyGIewus=
 github.com/go-pg/pg v8.0.7+incompatible h1:ty/sXL1OZLo+47KK9N8llRcmbA9tZasqbQ/OO4ld53g=
 github.com/go-pg/pg v8.0.7+incompatible/go.mod h1:a2oXow+aFOrvwcKs3eIA0lNFmMilrxK2sOkB5NWe0vA=
 github.com/go-pg/pg/extra/pgdebug v0.2.0 h1:t62UhMiV6KYAxSWojwIJiyX06TdepkzCeIzdeb00184=

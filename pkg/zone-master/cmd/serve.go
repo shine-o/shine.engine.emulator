@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/google/logger"
 	"github.com/mitchellh/go-homedir"
-	zm "github.com/shine-o/shine.engine.emulator/internal/app/zone-master"
+	zm "github.com/shine-o/shine.engine.emulator/internal/zone-master"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"io/ioutil"
