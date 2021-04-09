@@ -430,13 +430,15 @@ func getItemData(itemIndex string) *itemData {
 
 	wg.Wait()
 
-	if id.itemInfoServer.RandomOptionDropGroup != "" {
-		wg.Add(2)
-		go addRandomOptionRow(id.itemInfoServer.RandomOptionDropGroup, id, wg)
-		go addRandomOptionCountRow(id.itemInfoServer.RandomOptionDropGroup, id, wg)
-	}
+	if id.itemInfo != nil && id.itemInfoServer != nil {
+		if id.itemInfoServer.RandomOptionDropGroup != "" {
+			wg.Add(2)
+			go addRandomOptionRow(id.itemInfoServer.RandomOptionDropGroup, id, wg)
+			go addRandomOptionCountRow(id.itemInfoServer.RandomOptionDropGroup, id, wg)
+		}
 
-	wg.Wait()
+		wg.Wait()
+	}
 
 	return id
 }

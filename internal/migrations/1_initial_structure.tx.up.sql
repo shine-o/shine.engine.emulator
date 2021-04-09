@@ -2,7 +2,19 @@ SET statement_timeout = 60000;
 SET lock_timeout = 60000;
 
 --gopg:split
-create schema if not exists world
+create schema if not exists accounts;
+create schema if not exists world;
+
+--gopg:split
+create table if not exists accounts.users
+(
+    id          bigserial not null
+        constraint users_pkey
+            primary key,
+    user_name   text,
+    password    text,
+    soft_delete timestamp with time zone
+);
 
 --gopg:split
 create table if not exists world.item_enchantments

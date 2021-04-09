@@ -6,12 +6,6 @@ import (
 	"testing"
 )
 
-
-
-func TestLoadPlayerInventory_BagInventory(t *testing.T) {
-	// p.loadInventory(BagInventory)
-}
-
 //
 func TestNewItem_Success(t *testing.T) {
 	char := persistence.NewCharacter("mage")
@@ -383,7 +377,30 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 }
 
 func TestNewItem_BadItemIndex(t *testing.T) {
+	char := persistence.NewCharacter("mage")
 
+	player := &player{
+		baseEntity: baseEntity{
+			handle: 1,
+			fallback: &location{},
+			current:  &location{},
+			next:     &location{},
+		},
+		char: char,
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	_, err = makeItem("badindex")
+
+	if err == nil {
+		t.Fatal("expected error, got null")
+	}
 }
 
 func TestNewItemStack_Success(t *testing.T) {

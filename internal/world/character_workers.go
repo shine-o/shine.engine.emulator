@@ -154,7 +154,8 @@ func createCharacterLogic(e event, w *world) {
 
 	if err != nil {
 		log.Error(err)
-		createCharErr(ev.np, err)
+		ncAvatarCreateFailAck(ev.np, 385)
+
 		return
 	}
 
@@ -162,7 +163,7 @@ func createCharacterLogic(e event, w *world) {
 
 	if err != nil {
 		log.Error(err)
-		createCharErr(ev.np, err)
+		ncAvatarCreateFailAck(ev.np, 385)
 		return
 	}
 

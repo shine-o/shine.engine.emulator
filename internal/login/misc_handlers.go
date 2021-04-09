@@ -2,6 +2,7 @@ package login
 
 import (
 	"context"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 
@@ -14,7 +15,7 @@ func ncMiscSeedAck(ctx context.Context, np *networking.Parameters) {
 
 	xorLimit := uint16(viper.GetInt("crypt.xorLimit"))
 
-	xorOffset := networking.RandomXorKey(xorLimit)
+	xorOffset := crypto.RandomXorKey(xorLimit)
 	log.Infof("[xor offset] %v", xorOffset)
 
 	nc := structs.NcMiscSeedAck{

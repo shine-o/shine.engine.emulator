@@ -5,7 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -36,13 +38,23 @@ func Start(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 
-	db = dbConn(ctx, "accounts")
+
 	initRedis()
 
 	go newRPCServer("login")
 
-	defer db.Close()
 	defer cancel()
+
+	persistence.InitDB(database.ConnectionParams{
+		User:     viper.GetString("database.postgres.db_user"),
+		Password: viper.GetString("database.postgres.db_password"),
+		Host:     viper.GetString("database.postgres.host"),
+		Port:     viper.GetString("database.postgres.port"),
+		Database: viper.GetString("database.postgres.db_name"),
+		Schema:   viper.GetString("database.postgres.schema"),
+	})
+
+	defer persistence.CloseDB()
 
 	s := networking.Settings{}
 
@@ -70,14 +82,6 @@ func Start(cmd *cobra.Command, args []string) {
 		Name:     "login",
 		Settings: s,
 		ShinePacketRegistry: networking.ShinePacketRegistry{
-			//2055: ncMiscSeedAck,
-			//3173: ncUserClientVersionCheckReq,
-			//3162: ncUserUsLoginReq,
-			//3076: ncUserXtrapReq,
-			//3099: ncUserWorldStatusReq,
-			//3083: ncUserWorldSelectReq,
-			//3096: ncUserNormalLogoutCmd,
-			//3127: ncUserLoginWithOtpReq,
 			networking.NC_MISC_SEED_ACK: {
 				Handler: ncMiscSeedAck,
 			},

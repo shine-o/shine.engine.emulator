@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"time"
 
@@ -138,7 +139,7 @@ func checkClientVersion(req *structs.NcUserClientVersionCheckReq) error {
 //func checkCredentials(req *structs.NewUserLoginReq) error {
 func checkCredentials(req *structs.NewUserLoginReq) error {
 	var storedPassword string
-	err := db.Model((*User)(nil)).Column("password").Where("user_name = ?", req.UserName).Limit(1).Select(&storedPassword)
+	err := persistence.DB().Model((*User)(nil)).Column("password").Where("user_name = ?", req.UserName).Limit(1).Select(&storedPassword)
 
 	if err != nil {
 		return fmt.Errorf("%v: [ %v ]", ErrDBE, err)

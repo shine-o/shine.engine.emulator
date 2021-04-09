@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	l "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/login"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -20,7 +21,7 @@ var errBadRPCClient = errors.New("gRPC client is not present in the config file"
 
 func (s *server) AccountInfo(ctx context.Context, req *l.User) (*l.UserInfo, error) {
 	var userID uint64
-	err := db.Model((*User)(nil)).Column("id").Where("user_name = ?", req.UserName).Limit(1).Select(&userID)
+	err := persistence.DB().Model((*User)(nil)).Column("id").Where("user_name = ?", req.UserName).Limit(1).Select(&userID)
 	if err != nil {
 		return &l.UserInfo{}, status.Errorf(codes.FailedPrecondition, "failed to fetch user record %v", err)
 	}

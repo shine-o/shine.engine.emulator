@@ -67,7 +67,7 @@ func serverSelectLogic(e event, w *world) {
 		return
 	}
 
-	nc, err := userCharacters(w.db, s)
+	nc, err := userCharacters(s)
 
 	if err != nil {
 		log.Error(err)
