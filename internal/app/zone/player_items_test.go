@@ -58,7 +58,6 @@ func TestNewItem_Success(t *testing.T) {
 
 }
 
-
 func TestNewItem_WithAttributes(t *testing.T) {
 	itemInxName := "KarenStaff"
 	char := persistence.NewCharacter("mage")
@@ -103,15 +102,284 @@ func TestNewItem_WithAttributes(t *testing.T) {
 		t.Fail()
 	}
 
+	amount := 0
+
+	if item1.stats.strength.base > 0 || item1.stats.dexterity.base > 0 ||  item1.stats.endurance.base > 0 || item1.stats.intelligence.base > 0 || item1.stats.spirit.base > 0 {
+		amount++
+	}
+
+	if amount == 0 {
+		t.Fail()
+	}
+
 	// should have 2 static stats (97 int, 500 HP through GradeItemOption)
 	if item1.stats.intelligence.base != 97 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMaxHP.base != 500 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticAttackSpeed.base != 1300 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMinPAttack.base != 438 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMaxPAttack.base != 673 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMinMAttack.base != 2773 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMaxMAttack.base != 4265 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMAttackRate.base != 1000 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticPAttackRate.base != 1000 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMDefenseRate.base != 1000 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticPDefenseRate.base != 1000 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticShieldDefenseRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticCriticalRate.base != 6 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMinPACriticalRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMaxPACriticalRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMinMACriticalRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMaxMACriticalRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticPDefense.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMDefense.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticAim.base != 1326 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticEvasion.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticAimRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticEvasionRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticPResistance.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticDResistance.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticCResistance.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMResistance.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+}
+
+func TestLoadItem_WithAttributes(t *testing.T) {
+	itemInxName := "KarenStaff"
+	char := persistence.NewCharacter("mage")
+
+	player := &player{
+		baseEntity: baseEntity{
+			handle: 1,
+			fallback: &location{},
+			current:  &location{},
+			next:     &location{},
+		},
+		char: char,
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, err := makeItem(itemInxName)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is persisted here
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item1 := loadItem(item.pItem)
+
+	if item1.itemData.itemInfo.InxName != itemInxName {
 		t.Fail()
 	}
 
-	if item1.stats.hp.base != 500 {
+	amount := 0
+
+	if item1.stats.strength.base > 0 || item1.stats.dexterity.base > 0 ||  item1.stats.endurance.base > 0 || item1.stats.intelligence.base > 0 || item1.stats.spirit.base > 0 {
+		amount++
+	}
+
+	if amount == 0 {
 		t.Fail()
 	}
 
+	// should have 2 static stats (97 int, 500 HP through GradeItemOption)
+	if item1.stats.intelligence.base != 97 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMaxHP.base != 500 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticAttackSpeed.base != 1300 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMinPAttack.base != 438 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMaxPAttack.base != 673 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMinMAttack.base != 2773 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMaxMAttack.base != 4265 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMAttackRate.base != 1000 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticPAttackRate.base != 1000 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMDefenseRate.base != 1000 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticPDefenseRate.base != 1000 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticShieldDefenseRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticCriticalRate.base != 6 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMinPACriticalRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMaxPACriticalRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMinMACriticalRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMaxMACriticalRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticPDefense.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMDefense.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticAim.base != 1326 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticEvasion.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticAimRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticEvasionRate.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticPResistance.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticDResistance.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticCResistance.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
+
+	if item1.stats.staticMResistance.base != 0 {
+		t.Fatal("unexpected stat value")
+	}
 }
 
 func TestNewItem_BadItemIndex(t *testing.T) {

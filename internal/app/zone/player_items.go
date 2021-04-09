@@ -25,31 +25,59 @@ type itemBox struct {
 }
 
 type item struct {
-	pItem    *persistence.Item
-	itemData *itemData
+	pItem     *persistence.Item
+	itemData  *itemData
 	stats     itemStats
 	amount    int
 	stackable bool
 	sync.RWMutex
 }
 
+// static is a prefix for items that have stats defined in static files
+// strength, dexterity, intelligence, endurance and spirit are an exception, as they can also be static and randomly generated
 type itemStats struct {
-	strength itemStat
-	dexterity itemStat
-	intelligence itemStat
-	endurance itemStat
-	spirit itemStat
-	aim itemStat
-	critical itemStat
-	physicalAttack itemStat
-	magicalAttack itemStat
+	strength        itemStat
+	dexterity       itemStat
+	intelligence    itemStat
+	endurance       itemStat
+	spirit          itemStat
+	physicalAttack  itemStat
+	magicalAttack   itemStat
 	physicalDefense itemStat
-	magicalDefense itemStat
-	evasion itemStat
-	hp itemStat
+	magicalDefense  itemStat
+	aim             itemStat
+	evasion         itemStat
+
+	staticAttackSpeed       itemStat
+	staticMinPAttack        itemStat
+	staticMaxPAttack        itemStat
+	staticMinMAttack        itemStat
+	staticMaxMAttack        itemStat
+	staticMinPACriticalRate itemStat
+	staticMaxPACriticalRate itemStat
+	staticMinMACriticalRate itemStat
+	staticMaxMACriticalRate itemStat
+	staticMAttackRate       itemStat
+	staticPAttackRate       itemStat
+	staticMDefenseRate      itemStat
+	staticPDefenseRate      itemStat
+	staticShieldDefenseRate itemStat
+	staticMDefense          itemStat
+	staticPDefense          itemStat
+	staticAim               itemStat
+	staticEvasion           itemStat
+	staticMaxHP             itemStat
+	staticMaxSP             itemStat
+	staticEvasionRate       itemStat
+	staticAimRate           itemStat
+	staticCriticalRate      itemStat
+	staticPResistance       itemStat
+	staticDResistance       itemStat
+	staticCResistance       itemStat
+	staticMResistance       itemStat
 }
 
-func (i * item) generateStats() {
+func (i *item) generateStats() {
 	// first check if there are any random stats using (RandomOption / RandomOptionCount)
 	// apply those first, after that check GradeItemOption for fixed stats
 	// RNG for the number of stats that should be generated
@@ -62,6 +90,9 @@ func (i * item) generateStats() {
 	}
 
 	is := itemStats{}
+
+	is.staticStats(i.itemData)
+
 	for _, t := range types {
 		switch t {
 		case data.ROT_STR:
@@ -71,13 +102,29 @@ func (i * item) generateStats() {
 				is.strength.base = value(t)
 			}
 		case data.ROT_CON:
-			is.endurance.base = value(t)
+			if is.endurance.base > 0 {
+				is.endurance.extra = value(t)
+			} else {
+				is.endurance.base = value(t)
+			}
 		case data.ROT_DEX:
-			is.dexterity.base = value(t)
+			if is.dexterity.base > 0 {
+				is.dexterity.extra = value(t)
+			} else {
+				is.dexterity.base = value(t)
+			}
 		case data.ROT_INT:
-			is.intelligence.base = value(t)
+			if is.intelligence.base > 0 {
+				is.intelligence.extra = value(t)
+			} else {
+				is.intelligence.base = value(t)
+			}
 		case data.ROT_MEN:
-			is.spirit.base = value(t)
+			if is.spirit.base > 0 {
+				is.spirit.base = value(t)
+			} else {
+				is.spirit.base = value(t)
+			}
 		}
 	}
 
@@ -86,16 +133,99 @@ func (i * item) generateStats() {
 	i.Unlock()
 }
 
+func (is *itemStats) staticStats(id *itemData) {
+
+	is.staticAttackSpeed.base = int(id.itemInfo.AtkSpeed)
+	is.staticMinPAttack.base = int(id.itemInfo.MinWC)
+	is.staticMaxPAttack.base = int(id.itemInfo.MaxWC)
+	is.staticMinMAttack.base = int(id.itemInfo.MinMA)
+	is.staticMaxMAttack.base = int(id.itemInfo.MaxMA)
+	is.staticPDefense.base = int(id.itemInfo.AC)
+	is.staticMDefense.base = int(id.itemInfo.MR)
+	is.staticAim.base = int(id.itemInfo.TH)
+	is.staticEvasion.base = int(id.itemInfo.TB)
+	is.staticPAttackRate.base = int(id.itemInfo.WCRate)
+	is.staticMAttackRate.base = int(id.itemInfo.MARate)
+	is.staticPDefenseRate.base = int(id.itemInfo.ACRate)
+	is.staticMDefenseRate.base = int(id.itemInfo.MARate)
+	is.staticPDefense.base = int(id.itemInfo.AC)
+	is.staticMDefense.base = int(id.itemInfo.MR)
+	is.staticCriticalRate.base = int(id.itemInfo.CriRate / 10)
+	is.staticMinPACriticalRate.base = int(id.itemInfo.CriMinWc)
+	is.staticMaxPACriticalRate.base = int(id.itemInfo.CriMaxWc)
+	is.staticMinMACriticalRate.base = int(id.itemInfo.CriMinMa)
+	is.staticMaxMACriticalRate.base = int(id.itemInfo.CriMaxMa)
+	is.staticShieldDefenseRate.base = int(id.itemInfo.ShieldAC)
+
+	if id.gradeItemOption != nil {
+		if id.gradeItemOption.Strength > 0 {
+			is.strength.base = int(id.gradeItemOption.Strength)
+		}
+
+		if id.gradeItemOption.Endurance > 0 {
+			is.endurance.base = int(id.gradeItemOption.Endurance)
+		}
+
+		if id.gradeItemOption.Dexterity > 0 {
+			is.dexterity.base = int(id.gradeItemOption.Dexterity)
+		}
+
+		if id.gradeItemOption.Intelligence > 0 {
+			is.intelligence.base = int(id.gradeItemOption.Intelligence)
+		}
+
+		if id.gradeItemOption.Spirit > 0 {
+			is.spirit.base = int(id.gradeItemOption.Spirit)
+		}
+
+		if id.gradeItemOption.PoisonResistance > 0 {
+			is.staticPResistance.base = int(id.gradeItemOption.PoisonResistance)
+		}
+
+		if id.gradeItemOption.DiseaseResistance > 0 {
+			is.staticDResistance.base = int(id.gradeItemOption.DiseaseResistance)
+		}
+
+		if id.gradeItemOption.CurseResistance > 0 {
+			is.staticCResistance.base = int(id.gradeItemOption.CurseResistance)
+		}
+
+		if id.gradeItemOption.MobilityResistance > 0 {
+			is.staticMResistance.base = int(id.gradeItemOption.MobilityResistance)
+		}
+
+		if id.gradeItemOption.AimRate > 0 {
+			is.staticAimRate.base = int(id.gradeItemOption.AimRate - 1000)
+		}
+
+		if id.gradeItemOption.EvasionRate > 0 {
+			is.staticEvasionRate.base = int(id.gradeItemOption.EvasionRate - 1000)
+		}
+
+		if id.gradeItemOption.MaxHP > 0 {
+			is.staticMaxHP.base = int(id.gradeItemOption.MaxHP)
+		}
+
+		if id.gradeItemOption.MaxSP > 0 {
+			is.staticMaxSP.base = int(id.gradeItemOption.MaxSP)
+		}
+	}
+
+}
+
 // todo: extend this beyond RNG using the player's session data for deciding amount of stats, e.g: how much damage he did to the mob that dropped it, how many kills before, etc
-func amountStats(id * itemData) int {
+func amountStats(id *itemData) int {
 	var keys []int
 	for k, _ := range id.randomOptionCount {
 		keys = append(keys, int(k))
 	}
-	return crypto.RandomIntBetween(0, len(keys))
+	if len(keys) > 0 {
+		return keys[crypto.RandomIntBetween(0, len(keys))]
+	}
+	return 0
 }
 
-func chosenStatTypes(amount int, id * itemData) []data.RandomOptionType  {
+func chosenStatTypes(amount int, id *itemData) []data.RandomOptionType {
 	var types []data.RandomOptionType
 
 	for rot, _ := range id.randomOption {
@@ -106,12 +236,12 @@ func chosenStatTypes(amount int, id * itemData) []data.RandomOptionType  {
 	rand.Shuffle(len(types), func(i, j int) {
 		types[i], types[j] = types[j], types[i]
 	})
-	
+
 	return types[:amount]
 }
 
 type itemStat struct {
-	base    int
+	base  int
 	extra int
 }
 
@@ -133,23 +263,24 @@ func makeItem(itemIndex string) (*item, error) {
 
 	if itemData.itemInfo == nil {
 		return i, errors.Err{
-			Code:    errors.ZoneItemMissingData,
+			Code: errors.ZoneItemMissingData,
 			Details: errors.ErrDetails{
 				"itemIndex": itemIndex,
-				"type": "ItemInfo",
+				"type":      "ItemInfo",
 			},
 		}
 	}
 
 	if itemData.itemInfoServer == nil {
 		return i, errors.Err{
-			Code:    errors.ZoneItemMissingData,
+			Code: errors.ZoneItemMissingData,
 			Details: errors.ErrDetails{
 				"itemIndex": itemIndex,
-				"type": "ItemInfoServer",
+				"type":      "ItemInfoServer",
 			},
 		}
 	}
+
 	i.itemData = itemData
 	i.pItem = &persistence.Item{}
 
@@ -204,10 +335,10 @@ func (p *player) itemData() error {
 		ei, occupied := ivs.inventory.items[item.Slot]
 		if occupied {
 			log.Error(errors.Err{
-				Code:    errors.ZoneInventorySlotOccupied,
+				Code: errors.ZoneInventorySlotOccupied,
 				Details: errors.ErrDetails{
 					"itemID": ei.pItem.ID,
-					"slot": ei.pItem.Slot,
+					"slot":   ei.pItem.Slot,
 				},
 			})
 			continue
@@ -225,13 +356,56 @@ func (p *player) itemData() error {
 
 func loadItem(pItem *persistence.Item) *item {
 	i := &item{
-		pItem:     pItem,
-		itemData:  getItemData(pItem.ShnInxName),
+		pItem:    pItem,
+		itemData: getItemData(pItem.ShnInxName),
 		stats: itemStats{
 			strength: itemStat{
 				base:  pItem.Attributes.StrengthBase,
 				extra: pItem.Attributes.StrengthExtra,
 			},
+			dexterity:               itemStat{
+				//base:  pItem.Attributes.DexterityBase,
+				//extra: pItem.Attributes.DexterityExtra,
+			},
+			intelligence:            itemStat{
+				base:  0,
+				extra: 0,
+			},
+			endurance:               itemStat{},
+			spirit:                  itemStat{},
+			physicalAttack:          itemStat{},
+			magicalAttack:           itemStat{},
+			physicalDefense:         itemStat{},
+			magicalDefense:          itemStat{},
+			aim:                     itemStat{},
+			evasion:                 itemStat{},
+			staticAttackSpeed:       itemStat{},
+			staticMinPAttack:        itemStat{},
+			staticMaxPAttack:        itemStat{},
+			staticMinMAttack:        itemStat{},
+			staticMaxMAttack:        itemStat{},
+			staticMinPACriticalRate: itemStat{},
+			staticMaxPACriticalRate: itemStat{},
+			staticMinMACriticalRate: itemStat{},
+			staticMaxMACriticalRate: itemStat{},
+			staticMAttackRate:       itemStat{},
+			staticPAttackRate:       itemStat{},
+			staticMDefenseRate:      itemStat{},
+			staticPDefenseRate:      itemStat{},
+			staticShieldDefenseRate: itemStat{},
+			staticMDefense:          itemStat{},
+			staticPDefense:          itemStat{},
+			staticAim:               itemStat{},
+			staticEvasion:           itemStat{},
+			staticMaxHP:             itemStat{},
+			staticMaxSP:             itemStat{},
+			staticEvasionRate:       itemStat{},
+			staticAimRate:           itemStat{},
+			staticCriticalRate:      itemStat{},
+			staticPResistance:       itemStat{},
+			staticDResistance:       itemStat{},
+			staticCResistance:       itemStat{},
+			staticMResistance:       itemStat{},
 		},
 		amount:    pItem.Amount,
 		stackable: pItem.Stackable,
