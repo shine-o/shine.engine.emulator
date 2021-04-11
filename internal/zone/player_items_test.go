@@ -2,7 +2,10 @@ package zone
 
 import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
+	"reflect"
 	"testing"
 )
 
@@ -376,6 +379,22 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 	}
 }
 
+func TestNewItem_CreateAllItems(t *testing.T) {
+	for _, row := range itemsData.ItemInfo.ShineRow {
+		_, err := makeItem(row.InxName)
+		if err != nil {
+			t.Error(errors.Err{
+				Code:    errors.UnitTestError,
+				Message: "error creating item",
+				Details: errors.ErrDetails{
+					"err": err,
+					"itemIndex" : row.InxName,
+				},
+			})
+		}
+	}
+}
+
 func TestNewItem_BadItemIndex(t *testing.T) {
 	char := persistence.NewCharacter("mage")
 
@@ -400,6 +419,475 @@ func TestNewItem_BadItemIndex(t *testing.T) {
 
 	if err == nil {
 		t.Fatal("expected error, got null")
+	}
+}
+
+//union __unaligned __declspec(align(1)) SHINE_ITEM_ATTRIBUTE
+//{
+//  ShineItemAttr_ByteLot blot;
+//  ShineItemAttr_WordLot wlot;
+//  ShineItemAttr_DwrdLot dlot;
+//  ShineItemAttr_QuestItem qstitm;
+//  ShineItemAttr_Amulet amulet;
+//  ShineItemAttr_Weapon weapon;
+//  ShineItemAttr_Armor armor;
+//  ShineItemAttr_Shield shield;
+//  ShineItemAttr_Boot boot;
+//  ShineItemAttr_Furniture furniture;
+//  ShineItemAttr_Decoration decorate;
+//  ShineItemAttr_SkillScroll skillscroll;
+//  ShineItemAttr_RecallScroll recallscroll;
+//  ShineItemAttr_BindItem binditem;
+//  ShineItemAttr_UpSource upsource;
+//  ShineItemAttr_ItemChest itemchest;
+//  ShineItemAttr_WeaponTitleLicence weapontitlelicence;
+//  ShineItemAttr_KingdomQuest kingdomquest;
+//  ShineItemAttr_MiniHouseSkin minihouseskin;
+//  ShineItemAttr_UpRed upgraderedgem;
+//  ShineItemAttr_UpBlue upgradebluegem;
+//  ShineItemAttr_UpGold upgradegoldgem;
+//  ShineItemAttr_KQStep kqstep;
+//  ShineItemAttr_Feed feed;
+//  ShineItemAttr_Riding riding;
+//  ShineItemAttr_Amount amount;
+//  ShineItemAttr_CostumWeapon costumweapon;
+//  ShineItemAttr_CostumShield costumshield;
+//  ShineItemAttr_ActionItem actionitem;
+//  ShineItemAttr_Enchant Enchant;
+//  ShineItemAttr_GBCoin GBCoin;
+//  ShineItemAttr_Capsule Capsule;
+//  ShineItemAttr_MobCardCollect_Unident MobCard_Unident;
+//  ShineItemAttr_MobCardCollect MobCard;
+//  ShineItemAttr_NoEffect NoEffect;
+//  ShineItemAttr_ActiveSkill ActiveSkill;
+//  ShineItemAttr_Pet Pet;
+//  ShineItemAttr_Bracelet Bracelet;
+//};
+func Test_AllItems_NC(t *testing.T) {
+	for _, row := range itemsData.ItemInfo.ShineRow {
+		item, err := makeItem(row.InxName)
+		if err != nil {
+			continue
+		}
+
+		inc, err := item.protoItemPacketInformation()
+		if err != nil {
+			t.Error(errors.Err{
+				Code:    errors.UnitTestError,
+				Message: "error creating item nc struct",
+				Details: errors.ErrDetails{
+					"err": err,
+					"itemIndex" : row.InxName,
+					"nc": inc,
+				},
+			})
+			continue
+		}
+		switch row.Class {
+		case data.ItemClassByteLot:
+		case data.ItemUpRed:
+		case data.ItemUpBlue:
+		case data.ItemUpGold:
+		case data.ItemFeed:
+		case data.ItemClassSkillScroll:
+		case data.ItemClassRecallScroll:
+		case data.ItemClassUpsource:
+		case data.ItemClassWtLicence:
+		case data.ItemKq:
+		case data.ItemGbCoin:
+		case data.ItemNoEffect:
+		case data.ItemEnchant:
+			var nc structs.ShineItemAttrByteLot
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemClassWordLot:
+		case data.ItemKqStep:
+		case data.ItemActiveSkill:
+			var nc structs.ShineItemAttrWordLot
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemClassDwrdLot:
+			var nc structs.ShineItemAttrDwrdLot
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemClassQuestItem:
+			var nc structs.ShineItemAttrQuestItem
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemClassAmulet:
+			var nc structs.ShineItemAttrAmulet
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemClassWeapon:
+			var nc structs.ShineItemAttrWeapon
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemClassArmor:
+			var nc structs.ShineItemAttrArmor
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemClassShield:
+			var nc structs.ShineItemAttrShield
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemClassBoot:
+			var nc structs.ShineItemAttrBoot
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemClassFurniture:
+			var nc structs.ShineItemAttrFurniture
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemClassDecoration:
+			var nc structs.ShineItemAttrDecoration
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemClassBindItem:
+			var nc structs.ShineItemAttrBindItem
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemClassItemChest:
+			var nc structs.ShineItemAttrItemChest
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemHouseSkin:
+			var nc structs.ShineItemAttrMiniHouseSkin
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemRiding:
+			var nc structs.ShineItemAttrRiding
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemAmount:
+			var nc structs.ShineItemAttrAmount
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemCosWeapon:
+			var nc structs.ShineItemAttrCostumeWeapon
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemActionItem:
+			var nc structs.ShineItemAttrActionItem
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemCapsule:
+			var nc structs.ShineItemAttrCapsule
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemClosedCard:
+			var nc structs.ShineItemAttrMobCardCollectClosed
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemOpenCard:
+			var nc structs.ShineItemAttrMobCardCollect
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemMoney:
+			//
+			break
+		case data.ItemPup:
+			var nc structs.ShineItemAttrPet
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemCosShield:
+			var nc structs.ShineItemAttrCostumeShield
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		case data.ItemBracelet:
+			var nc structs.ShineItemAttrBracelet
+			err := structs.Unpack(inc.ItemAttr, &nc)
+			if err != nil {
+				t.Error(errors.Err{
+					Code:    errors.UnitTestError,
+					Message: "bad ItemAttr NC for item class",
+					Details: errors.ErrDetails{
+						"err": err,
+						"itemIndex" : row.InxName,
+						"data": inc.ItemAttr,
+						"ncType": reflect.TypeOf(nc).String(),
+					},
+				})
+			}
+			break
+		}
+
+
 	}
 }
 

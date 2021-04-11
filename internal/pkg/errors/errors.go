@@ -23,6 +23,8 @@ const (
 	ZoneItemEquipFailed
 	ZoneItemMissingData
 	ZoneInventorySlotOccupied
+
+	UnitTestError
 )
 
 //go:generate stringer -type=ShineErrorCode

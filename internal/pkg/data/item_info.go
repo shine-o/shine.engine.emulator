@@ -89,7 +89,7 @@ const (
 type ItemClassEnum uint32
 
 const (
-	ItemclassByteLot ItemClassEnum = iota
+	ItemClassByteLot ItemClassEnum = iota
 	ItemClassWordLot
 	ItemClassDwrdLot
 	ItemClassQuestItem

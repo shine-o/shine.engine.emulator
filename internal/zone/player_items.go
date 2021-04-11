@@ -5,6 +5,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"math/rand"
 	"sync"
 	"time"
@@ -87,6 +88,9 @@ func (i *item) generateStats() {
 
 	value := func(t data.RandomOptionType) int {
 		ro := i.itemData.randomOption[t]
+		if ro.Min == ro.Max {
+			return int(ro.Min)
+		}
 		return int(crypto.RandomUint32Between(ro.Min, ro.Max))
 	}
 
@@ -134,6 +138,269 @@ func (i *item) generateStats() {
 	i.Unlock()
 }
 
+func (i *item) protoItemPacketInformation() (*structs.ProtoItemPacketInformation, error) {
+	var (
+		nc * structs.ProtoItemPacketInformation
+		itemAttr []byte
+	)
+
+	nc = &structs.ProtoItemPacketInformation{}
+	nc.Location.Inventory = uint16(i.pItem.InventoryType << 10 | i.pItem.Slot & 1023)
+	nc.ItemID = i.itemData.itemInfo.ID
+	nc.DataSize = 4
+
+	switch i.itemData.itemInfo.Class {
+	case data.ItemClassByteLot:
+	case data.ItemUpRed:
+	case data.ItemUpBlue:
+	case data.ItemUpGold:
+	case data.ItemFeed:
+	case data.ItemClassSkillScroll:
+	case data.ItemClassRecallScroll:
+	case data.ItemClassUpsource:
+	case data.ItemClassWtLicence:
+	case data.ItemKq:
+	case data.ItemGbCoin:
+	case data.ItemNoEffect:
+	case data.ItemEnchant:
+		attr := structs.ShineItemAttrByteLot(i.amount)
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemClassWordLot:
+	case data.ItemKqStep:
+	case data.ItemActiveSkill:
+		attr := structs.ShineItemAttrWordLot(i.amount)
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemClassDwrdLot:
+		attr := structs.ShineItemAttrDwrdLot(i.amount)
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemClassQuestItem:
+		attr := structs.ShineItemAttrQuestItem(i.amount)
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemClassAmulet:
+		attr := structs.ShineItemAttrAmulet{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemClassWeapon:
+		attr := structs.ShineItemAttrWeapon{}
+
+		amount := 0
+		attr.Option.Elements = []structs.ItemOptionStorageElement{}
+		// 	ROT_STR RandomOptionType = iota
+		//	ROT_CON
+		//	ROT_DEX
+		//	ROT_INT
+		//	ROT_MEN
+		//	ROT_TH
+		//	ROT_CRI
+		//	ROT_WC
+		//	ROT_AC
+		//	ROT_MA
+		//	ROT_MR
+		//	ROT_TB
+		//	ROT_CRITICAL_TB
+		//	ROT_DEMANDLVDOWN
+		//	ROT_MAXHP
+		//	MAX_RANDOMOPTIONTYPE
+		if i.stats.strength.base > 0 || i.stats.strength.extra > 0 {
+			iose := structs.ItemOptionStorageElement{
+				ItemOptionType:  byte(data.ROT_STR),
+			}
+			if i.stats.strength.isStatic {
+				iose.ItemOptionValue = uint16(i.stats.strength.extra)
+			} else {
+				iose.ItemOptionValue = uint16(i.stats.strength.base)
+			}
+
+			attr.Option.Elements = append(attr.Option.Elements, iose)
+		}
+
+		attr.Option.AmountBit = byte(amount << 1 | 1)
+
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemClassArmor:
+		attr := structs.ShineItemAttrArmor{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemClassShield:
+		attr := structs.ShineItemAttrShield{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemClassBoot:
+		attr := structs.ShineItemAttrBoot{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemClassFurniture:
+		attr := structs.ShineItemAttrFurniture{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemClassDecoration:
+		attr := structs.ShineItemAttrDecoration{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemClassBindItem:
+		attr := structs.ShineItemAttrBindItem{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemClassItemChest:
+		attr := structs.ShineItemAttrItemChest{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemHouseSkin:
+		attr := structs.ShineItemAttrMiniHouseSkin{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemRiding:
+		attr := structs.ShineItemAttrRiding{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemAmount:
+		attr := structs.ShineItemAttrAmount{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemCosWeapon:
+		attr := structs.ShineItemAttrCostumeWeapon{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemActionItem:
+		attr := structs.ShineItemAttrActionItem{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemCapsule:
+		attr := structs.ShineItemAttrCapsule{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemClosedCard:
+		attr := structs.ShineItemAttrMobCardCollectClosed{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemOpenCard:
+		attr := structs.ShineItemAttrMobCardCollect{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemMoney:
+		//
+		break
+	case data.ItemPup:
+		attr := structs.ShineItemAttrPet{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemCosShield:
+		attr := structs.ShineItemAttrCostumeShield{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	case data.ItemBracelet:
+		attr := structs.ShineItemAttrBracelet{}
+		bytes, err := structs.Pack(&attr)
+		if err != nil {
+			return nc, err
+		}
+		itemAttr = bytes
+		break
+	}
+
+	nc.ItemAttr = itemAttr
+	nc.DataSize += byte(len(itemAttr))
+
+	return nc, nil
+}
+
 func (is *itemStats) staticStats(id *itemData) {
 
 	is.staticAttackSpeed.base = int(id.itemInfo.AtkSpeed)
@@ -161,22 +428,27 @@ func (is *itemStats) staticStats(id *itemData) {
 	if id.gradeItemOption != nil {
 		if id.gradeItemOption.Strength > 0 {
 			is.strength.base = int(id.gradeItemOption.Strength)
+			is.strength.isStatic = true
 		}
 
 		if id.gradeItemOption.Endurance > 0 {
 			is.endurance.base = int(id.gradeItemOption.Endurance)
+			is.endurance.isStatic = true
 		}
 
 		if id.gradeItemOption.Dexterity > 0 {
 			is.dexterity.base = int(id.gradeItemOption.Dexterity)
+			is.dexterity.isStatic = true
 		}
 
 		if id.gradeItemOption.Intelligence > 0 {
 			is.intelligence.base = int(id.gradeItemOption.Intelligence)
+			is.intelligence.isStatic = true
 		}
 
 		if id.gradeItemOption.Spirit > 0 {
 			is.spirit.base = int(id.gradeItemOption.Spirit)
+			is.spirit.isStatic = true
 		}
 
 		if id.gradeItemOption.PoisonResistance > 0 {
@@ -242,6 +514,8 @@ func chosenStatTypes(amount int, id *itemData) []data.RandomOptionType {
 }
 
 type itemStat struct {
+	isStatic bool
+	isUpgraded bool
 	base  int
 	extra int
 }

@@ -53,72 +53,245 @@ type ProtoItemPacketInformation struct {
 	ItemAttr []byte `struct-size:"DataSize - 4"`
 }
 
-//struct SHINE_ITEM_STRUCT
-//{
-//  unsigned __int16 itemid;
-//  SHINE_ITEM_ATTRIBUTE itemattr;
-//};
+//struct ShineItemAttr_ByteLot
+type ShineItemAttrByteLot byte
+
+type ShineItemAttrWordLot uint16
+
+type ShineItemAttrDwrdLot uint32
+
+type ShineItemAttrQuestItem uint16
+
+//struct ShineItemAttr_Amulet
+type ShineItemAttrAmulet struct {
+	DeleteTime int32
+	IsBound uint32
+	Upgrade byte
+	Strengthen byte
+	UpgradeFailCount byte
+	// this is set
+	UpgradeOption UpgradeItemOptionStorage
+	RandomOptionChangedCount byte
+	// this is dynamic
+	Option ItemOptionStorage
+}
+
+type ItemOptionStorageFixedInfo struct {
+	// this might be the Count of stats
+	// statType >> 1
+	StatType byte
+}
+
+type ItemOptionStorageElement struct {
+	ItemOptionType  byte
+	ItemOptionValue uint16
+}
+
+type ItemOptionStorage struct {
+	AmountBit byte
+	Elements []ItemOptionStorageElement `struct-size:"AmountBit >> 1"`
+}
+
+type UpgradeItemOptionStorage struct {
+	// if its fixed stats or generated
+
+	FixedStat ItemOptionStorageFixedInfo
+	// ItemOptionStorageElement max 8
+	Elements [8]ItemOptionStorageElement
+}
+
+
+// struct ShineItemAttr_Weapon
+type ShineItemAttrWeapon struct {
+	Upgrade byte
+	Strengthen byte
+	UpgradeFailCount byte
+	IsBound uint32
+	Licences [3]ShineItemWeaponLicence
+	WeaponLicenceTitle uint16
+	UserTitle [21]byte
+	GemSockets [3]ShineItemWeaponGemSocket
+	MaxSocketCount byte
+	CreatedSocketCount byte
+	DeleteTime int32
+	// Bijou hammer usages
+	RandomOptionChangedCount byte
+	Option ItemOptionStorage
+}
+
+type ShineItemWeaponLicence struct {
+	MobID uint16
+	BF2 int32
+}
+
+type ShineItemWeaponGemSocket struct {
+	GemID uint16
+	RestCount byte
+}
+
+//struct ShineItemAttr_Armor
+type ShineItemAttrArmor struct {
+	Upgrade byte
+	Strengthen byte
+	UpgradeFailCount byte
+	IsBound uint32
+	DeleteTime int32
+	RandomOptionChangedCount byte
+	Option ItemOptionStorage
+}
+
+// struct ShineItemAttr_Shield
+type ShineItemAttrShield struct {
+	Upgrade byte
+	Strengthen byte
+	UpgradeFailCount byte
+	IsBound uint32
+	DeleteTime int32
+	RandomOptionChangedCount byte
+	Option ItemOptionStorage
+}
+
+// struct ShineItemAttr_Boot
+type ShineItemAttrBoot struct {
+	Upgrade byte
+	Strengthen byte
+	UpgradeFailCount byte
+	IsBound uint32
+	DeleteTime int32
+	RandomOptionChangedCount byte
+	Option ItemOptionStorage
+}
+
+// struct ShineItemAttr_Furniture
+type ShineItemAttrFurniture struct {
+	Flag byte
+	FurnitureID uint16
+	DeleteTime int32
+	LocX float32
+	LocY float32
+	LocZ float32
+	Direction float32
+	ExpirationTime int32
+	EndureGrade byte
+	RewardMoney uint64
+}
+
+// struct ShineItemAttr_Decoration
+type ShineItemAttrDecoration struct {
+	IsBound    uint32
+	DeleteTime int32
+}
+
+// struct ShineItemAttr_BindItem
+type ShineItemAttrBindItem struct {
+	PortalNum byte
+	Portals [10]Bind
+}
+
+type Bind struct {
+	MapID uint16
+	X uint32
+	Y uint32
+}
+
+// struct ShineItemAttr_ItemChest
+type ShineItemAttrItemChest struct {
+	Type byte
+	Content [8][8]byte
+}
+
+// struct ShineItemAttr_MiniHouseSkin
+type ShineItemAttrMiniHouseSkin struct {
+	DeleteTime int32
+}
+
+// struct ShineItemAttr_Riding
+type ShineItemAttrRiding struct {
+	HungryPoints uint16
+	DeleteTime int32
+	RidingFlag uint16
+	IsBound uint32
+	HP uint32
+	Grade byte
+	RareFailCount uint16
+}
+
+// ShineItemAttr_CostumWeapon
+type ShineItemAttrCostumeWeapon struct {
+	Durability uint32
+}
+
+// struct ShineItemAttr_ActionItem
+type ShineItemAttrActionItem struct {
+	DeleteTime int32
+}
+
+// struct ShineItemAttr_Capsule
+type ShineItemAttrCapsule struct {
+	Content [8]byte
+	UseAbleTime int32
+}
+
+// struct ShineItemAttr_MobCardCollect_Unident
+type ShineItemAttrMobCardCollectClosed struct {
+	SerialNumber uint32
+	CardID uint16
+	Star byte
+	Group uint16
+}
+
+// ShineItemAttr_MobCardCollect
+type ShineItemAttrMobCardCollect struct {
+	SerialNumber uint32
+	Start byte
+}
+
+// struct ShineItemAttr_Amount
+type ShineItemAttrAmount struct {
+	Amount uint32
+}
+
+// struct ShineItemAttr_Pet
+type ShineItemAttrPet struct {
+	PetRegNum uint32
+	PetID uint32
+	Name [17]byte
+	Summoning byte
+}
+
+// struct ShineItemAttr_Bracelet
+type ShineItemAttrBracelet struct {
+	DeleteTime int32
+	IsBound uint32
+	Upgrade byte
+	Strengthen byte
+	UpgradeFailCount byte
+	RandomOptionChangedCount byte
+	Option ItemOptionStorage
+}
+
+// struct ShineItemAttrCostumeShield
+type ShineItemAttrCostumeShield struct {
+	Durability uint32
+}
+
 type ShineItem struct {
 	ItemID uint16
 	//Attr [101]byte
 }
 
 //struct CT_INFO
-//{
-//  char Type;
-//  char _bf1;
-//};
 type CharTitleInfo struct {
 	Type byte
 	BF1  byte
 }
 
 //struct PROTO_NC_CHAR_OPTION_SHORTCUTSIZE
-//{
-//  char Data[24];
-//};
 type NcCharOptionShortcutSize struct {
 	Data [24]byte
 }
 
 //struct GUILD_CLIENT
-//{
-//  unsigned int nNo;
-//  Name4 sName;
-//  unsigned __int64 nMoney;
-//  char nType;
-//  char nGrade;
-//  unsigned int nFame;
-//  unsigned __int16 nStoneLevel;
-//  unsigned __int64 nExp;
-//  int dCreateDate;
-//  tm tm_dCreateDate;
-//  unsigned __int16 nNumMembers;
-//  unsigned __int16 nMaxMembers;
-//  char nWarStatus;
-//  int dWarRequestDate;
-//  int dWarStartDate;
-//  int dWarEndDate;
-//  tm tm_dWarRequestDate;
-//  tm tm_dWarStartDate;
-//  tm tm_dWarEndDate;
-//  unsigned int nWarEnemy;
-//  Name4 sWarEnemyName;
-//  char nWarEnemyGrade;
-//  SHINE_GUILD_SCORE MyScore;
-//  SHINE_GUILD_SCORE EnemyScore;
-//  unsigned int nWarWinCount;
-//  unsigned int nWarLoseCount;
-//  unsigned int nWarDrawCount;
-//  char nDismissStatus;
-//  int dDismissDate;
-//  tm tm_dDismissDate;
-//  char sIntro[128];
-//  int dNotifyDate;
-//  tm tm_dNotifyDate;
-//  Name5 sNotifyCharID;
-//  char sNotify[512];
-//};
 type GuildClient struct { // WRONG, 2020 uses different struct
 	Number           uint32
 	Name             Name4
@@ -157,27 +330,12 @@ type GuildClient struct { // WRONG, 2020 uses different struct
 }
 
 //struct SHINE_GUILD_SCORE
-//{
-//  unsigned __int16 nKillCount[7];
-//  unsigned int nKillScore[7];
-//};
 type ShineGuildScore struct {
 	KillCount [7]uint16
 	KillScore [7]uint32
 }
 
 //struct tm
-//{
-//  int tm_sec;
-//  int tm_min;
-//  int tm_hour;
-//  int tm_mday;
-//  int tm_mon;
-//  int tm_year;
-//  int tm_wday;
-//  int tm_yday;
-//  int tm_isdst;
-//};
 type TM struct {
 	Seconds  int32
 	Minutes  int32

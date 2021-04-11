@@ -29,35 +29,45 @@ func main() {
 	//// problem: Sea of Greed portals all point to Forest Of Mist
 	//logger.Info(npcData)
 
-	//ds := "17240024"
-	//
-	//data, _ := hex.DecodeString(ds)
-	//
-	//nc := structs.NcitemRelocateReq{}
-	//
-	//structs.Unpack(data, &nc)
-	//
-	//inventoryType := 9216 >> 10
-	//
-	//itemSlot := 9216 & 1023
-	//
-	//reverse := inventoryType << 10 | itemSlot & 1023
-	//
-	//fmt.Println(inventoryType, itemSlot)
-	//
-	//// box 2 = reward  inventory
-	//// box 3 = mini house furniture
-	//// box 8 = equipped items  / 1-29
-	//// box 9 = inventory, storage  // 9216 - 9377 (24 slots per page)
-	//// box 12 = mini houses // 12288 equipped minihouse, 12299-12322 available slots
-	//// box 13 = mini house accessories
-	//// box 14 = mini house tile all inventory
-	//// box 15 = premium actions inventory(dances)
-	//// box 16 = mini house mini game inventory
-	//
-	//inventoryTypes := []uint16{
-	//	2, 3, 8, 9, 12, 13, 14, 15, 16,
-	//}
+	ds := "2609230c0024b5b300000000000000000801248675e09304000802245975a0860100050324750e110504247f0e10050524840e07050624890e240507248e0e1c050824980e120509249d0e12050a24a20e12050b24790e02050c24487501050d24d8750b050e24847705050f24ca0903051024c90901171124f18b2c01ffecbb7600000000000000000000050000051224f81a14051324331b000c1424a5bc0000000000000000051524de1e1f48162440a009000000000000250000000000ffff00000000ffff000000000000417664614b656461767261000000000000000000008aeeff53eeffffffff0200000000000103030e001a1724dcd600000000000000000000000007030c000210000110001a1824ddd600000000000000000000000007010a00040600030c00171924ded600000000000000000000000005030400010a00301a2422a20000000000000000000000010000000000000000000000000000000000000000000000000005030900040900301b2425a20000000000000000000000010000000000000000000000000000000000000000000000000005020300030a002a1c24d5080000000000000000000000000000000000000000000000000000000000000000000000000000051d24591f14051e2453ee13061f24df0c010006202459810100112124e7050000000000000000000000000130222466a500000000000000000900000901030004070002010003020000000000000000000000000001050302000207004e232469e100000000000000ffff00000000ffff00000000ffff000000000000000000000000000000000000000000000000000000ffffffffffffffffff0200000000000007020c000113000007001a282413cf000000000000000000000000070003000409000210004e29244aa000000000000000ffff00000000ffff00000000ffff000000000000000000000000000000000000000000000000000000ffffffffffffffffff0100000000000007030d00040c00010400"
+
+	d, _ := hex.DecodeString(ds)
+
+	nc := structs.NcCharClientItemCmd{}
+
+	err := structs.Unpack(d, &nc)
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	attr := structs.ShineItemAttrAmulet{
+		DeleteTime:               0,
+		IsBound:                  0,
+		Upgrade:                  0,
+		Strengthen:               0,
+		UpgradeFailCount:         0,
+		//UpgradeOption:            structs.ItemOptionStorage{},
+		RandomOptionChangedCount: 0,
+
+	}
+	b, err := structs.Pack(&attr)
+
+	if err != nil {
+		logger.Error(err, b)
+	}
+
+	//tnc := structs.ShineItemAttrAmulet{}
+	//err = structs.Unpack(nc.Items[34].ItemAttr, &tnc)
+
+	tnc := structs.ShineItemAttrWeapon{}
+	err = structs.Unpack(nc.Items[35].ItemAttr, &tnc)
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	fmt.Println(b)
 }
 
 func packetFilter() {
