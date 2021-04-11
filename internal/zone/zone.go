@@ -40,13 +40,9 @@ func (z *zone) load() {
 	z.rm = make(runningMaps)
 
 	zEvents := []eventIndex{
-		playerMapLogin,
-		playerSHN,
-		playerData,
-		heartbeatUpdate,
-		queryMap,
-		playerLogoutStart, playerLogoutCancel, playerLogoutConclude,
-		persistPlayerPosition,
+		playerMapLogin, playerSHN, playerData,
+		heartbeatUpdate, queryMap, playerLogoutStart,
+		playerLogoutCancel, playerLogoutConclude, persistPlayerPosition,
 		changeMap,
 	}
 
@@ -188,6 +184,7 @@ func (z *zone) addMap(mapId int) {
 	go m.run()
 
 }
+
 func (z *zone) run() {
 	// run query workers
 	num := viper.GetInt("workers.num_zone_workers")

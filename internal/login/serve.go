@@ -38,7 +38,6 @@ func Start(cmd *cobra.Command, args []string) {
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 
-
 	initRedis()
 
 	go newRPCServer("login")

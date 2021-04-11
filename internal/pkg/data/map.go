@@ -8,7 +8,6 @@ import (
 
 type MapData struct {
 	Maps map[int]*Map
-
 }
 
 type Map struct {

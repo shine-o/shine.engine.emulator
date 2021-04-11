@@ -1,6 +1,5 @@
 package data
 
-
 type ItemData struct {
 	ItemInfo          ShineItemInfo
 	ItemInfoServer    ShineItemInfoServer

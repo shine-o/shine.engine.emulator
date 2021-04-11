@@ -1,19 +1,11 @@
 package structs
 
 //struct PROTO_NC_QUEST_START_REQ
-//{
-//  unsigned __int16 nQuestID;
-//};
 type NcQuestStartReq struct {
 	QuestID uint16
 }
 
 //struct PROTO_NC_QUEST_SCRIPT_CMD_ACK
-//{
-//  unsigned __int16 nQuestID;
-//  char nQSC;
-//  unsigned int nResult;
-//};
 type NcQuestScriptCmdAck struct {
 	QuestID uint16
 	QSC     byte
@@ -21,12 +13,6 @@ type NcQuestScriptCmdAck struct {
 }
 
 //struct PROTO_NC_QUEST_RESET_TIME_CMD
-//{
-//  int tResetYearQuest;
-//  int tResetMonthQuest;
-//  int tResetWeekQuest;
-//  int tResetDayQuest;
-//};
 type NcQuestResetTimeCmd struct {
 	ResetYear  int32
 	ResetMonth int32

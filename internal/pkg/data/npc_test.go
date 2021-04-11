@@ -17,4 +17,3 @@ func TestLoadNpcData(t *testing.T) {
 	//	t.Fail()
 	//}
 }
-

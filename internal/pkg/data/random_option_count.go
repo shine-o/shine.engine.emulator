@@ -11,8 +11,8 @@ type ShineRandomOptionCount struct {
 
 // Amount of stats that can drop and the drop rate
 type RandomOptionCount struct {
-	_ uint16
+	_             uint16
 	DropItemIndex string `struct:"[33]byte"`
 	LimitCount    uint16
-	LimitDropRate  uint16
+	LimitDropRate uint16
 }

@@ -70,7 +70,7 @@ type Params struct {
 }
 
 var (
-	params *Params
+	params   *Params
 	xorBytes []byte
 )
 
@@ -78,7 +78,7 @@ func ExtendedCapture(p *Params) {
 	initConfig()
 	params = p
 
-	xb , err := hex.DecodeString(viper.GetString("protocol.xorKey"))
+	xb, err := hex.DecodeString(viper.GetString("protocol.xorKey"))
 
 	if err != nil {
 		log.Fatal(err)

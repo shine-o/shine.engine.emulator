@@ -11,7 +11,7 @@ type ShineRandomOption struct {
 
 // stats
 type RandomOption struct {
-	_ uint16
+	_                uint16
 	DropItemIndex    string `struct:"[33]byte"`
 	RandomOptionType RandomOptionType
 	Min              uint32

@@ -62,4 +62,3 @@ func exitf(s string, args ...interface{}) {
 	errorf(s, args...)
 	os.Exit(1)
 }
-

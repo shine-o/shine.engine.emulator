@@ -40,13 +40,12 @@ type player struct {
 	quests      *playerQuests
 	skills      []skill
 	passives    []passive
-	targeting targeting
-	prompt *prompt
+	targeting   targeting
+	prompt      *prompt
 	justSpawned bool
 	tickers     []*time.Ticker
 	char        *persistence.Character
 	sync.RWMutex
-
 }
 
 type promptAction int
@@ -237,7 +236,6 @@ type playerConnection struct {
 	close         chan<- bool
 	outboundData  chan<- []byte
 	sync.RWMutex
-
 }
 
 type playerView struct {
@@ -407,7 +405,7 @@ func (p *player) load(name string) error {
 		defer wg.Done()
 		p.statsData()
 	}()
-	go func(err chan <- error) {
+	go func(err chan<- error) {
 		defer wg.Done()
 		err <- p.itemData()
 	}(errC)
@@ -430,7 +428,59 @@ func (p *player) load(name string) error {
 
 	wg.Wait()
 
-	return <- errC
+	return <-errC
+}
+
+func (p *player) itemData() error {
+	// for this character, load all items in each respective box
+	// each item loaded should be validated so that, best way is to iterate all items and for each item launch a routine that validates it and returns the valid item through a channel
+	// we also forward the error channel in case there is an error
+	ivs := &playerInventories{
+		equipped: itemBox{
+			box: 8,
+		},
+		inventory: itemBox{
+			box: persistence.BagInventory,
+		},
+		miniHouse: itemBox{
+			box: 12,
+		},
+		premium: itemBox{
+			box: 15,
+		},
+	}
+
+	items, err := persistence.GetCharacterItems(int(p.char.ID), persistence.BagInventory)
+
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+
+	ivs.inventory.items = make(map[int]*item)
+
+	for _, item := range items {
+
+		ei, occupied := ivs.inventory.items[item.Slot]
+		if occupied {
+			log.Error(errors.Err{
+				Code: errors.ZoneInventorySlotOccupied,
+				Details: errors.ErrDetails{
+					"itemID": ei.pItem.ID,
+					"slot":   ei.pItem.Slot,
+				},
+			})
+			continue
+		}
+		// load with goroutines and waitgroups
+		ivs.inventory.items[item.Slot] = loadItem(item)
+	}
+
+	p.Lock()
+	p.inventories = ivs
+	p.Unlock()
+
+	return nil
 }
 
 func (p *player) viewData() {

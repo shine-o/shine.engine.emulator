@@ -5,12 +5,12 @@ type ShineGradeItemOption struct {
 	RowsCount   uint32
 	FieldSize   uint32
 	ColumnCount uint32
-	Columns     []ShineColumn      `struct:"sizefrom=ColumnCount"`
+	Columns     []ShineColumn     `struct:"sizefrom=ColumnCount"`
 	ShineRow    []GradeItemOption `struct:"sizefrom=RowsCount"`
 }
 
 type GradeItemOption struct {
-	_         uint16
+	_                  uint16
 	ItemIndex          string `struct:"[32]byte"`
 	Strength           uint16
 	Endurance          uint16

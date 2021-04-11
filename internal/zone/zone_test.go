@@ -2,8 +2,7 @@ package zone
 
 import (
 	"encoding/hex"
-	"errors"
-	"fmt"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/utils"
@@ -18,10 +17,22 @@ func netPackets() utils.TargetPackets {
 			Assert: func(i interface{}) error {
 				ncS, ok := i.(*structs.NcMiscSeedAck)
 				if !ok {
-					return errors.New(fmt.Sprintf("bad struct %v", reflect.TypeOf(ncS).String()))
+					return errors.Err{
+						Code:    errors.UnitTestError,
+						Message: "",
+						Details: errors.ErrDetails{
+							"struct": reflect.TypeOf(ncS).String(),
+						},
+					}
 				}
 				if ncS.Seed > 499 {
-					return errors.New(fmt.Sprintf("bad seed key %v", ncS.Seed))
+					return errors.Err{
+						Code:    errors.UnitTestError,
+						Message: "",
+						Details: errors.ErrDetails{
+							"seed": ncS.Seed,
+						},
+					}
 				}
 				return nil
 			},
@@ -126,8 +137,9 @@ func TestPackets(t *testing.T) {
 	netPackets := netPackets()
 
 	files := []string{
-		"../../../test-data/packets-1612910284-version-1.02.295.json",
-		"../../../test-data/packets-1613170127-version-1.02.295.json",
+		"../../test-data/packets-1612910284-version-1.02.296.json",
+		"../../test-data/packets-1613170127-version-1.02.296.json",
+		"../../test-data/packets-1613328603-version-1.02.296.json",
 	}
 
 	for _, f := range files {
@@ -142,16 +154,30 @@ func TestPackets(t *testing.T) {
 
 					data, err := hex.DecodeString(dataString)
 					if err != nil {
-						t.Error(err)
+						t.Error(errors.Err{
+							Code:    errors.UnitTestError,
+							Message: "",
+							Details: errors.ErrDetails{
+								"err":    err,
+								"struct": reflect.TypeOf(packet.NcStruct).String(),
+								"data":   dataString,
+							},
+						})
 					}
 					err = utils.TestPacket(packet, data)
 					if err != nil {
-						t.Error(err)
+						t.Error(errors.Err{
+							Code:    errors.UnitTestError,
+							Message: "",
+							Details: errors.ErrDetails{
+								"err":    err,
+								"struct": reflect.TypeOf(packet.NcStruct).String(),
+								"data":   dataString,
+							},
+						})
 					}
-					t.Log(fmt.Sprintf("ok, struct=%v data=%v", reflect.TypeOf(packet.NcStruct).String(), dataString))
 				}
 			}
 		}
 	}
-
 }

@@ -6,7 +6,7 @@ import (
 )
 
 type NpcData struct {
-	MapNPCs map[string][]*ShineNPC
+	MapNPCs    map[string][]*ShineNPC
 	VendorNPCs map[string]*VendorItems
 }
 
@@ -71,7 +71,7 @@ func loadMapNPCs(shineFolder string, npc *NpcData) error {
 
 	data, err := loadTxtFile(filesPath)
 	if err != nil {
-		return  err
+		return err
 	}
 
 	for _, row := range data {

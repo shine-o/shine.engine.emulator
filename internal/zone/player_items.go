@@ -51,8 +51,8 @@ type itemStats struct {
 	maxHP           itemStat
 	maxSP           itemStat
 	// unsure what these stats are
-	critical            itemStat
-	criticalEvasion		itemStat
+	critical        itemStat
+	criticalEvasion itemStat
 
 	staticAttackSpeed       itemStat
 	staticMinPAttack        itemStat
@@ -69,13 +69,36 @@ type itemStats struct {
 	staticPDefenseRate      itemStat
 	staticShieldDefenseRate itemStat
 
-	staticEvasionRate       itemStat
-	staticAimRate           itemStat
-	staticCriticalRate      itemStat
-	staticPResistance       itemStat
-	staticDResistance       itemStat
-	staticCResistance       itemStat
-	staticMResistance       itemStat
+	staticEvasionRate  itemStat
+	staticAimRate      itemStat
+	staticCriticalRate itemStat
+	staticPResistance  itemStat
+	staticDResistance  itemStat
+	staticCResistance  itemStat
+	staticMResistance  itemStat
+}
+
+type itemStat struct {
+	isStatic   bool
+	isUpgraded bool
+	base       int
+	extra      int
+}
+
+type itemData struct {
+	itemInfo          *data.ItemInfo
+	itemInfoServer    *data.ItemInfoServer
+	gradeItemOption   *data.GradeItemOption
+	randomOption      map[data.RandomOptionType]*data.RandomOption
+	randomOptionCount map[uint16]*data.RandomOptionCount
+	// itemUseEffect
+	// ... etc
+	sync.Mutex
+}
+
+type itemCreationDetails struct {
+	randomTypes []data.RandomOptionType
+	randomCount int
 }
 
 func (i *item) generateStats() (int, []data.RandomOptionType) {
@@ -211,7 +234,7 @@ func (i *item) generateStats() (int, []data.RandomOptionType) {
 	i.stats = is
 	i.Unlock()
 
-	return amount,types
+	return amount, types
 }
 
 func (is *itemStats) staticStats(id *itemData) {
@@ -231,7 +254,6 @@ func (is *itemStats) staticStats(id *itemData) {
 	is.staticMinMACriticalRate.base = int(id.itemInfo.CriMinMa)
 	is.staticMaxMACriticalRate.base = int(id.itemInfo.CriMaxMa)
 	is.staticShieldDefenseRate.base = int(id.itemInfo.ShieldAC)
-
 
 	if id.itemInfo.AC > 0 {
 		is.physicalDefense.base = int(id.itemInfo.AC)
@@ -318,12 +340,12 @@ func (is *itemStats) staticStats(id *itemData) {
 
 func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, error) {
 	var (
-		nc * structs.ProtoItemPacketInformation
+		nc       *structs.ProtoItemPacketInformation
 		itemAttr []byte
 	)
 
 	nc = &structs.ProtoItemPacketInformation{}
-	nc.Location.Inventory = uint16(i.pItem.InventoryType << 10 | i.pItem.Slot & 1023)
+	nc.Location.Inventory = uint16(i.pItem.InventoryType<<10 | i.pItem.Slot&1023)
 	nc.ItemID = i.itemData.itemInfo.ID
 	nc.DataSize = 4
 
@@ -550,13 +572,13 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 
 func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 	var (
-		storage = structs.ItemOptionStorage{}
+		storage  = structs.ItemOptionStorage{}
 		elements []structs.ItemOptionStorageElement
 	)
 
 	if stats.strength.base > 0 || stats.strength.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_STR),
+			ItemOptionType: byte(data.ROT_STR),
 		}
 
 		if stats.strength.isStatic {
@@ -570,7 +592,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 
 	if stats.endurance.base > 0 || stats.endurance.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_CON),
+			ItemOptionType: byte(data.ROT_CON),
 		}
 
 		if stats.endurance.isStatic {
@@ -584,7 +606,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 
 	if stats.dexterity.base > 0 || stats.dexterity.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_DEX),
+			ItemOptionType: byte(data.ROT_DEX),
 		}
 
 		if stats.dexterity.isStatic {
@@ -598,7 +620,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 
 	if stats.intelligence.base > 0 || stats.intelligence.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_INT),
+			ItemOptionType: byte(data.ROT_INT),
 		}
 
 		if stats.dexterity.isStatic {
@@ -612,7 +634,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 
 	if stats.spirit.base > 0 || stats.spirit.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_MEN),
+			ItemOptionType: byte(data.ROT_MEN),
 		}
 
 		if stats.dexterity.isStatic {
@@ -626,7 +648,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 
 	if stats.aim.base > 0 || stats.aim.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_TH),
+			ItemOptionType: byte(data.ROT_TH),
 		}
 
 		if stats.dexterity.isStatic {
@@ -640,7 +662,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 
 	if stats.critical.base > 0 || stats.critical.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_CRI),
+			ItemOptionType: byte(data.ROT_CRI),
 		}
 
 		if stats.critical.isStatic {
@@ -654,7 +676,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 
 	if stats.physicalAttack.base > 0 || stats.physicalAttack.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_WC),
+			ItemOptionType: byte(data.ROT_WC),
 		}
 
 		if stats.physicalAttack.isStatic {
@@ -668,7 +690,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 
 	if stats.physicalDefense.base > 0 || stats.physicalDefense.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_AC),
+			ItemOptionType: byte(data.ROT_AC),
 		}
 
 		if stats.physicalAttack.isStatic {
@@ -682,7 +704,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 
 	if stats.magicalAttack.base > 0 || stats.magicalAttack.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_MA),
+			ItemOptionType: byte(data.ROT_MA),
 		}
 
 		if stats.magicalAttack.isStatic {
@@ -696,7 +718,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 
 	if stats.magicalDefense.base > 0 || stats.magicalDefense.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_MR),
+			ItemOptionType: byte(data.ROT_MR),
 		}
 
 		if stats.magicalDefense.isStatic {
@@ -710,7 +732,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 
 	if stats.evasion.base > 0 || stats.evasion.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_TB),
+			ItemOptionType: byte(data.ROT_TB),
 		}
 
 		if stats.evasion.isStatic {
@@ -724,7 +746,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 
 	if stats.criticalEvasion.base > 0 || stats.criticalEvasion.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_TB),
+			ItemOptionType: byte(data.ROT_TB),
 		}
 
 		if stats.criticalEvasion.isStatic {
@@ -738,7 +760,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 
 	if stats.maxHP.base > 0 || stats.maxHP.extra > 0 {
 		iose := structs.ItemOptionStorageElement{
-			ItemOptionType:  byte(data.ROT_MAXHP),
+			ItemOptionType: byte(data.ROT_MAXHP),
 		}
 
 		if stats.maxHP.isStatic {
@@ -750,7 +772,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 		elements = append(elements, iose)
 	}
 
-	storage.AmountBit = byte(len(elements) << 1 | 1)
+	storage.AmountBit = byte(len(elements)<<1 | 1)
 	storage.Elements = elements
 	return storage
 }
@@ -782,32 +804,9 @@ func chosenStatTypes(amount int, id *itemData) []data.RandomOptionType {
 	return types[:amount]
 }
 
-type itemStat struct {
-	isStatic bool
-	isUpgraded bool
-	base  int
-	extra int
-}
-
-type itemData struct {
-	itemInfo          *data.ItemInfo
-	itemInfoServer    *data.ItemInfoServer
-	gradeItemOption   *data.GradeItemOption
-	randomOption      map[data.RandomOptionType]*data.RandomOption
-	randomOptionCount map[uint16]*data.RandomOptionCount
-	// itemUseEffect
-	// ... etc
-	sync.Mutex
-}
-
-type itemCreationDetails struct {
-	randomTypes []data.RandomOptionType
-	randomCount int
-}
-
 func makeItem(itemIndex string) (*item, itemCreationDetails, error) {
 	var (
-		i = &item{}
+		i   = &item{}
 		icd = itemCreationDetails{}
 	)
 
@@ -856,58 +855,6 @@ func makeItem(itemIndex string) (*item, itemCreationDetails, error) {
 	return i, icd, nil
 }
 
-func (p *player) itemData() error {
-	// for this character, load all items in each respective box
-	// each item loaded should be validated so that, best way is to iterate all items and for each item launch a routine that validates it and returns the valid item through a channel
-	// we also forward the error channel in case there is an error
-	ivs := &playerInventories{
-		equipped: itemBox{
-			box: 8,
-		},
-		inventory: itemBox{
-			box: persistence.BagInventory,
-		},
-		miniHouse: itemBox{
-			box: 12,
-		},
-		premium: itemBox{
-			box: 15,
-		},
-	}
-
-	items, err := persistence.GetCharacterItems(int(p.char.ID), persistence.BagInventory)
-
-	if err != nil {
-		log.Error(err)
-		return err
-	}
-
-	ivs.inventory.items = make(map[int]*item)
-
-	for _, item := range items {
-
-		ei, occupied := ivs.inventory.items[item.Slot]
-		if occupied {
-			log.Error(errors.Err{
-				Code: errors.ZoneInventorySlotOccupied,
-				Details: errors.ErrDetails{
-					"itemID": ei.pItem.ID,
-					"slot":   ei.pItem.Slot,
-				},
-			})
-			continue
-		}
-		// load with goroutines and waitgroups
-		ivs.inventory.items[item.Slot] = loadItem(item)
-	}
-
-	p.Lock()
-	p.inventories = ivs
-	p.Unlock()
-
-	return nil
-}
-
 func loadItem(pItem *persistence.Item) *item {
 	i := &item{
 		pItem:    pItem,
@@ -917,43 +864,43 @@ func loadItem(pItem *persistence.Item) *item {
 				base:  pItem.Attributes.StrengthBase,
 				extra: pItem.Attributes.StrengthExtra,
 			},
-			dexterity:               itemStat{
+			dexterity: itemStat{
 				base:  pItem.Attributes.DexterityBase,
 				extra: pItem.Attributes.DexterityExtra,
 			},
-			intelligence:            itemStat{
+			intelligence: itemStat{
 				base:  pItem.Attributes.IntelligenceBase,
 				extra: pItem.Attributes.IntelligenceExtra,
 			},
-			endurance:               itemStat{
+			endurance: itemStat{
 				base:  pItem.Attributes.EnduranceBase,
 				extra: pItem.Attributes.EnduranceExtra,
 			},
-			spirit:                  itemStat{
+			spirit: itemStat{
 				base:  pItem.Attributes.SpiritBase,
 				extra: pItem.Attributes.SpiritExtra,
 			},
-			physicalAttack:          itemStat{
+			physicalAttack: itemStat{
 				base:  pItem.Attributes.PAttackBase,
 				extra: pItem.Attributes.PAttackExtra,
 			},
-			magicalAttack:           itemStat{
+			magicalAttack: itemStat{
 				base:  pItem.Attributes.MAttackBase,
 				extra: pItem.Attributes.MAttackExtra,
 			},
-			physicalDefense:         itemStat{
+			physicalDefense: itemStat{
 				base:  pItem.Attributes.PDefenseBase,
 				extra: pItem.Attributes.PDefenseExtra,
 			},
-			magicalDefense:          itemStat{
+			magicalDefense: itemStat{
 				base:  pItem.Attributes.MDefenseBase,
 				extra: pItem.Attributes.MDefenseExtra,
 			},
-			aim:                     itemStat{
+			aim: itemStat{
 				base:  pItem.Attributes.AimBase,
 				extra: pItem.Attributes.AimExtra,
 			},
-			evasion:                 itemStat{
+			evasion: itemStat{
 				base:  pItem.Attributes.EvasionBase,
 				extra: pItem.Attributes.EvasionExtra,
 			},

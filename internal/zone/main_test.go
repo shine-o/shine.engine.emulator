@@ -43,7 +43,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func loadTestData(filesPath string)  {
+func loadTestData(filesPath string) {
 	var (
 		wg sync.WaitGroup
 	)

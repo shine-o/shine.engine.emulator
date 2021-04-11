@@ -11,11 +11,13 @@ import (
 
 //
 func TestNewItem_Success(t *testing.T) {
+	persistence.CleanDB()
+
 	char := persistence.NewCharacter("mage")
 
 	player := &player{
 		baseEntity: baseEntity{
-			handle: 1,
+			handle:   1,
 			fallback: &location{},
 			current:  &location{},
 			next:     &location{},
@@ -56,12 +58,14 @@ func TestNewItem_Success(t *testing.T) {
 }
 
 func TestNewItem_WithAttributes(t *testing.T) {
+	persistence.CleanDB()
+
 	itemInxName := "KarenStaff"
 	char := persistence.NewCharacter("mage")
 
 	player := &player{
 		baseEntity: baseEntity{
-			handle: 1,
+			handle:   1,
 			fallback: &location{},
 			current:  &location{},
 			next:     &location{},
@@ -101,7 +105,7 @@ func TestNewItem_WithAttributes(t *testing.T) {
 
 	amount := 0
 
-	if item1.stats.strength.base > 0 || item1.stats.dexterity.base > 0 ||  item1.stats.endurance.base > 0 || item1.stats.intelligence.base > 0 || item1.stats.spirit.base > 0 {
+	if item1.stats.strength.base > 0 || item1.stats.dexterity.base > 0 || item1.stats.endurance.base > 0 || item1.stats.intelligence.base > 0 || item1.stats.spirit.base > 0 {
 		amount++
 	}
 
@@ -220,12 +224,14 @@ func TestNewItem_WithAttributes(t *testing.T) {
 }
 
 func TestLoadItem_WithAttributes(t *testing.T) {
+	persistence.CleanDB()
+
 	itemInxName := "KarenStaff"
 	char := persistence.NewCharacter("mage")
 
 	player := &player{
 		baseEntity: baseEntity{
-			handle: 1,
+			handle:   1,
 			fallback: &location{},
 			current:  &location{},
 			next:     &location{},
@@ -261,7 +267,7 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 
 	amount := 0
 
-	if item1.stats.strength.base > 0 || item1.stats.dexterity.base > 0 ||  item1.stats.endurance.base > 0 || item1.stats.intelligence.base > 0 || item1.stats.spirit.base > 0 {
+	if item1.stats.strength.base > 0 || item1.stats.dexterity.base > 0 || item1.stats.endurance.base > 0 || item1.stats.intelligence.base > 0 || item1.stats.spirit.base > 0 {
 		amount++
 	}
 
@@ -380,6 +386,8 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 }
 
 func TestNewItem_CreateAllItems(t *testing.T) {
+	persistence.CleanDB()
+
 	for _, row := range itemsData.ItemInfo.ShineRow {
 		_, _, err := makeItem(row.InxName)
 		if err != nil {
@@ -387,8 +395,8 @@ func TestNewItem_CreateAllItems(t *testing.T) {
 				Code:    errors.UnitTestError,
 				Message: "error creating item",
 				Details: errors.ErrDetails{
-					"err": err,
-					"itemIndex" : row.InxName,
+					"err":       err,
+					"itemIndex": row.InxName,
 				},
 			})
 		}
@@ -396,11 +404,13 @@ func TestNewItem_CreateAllItems(t *testing.T) {
 }
 
 func TestNewItem_BadItemIndex(t *testing.T) {
+	persistence.CleanDB()
+
 	char := persistence.NewCharacter("mage")
 
 	player := &player{
 		baseEntity: baseEntity{
-			handle: 1,
+			handle:   1,
 			fallback: &location{},
 			current:  &location{},
 			next:     &location{},
@@ -423,6 +433,8 @@ func TestNewItem_BadItemIndex(t *testing.T) {
 }
 
 func Test_AllItems_NC(t *testing.T) {
+	persistence.CleanDB()
+
 	for _, row := range itemsData.ItemInfo.ShineRow {
 		item, _, err := makeItem(row.InxName)
 		if err != nil {
@@ -435,9 +447,9 @@ func Test_AllItems_NC(t *testing.T) {
 				Code:    errors.UnitTestError,
 				Message: "error creating item nc struct",
 				Details: errors.ErrDetails{
-					"err": err,
-					"itemIndex" : row.InxName,
-					"nc": inc,
+					"err":       err,
+					"itemIndex": row.InxName,
+					"nc":        inc,
 				},
 			})
 			continue
@@ -463,10 +475,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -481,10 +493,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -497,10 +509,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -513,10 +525,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -529,10 +541,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -545,10 +557,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -561,10 +573,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -577,10 +589,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -593,10 +605,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -609,10 +621,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -625,10 +637,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -641,10 +653,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -657,10 +669,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -673,10 +685,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -689,10 +701,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -705,10 +717,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -721,10 +733,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -737,10 +749,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -753,10 +765,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -769,10 +781,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -785,10 +797,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -804,10 +816,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -820,10 +832,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -836,10 +848,10 @@ func Test_AllItems_NC(t *testing.T) {
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
 					Details: errors.ErrDetails{
-						"err": err,
-						"itemIndex" : row.InxName,
-						"data": inc.ItemAttr,
-						"ncType": reflect.TypeOf(nc).String(),
+						"err":       err,
+						"itemIndex": row.InxName,
+						"data":      inc.ItemAttr,
+						"ncType":    reflect.TypeOf(nc).String(),
 					},
 				})
 			}
@@ -849,6 +861,8 @@ func Test_AllItems_NC(t *testing.T) {
 }
 
 func Test_AllItems_With_Attributes_NC(t *testing.T) {
+	persistence.CleanDB()
+
 	for _, row := range itemsData.ItemInfo.ShineRow {
 		item, icd, err := makeItem(row.InxName)
 		if err != nil {
@@ -862,7 +876,7 @@ func Test_AllItems_With_Attributes_NC(t *testing.T) {
 
 		if item.itemData.randomOption != nil && item.itemData.randomOptionCount != nil {
 			switch row.Class {
-			case data.ItemClassArmor :
+			case data.ItemClassArmor:
 				attr := structs.ShineItemAttrArmor{}
 				err := structs.Unpack(inc.ItemAttr, &attr)
 				if err != nil {
@@ -870,9 +884,9 @@ func Test_AllItems_With_Attributes_NC(t *testing.T) {
 						Code:    errors.UnitTestError,
 						Message: "error serializing item attr nc struct",
 						Details: errors.ErrDetails{
-							"err": err,
-							"itemIndex" : row.InxName,
-							"creationDetails" : icd,
+							"err":             err,
+							"itemIndex":       row.InxName,
+							"creationDetails": icd,
 						},
 					})
 				}
@@ -881,9 +895,9 @@ func Test_AllItems_With_Attributes_NC(t *testing.T) {
 						Code:    errors.UnitTestError,
 						Message: "missing stats, expected at least 1 or more stats",
 						Details: errors.ErrDetails{
-							"itemIndex" : row.InxName,
-							"rotIndex" : item.itemData.itemInfoServer.RandomOptionDropGroup,
-							"creationDetails" : icd,
+							"itemIndex":       row.InxName,
+							"rotIndex":        item.itemData.itemInfoServer.RandomOptionDropGroup,
+							"creationDetails": icd,
 						},
 					})
 				}
@@ -896,9 +910,9 @@ func Test_AllItems_With_Attributes_NC(t *testing.T) {
 						Code:    errors.UnitTestError,
 						Message: "error serializing item attr nc struct",
 						Details: errors.ErrDetails{
-							"err": err,
-							"itemIndex" : row.InxName,
-							"creationDetails" : icd,
+							"err":             err,
+							"itemIndex":       row.InxName,
+							"creationDetails": icd,
 						},
 					})
 				}
@@ -907,9 +921,9 @@ func Test_AllItems_With_Attributes_NC(t *testing.T) {
 						Code:    errors.UnitTestError,
 						Message: "missing stats, expected at least 1 or more stats",
 						Details: errors.ErrDetails{
-							"itemIndex" : row.InxName,
-							"rotIndex" : item.itemData.itemInfoServer.RandomOptionDropGroup,
-							"creationDetails" : icd,
+							"itemIndex":       row.InxName,
+							"rotIndex":        item.itemData.itemInfoServer.RandomOptionDropGroup,
+							"creationDetails": icd,
 						},
 					})
 				}
@@ -922,9 +936,9 @@ func Test_AllItems_With_Attributes_NC(t *testing.T) {
 						Code:    errors.UnitTestError,
 						Message: "error serializing item attr nc struct",
 						Details: errors.ErrDetails{
-							"err": err,
-							"itemIndex" : row.InxName,
-							"creationDetails" : icd,
+							"err":             err,
+							"itemIndex":       row.InxName,
+							"creationDetails": icd,
 						},
 					})
 				}
@@ -933,9 +947,9 @@ func Test_AllItems_With_Attributes_NC(t *testing.T) {
 						Code:    errors.UnitTestError,
 						Message: "missing stats, expected at least 1 or more stats",
 						Details: errors.ErrDetails{
-							"itemIndex" : row.InxName,
-							"rotIndex" : item.itemData.itemInfoServer.RandomOptionDropGroup,
-							"creationDetails" : icd,
+							"itemIndex":       row.InxName,
+							"rotIndex":        item.itemData.itemInfoServer.RandomOptionDropGroup,
+							"creationDetails": icd,
 						},
 					})
 				}
@@ -946,111 +960,127 @@ func Test_AllItems_With_Attributes_NC(t *testing.T) {
 }
 
 func TestNewItemStack_Success(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestNewItemStack_ItemNotStackable(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestSplitItemStack_Success(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestSplitItemStack_NC_Success(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestSplitItemStack_BadDivision(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestSplitItemStack_ItemNotStackable(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestSoftDeleteItem_Success(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestLoadNewPlayer_Mage_EquippedItems(t *testing.T) {
 	// should have 1 staff
+	t.Fail()
+
 }
 
 func TestLoadNewPlayer_Warrior_EquippedItems(t *testing.T) {
-
+	t.Fail()
 }
 
 func TestLoadNewPlayer_Archer_EquippedItems(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestLoadNewPlayer_Cleric_EquippedItems(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestPlayer_PicksUpItem(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestPlayer_DropsItem(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestPlayer_DeletesItem(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestItemEquip_Success(t *testing.T) {
+	t.Fail()
+
 	//    SUCCESS = 641, // 0x0281
 	//    FAILED = 645, // 0x0285
-	player := &player{
-		baseEntity: baseEntity{
-			handle: 1,
-		},
-	}
-
-	item := &item{}
-
-	itemSlotChange, err := player.equip(item, data.ItemEquipHat)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if itemSlotChange.from != 0 {
-		t.Fail()
-	}
-
-	if itemSlotChange.to != 1 {
-		t.Fail()
-	}
-
-	equippedItem, ok := player.inventories.equipped.items[int(data.ItemEquipHat)]
-
-	if !ok {
-		t.Fail()
-	}
-
-	if equippedItem.pItem.ID != item.pItem.ID {
-		t.Fail()
-	}
-
-	clauses := make(map[string]interface{})
-
-	clauses["item_id"] = item.pItem.ID
-	clauses["character_id"] = player.char.ID
-	clauses["inventory_type"] = persistence.EquippedInventory
-
-	_, err = persistence.GetItemWhere(clauses, false)
-
-	if err != nil {
-		t.Fail()
-	}
+	//player := &player{
+	//	baseEntity: baseEntity{
+	//		handle: 1,
+	//	},
+	//}
+	//
+	//item := &item{}
+	//
+	//itemSlotChange, err := player.equip(item, data.ItemEquipHat)
+	//
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
+	//
+	//if itemSlotChange.from != 0 {
+	//	t.Fail()
+	//}
+	//
+	//if itemSlotChange.to != 1 {
+	//	t.Fail()
+	//}
+	//
+	//equippedItem, ok := player.inventories.equipped.items[int(data.ItemEquipHat)]
+	//
+	//if !ok {
+	//	t.Fail()
+	//}
+	//
+	//if equippedItem.pItem.ID != item.pItem.ID {
+	//	t.Fail()
+	//}
+	//
+	//clauses := make(map[string]interface{})
+	//
+	//clauses["item_id"] = item.pItem.ID
+	//clauses["character_id"] = player.char.ID
+	//clauses["inventory_type"] = persistence.EquippedInventory
+	//
+	//_, err = persistence.GetItemWhere(clauses, false)
+	//
+	//if err != nil {
+	//	t.Fail()
+	//}
 }
 
 func TestItemEquip_NC_Success(t *testing.T) {
-
+	t.Fail()
 }
 
 func TestItemEquip_Failed(t *testing.T) {
@@ -1059,66 +1089,84 @@ func TestItemEquip_Failed(t *testing.T) {
 	// err.Code = ItemEquipFailed
 	// err.Details["pHandle"]
 	//
+	t.Fail()
+
 }
 
 func TestItemEquip_NC_Failed(t *testing.T) {
 	//    FAILED = 645, // 0x0285
 	// nc := itemEquipFailNc(err) structs.NcItemEquipFailNc ?
 	//nc.Code == 645
+	t.Fail()
+
 }
 
 func TestItemEquip_BadSlot(t *testing.T) {
-
+	t.Fail()
 }
 
 func TestItemUnEquip_NC_Success(t *testing.T) {
+	t.Fail()
+
 }
 
 func TestItemUnEquip_Success(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestChangeItemSlot_Success(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestChangeItemSlot_NC_Success(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestChangeItem_NonExistentSlot(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestChangeItemSlot_BadItemType(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestChangeItemSlot_NoItemInSlot(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestDropItem_NonExistingItem(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestSellItem_Success(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestSellItem_NonExistingItem(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestBuyItem_Success(t *testing.T) {
+	t.Fail()
 
 }
 
 func TestOneUseItem_Success(t *testing.T) {
+	t.Fail()
 
 }
 
 // Like mounts, quest items
 func TestMultipleUseItem_Success(t *testing.T) {
+	t.Fail()
 
 }

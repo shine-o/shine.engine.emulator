@@ -63,7 +63,6 @@ type ShineColumn struct {
 	Size uint32
 }
 
-
 func Load(filesPath string, shn interface{}) error {
 	data, err := loadRawData(filesPath)
 	if err != nil {
@@ -75,7 +74,6 @@ func Load(filesPath string, shn interface{}) error {
 	}
 	return nil
 }
-
 
 func loadRawData(filesPath string) ([]byte, error) {
 	var srf ShineRawFile

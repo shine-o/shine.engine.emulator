@@ -269,4 +269,3 @@ func loadRegenData(shineFolder string) (map[string]MonsterRegenTable, error) {
 
 	return mapRegens, err
 }
-
