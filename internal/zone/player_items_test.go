@@ -30,7 +30,7 @@ func TestNewItem_Success(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff")
 
 	if err != nil {
 		t.Fatal(err)
@@ -76,7 +76,7 @@ func TestNewItem_WithAttributes(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, err := makeItem(itemInxName)
+	item, _, err := makeItem(itemInxName)
 
 	if err != nil {
 		t.Fatal(err)
@@ -114,7 +114,7 @@ func TestNewItem_WithAttributes(t *testing.T) {
 		t.Fatal("unexpected stat value")
 	}
 
-	if item1.stats.staticMaxHP.base != 500 {
+	if item1.stats.maxHP.base != 500 {
 		t.Fatal("unexpected stat value")
 	}
 
@@ -178,19 +178,19 @@ func TestNewItem_WithAttributes(t *testing.T) {
 		t.Fatal("unexpected stat value")
 	}
 
-	if item1.stats.staticPDefense.base != 0 {
+	if item1.stats.physicalDefense.base != 0 {
 		t.Fatal("unexpected stat value")
 	}
 
-	if item1.stats.staticMDefense.base != 0 {
+	if item1.stats.magicalDefense.base != 0 {
 		t.Fatal("unexpected stat value")
 	}
 
-	if item1.stats.staticAim.base != 1326 {
+	if item1.stats.aim.base != 1326 {
 		t.Fatal("unexpected stat value")
 	}
 
-	if item1.stats.staticEvasion.base != 0 {
+	if item1.stats.evasion.base != 0 {
 		t.Fatal("unexpected stat value")
 	}
 
@@ -240,7 +240,7 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, err := makeItem(itemInxName)
+	item, _, err := makeItem(itemInxName)
 
 	if err != nil {
 		t.Fatal(err)
@@ -274,7 +274,7 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 		t.Fatal("unexpected stat value")
 	}
 
-	if item1.stats.staticMaxHP.base != 500 {
+	if item1.stats.maxHP.base != 500 {
 		t.Fatal("unexpected stat value")
 	}
 
@@ -338,19 +338,19 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 		t.Fatal("unexpected stat value")
 	}
 
-	if item1.stats.staticPDefense.base != 0 {
+	if item1.stats.physicalDefense.base != 0 {
 		t.Fatal("unexpected stat value")
 	}
 
-	if item1.stats.staticMDefense.base != 0 {
+	if item1.stats.magicalDefense.base != 0 {
 		t.Fatal("unexpected stat value")
 	}
 
-	if item1.stats.staticAim.base != 1326 {
+	if item1.stats.aim.base != 1326 {
 		t.Fatal("unexpected stat value")
 	}
 
-	if item1.stats.staticEvasion.base != 0 {
+	if item1.stats.evasion.base != 0 {
 		t.Fatal("unexpected stat value")
 	}
 
@@ -381,7 +381,7 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 
 func TestNewItem_CreateAllItems(t *testing.T) {
 	for _, row := range itemsData.ItemInfo.ShineRow {
-		_, err := makeItem(row.InxName)
+		_, _, err := makeItem(row.InxName)
 		if err != nil {
 			t.Error(errors.Err{
 				Code:    errors.UnitTestError,
@@ -415,62 +415,21 @@ func TestNewItem_BadItemIndex(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	_, err = makeItem("badindex")
+	_, _, err = makeItem("badindex")
 
 	if err == nil {
 		t.Fatal("expected error, got null")
 	}
 }
 
-//union __unaligned __declspec(align(1)) SHINE_ITEM_ATTRIBUTE
-//{
-//  ShineItemAttr_ByteLot blot;
-//  ShineItemAttr_WordLot wlot;
-//  ShineItemAttr_DwrdLot dlot;
-//  ShineItemAttr_QuestItem qstitm;
-//  ShineItemAttr_Amulet amulet;
-//  ShineItemAttr_Weapon weapon;
-//  ShineItemAttr_Armor armor;
-//  ShineItemAttr_Shield shield;
-//  ShineItemAttr_Boot boot;
-//  ShineItemAttr_Furniture furniture;
-//  ShineItemAttr_Decoration decorate;
-//  ShineItemAttr_SkillScroll skillscroll;
-//  ShineItemAttr_RecallScroll recallscroll;
-//  ShineItemAttr_BindItem binditem;
-//  ShineItemAttr_UpSource upsource;
-//  ShineItemAttr_ItemChest itemchest;
-//  ShineItemAttr_WeaponTitleLicence weapontitlelicence;
-//  ShineItemAttr_KingdomQuest kingdomquest;
-//  ShineItemAttr_MiniHouseSkin minihouseskin;
-//  ShineItemAttr_UpRed upgraderedgem;
-//  ShineItemAttr_UpBlue upgradebluegem;
-//  ShineItemAttr_UpGold upgradegoldgem;
-//  ShineItemAttr_KQStep kqstep;
-//  ShineItemAttr_Feed feed;
-//  ShineItemAttr_Riding riding;
-//  ShineItemAttr_Amount amount;
-//  ShineItemAttr_CostumWeapon costumweapon;
-//  ShineItemAttr_CostumShield costumshield;
-//  ShineItemAttr_ActionItem actionitem;
-//  ShineItemAttr_Enchant Enchant;
-//  ShineItemAttr_GBCoin GBCoin;
-//  ShineItemAttr_Capsule Capsule;
-//  ShineItemAttr_MobCardCollect_Unident MobCard_Unident;
-//  ShineItemAttr_MobCardCollect MobCard;
-//  ShineItemAttr_NoEffect NoEffect;
-//  ShineItemAttr_ActiveSkill ActiveSkill;
-//  ShineItemAttr_Pet Pet;
-//  ShineItemAttr_Bracelet Bracelet;
-//};
 func Test_AllItems_NC(t *testing.T) {
 	for _, row := range itemsData.ItemInfo.ShineRow {
-		item, err := makeItem(row.InxName)
+		item, _, err := makeItem(row.InxName)
 		if err != nil {
 			continue
 		}
 
-		inc, err := item.protoItemPacketInformation()
+		inc, err := protoItemPacketInformation(item)
 		if err != nil {
 			t.Error(errors.Err{
 				Code:    errors.UnitTestError,
@@ -886,8 +845,103 @@ func Test_AllItems_NC(t *testing.T) {
 			}
 			break
 		}
+	}
+}
 
+func Test_AllItems_With_Attributes_NC(t *testing.T) {
+	for _, row := range itemsData.ItemInfo.ShineRow {
+		item, icd, err := makeItem(row.InxName)
+		if err != nil {
+			continue
+		}
 
+		inc, err := protoItemPacketInformation(item)
+		if err != nil {
+			continue
+		}
+
+		if item.itemData.randomOption != nil && item.itemData.randomOptionCount != nil {
+			switch row.Class {
+			case data.ItemClassArmor :
+				attr := structs.ShineItemAttrArmor{}
+				err := structs.Unpack(inc.ItemAttr, &attr)
+				if err != nil {
+					t.Error(errors.Err{
+						Code:    errors.UnitTestError,
+						Message: "error serializing item attr nc struct",
+						Details: errors.ErrDetails{
+							"err": err,
+							"itemIndex" : row.InxName,
+							"creationDetails" : icd,
+						},
+					})
+				}
+				if (attr.Option.AmountBit >> 1) == 0 {
+					t.Error(errors.Err{
+						Code:    errors.UnitTestError,
+						Message: "missing stats, expected at least 1 or more stats",
+						Details: errors.ErrDetails{
+							"itemIndex" : row.InxName,
+							"rotIndex" : item.itemData.itemInfoServer.RandomOptionDropGroup,
+							"creationDetails" : icd,
+						},
+					})
+				}
+				break
+			case data.ItemClassAmulet:
+				attr := structs.ShineItemAttrAmulet{}
+				err := structs.Unpack(inc.ItemAttr, &attr)
+				if err != nil {
+					t.Error(errors.Err{
+						Code:    errors.UnitTestError,
+						Message: "error serializing item attr nc struct",
+						Details: errors.ErrDetails{
+							"err": err,
+							"itemIndex" : row.InxName,
+							"creationDetails" : icd,
+						},
+					})
+				}
+				if (attr.Option.AmountBit >> 1) == 0 {
+					t.Error(errors.Err{
+						Code:    errors.UnitTestError,
+						Message: "missing stats, expected at least 1 or more stats",
+						Details: errors.ErrDetails{
+							"itemIndex" : row.InxName,
+							"rotIndex" : item.itemData.itemInfoServer.RandomOptionDropGroup,
+							"creationDetails" : icd,
+						},
+					})
+				}
+				break
+			case data.ItemClassWeapon:
+				attr := structs.ShineItemAttrWeapon{}
+				err := structs.Unpack(inc.ItemAttr, &attr)
+				if err != nil {
+					t.Error(errors.Err{
+						Code:    errors.UnitTestError,
+						Message: "error serializing item attr nc struct",
+						Details: errors.ErrDetails{
+							"err": err,
+							"itemIndex" : row.InxName,
+							"creationDetails" : icd,
+						},
+					})
+				}
+				if (attr.Option.AmountBit >> 1) == 0 {
+					t.Error(errors.Err{
+						Code:    errors.UnitTestError,
+						Message: "missing stats, expected at least 1 or more stats",
+						Details: errors.ErrDetails{
+							"itemIndex" : row.InxName,
+							"rotIndex" : item.itemData.itemInfoServer.RandomOptionDropGroup,
+							"creationDetails" : icd,
+						},
+					})
+				}
+				break
+			}
+		}
 	}
 }
 

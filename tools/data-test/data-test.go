@@ -57,11 +57,14 @@ func main() {
 		logger.Error(err, b)
 	}
 
-	//tnc := structs.ShineItemAttrAmulet{}
-	//err = structs.Unpack(nc.Items[34].ItemAttr, &tnc)
+	tnc := structs.ShineItemAttrAmulet{}
+	err = structs.Unpack(nc.Items[34].ItemAttr, &tnc)
 
-	tnc := structs.ShineItemAttrWeapon{}
-	err = structs.Unpack(nc.Items[35].ItemAttr, &tnc)
+	//tnc := structs.ShineItemAttrWeapon{}
+	//err = structs.Unpack(nc.Items[35].ItemAttr, &tnc)
+
+	//tnc := structs.ShineItemAttrArmor{}
+	//err = structs.Unpack(nc.Items[33].ItemAttr, &tnc)
 
 	if err != nil {
 		logger.Error(err)

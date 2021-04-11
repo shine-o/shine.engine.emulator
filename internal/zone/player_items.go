@@ -49,6 +49,10 @@ type itemStats struct {
 	aim             itemStat
 	evasion         itemStat
 	maxHP           itemStat
+	maxSP           itemStat
+	// unsure what these stats are
+	critical            itemStat
+	criticalEvasion		itemStat
 
 	staticAttackSpeed       itemStat
 	staticMinPAttack        itemStat
@@ -64,12 +68,7 @@ type itemStats struct {
 	staticMDefenseRate      itemStat
 	staticPDefenseRate      itemStat
 	staticShieldDefenseRate itemStat
-	staticMDefense          itemStat
-	staticPDefense          itemStat
-	staticAim               itemStat
-	staticEvasion           itemStat
-	staticMaxHP             itemStat
-	staticMaxSP             itemStat
+
 	staticEvasionRate       itemStat
 	staticAimRate           itemStat
 	staticCriticalRate      itemStat
@@ -79,7 +78,7 @@ type itemStats struct {
 	staticMResistance       itemStat
 }
 
-func (i *item) generateStats() {
+func (i *item) generateStats() (int, []data.RandomOptionType) {
 	// first check if there are any random stats using (RandomOption / RandomOptionCount)
 	// apply those first, after that check GradeItemOption for fixed stats
 	// RNG for the number of stats that should be generated
@@ -106,39 +105,218 @@ func (i *item) generateStats() {
 			} else {
 				is.strength.base = value(t)
 			}
+			break
 		case data.ROT_CON:
 			if is.endurance.base > 0 {
 				is.endurance.extra = value(t)
 			} else {
 				is.endurance.base = value(t)
 			}
+			break
 		case data.ROT_DEX:
 			if is.dexterity.base > 0 {
 				is.dexterity.extra = value(t)
 			} else {
 				is.dexterity.base = value(t)
 			}
+			break
 		case data.ROT_INT:
 			if is.intelligence.base > 0 {
 				is.intelligence.extra = value(t)
 			} else {
 				is.intelligence.base = value(t)
 			}
+			break
 		case data.ROT_MEN:
 			if is.spirit.base > 0 {
-				is.spirit.base = value(t)
+				is.spirit.extra = value(t)
 			} else {
 				is.spirit.base = value(t)
 			}
+			break
+		case data.ROT_TH:
+			if is.aim.base > 0 {
+				is.aim.extra = value(t)
+			} else {
+				is.aim.base = value(t)
+			}
+			break
+		case data.ROT_CRI:
+			if is.critical.base > 0 {
+				is.critical.extra = value(t)
+			} else {
+				is.critical.base = value(t)
+			}
+			break
+		case data.ROT_WC:
+			if is.physicalAttack.base > 0 {
+				is.physicalAttack.extra = value(t)
+			} else {
+				is.physicalAttack.base = value(t)
+			}
+			break
+		case data.ROT_AC:
+			if is.physicalDefense.base > 0 {
+				is.physicalDefense.extra = value(t)
+			} else {
+				is.physicalDefense.base = value(t)
+			}
+			break
+		case data.ROT_MA:
+			if is.magicalAttack.base > 0 {
+				is.magicalAttack.extra = value(t)
+			} else {
+				is.magicalAttack.base = value(t)
+			}
+			break
+		case data.ROT_MR:
+			if is.magicalDefense.base > 0 {
+				is.magicalDefense.extra = value(t)
+			} else {
+				is.magicalDefense.base = value(t)
+			}
+			break
+		case data.ROT_TB:
+			if is.evasion.base > 0 {
+				is.evasion.extra = value(t)
+			} else {
+				is.evasion.base = value(t)
+			}
+			break
+		case data.ROT_CRITICAL_TB:
+			if is.criticalEvasion.base > 0 {
+				is.criticalEvasion.extra = value(t)
+			} else {
+				is.criticalEvasion.base = value(t)
+			}
+			break
+		case data.ROT_DEMANDLVDOWN:
+			if is.maxHP.base > 0 {
+				is.maxHP.extra = value(t)
+			} else {
+				is.maxHP.base = value(t)
+			}
+			break
+		case data.ROT_MAXHP:
+			if is.maxHP.base > 0 {
+				is.maxHP.extra = value(t)
+			} else {
+				is.maxHP.base = value(t)
+			}
+			break
 		}
 	}
 
 	i.Lock()
 	i.stats = is
 	i.Unlock()
+
+	return amount,types
 }
 
-func (i *item) protoItemPacketInformation() (*structs.ProtoItemPacketInformation, error) {
+func (is *itemStats) staticStats(id *itemData) {
+
+	is.staticAttackSpeed.base = int(id.itemInfo.AtkSpeed)
+	is.staticMinPAttack.base = int(id.itemInfo.MinWC)
+	is.staticMaxPAttack.base = int(id.itemInfo.MaxWC)
+	is.staticMinMAttack.base = int(id.itemInfo.MinMA)
+	is.staticMaxMAttack.base = int(id.itemInfo.MaxMA)
+	is.staticPAttackRate.base = int(id.itemInfo.WCRate)
+	is.staticMAttackRate.base = int(id.itemInfo.MARate)
+	is.staticPDefenseRate.base = int(id.itemInfo.ACRate)
+	is.staticMDefenseRate.base = int(id.itemInfo.MARate)
+	is.staticCriticalRate.base = int(id.itemInfo.CriRate / 10)
+	is.staticMinPACriticalRate.base = int(id.itemInfo.CriMinWc)
+	is.staticMaxPACriticalRate.base = int(id.itemInfo.CriMaxWc)
+	is.staticMinMACriticalRate.base = int(id.itemInfo.CriMinMa)
+	is.staticMaxMACriticalRate.base = int(id.itemInfo.CriMaxMa)
+	is.staticShieldDefenseRate.base = int(id.itemInfo.ShieldAC)
+
+
+	if id.itemInfo.AC > 0 {
+		is.physicalDefense.base = int(id.itemInfo.AC)
+		is.physicalDefense.isStatic = true
+	}
+
+	if id.itemInfo.MR > 0 {
+		is.magicalDefense.base = int(id.itemInfo.MR)
+		is.magicalDefense.isStatic = true
+	}
+
+	if id.itemInfo.MR > 0 {
+		is.aim.base = int(id.itemInfo.TH)
+		is.aim.isStatic = true
+	}
+
+	if id.itemInfo.MR > 0 {
+		is.evasion.base = int(id.itemInfo.TB)
+		is.evasion.isStatic = true
+	}
+
+	if id.gradeItemOption != nil {
+		if id.gradeItemOption.Strength > 0 {
+			is.strength.base = int(id.gradeItemOption.Strength)
+			is.strength.isStatic = true
+		}
+
+		if id.gradeItemOption.Endurance > 0 {
+			is.endurance.base = int(id.gradeItemOption.Endurance)
+			is.endurance.isStatic = true
+		}
+
+		if id.gradeItemOption.Dexterity > 0 {
+			is.dexterity.base = int(id.gradeItemOption.Dexterity)
+			is.dexterity.isStatic = true
+		}
+
+		if id.gradeItemOption.Intelligence > 0 {
+			is.intelligence.base = int(id.gradeItemOption.Intelligence)
+			is.intelligence.isStatic = true
+		}
+
+		if id.gradeItemOption.Spirit > 0 {
+			is.spirit.base = int(id.gradeItemOption.Spirit)
+			is.spirit.isStatic = true
+		}
+
+		if id.gradeItemOption.MaxHP > 0 {
+			is.maxHP.base = int(id.gradeItemOption.MaxHP)
+			is.spirit.isStatic = true
+		}
+
+		if id.gradeItemOption.MaxSP > 0 {
+			is.maxSP.base = int(id.gradeItemOption.MaxSP)
+			is.spirit.isStatic = true
+		}
+
+		if id.gradeItemOption.PoisonResistance > 0 {
+			is.staticPResistance.base = int(id.gradeItemOption.PoisonResistance)
+		}
+
+		if id.gradeItemOption.DiseaseResistance > 0 {
+			is.staticDResistance.base = int(id.gradeItemOption.DiseaseResistance)
+		}
+
+		if id.gradeItemOption.CurseResistance > 0 {
+			is.staticCResistance.base = int(id.gradeItemOption.CurseResistance)
+		}
+
+		if id.gradeItemOption.MobilityResistance > 0 {
+			is.staticMResistance.base = int(id.gradeItemOption.MobilityResistance)
+		}
+
+		if id.gradeItemOption.AimRate > 0 {
+			is.staticAimRate.base = int(id.gradeItemOption.AimRate - 1000)
+		}
+
+		if id.gradeItemOption.EvasionRate > 0 {
+			is.staticEvasionRate.base = int(id.gradeItemOption.EvasionRate - 1000)
+		}
+	}
+
+}
+
+func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, error) {
 	var (
 		nc * structs.ProtoItemPacketInformation
 		itemAttr []byte
@@ -198,6 +376,7 @@ func (i *item) protoItemPacketInformation() (*structs.ProtoItemPacketInformation
 		break
 	case data.ItemClassAmulet:
 		attr := structs.ShineItemAttrAmulet{}
+		attr.Option = itemOptionStorage(i.stats)
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
 			return nc, err
@@ -206,40 +385,7 @@ func (i *item) protoItemPacketInformation() (*structs.ProtoItemPacketInformation
 		break
 	case data.ItemClassWeapon:
 		attr := structs.ShineItemAttrWeapon{}
-
-		amount := 0
-		attr.Option.Elements = []structs.ItemOptionStorageElement{}
-		// 	ROT_STR RandomOptionType = iota
-		//	ROT_CON
-		//	ROT_DEX
-		//	ROT_INT
-		//	ROT_MEN
-		//	ROT_TH
-		//	ROT_CRI
-		//	ROT_WC
-		//	ROT_AC
-		//	ROT_MA
-		//	ROT_MR
-		//	ROT_TB
-		//	ROT_CRITICAL_TB
-		//	ROT_DEMANDLVDOWN
-		//	ROT_MAXHP
-		//	MAX_RANDOMOPTIONTYPE
-		if i.stats.strength.base > 0 || i.stats.strength.extra > 0 {
-			iose := structs.ItemOptionStorageElement{
-				ItemOptionType:  byte(data.ROT_STR),
-			}
-			if i.stats.strength.isStatic {
-				iose.ItemOptionValue = uint16(i.stats.strength.extra)
-			} else {
-				iose.ItemOptionValue = uint16(i.stats.strength.base)
-			}
-
-			attr.Option.Elements = append(attr.Option.Elements, iose)
-		}
-
-		attr.Option.AmountBit = byte(amount << 1 | 1)
-
+		attr.Option = itemOptionStorage(i.stats)
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
 			return nc, err
@@ -248,6 +394,7 @@ func (i *item) protoItemPacketInformation() (*structs.ProtoItemPacketInformation
 		break
 	case data.ItemClassArmor:
 		attr := structs.ShineItemAttrArmor{}
+		attr.Option = itemOptionStorage(i.stats)
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
 			return nc, err
@@ -401,89 +548,211 @@ func (i *item) protoItemPacketInformation() (*structs.ProtoItemPacketInformation
 	return nc, nil
 }
 
-func (is *itemStats) staticStats(id *itemData) {
+func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
+	var (
+		storage = structs.ItemOptionStorage{}
+		elements []structs.ItemOptionStorageElement
+	)
 
-	is.staticAttackSpeed.base = int(id.itemInfo.AtkSpeed)
-	is.staticMinPAttack.base = int(id.itemInfo.MinWC)
-	is.staticMaxPAttack.base = int(id.itemInfo.MaxWC)
-	is.staticMinMAttack.base = int(id.itemInfo.MinMA)
-	is.staticMaxMAttack.base = int(id.itemInfo.MaxMA)
-	is.staticPDefense.base = int(id.itemInfo.AC)
-	is.staticMDefense.base = int(id.itemInfo.MR)
-	is.staticAim.base = int(id.itemInfo.TH)
-	is.staticEvasion.base = int(id.itemInfo.TB)
-	is.staticPAttackRate.base = int(id.itemInfo.WCRate)
-	is.staticMAttackRate.base = int(id.itemInfo.MARate)
-	is.staticPDefenseRate.base = int(id.itemInfo.ACRate)
-	is.staticMDefenseRate.base = int(id.itemInfo.MARate)
-	is.staticPDefense.base = int(id.itemInfo.AC)
-	is.staticMDefense.base = int(id.itemInfo.MR)
-	is.staticCriticalRate.base = int(id.itemInfo.CriRate / 10)
-	is.staticMinPACriticalRate.base = int(id.itemInfo.CriMinWc)
-	is.staticMaxPACriticalRate.base = int(id.itemInfo.CriMaxWc)
-	is.staticMinMACriticalRate.base = int(id.itemInfo.CriMinMa)
-	is.staticMaxMACriticalRate.base = int(id.itemInfo.CriMaxMa)
-	is.staticShieldDefenseRate.base = int(id.itemInfo.ShieldAC)
-
-	if id.gradeItemOption != nil {
-		if id.gradeItemOption.Strength > 0 {
-			is.strength.base = int(id.gradeItemOption.Strength)
-			is.strength.isStatic = true
+	if stats.strength.base > 0 || stats.strength.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_STR),
 		}
 
-		if id.gradeItemOption.Endurance > 0 {
-			is.endurance.base = int(id.gradeItemOption.Endurance)
-			is.endurance.isStatic = true
+		if stats.strength.isStatic {
+			iose.ItemOptionValue = uint16(stats.strength.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.strength.base)
 		}
 
-		if id.gradeItemOption.Dexterity > 0 {
-			is.dexterity.base = int(id.gradeItemOption.Dexterity)
-			is.dexterity.isStatic = true
-		}
-
-		if id.gradeItemOption.Intelligence > 0 {
-			is.intelligence.base = int(id.gradeItemOption.Intelligence)
-			is.intelligence.isStatic = true
-		}
-
-		if id.gradeItemOption.Spirit > 0 {
-			is.spirit.base = int(id.gradeItemOption.Spirit)
-			is.spirit.isStatic = true
-		}
-
-		if id.gradeItemOption.PoisonResistance > 0 {
-			is.staticPResistance.base = int(id.gradeItemOption.PoisonResistance)
-		}
-
-		if id.gradeItemOption.DiseaseResistance > 0 {
-			is.staticDResistance.base = int(id.gradeItemOption.DiseaseResistance)
-		}
-
-		if id.gradeItemOption.CurseResistance > 0 {
-			is.staticCResistance.base = int(id.gradeItemOption.CurseResistance)
-		}
-
-		if id.gradeItemOption.MobilityResistance > 0 {
-			is.staticMResistance.base = int(id.gradeItemOption.MobilityResistance)
-		}
-
-		if id.gradeItemOption.AimRate > 0 {
-			is.staticAimRate.base = int(id.gradeItemOption.AimRate - 1000)
-		}
-
-		if id.gradeItemOption.EvasionRate > 0 {
-			is.staticEvasionRate.base = int(id.gradeItemOption.EvasionRate - 1000)
-		}
-
-		if id.gradeItemOption.MaxHP > 0 {
-			is.staticMaxHP.base = int(id.gradeItemOption.MaxHP)
-		}
-
-		if id.gradeItemOption.MaxSP > 0 {
-			is.staticMaxSP.base = int(id.gradeItemOption.MaxSP)
-		}
+		elements = append(elements, iose)
 	}
 
+	if stats.endurance.base > 0 || stats.endurance.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_CON),
+		}
+
+		if stats.endurance.isStatic {
+			iose.ItemOptionValue = uint16(stats.endurance.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.endurance.base)
+		}
+
+		elements = append(elements, iose)
+	}
+
+	if stats.dexterity.base > 0 || stats.dexterity.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_DEX),
+		}
+
+		if stats.dexterity.isStatic {
+			iose.ItemOptionValue = uint16(stats.dexterity.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.dexterity.base)
+		}
+
+		elements = append(elements, iose)
+	}
+
+	if stats.intelligence.base > 0 || stats.intelligence.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_INT),
+		}
+
+		if stats.dexterity.isStatic {
+			iose.ItemOptionValue = uint16(stats.intelligence.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.intelligence.base)
+		}
+
+		elements = append(elements, iose)
+	}
+
+	if stats.spirit.base > 0 || stats.spirit.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_MEN),
+		}
+
+		if stats.dexterity.isStatic {
+			iose.ItemOptionValue = uint16(stats.spirit.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.spirit.base)
+		}
+
+		elements = append(elements, iose)
+	}
+
+	if stats.aim.base > 0 || stats.aim.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_TH),
+		}
+
+		if stats.dexterity.isStatic {
+			iose.ItemOptionValue = uint16(stats.aim.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.aim.base)
+		}
+
+		elements = append(elements, iose)
+	}
+
+	if stats.critical.base > 0 || stats.critical.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_CRI),
+		}
+
+		if stats.critical.isStatic {
+			iose.ItemOptionValue = uint16(stats.critical.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.critical.base)
+		}
+
+		elements = append(elements, iose)
+	}
+
+	if stats.physicalAttack.base > 0 || stats.physicalAttack.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_WC),
+		}
+
+		if stats.physicalAttack.isStatic {
+			iose.ItemOptionValue = uint16(stats.physicalAttack.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.physicalAttack.base)
+		}
+
+		elements = append(elements, iose)
+	}
+
+	if stats.physicalDefense.base > 0 || stats.physicalDefense.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_AC),
+		}
+
+		if stats.physicalAttack.isStatic {
+			iose.ItemOptionValue = uint16(stats.physicalDefense.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.physicalDefense.base)
+		}
+
+		elements = append(elements, iose)
+	}
+
+	if stats.magicalAttack.base > 0 || stats.magicalAttack.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_MA),
+		}
+
+		if stats.magicalAttack.isStatic {
+			iose.ItemOptionValue = uint16(stats.magicalAttack.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.magicalAttack.base)
+		}
+
+		elements = append(elements, iose)
+	}
+
+	if stats.magicalDefense.base > 0 || stats.magicalDefense.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_MR),
+		}
+
+		if stats.magicalDefense.isStatic {
+			iose.ItemOptionValue = uint16(stats.magicalDefense.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.magicalDefense.base)
+		}
+
+		elements = append(elements, iose)
+	}
+
+	if stats.evasion.base > 0 || stats.evasion.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_TB),
+		}
+
+		if stats.evasion.isStatic {
+			iose.ItemOptionValue = uint16(stats.evasion.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.evasion.base)
+		}
+
+		elements = append(elements, iose)
+	}
+
+	if stats.criticalEvasion.base > 0 || stats.criticalEvasion.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_TB),
+		}
+
+		if stats.criticalEvasion.isStatic {
+			iose.ItemOptionValue = uint16(stats.criticalEvasion.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.criticalEvasion.base)
+		}
+
+		elements = append(elements, iose)
+	}
+
+	if stats.maxHP.base > 0 || stats.maxHP.extra > 0 {
+		iose := structs.ItemOptionStorageElement{
+			ItemOptionType:  byte(data.ROT_MAXHP),
+		}
+
+		if stats.maxHP.isStatic {
+			iose.ItemOptionValue = uint16(stats.maxHP.extra)
+		} else {
+			iose.ItemOptionValue = uint16(stats.maxHP.base)
+		}
+
+		elements = append(elements, iose)
+	}
+
+	storage.AmountBit = byte(len(elements) << 1 | 1)
+	storage.Elements = elements
+	return storage
 }
 
 // todo: extend this beyond RNG using the player's session data for deciding amount of stats, e.g: how much damage he did to the mob that dropped it, how many kills before, etc
@@ -531,13 +800,21 @@ type itemData struct {
 	sync.Mutex
 }
 
-func makeItem(itemIndex string) (*item, error) {
-	var i = &item{}
+type itemCreationDetails struct {
+	randomTypes []data.RandomOptionType
+	randomCount int
+}
+
+func makeItem(itemIndex string) (*item, itemCreationDetails, error) {
+	var (
+		i = &item{}
+		icd = itemCreationDetails{}
+	)
 
 	itemData := getItemData(itemIndex)
 
 	if itemData.itemInfo == nil {
-		return i, errors.Err{
+		return i, icd, errors.Err{
 			Code: errors.ZoneItemMissingData,
 			Details: errors.ErrDetails{
 				"itemIndex": itemIndex,
@@ -547,7 +824,7 @@ func makeItem(itemIndex string) (*item, error) {
 	}
 
 	if itemData.itemInfoServer == nil {
-		return i, errors.Err{
+		return i, icd, errors.Err{
 			Code: errors.ZoneItemMissingData,
 			Details: errors.ErrDetails{
 				"itemIndex": itemIndex,
@@ -562,7 +839,9 @@ func makeItem(itemIndex string) (*item, error) {
 	// first check if there are any random stats using (RandomOption / RandomOptionCount)
 	// apply those first, after that check GradeItemOption for fixed stats
 	if i.itemData.randomOption != nil && i.itemData.randomOptionCount != nil {
-		i.generateStats()
+		count, types := i.generateStats()
+		icd.randomCount = count
+		icd.randomTypes = types
 	}
 
 	if itemData.itemInfo.MaxLot > 1 {
@@ -574,7 +853,7 @@ func makeItem(itemIndex string) (*item, error) {
 	// will not vary if stackable is false
 	i.amount = int(itemData.itemInfo.MaxLot)
 
-	return i, nil
+	return i, icd, nil
 }
 
 func (p *player) itemData() error {
@@ -705,7 +984,7 @@ func getItemData(itemIndex string) *itemData {
 	wg.Wait()
 
 	if id.itemInfo != nil && id.itemInfoServer != nil {
-		if id.itemInfoServer.RandomOptionDropGroup != "" {
+		if id.itemInfoServer.RandomOptionDropGroup != "" && id.itemInfoServer.RandomOptionDropGroup != "-" {
 			wg.Add(2)
 			go addRandomOptionRow(id.itemInfoServer.RandomOptionDropGroup, id, wg)
 			go addRandomOptionCountRow(id.itemInfoServer.RandomOptionDropGroup, id, wg)
