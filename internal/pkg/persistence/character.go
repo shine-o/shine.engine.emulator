@@ -3,7 +3,6 @@ package persistence
 import (
 	"encoding/hex"
 	"fmt"
-	"github.com/go-pg/pg/v10"
 	"github.com/google/logger"
 	"github.com/google/uuid"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
@@ -16,7 +15,7 @@ import (
 var log *logger.Logger
 
 func init() {
-	log = logger.Init("character logger", true, false, ioutil.Discard)
+	log = logger.Init("persistence logger", true, false, ioutil.Discard)
 }
 
 // EquippedItems model for the database layer
@@ -137,6 +136,7 @@ type ClientOptions struct {
 	Shortcuts   []byte `pg:",notnull"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	DeletedAt time.Time `pg:",soft_delete"`
 }
 
 const (
@@ -146,8 +146,8 @@ const (
 	startMapName = "Rou"
 )
 
-// Validate checks data sent by the client is valid
-func Validate(userID uint64, req *structs.NcAvatarCreateReq) error {
+// ValidateCharacter checks data sent by the client is valid
+func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 
 	if req.SlotNum > 5 {
 		return errors.Err{
@@ -233,8 +233,8 @@ func Validate(userID uint64, req *structs.NcAvatarCreateReq) error {
 	return nil
 }
 
-// New creates character for the User with userID and returns data the client can understand
-func New(userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
+// NewCharacter creates character for the User with userID and returns data the client can understand
+func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
 	var char *Character
 	tx, err := db.Begin()
 
@@ -263,12 +263,11 @@ func New(userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
 		}
 	}
 
-	char.
-		initialAppearance(req.Shape).
-		initialAttributes().
-		initialLocation().
-		initialClientOptions().
-		initialEquippedItems()
+	char.initialAppearance(req.Shape)
+	char.initialAttributes()
+	char.initialLocation()
+	char.initialClientOptions()
+	char.initialEquippedItems()
 
 	if _, err = tx.Model(char.Appearance).Returning("*").Insert(); err != nil {
 		return char, errors.Err{
@@ -322,7 +321,7 @@ func New(userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
 	return char, tx.Commit()
 }
 
-func Get(characterID uint64) (Character, error) {
+func GetCharacter(characterID uint64) (Character, error) {
 	var c Character
 	c.ID = characterID
 	err := db.Model(&c).
@@ -354,7 +353,7 @@ func GetCharacterByName(name string) (Character, error) {
 	return c, err
 }
 
-func GetBySlot(slot byte, userID uint64) (Character, error) {
+func GetCharacterBySlot(slot byte, userID uint64) (Character, error) {
 	var c Character
 	err := db.Model(&c).
 		Relation("Appearance").
@@ -381,7 +380,7 @@ func UserCharacters(id uint64) ([]*Character, error) {
 	return chars, err
 }
 
-func Update(c *Character) error {
+func UpdateCharacter(c *Character) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return err
@@ -424,8 +423,13 @@ func UpdateLocation(c *Character) error {
 		WherePK().Returning("*").Update()
 
 	if err != nil {
-		tx.Rollback()
-		return err
+		return errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
+		}
 	}
 
 	return tx.Commit()
@@ -433,7 +437,9 @@ func UpdateLocation(c *Character) error {
 
 // Delete character for User with userID
 // soft deletion is performed
-func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
+// todo: switch to method
+// replace NC parameters
+func DeleteCharacter(userID uint64, slot int) error {
 	tx, err := db.Begin()
 	if err != nil {
 		return errors.Err{
@@ -447,7 +453,7 @@ func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
 	defer closeTx(tx)
 
 	var char Character
-	err = tx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", req.Slot).Select()
+	err = tx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", slot).Select()
 
 	if err != nil {
 		return errors.Err{
@@ -460,7 +466,7 @@ func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
 	}
 
 	name := fmt.Sprintf("%v@%v", char.Name, uuid.New().String())
-	_, err = tx.Model((*Character)(nil)).Set("name = ?", name).Where("user_id = ?", userID).Where("slot = ? ", req.Slot).Update()
+	_, err = tx.Model((*Character)(nil)).Set("name = ?", name).Where("user_id = ?", userID).Where("slot = ? ", slot).Update()
 	if err != nil {
 		return errors.Err{
 			Code: errors.PersistenceErrDB,
@@ -471,7 +477,7 @@ func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
 		}
 	}
 
-	if _, err = tx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", req.Slot).Delete(); err != nil {
+	if _, err = tx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", slot).Delete(); err != nil {
 		return errors.Err{
 			Code: errors.PersistenceErrDB,
 			Details: errors.ErrDetails{
@@ -524,24 +530,7 @@ func Delete(userID uint64, req *structs.NcAvatarEraseReq) error {
 	return tx.Commit()
 }
 
-// TODO: All NC related stuff should be moved to related service
-func (c *Character) AllEquippedItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(8)
-}
-
-func (c *Character) InventoryItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(9)
-}
-
-func (c *Character) MiniHouseItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(12)
-}
-
-func (c *Character) PremiumActionItems(db *pg.DB) *structs.NcCharClientItemCmd {
-	return c.getItemsByInventory(15)
-}
-
-func (c *Character) initialAppearance(shape structs.ProtoAvatarShapeInfo) *Character {
+func (c *Character) initialAppearance(shape structs.ProtoAvatarShapeInfo) {
 	isMale := (shape.BF >> 7) & 1
 	class := (shape.BF >> 2) & 31
 
@@ -553,10 +542,9 @@ func (c *Character) initialAppearance(shape structs.ProtoAvatarShapeInfo) *Chara
 		HairColor:   shape.HairColor,
 		FaceType:    shape.FaceShape,
 	}
-	return c
 }
 
-func (c *Character) initialAttributes() *Character {
+func (c *Character) initialAttributes() {
 	c.Attributes = &Attributes{
 		CharacterID:  c.ID,
 		Level:        startLevel,
@@ -574,10 +562,9 @@ func (c *Character) initialAttributes() *Character {
 		HpStones:     15,
 		SpStones:     15,
 	}
-	return c
 }
 
-func (c *Character) initialLocation() *Character {
+func (c *Character) initialLocation() {
 	// loadDB
 	c.Location = &Location{
 		CharacterID: c.ID,
@@ -588,10 +575,9 @@ func (c *Character) initialLocation() *Character {
 		D:           90,
 		IsKQ:        false,
 	}
-	return c
 }
 
-func (c *Character) initialClientOptions() *Character {
+func (c *Character) initialClientOptions() {
 	// hardcoded defaults :)
 	// game_options: 20000000010100010200010300010400000500010600000700010800010900010a00010b00010c00000d00000e00000f00001000011100001200001300001400011500001600001700001800011900011a00011b00011c00011d00001e00001f0001
 	goData, _ := hex.DecodeString("20000000010100010200010300010400000500010600000700010800010900010a00010b00010c00000d00000e00000f00001000011100001200001300001400011500001600001700001800011900011a00011b00011c00011d00001e00001f0001")
@@ -606,10 +592,9 @@ func (c *Character) initialClientOptions() *Character {
 		Keymap:      kmData, // hardcoded byte slice
 		Shortcuts:   scData, // hardcoded byte slice
 	}
-	return c
 }
 
-func (c *Character) initialEquippedItems() *Character {
+func (c *Character) initialEquippedItems()  {
 	c.EquippedItems = &EquippedItems{
 		CharacterID:      c.ID,
 		Head:             65535,
@@ -634,7 +619,22 @@ func (c *Character) initialEquippedItems() *Character {
 		ApparelAura:      65535,
 		ApparelShield:    65535,
 	}
-	return c
+}
+
+func (c *Character) initialItems()  {
+	item := Item{
+		InventoryType: int(BagInventory),
+		Slot:          0,
+		CharacterID:   0,
+		Character:     nil,
+		ShnID:         0,
+		ShnInxName:    "",
+		Stackable:     false,
+		Amount:        0,
+		Attributes:    nil,
+		CreatedAt:     time.Time{},
+		UpdatedAt:     time.Time{},
+	}
 }
 
 // if not 65535, add item to the list

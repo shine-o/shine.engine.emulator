@@ -19,6 +19,7 @@ const (
 	PersistenceErrCharInvalidName
 	PersistenceErrCharInvalidClassGender
 	PersistenceErrCharNotExists
+	PersistenceErrUnknownInventory
 
 	ZoneItemEquipFailed
 	ZoneItemMissingData

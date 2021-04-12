@@ -13,7 +13,7 @@ import (
 func TestNewItem_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewCharacter("mage")
+	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
 		baseEntity: baseEntity{
@@ -61,7 +61,7 @@ func TestNewItem_WithAttributes(t *testing.T) {
 	persistence.CleanDB()
 
 	itemInxName := "KarenStaff"
-	char := persistence.NewCharacter("mage")
+	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
 		baseEntity: baseEntity{
@@ -227,7 +227,7 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 	persistence.CleanDB()
 
 	itemInxName := "KarenStaff"
-	char := persistence.NewCharacter("mage")
+	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
 		baseEntity: baseEntity{
@@ -406,7 +406,7 @@ func TestNewItem_CreateAllItems(t *testing.T) {
 func TestNewItem_BadItemIndex(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewCharacter("mage")
+	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
 		baseEntity: baseEntity{

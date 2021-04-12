@@ -5,11 +5,14 @@ import (
 	"time"
 )
 
+type InventoryType int
+
 const (
-	BufferInventory    = 100
-	EquippedInventory  = 8
-	BagInventory       = 9
-	MiniHouseInventory = 12
+	UnknownInventory   InventoryType = 0
+	BufferInventory    InventoryType = 100
+	EquippedInventory  InventoryType = 8
+	BagInventory       InventoryType = 9
+	MiniHouseInventory InventoryType = 12
 
 	BagInventoryMin = 0
 	BagInventoryMax = 117
@@ -82,6 +85,19 @@ type ItemParams struct {
 	Attributes  *ItemAttributes
 }
 
+func getInventoryType(val int) InventoryType  {
+	switch val {
+	case 8:
+		return EquippedInventory
+	case 9:
+		return BagInventory
+	case 12:
+		return MiniHouseInventory
+	default:
+		return UnknownInventory
+	}
+}
+
 // Insert an Item
 // Items can only be persisted if they are linked to a character
 func (i *Item) Insert() error {
@@ -92,9 +108,7 @@ func (i *Item) Insert() error {
 		return err
 	}
 
-	i.InventoryType = BagInventory
-
-	slot, err := freeSlot(i.CharacterID, BagInventory)
+	slot, err := freeSlot(i.CharacterID, InventoryType(i.InventoryType))
 
 	if err != nil {
 		return err
@@ -142,8 +156,8 @@ func (i *Item) Insert() error {
 	}
 
 	return tx.Commit()
-
 }
+
 func (i *Item) Update() error {
 
 	err := validateItem(i)
@@ -209,7 +223,8 @@ func (i *Item) Update() error {
 
 	return tx.Commit()
 }
-func (i Item) MoveTo(inventoryType int, slot int) (*Item, error) {
+
+func (i Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 	var (
 		otherItem Item
 	)
@@ -235,7 +250,7 @@ func (i Item) MoveTo(inventoryType int, slot int) (*Item, error) {
 		)
 
 		// to avoid unique constraint error, use buffer inventory
-		i.InventoryType = BufferInventory
+		i.InventoryType = int(BufferInventory)
 		i.Slot = 0
 		_, err := tx.Model(&i).WherePK().Update()
 		if err != nil {
@@ -273,7 +288,7 @@ func (i Item) MoveTo(inventoryType int, slot int) (*Item, error) {
 		}
 	}
 
-	i.InventoryType = inventoryType
+	i.InventoryType = int(inventoryType)
 	i.Slot = slot
 
 	_, err = tx.Model(&i).WherePK().Update()
@@ -352,7 +367,7 @@ func GetItemWhere(clauses map[string]interface{}, deleted bool) (*Item, error) {
 	return &item, err
 }
 
-func GetCharacterItems(characterID int, inventoryType int) ([]*Item, error) {
+func GetCharacterItems(characterID int, inventoryType InventoryType) ([]*Item, error) {
 	var items []*Item
 
 	err := db.Model(&items).
@@ -364,10 +379,17 @@ func GetCharacterItems(characterID int, inventoryType int) ([]*Item, error) {
 	return items, err
 }
 
-func freeSlot(characterID uint64, inventoryType uint64) (int, error) {
+// for each slot
+// if nextSlot is last one
+//		if nextSlot+1 <= BagInventoryMax
+//		availableSlot = nextSlot+1
+// if nextSlot > currentSlot+1
+//		availableSlot = currentSlot+1
+func freeSlot(characterID uint64, inventoryType InventoryType) (int, error) {
 	var (
 		slots []int
 		slot  int
+		min, max int
 	)
 
 	err := db.Model((*Item)(nil)).
@@ -380,15 +402,19 @@ func freeSlot(characterID uint64, inventoryType uint64) (int, error) {
 		return slot, err
 	}
 
-	// for each slot
-	// if nextSlot is last one
-	//		if nextSlot+1 <= BagInventoryMax
-	//		availableSlot = nextSlot+1
-	// if nextSlot > currentSlot+1
-	//		availableSlot = currentSlot+1
+	switch inventoryType {
+	case BagInventory:
+		min = BagInventoryMin
+		max = BagInventoryMax
+		break
+	case BufferInventory:
+	case EquippedInventory:
+	case MiniHouseInventory:
+	}
+
 	for i, s := range slots {
 		if i+1 == len(slots) {
-			if s+1 < BagInventoryMax {
+			if s+1 < max {
 				slot = s + 1
 				break
 			}
@@ -403,13 +429,24 @@ func freeSlot(characterID uint64, inventoryType uint64) (int, error) {
 	}
 
 	if len(slots) == 0 {
-		slot = BagInventoryMin
+		slot = min
 	}
 
 	return slot, nil
 }
 
 func validateItem(item *Item) error {
+	inventoryType := getInventoryType(item.InventoryType)
+
+	if inventoryType == UnknownInventory {
+		return errors.Err{
+			Code:    errors.PersistenceErrUnknownInventory,
+			Details: errors.ErrDetails{
+				"inventoryType": inventoryType,
+			},
+		}
+	}
+
 	if item.Amount == 0 {
 		return errors.Err{
 			Code: errors.PersistenceErrItemInvalidAmount,

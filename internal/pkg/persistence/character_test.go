@@ -52,7 +52,7 @@ func TestValidateCharacterRequest(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		err = Validate(1, &nc)
+		err = ValidateCharacter(1, &nc)
 		if err != nil {
 			t.Error(err)
 		}
@@ -71,7 +71,7 @@ func TestCreateCharacter(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		_, err = New(1, &nc)
+		_, err = NewCharacter(1, &nc)
 		if err != nil {
 			t.Error(err)
 		}
@@ -88,7 +88,7 @@ func TestDeleteCharacter(t *testing.T) {
 		Slot: 0,
 	}
 
-	err := Delete(1, &nc)
+	err := DeleteCharacter(1, int(nc.Slot))
 
 	if err != nil {
 		log.Error(err)
@@ -126,7 +126,7 @@ func TestCharacterNameInUseError(t *testing.T) {
 			FaceShape: 0,
 		},
 	}
-	err := Validate(1, &c)
+	err := ValidateCharacter(1, &c)
 	if err == nil {
 		log.Error(err)
 	}
@@ -154,7 +154,7 @@ func TestNoSlotAvailableError(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate(1, &nc)
+		err = ValidateCharacter(1, &nc)
 		if err != nil {
 			cErr, ok := err.(errors.Err)
 			if !ok {
@@ -180,7 +180,7 @@ func TestInvalidSlotError(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate(1, &nc)
+		err = ValidateCharacter(1, &nc)
 		if err != nil {
 			cErr, ok := err.(errors.Err)
 			if !ok {
@@ -208,7 +208,7 @@ func TestInvalidNameError(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate(1, &nc)
+		err = ValidateCharacter(1, &nc)
 		if err != nil {
 			cErr, ok := err.(errors.Err)
 			if !ok {
@@ -238,7 +238,7 @@ func TestInvalidGenderClassBinaryOperation(t *testing.T) {
 			t.Error(err)
 		}
 
-		err = Validate(1, &nc)
+		err = ValidateCharacter(1, &nc)
 		if err != nil {
 			errChar, ok := err.(errors.Err)
 			if !ok {
@@ -437,7 +437,7 @@ func newCharacter(class string) *Character {
 		},
 	}
 
-	char, err := New(1, &c)
+	char, err := NewCharacter(1, &c)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -471,7 +471,7 @@ func createDummyCharacters() {
 				FaceShape: 0,
 			},
 		}
-		_, err := New(1, &c)
+		_, err := NewCharacter(1, &c)
 		if err != nil {
 			log.Fatal(err)
 		}

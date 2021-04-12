@@ -22,7 +22,7 @@ func TestGetCharacterItems(t *testing.T) {
 			CharacterID:   1,
 			Stackable:     false,
 			Amount:        1,
-			InventoryType: BagInventory,
+			InventoryType: int(BagInventory),
 		}
 
 		err := item.Insert()
@@ -62,7 +62,7 @@ func TestCreateItem_Ok(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 	}
 
 	err := item.Insert()
@@ -81,7 +81,7 @@ func TestCreateItem_Ok(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 	}
 
 	err = item2.Insert()
@@ -105,7 +105,7 @@ func TestCreateItem_WithAttributes(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 		Attributes: &ItemAttributes{
 			StrengthBase: 15,
 		},
@@ -131,7 +131,7 @@ func TestCreateItem_MissingValues(t *testing.T) {
 		ShnID:         1,
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 		Attributes: &ItemAttributes{
 			StrengthBase: 15,
 		},
@@ -147,7 +147,7 @@ func TestCreateItem_MissingValues(t *testing.T) {
 	item = &Item{
 		CharacterID:   1,
 		Stackable:     false,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 		Attributes: &ItemAttributes{
 			StrengthBase: 15,
 		},
@@ -164,7 +164,7 @@ func TestCreateItem_MissingValues(t *testing.T) {
 		CharacterID:   1,
 		ShnID:         1,
 		Stackable:     false,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 		Attributes: &ItemAttributes{
 			StrengthBase: 15,
 		},
@@ -180,7 +180,7 @@ func TestCreateItem_MissingValues(t *testing.T) {
 	item = &Item{
 		CharacterID:   0,
 		Stackable:     false,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 		Attributes: &ItemAttributes{
 			StrengthBase: 15,
 		},
@@ -203,7 +203,7 @@ func TestCreateItem_CharacterNotExist(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 		Attributes: &ItemAttributes{
 			StrengthBase: 15,
 		},
@@ -237,7 +237,7 @@ func TestCreateItem_BadAmount(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        5,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 		Attributes: &ItemAttributes{
 			StrengthBase: 15,
 		},
@@ -266,7 +266,7 @@ func TestCreateItem_BadAmount(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        0,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 		Attributes: &ItemAttributes{
 			StrengthBase: 15,
 		},
@@ -296,7 +296,7 @@ func TestCreateItem_BadPKeys(t *testing.T) {
 
 	item0 := &Item{
 		CharacterID:   1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 		Slot:          0,
 		ShnID:         1,
 		ShnInxName:    "ShortStaff",
@@ -315,7 +315,7 @@ func TestCreateItem_BadPKeys(t *testing.T) {
 	// second try should fail
 	item1 := &Item{
 		CharacterID:   1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 		Slot:          0,
 		ShnID:         1,
 		ShnInxName:    "ShortStaff",
@@ -343,7 +343,7 @@ func TestUpdateItem_Ok(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 	}
 
 	err := item.Insert()
@@ -370,7 +370,7 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 	}
 
 	err := item.Insert()
@@ -428,7 +428,7 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 //		ShnInxName: "ShortStaff",
 //		Stackable:     false,
 //		Amount:        1,
-//		InventoryType: BagInventory,
+//		InventoryType: int(BagInventory),
 //	}
 //
 //	err := item.Insert()
@@ -438,7 +438,7 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 //	}
 //
 //	item.ShnID = 2
-//	err = item.Update()
+//	err = item.UpdateCharacter()
 //
 //	if err == nil {
 //		t.Fatal("expected error, got nil")
@@ -465,7 +465,7 @@ func TestItemSlot_MoveToUnusedSlot(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 	}
 
 	err := item0.Insert()
@@ -495,7 +495,7 @@ func TestItemSlot_MoveToUsedSlot(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 	}
 
 	err := item0.Insert()
@@ -511,7 +511,7 @@ func TestItemSlot_MoveToUsedSlot(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 	}
 
 	err = item1.Insert()
@@ -568,7 +568,7 @@ func TestSoftDeleteItem(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 	}
 
 	err := item.Insert()
@@ -607,7 +607,7 @@ func TestInventoryFull(t *testing.T) {
 			ShnInxName:    "ShortStaff",
 			Stackable:     false,
 			Amount:        1,
-			InventoryType: BagInventory,
+			InventoryType: int(BagInventory),
 		}
 
 		err := item.Insert()
@@ -624,7 +624,7 @@ func TestInventoryFull(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 	}
 
 	err := item.Insert()
@@ -660,7 +660,7 @@ func TestInventory_AutomaticSlot(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 	}
 
 	err := item.Insert()
@@ -675,7 +675,7 @@ func TestInventory_AutomaticSlot(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 	}
 
 	err = item.Insert()
@@ -690,7 +690,7 @@ func TestInventory_AutomaticSlot(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 	}
 
 	err = item.Insert()
@@ -713,7 +713,7 @@ func TestInventory_AutomaticSlot(t *testing.T) {
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
 		Amount:        1,
-		InventoryType: BagInventory,
+		InventoryType: int(BagInventory),
 	}
 
 	err = item.Insert()

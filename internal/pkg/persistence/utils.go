@@ -5,8 +5,8 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
-// NewCharacter to be used only for testing purposes where a character is needed
-func NewCharacter(class string) *Character {
+// NewDummyCharacter to be used only for testing purposes where a character is needed
+func NewDummyCharacter(class string) *Character {
 	var (
 		bitField byte
 		name     string
@@ -44,7 +44,7 @@ func NewCharacter(class string) *Character {
 		},
 	}
 
-	char, err := New(1, &c)
+	char, err := NewCharacter(1, &c)
 	if err != nil {
 		log.Fatal(err)
 	}
