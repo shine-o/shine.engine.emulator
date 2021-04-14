@@ -41,14 +41,14 @@ type unknownHandleEvent struct {
 	nc     *structs.NcBriefInfoInformCmd
 }
 
-type monsterWalksEvent struct {
+type npcWalksEvent struct {
 	nc *structs.NcActSomeoneMoveWalkCmd
-	m  *monster
+	n  *npc
 }
 
-type monsterRunsEvent struct {
+type npcRunsEvent struct {
 	nc *structs.NcActSomeoneMoveRunCmd
-	m  *monster
+	n  *npc
 }
 
 type playerSelectsEntityEvent struct {

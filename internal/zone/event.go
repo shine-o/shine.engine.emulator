@@ -32,22 +32,6 @@ type dynamicEvents struct {
 	events map[string]events
 }
 
-func (de *dynamicEvents) add(sid string, i eventIndex) chan event {
-	de.Lock()
-	defer de.Unlock()
-	_, ok := de.events[sid]
-	if !ok {
-		de.events[sid] = events{
-			send: make(sendEvents),
-			recv: make(recvEvents),
-		}
-	}
-	c := make(chan event)
-	de.events[sid].send[i] = c
-	de.events[sid].recv[i] = c
-	return c
-}
-
 // to use when no particular data is needed
 type emptyEvent struct{}
 
@@ -93,3 +77,19 @@ const (
 	dLogoutCancel
 	dLogoutConclude
 )
+
+func (de *dynamicEvents) add(sid string, i eventIndex) chan event {
+	de.Lock()
+	defer de.Unlock()
+	_, ok := de.events[sid]
+	if !ok {
+		de.events[sid] = events{
+			send: make(sendEvents),
+			recv: make(recvEvents),
+		}
+	}
+	c := make(chan event)
+	de.events[sid].send[i] = c
+	de.events[sid].recv[i] = c
+	return c
+}

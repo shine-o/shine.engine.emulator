@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"sync"
 )
 
@@ -42,24 +43,46 @@ func (n *npcs) remove(h uint16) {
 }
 
 func (n *npcs) add(ap *npc) {
+	h := ap.getHandle()
 	n.Lock()
-	n.active[ap.handle] = ap
-	n.handler.usedHandles[ap.handle] = true
+	n.active[h] = ap
+	n.handler.usedHandles[h] = true
 	n.Unlock()
 }
 
 func npcInRange(p *player, n *npc) bool {
-	p.RLock()
-	n.RLock()
-	yes := entityInRange(p.baseEntity, n.baseEntity)
-	p.RUnlock()
-	n.RUnlock()
+	h := n.getHandle()
+	yes := entityInRange(p.baseEntity.current, n.baseEntity.current)
 
 	if yes {
-		p.Lock()
-		p.npcs[n.handle] = n
-		p.Unlock()
+		p.proximity.Lock()
+		p.proximity.npcs[h] = n
+		p.proximity.Unlock()
 		return true
 	}
 	return false
 }
+
+func knownNpc(p *player, nh uint16) bool {
+	p.proximity.RLock()
+	_, ok := p.proximity.npcs[nh]
+	p.proximity.RUnlock()
+	if ok {
+		return true
+	}
+	return false
+}
+
+func adjacentNpcsInform(p *player, zm *zoneMap) {
+	for m := range zm.entities.npcs.all() {
+		go func(p *player, n *npc) {
+			if !knownNpc(p, n.getHandle()) {
+				if npcInRange(p, n) {
+					nc := ncBriefInfoRegenMobCmd(n)
+					networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
+				}
+			}
+		}(p, m)
+	}
+}
+

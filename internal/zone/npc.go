@@ -4,55 +4,58 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"sync"
-	"time"
 )
 
 type npc struct {
 	baseEntity
+	data  *npcStaticData
+	ticks *entityTicks
+	state *entityState
+	stats *npcStats
+	dz    sync.RWMutex
+	monster bool
+}
+
+type npcStats struct {
 	hp, sp        uint32
+}
+
+type npcStaticData struct {
 	mobInfo       *data.MobInfo
 	mobInfoServer *data.MobInfoServer
 	regenData     *data.RegenEntry
 	npcData       *data.ShineNPC
-	tickers       []*time.Ticker
-	status
-	sync.RWMutex
 }
 
-func (n *npc) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
-	var nc structs.NcBatTargetInfoCmd
-	n.RLock()
-	nc = structs.NcBatTargetInfoCmd{
-		Order:         0,
-		Handle:        n.handle,
-		TargetHP:      n.hp,
-		TargetMaxHP:   n.mobInfo.MaxHP, //todo: use the same player stat system for mobs and NPCs
-		TargetSP:      n.sp,
-		TargetMaxSP:   uint32(n.mobInfoServer.MaxSP), //todo: use the same player stat system for mobs and NPCs
-		TargetLP:      0,
-		TargetMaxLP:   0,
-		TargetLevel:   byte(n.mobInfo.Level),
-		HpChangeOrder: 0,
+func ncBatTargetInfoCmd(n *npc) *structs.NcBatTargetInfoCmd {
+	var nc = structs.NcBatTargetInfoCmd{
+		Handle:        n.getHandle(),
+		TargetMaxHP:   n.data.mobInfo.MaxHP, //todo: use the same player stat system for mobs and NPCs
+		TargetMaxSP:   uint32(n.data.mobInfoServer.MaxSP), //todo: use the same player stat system for mobs and NPCs
+		TargetLevel:   byte(n.data.mobInfo.Level),
 	}
-	n.RUnlock()
+
+	nc.TargetHP = n.stats.hp
+	nc.TargetSP = n.stats.sp
+
 	return &nc
 }
 
 // find a way to merge npc and monster structs
-func (n *npc) ncBriefInfoRegenMobCmd() structs.NcBriefInfoRegenMobCmd {
-	n.RLock()
-	nc := structs.NcBriefInfoRegenMobCmd{
-		Handle: n.handle,
-		Mode:   byte(n.mobInfoServer.EnemyDetect),
-		MobID:  n.mobInfo.ID,
-		Coord: structs.ShineCoordType{
-			XY: structs.ShineXYType{
-				X: uint32(n.current.x),
-				Y: uint32(n.current.y),
-			},
-			Direction: uint8(n.current.d),
-		},
+func ncBriefInfoRegenMobCmd(n *npc) structs.NcBriefInfoRegenMobCmd {
+	var nc = structs.NcBriefInfoRegenMobCmd{
+		Handle: n.getHandle(),
+		Mode:   byte(n.data.mobInfoServer.EnemyDetect),
+		MobID:  n.data.mobInfo.ID,
 	}
-	n.RUnlock()
+	n.current.RLock()
+	nc.Coord =  structs.ShineCoordType{
+		XY: structs.ShineXYType{
+			X: uint32(n.current.x),
+			Y: uint32(n.current.y),
+		},
+		Direction: uint8(n.current.d),
+	}
+	n.current.RUnlock()
 	return nc
 }

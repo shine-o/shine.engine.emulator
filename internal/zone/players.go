@@ -17,14 +17,14 @@ func (p *players) all() <-chan *player {
 	ch := make(chan *player, len(p.active))
 	p.RUnlock()
 
-	go func(send chan<- *player) {
+	go func(p* players,send chan<- *player) {
 		p.RLock()
 		for _, ap := range p.active {
 			send <- ap
 		}
 		p.RUnlock()
 		close(send)
-	}(ch)
+	}(p, ch)
 
 	return ch
 }
@@ -43,33 +43,33 @@ func (p *players) remove(h uint16) {
 }
 
 func (p *players) add(ap *player) {
+	h := ap.getHandle()
+
+	ap.state.Lock()
+	ap.state.justSpawned = true
+	ap.state.Unlock()
+
 	p.Lock()
-	p.active[ap.handle] = ap
-	ap.justSpawned = true
-	p.handler.usedHandles[ap.handle] = true
+	p.active[h] = ap
+	p.handler.usedHandles[h] = true
 	p.Unlock()
 
 	go func(p *player) {
 		time.Sleep(15 * time.Second)
-		p.Lock()
-		p.justSpawned = false
-		p.Unlock()
+		p.state.Lock()
+		p.state.justSpawned = false
+		p.state.Unlock()
 	}(ap)
 }
 
 func playerInRange(v, t *player) bool {
-	v.RLock()
-	t.RLock()
-
-	yes := entityInRange(v.baseEntity, t.baseEntity)
-
-	v.RUnlock()
-	t.RUnlock()
+	h := t.getHandle()
+	yes := entityInRange(v.baseEntity.current, t.baseEntity.current)
 
 	if yes {
-		v.Lock()
-		v.players[t.handle] = t
-		v.Unlock()
+		v.proximity.Lock()
+		v.proximity.players[h] = t
+		v.proximity.Unlock()
 		return true
 	}
 	return false

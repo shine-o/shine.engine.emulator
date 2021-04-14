@@ -129,10 +129,6 @@ func (z *zone) addMap(mapId int) {
 				handler: z.handler,
 				active:  make(map[uint16]*player),
 			},
-			monsters: &monsters{
-				handler: z.handler,
-				active:  make(map[uint16]*monster),
-			},
 			npcs: &npcs{
 				handler: z.handler,
 				active:  make(map[uint16]*npc),
@@ -147,10 +143,6 @@ func (z *zone) addMap(mapId int) {
 				Name: fmt.Sprintf("players_in_%v", md.Info.MapName.Name),
 				Help: "Total number of active players.",
 			}),
-			monsters: promauto.NewGauge(prometheus.GaugeOpts{
-				Name: fmt.Sprintf("monsters_in_%v", md.Info.MapName.Name),
-				Help: "Total number of active monsters.",
-			}),
 			npcs: promauto.NewGauge(prometheus.GaugeOpts{
 				Name: fmt.Sprintf("npcs_in_%v", md.Info.MapName.Name),
 				Help: "Total number of active non player characters.",
@@ -158,7 +150,6 @@ func (z *zone) addMap(mapId int) {
 		},
 	}
 
-	m.metrics.monsters.Set(0)
 	m.metrics.players.Set(0)
 	m.metrics.npcs.Set(0)
 

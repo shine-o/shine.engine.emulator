@@ -75,9 +75,9 @@ func (zm *zoneMap) monsterActivity() {
 		case e := <-zm.recv[monsterDisappeared]:
 			log.Info(e)
 		case e := <-zm.recv[monsterWalks]:
-			go monsterWalksLogic(zm, e)
+			go npcWalksLogic(zm, e)
 		case e := <-zm.recv[monsterRuns]:
-			go monsterRunsLogic(zm, e)
+			go npcRunsLogic(zm, e)
 		}
 	}
 }
@@ -123,14 +123,14 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 	// send id of mob
 	var nc structs.NcActNpcMenuOpenReq
 	for n := range zm.entities.npcs.all() {
-		if n.handle == ev.nc.NpcHandle {
-			nc.MobID = n.mobInfo.ID
+		if n.getHandle() == ev.nc.NpcHandle {
+			nc.MobID = n.data.mobInfo.ID
 			if isPortal(n) {
 
 				var md *data.Map
 
 				for i, m := range mapData.Maps {
-					if m.Info.MapName.Name == n.npcData.ShinePortal.ServerMapIndex {
+					if m.Info.MapName.Name == n.data.npcData.ShinePortal.ServerMapIndex {
 						md = mapData.Maps[i]
 						break
 					}
@@ -174,15 +174,14 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 					return
 				}
 
-				p.Lock()
+				p.dz.Lock()
 				p.next = &location{
 					mapID:     md.ID,
 					mapName:   md.Info.MapName.Name,
-					x:         n.npcData.ShinePortal.X,
-					y:         n.npcData.ShinePortal.Y,
-					movements: [15]movement{},
+					x:         n.data.npcData.ShinePortal.X,
+					y:         n.data.npcData.ShinePortal.Y,
 				}
-				p.Unlock()
+				p.dz.Unlock()
 				return
 			}
 			break
@@ -216,7 +215,7 @@ func playerPromptReplyLogic(zm *zoneMap, e event) {
 	}
 
 	// for now, its only about portals
-	if isPortal(p.targeting.selectingN) && portalMatchesLocation(p.targeting.selectingN.npcData.ShinePortal, p.next) {
+	if isPortal(p.targeting.selectingN) && portalMatchesLocation(p.targeting.selectingN.data.npcData.ShinePortal, p.baseEntity.next) {
 		// move player to map
 		mqe := queryMapEvent{
 			id:  p.next.mapID,
@@ -259,13 +258,13 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 		return
 	}
 
-	p, m, n := findFirstEntity(zm, ev.nc.TargetHandle)
+	p,n := findFirstEntity(zm, ev.nc.TargetHandle)
 
 	// set timeout in case of nonexistent handle
 	// or use bool channels, and in the default case check if all three are false and return if so
 	var nc *structs.NcBatTargetInfoCmd
 
-	var notP, notM, notN bool
+	var notP, notN bool
 	for {
 		select {
 		case ap := <-p:
@@ -287,14 +286,8 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 				networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
 			}
 
-			if ap.targeting.selectingM != nil {
-				nextNc := ap.targeting.selectingM.ncBatTargetInfoCmd()
-				nextNc.Order = order + 1
-				networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
-			}
-
 			if ap.targeting.selectingN != nil {
-				nextNc := ap.targeting.selectingN.ncBatTargetInfoCmd()
+				nextNc := ncBatTargetInfoCmd(ap.targeting.selectingN)
 				nextNc.Order = order + 1
 				networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
 			}
@@ -305,28 +298,6 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 				networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
 			}
 
-			return
-		case am := <-m:
-			if am == nil {
-				notM = true
-				break
-			}
-
-			order := vp.selectsMonster(am)
-
-			nc = am.ncBatTargetInfoCmd()
-
-			nc.Order = order
-
-			networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nc)
-
-			//if vp is being selected by player
-			//send them information about the monster
-			for p := range vp.selectedByPlayers() {
-				nextNc := *nc
-				nextNc.Order++
-				networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
-			}
 			return
 		case an := <-n:
 			if an == nil {
@@ -335,7 +306,7 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 			}
 			order := vp.selectsNPC(an)
 
-			nc = an.ncBatTargetInfoCmd()
+			nc = ncBatTargetInfoCmd(an)
 
 			nc.Order = order
 
@@ -348,7 +319,7 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 			}
 			return
 		default:
-			if notP && notM && notN {
+			if notP && notN {
 				return
 			}
 		}
@@ -369,12 +340,11 @@ func playerUnselectsEntityLogic(zm *zoneMap, e event) {
 	}
 
 	var order byte
-	vp.Lock()
+	vp.targeting.Lock()
 	order = vp.targeting.selectionOrder
 	vp.targeting.selectingP = nil
-	vp.targeting.selectingM = nil
 	vp.targeting.selectingN = nil
-	vp.Unlock()
+	vp.targeting.Unlock()
 
 	nc := structs.NcBatTargetInfoCmd{
 		Order:         order + 1,
@@ -388,40 +358,41 @@ func playerUnselectsEntityLogic(zm *zoneMap, e event) {
 		TargetLevel:   0,
 		HpChangeOrder: 0,
 	}
-	vp.RLock()
+
+	vp.targeting.RLock()
 	for _, p := range vp.targeting.selectedByP {
 		go networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, &nc)
 	}
-	vp.RUnlock()
+	vp.targeting.RUnlock()
 }
 
-func monsterWalksLogic(zm *zoneMap, e event) {
-	ev, ok := e.(*monsterWalksEvent)
+func npcWalksLogic(zm *zoneMap, e event) {
+	ev, ok := e.(*npcWalksEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&monsterWalksEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&npcWalksEvent{}).String(), reflect.TypeOf(ev).String())
 		return
 	}
 	for ap := range zm.entities.players.all() {
-		go func(p *player, m *monster) {
-			if monsterInRange(p, m) {
+		go func(p *player, n *npc) {
+			if npcInRange(p, n) {
 				networking.Send(p.conn.outboundData, networking.NC_ACT_SOMEONEMOVEWALK_CMD, ev.nc)
 			}
-		}(ap, ev.m)
+		}(ap, ev.n)
 	}
 }
 
-func monsterRunsLogic(zm *zoneMap, e event) {
-	ev, ok := e.(*monsterRunsEvent)
+func npcRunsLogic(zm *zoneMap, e event) {
+	ev, ok := e.(*npcRunsEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&monsterRunsEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&npcRunsEvent{}).String(), reflect.TypeOf(ev).String())
 		return
 	}
 	for ap := range zm.entities.players.all() {
-		go func(p *player, m *monster) {
-			if monsterInRange(p, m) {
+		go func(p *player, n *npc) {
+			if npcInRange(p, n) {
 				go networking.Send(p.conn.outboundData, networking.NC_ACT_SOMEONEMOVERUN_CMD, ev.nc)
 			}
-		}(ap, ev.m)
+		}(ap, ev.n)
 	}
 }
 
@@ -430,7 +401,7 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 
 		go func(p *player) {
 
-			if p.spawned() {
+			if justSpawned(p) {
 				return
 			}
 
@@ -440,10 +411,17 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 				return
 			}
 
-			p.RLock()
+			h :=  p.getHandle()
 
 			pde := &playerDisappearedEvent{
-				handle: p.handle,
+				handle: h,
+			}
+
+			//for t := range allTicks(p) {
+			//	t.Stop()
+			//}
+			for _, t := range p.ticks.list {
+				t.Stop()
 			}
 
 			select {
@@ -454,14 +432,8 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 				break
 			}
 
-			for _, t := range p.tickers {
-				t.Stop()
-			}
-
-			go zm.entities.players.remove(p.handle)
-			go zm.entities.players.handler.remove(p.handle)
-
-			p.RUnlock()
+			go zm.entities.players.remove(h)
+			go zm.entities.players.handler.remove(h)
 
 		}(ap)
 	}
@@ -482,9 +454,9 @@ func playerHandleLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	ev.player.Lock()
-	ev.player.handle = handle
-	ev.player.Unlock()
+	ev.player.baseEntity.info.Lock()
+	ev.player.baseEntity.info.handle = handle
+	ev.player.baseEntity.info.Unlock()
 
 	zm.entities.players.add(ev.player)
 
@@ -523,7 +495,7 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 
 	go func() {
 		defer wg.Done()
-		nearbyMonsters(p1, zm)
+		nearbyMonsterNpcs(p1, zm)
 	}()
 
 	go func() {
@@ -537,8 +509,7 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 
 	go p1.persistPosition()
 	go p1.nearbyPlayersMaintenance(zm)
-	go p1.nearbyMonstersMaintenance(zm)
-	go p1.nearbyNPCMaintenance(zm)
+	go p1.nearbyNpcsMaintenance(zm)
 
 	//go adjacentMonstersInform(p1, zm)
 }
@@ -604,10 +575,10 @@ func playerWalksLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	p1.Lock()
+	p1.current.Lock()
 	p1.current.x = igX
 	p1.current.y = igY
-	p1.Unlock()
+	p1.current.Unlock()
 
 	nc := structs.NcActSomeoneMoveWalkCmd{
 		Handle: ev.handle,
@@ -661,10 +632,10 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	p1.Lock()
+	p1.current.Lock()
 	p1.current.x = igX
 	p1.current.y = igY
-	p1.Unlock()
+	p1.current.Unlock()
 
 	nc := structs.NcActSomeoneMoveRunCmd{
 		Handle: ev.handle,
@@ -718,10 +689,10 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	p1.Lock()
+	p1.current.Lock()
 	p1.current.x = igX
 	p1.current.y = igY
-	p1.Unlock()
+	p1.current.Unlock()
 
 	nc := structs.NcActSomeoneStopCmd{
 		Handle:   ev.handle,
@@ -799,26 +770,22 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 
 	if playerInRange(p1, p2) {
 
-		p1.RLock()
-		nc1 := p1.ncBriefInfoLoginCharacterCmd()
-		p1.RUnlock()
-		go networking.Send(p2.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, &nc1)
+		nc1 := ncBriefInfoLoginCharacterCmd(p1)
+		nc2 := ncBriefInfoLoginCharacterCmd(p2)
 
-		p2.RLock()
-		nc2 := p2.ncBriefInfoLoginCharacterCmd()
-		p2.RUnlock()
+		go networking.Send(p2.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, &nc1)
 		go networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, &nc2)
 
 	}
 
-	m := zm.entities.monsters.get(ev.nc.ForeignHandle)
+	n := zm.entities.npcs.get(ev.nc.ForeignHandle)
 
-	if m == nil {
+	if n == nil {
 		return
 	}
 
-	if monsterInRange(p1, m) {
-		nc := m.ncBriefInfoRegenMobCmd()
+	if npcInRange(p1, n) {
+		nc := ncBriefInfoRegenMobCmd(n)
 		go networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
 	}
 
@@ -830,7 +797,7 @@ func newPlayer(p1 *player, zm *zoneMap) {
 		go func(p2 *player) {
 			if p1.getHandle() != p2.getHandle() {
 				if playerInRange(p2, p1) {
-					nc := p1.ncBriefInfoLoginCharacterCmd()
+					nc := ncBriefInfoLoginCharacterCmd(p1)
 					networking.Send(p2.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, &nc)
 				}
 			}
@@ -845,7 +812,7 @@ func nearbyPlayers(p1 *player, zm *zoneMap) {
 	for p2 := range zm.entities.players.all() {
 		if p1.getHandle() != p2.getHandle() {
 			if playerInRange(p2, p1) {
-				nc := p2.ncBriefInfoLoginCharacterCmd()
+				nc := ncBriefInfoLoginCharacterCmd(p2)
 				characters = append(characters, nc)
 			}
 		}
@@ -859,20 +826,21 @@ func nearbyPlayers(p1 *player, zm *zoneMap) {
 	networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_CHARACTER_CMD, nc)
 }
 
-func nearbyMonsters(p *player, zm *zoneMap) {
-	for am := range zm.entities.monsters.all() {
-		go func(p *player, m *monster) {
-			if monsterInRange(p, m) {
-				nc := m.ncBriefInfoRegenMobCmd()
-				networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
+func nearbyMonsterNpcs(p *player, zm *zoneMap) {
+	for am := range zm.entities.npcs.all() {
+		go func(p *player, n *npc) {
+			if n.monster {
+				if npcInRange(p, n) {
+					nc := ncBriefInfoRegenMobCmd(n)
+					networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
+				}
 			}
 		}(p, am)
 	}
 }
 
-func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *monster, chan *npc) {
+func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *npc) {
 	p := make(chan *player, 1)
-	m := make(chan *monster, 1)
 	n := make(chan *npc, 1)
 
 	go func(p chan<- *player, zm *zoneMap, targetHandle uint16) {
@@ -885,16 +853,6 @@ func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *monster, c
 		p <- nil
 	}(p, zm, handle)
 
-	go func(m chan<- *monster, zm *zoneMap, targetHandle uint16) {
-		for am := range zm.entities.monsters.all() {
-			if am.getHandle() == targetHandle {
-				m <- am
-				return
-			}
-		}
-		m <- nil
-	}(m, zm, handle)
-
 	go func(n chan<- *npc, zm *zoneMap, targetHandle uint16) {
 		for an := range zm.entities.npcs.all() {
 			if an.getHandle() == targetHandle {
@@ -904,21 +862,23 @@ func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *monster, c
 		}
 		n <- nil
 	}(n, zm, handle)
-	return p, m, n
+	return p, n
 }
 
 func showAllNPC(p *player, zm *zoneMap) {
 	var npcs structs.NcBriefInfoMobCmd
 
 	for n := range zm.entities.npcs.all() {
-		info := n.ncBriefInfoRegenMobCmd()
-		// if portal, FlagState = 1
-		// FlagData, Destination Map Index
-		if isPortal(n) {
-			info.FlagState = 1
-			info.FlagData.Data = n.npcData.ServerMapIndex
+		if !n.monster {
+			info := ncBriefInfoRegenMobCmd(n)
+			// if portal, FlagState = 1
+			// FlagData, Destination Map Index
+			if isPortal(n) {
+				info.FlagState = 1
+				info.FlagData.Data = n.data.npcData.ServerMapIndex
+			}
+			npcs.Mobs = append(npcs.Mobs, info)
 		}
-		npcs.Mobs = append(npcs.Mobs, info)
 	}
 
 	npcs.MobNum = byte(len(npcs.Mobs))
@@ -927,17 +887,17 @@ func showAllNPC(p *player, zm *zoneMap) {
 }
 
 func isPortal(n *npc) bool {
-	if n.npcData == nil {
+	if n.monster || n.data.npcData == nil {
 		return false
 	}
 
-	if n.npcData.ShinePortal == nil {
+	if n.data.npcData.ShinePortal == nil {
 		return false
 	}
 
 	var loaded bool
 	for _, m := range mapData.Maps {
-		if m.MapInfoIndex == n.npcData.ShinePortal.ServerMapIndex {
+		if m.MapInfoIndex == n.data.npcData.ShinePortal.ServerMapIndex {
 			loaded = true
 			break
 		}

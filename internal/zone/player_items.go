@@ -21,7 +21,7 @@ type playerInventories struct {
 }
 
 type itemBox struct {
-	box   uint8
+	box   int
 	items map[int]*item
 }
 
@@ -265,12 +265,12 @@ func (is *itemStats) staticStats(id *itemData) {
 		is.magicalDefense.isStatic = true
 	}
 
-	if id.itemInfo.MR > 0 {
+	if id.itemInfo.TH > 0 {
 		is.aim.base = int(id.itemInfo.TH)
 		is.aim.isStatic = true
 	}
 
-	if id.itemInfo.MR > 0 {
+	if id.itemInfo.TB > 0 {
 		is.evasion.base = int(id.itemInfo.TB)
 		is.evasion.isStatic = true
 	}
@@ -833,7 +833,9 @@ func makeItem(itemIndex string) (*item, itemCreationDetails, error) {
 	}
 
 	i.itemData = itemData
-	i.pItem = &persistence.Item{}
+	i.pItem = &persistence.Item{
+		InventoryType: int(persistence.BagInventory),
+	}
 
 	// first check if there are any random stats using (RandomOption / RandomOptionCount)
 	// apply those first, after that check GradeItemOption for fixed stats

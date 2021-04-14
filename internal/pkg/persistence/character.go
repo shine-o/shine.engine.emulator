@@ -622,19 +622,19 @@ func (c *Character) initialEquippedItems()  {
 }
 
 func (c *Character) initialItems()  {
-	item := Item{
-		InventoryType: int(BagInventory),
-		Slot:          0,
-		CharacterID:   0,
-		Character:     nil,
-		ShnID:         0,
-		ShnInxName:    "",
-		Stackable:     false,
-		Amount:        0,
-		Attributes:    nil,
-		CreatedAt:     time.Time{},
-		UpdatedAt:     time.Time{},
-	}
+	//item := Item{
+	//	InventoryType: int(BagInventory),
+	//	Slot:          0,
+	//	CharacterID:   0,
+	//	Character:     nil,
+	//	ShnID:         0,
+	//	ShnInxName:    "",
+	//	Stackable:     false,
+	//	Amount:        0,
+	//	Attributes:    nil,
+	//	CreatedAt:     time.Time{},
+	//	UpdatedAt:     time.Time{},
+	//}
 }
 
 // if not 65535, add item to the list

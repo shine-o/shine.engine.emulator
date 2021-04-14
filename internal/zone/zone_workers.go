@@ -37,7 +37,6 @@ func (z *zone) playerSession() {
 			go playerLogoutConcludeLogic(z, e)
 		case e := <-z.recv[changeMap]:
 			go func() {
-				log.Info(e)
 				ev, ok := e.(*changeMapEvent)
 				if !ok {
 					log.Errorf("expected event type %v but got %v", reflect.TypeOf(changeMapEvent{}).String(), reflect.TypeOf(ev).String())
@@ -46,15 +45,10 @@ func (z *zone) playerSession() {
 
 				//todo: zone rpc method for external maps, for now, all maps are running in the same zone
 				p := ev.p
-
-				for _, v := range p.tickers {
-					v.Stop()
-				}
-
-				handle := ev.p.getHandle()
+				handle := p.getHandle()
 
 				ev.prev.entities.players.remove(handle)
-				ev.prev.entities.players.handler.remove(p.handle)
+				ev.prev.entities.players.handler.remove(handle)
 
 				ev.next.entities.players.add(p)
 
@@ -62,19 +56,23 @@ func (z *zone) playerSession() {
 					handle: handle,
 				}
 
-				p.Lock()
-				newLocation := *p.next
+				for _, v := range p.ticks.list {
+					v.Stop()
+				}
 
-				p.fallback = &newLocation
-				p.current = &newLocation
+				newLocation := p.next
 
+				p.dz.Lock()
+				p.fallback = newLocation
+				p.current = newLocation
 				p.next = nil
+				p.ticks = &entityTicks{}
+				p.dz.Unlock()
 
-				p.players = make(map[uint16]*player)
-				p.monsters = make(map[uint16]*monster)
-				p.npcs = make(map[uint16]*npc)
-				p.tickers = make([]*time.Ticker, 0)
-				p.Unlock()
+				p.proximity.Lock()
+				p.proximity.players = make(map[uint16]*player)
+				p.proximity.npcs = make(map[uint16]*npc)
+				p.proximity.Unlock()
 
 				nc := structs.NcMapLinkSameCmd{
 					//MapID:    ev.next.data.Info.ID,
@@ -225,11 +223,11 @@ func playerMapLoginLogic(e event) {
 	case <-phe.done:
 
 		nc := &structs.NcCharClientBaseCmd{
-			ChrRegNum: uint32(p.char.ID),
+			ChrRegNum: uint32(p.persistence.char.ID),
 			CharName: structs.Name5{
 				Name: p.view.name,
 			},
-			Slot:       p.char.Slot,
+			Slot:       p.persistence.char.Slot,
 			Level:      p.state.level,
 			Experience: p.state.exp,
 			PwrStone:   0,
@@ -263,9 +261,9 @@ func playerMapLoginLogic(e event) {
 				RedistributePoint: p.stats.points.redistributionPoints,
 			},
 			IdleTime:   0,
-			PkCount:    p.char.Attributes.KillPoints,
+			PkCount:    p.persistence.char.Attributes.KillPoints,
 			PrisonMin:  0,
-			AdminLevel: p.char.AdminLevel,
+			AdminLevel: p.persistence.char.AdminLevel,
 			Flag: structs.NcCharBaseCmdFlag{
 				Val: 0,
 			},
@@ -276,7 +274,7 @@ func playerMapLoginLogic(e event) {
 		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_SHAPE_CMD, shape)
 
 		mapAck := &structs.NcMapLoginAck{
-			Handle: p.handle, // id of the entity inside this map
+			Handle: p.getHandle(), // id of the entity inside this map
 			Params: p.charParameterData(),
 			LoginCoord: structs.ShineXYType{
 				X: uint32(p.current.x),
@@ -357,9 +355,9 @@ func hearbeatUpdateLogic(e event) {
 		return
 	}
 
-	p.Lock()
+	p.conn.Lock()
 	p.conn.lastHeartBeat = time.Now()
-	p.Unlock()
+	p.conn.Unlock()
 
 	log.Infof("updating heartbeat for player %v", p.view.name)
 }
@@ -443,15 +441,15 @@ func persistPLayerPositionLogic(e event, z *zone) {
 		return
 	}
 
-	ev.p.Lock()
-	c := ev.p.char
+	ev.p.persistence.Lock()
+	c := ev.p.persistence.char
 	c.Location.MapID = uint32(ev.p.current.mapID)
 	c.Location.MapName = ev.p.current.mapName
 	c.Location.X = ev.p.current.x
 	c.Location.Y = ev.p.current.y
 	c.Location.D = ev.p.current.d
 	c.Location.IsKQ = false
-	ev.p.Unlock()
+	ev.p.persistence.Unlock()
 
 	err := persistence.UpdateLocation(c)
 
@@ -470,7 +468,7 @@ func playerLogout(z *zone, zm *zoneMap, p *player, sid string) {
 		select {
 		case p.conn.close <- true:
 			pde := &playerDisappearedEvent{
-				handle: p.handle,
+				handle: p.getHandle(),
 			}
 
 			select {

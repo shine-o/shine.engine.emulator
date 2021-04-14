@@ -23,13 +23,14 @@ const (
 	enhanceItem
 )
 
-// todo: use pointers for high use variables (state, skills, passives, targetting, etc..), locking the whole entity is gonna be costly for latency
+const (
+	maxProximityEntities = 1500
+)
+
 type player struct {
 	baseEntity
 	//todo: group into another struct that can be locked
-	players     map[uint16]*player
-	monsters    map[uint16]*monster
-	npcs        map[uint16]*npc
+	proximity   *playerProximity
 	conn        *playerConnection
 	view        *playerView
 	stats       *playerStats
@@ -38,13 +39,36 @@ type player struct {
 	money       *playerMoney
 	titles      *playerTitles
 	quests      *playerQuests
-	skills      []skill
-	passives    []passive
-	targeting   targeting
+	skills      *playerSkills
+	targeting   *targeting
 	prompt      *prompt
-	justSpawned bool
-	tickers     []*time.Ticker
+
+	ticks       *entityTicks
+	persistence *playerPersistence
+
+	// dangerZone: only to be used when loading or other situation!!
+	dz sync.RWMutex
+}
+
+type playerPersistence struct {
 	char        *persistence.Character
+	sync.RWMutex
+}
+
+type playerProximity struct {
+	players     map[uint16]*player
+	npcs        map[uint16]*npc
+	sync.RWMutex
+}
+
+type entityTicks struct {
+	list     []*time.Ticker
+	sync.RWMutex
+}
+
+type playerSkills struct {
+	active      []skill
+	passive     []skill
 	sync.RWMutex
 }
 
@@ -53,182 +77,6 @@ type promptAction int
 type prompt struct {
 	action int
 	sync.RWMutex
-}
-
-func (p *player) selectsNPC(n *npc) byte {
-	var order byte
-	p.Lock()
-	p.targeting.selectingP = nil
-	p.targeting.selectingM = nil
-	p.targeting.selectingN = n
-	p.targeting.selectionOrder += 32
-	order = p.targeting.selectionOrder
-	p.Unlock()
-	//ep.Lock()
-	//ep.targeting.selectedByP = append(ep.targeting.selectedByP, p)
-	//ep.Unlock()
-	return order
-}
-
-func (p *player) selectsPlayer(ap *player) byte {
-	var order byte
-	p.Lock()
-	p.targeting.selectingP = ap
-	p.targeting.selectingM = nil
-	p.targeting.selectingN = nil
-
-	p.targeting.selectionOrder += 32
-	order = p.targeting.selectionOrder
-	p.Unlock()
-
-	ap.Lock()
-	ap.targeting.selectedByP = append(ap.targeting.selectedByP, p)
-	ap.Unlock()
-
-	return order
-}
-
-func (p *player) selectsMonster(m *monster) byte {
-	var order byte
-	p.Lock()
-	p.targeting.selectingP = nil
-	p.targeting.selectingM = m
-	p.targeting.selectingN = nil
-	p.targeting.selectionOrder += 32
-	order = p.targeting.selectionOrder
-	p.Unlock()
-	//ep.Lock()
-	//ep.targeting.selectedByP = append(ep.targeting.selectedByP, p)
-	//ep.Unlock()
-	return order
-}
-
-func (p *player) getHandle() uint16 {
-	p.RLock()
-	h := p.handle
-	p.RUnlock()
-	return h
-}
-
-func (p *player) spawned() bool {
-	p.RLock()
-	defer p.RUnlock()
-
-	return p.justSpawned
-}
-
-func (p *player) adjacentPlayers() <-chan *player {
-	p.RLock()
-	ch := make(chan *player, len(p.players))
-	p.RUnlock()
-
-	go func(send chan<- *player) {
-		p.RLock()
-		for _, ap := range p.players {
-			send <- ap
-		}
-		p.RUnlock()
-		close(send)
-	}(ch)
-
-	return ch
-}
-
-func (p *player) removeAdjacentPlayer(h uint16) {
-	p.Lock()
-	delete(p.players, h)
-	p.Unlock()
-}
-
-func (p *player) adjacentMonsters() <-chan *monster {
-	p.RLock()
-	ch := make(chan *monster, len(p.monsters))
-	p.RUnlock()
-
-	go func(send chan<- *monster) {
-		p.RLock()
-		for _, ap := range p.monsters {
-			send <- ap
-		}
-		p.RUnlock()
-		close(send)
-	}(ch)
-
-	return ch
-}
-
-func (p *player) selectedByMonsters() chan *monster {
-	p.RLock()
-	ch := make(chan *monster, len(p.targeting.selectedByM))
-	p.RUnlock()
-
-	go func(send chan<- *monster) {
-		p.RLock()
-		for _, m := range p.targeting.selectedByM {
-			send <- m
-		}
-		p.RUnlock()
-		close(send)
-	}(ch)
-	return ch
-}
-
-func (p *player) selectedByPlayers() chan *player {
-	p.RLock()
-	ch := make(chan *player, len(p.targeting.selectedByP))
-	p.RUnlock()
-
-	go func(send chan<- *player) {
-		p.RLock()
-		for _, ap := range p.targeting.selectedByP {
-			send <- ap
-		}
-		p.RUnlock()
-		close(send)
-	}(ch)
-	return ch
-}
-
-func (p *player) selectedByNPCs() chan *npc {
-	p.RLock()
-	ch := make(chan *npc, len(p.targeting.selectedByN))
-	p.RUnlock()
-
-	go func(send chan<- *npc) {
-		p.RLock()
-		for _, n := range p.targeting.selectedByN {
-			send <- n
-		}
-		p.RUnlock()
-		close(send)
-	}(ch)
-	return ch
-}
-
-func (p *player) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
-	var nc structs.NcBatTargetInfoCmd
-	p.RLock()
-	nc = structs.NcBatTargetInfoCmd{
-		Order:         0,
-		Handle:        p.handle,
-		TargetHP:      p.stats.hp,
-		TargetMaxHP:   p.stats.maxHP,
-		TargetSP:      p.stats.sp,
-		TargetMaxSP:   p.stats.maxSP,
-		TargetLP:      p.stats.lp,
-		TargetMaxLP:   p.stats.maxLP,
-		TargetLevel:   p.state.level,
-		HpChangeOrder: 0,
-	}
-	p.RUnlock()
-	return &nc
-}
-
-func lastHeartbeat(p *player) float64 {
-	p.RLock()
-	lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()
-	p.RUnlock()
-	return lastHeartBeat
 }
 
 type playerConnection struct {
@@ -302,6 +150,7 @@ type playerState struct {
 	moverHandle uint16
 	moverSlot   uint8
 	miniPet     uint8
+	justSpawned bool
 	sync.RWMutex
 }
 
@@ -336,10 +185,6 @@ type skill struct {
 	coolTime uint32
 }
 
-type passive struct {
-	id uint16
-}
-
 type quest struct {
 	id             uint16
 	status         uint8
@@ -367,6 +212,120 @@ type itemSlotChange struct {
 	to   int
 }
 
+func (p *player) selectsNPC(n *npc) byte {
+	var order byte
+	p.targeting.Lock()
+	p.targeting.selectingP = nil
+	p.targeting.selectingN = n
+	p.targeting.selectionOrder += 32
+	order = p.targeting.selectionOrder
+	p.targeting.Unlock()
+	return order
+}
+
+func (p *player) selectsPlayer(ap *player) byte {
+	var order byte
+	p.targeting.Lock()
+	p.targeting.selectingP = ap
+	p.targeting.selectingN = nil
+
+	p.targeting.selectionOrder += 32
+	order = p.targeting.selectionOrder
+	p.targeting.Unlock()
+
+	ap.targeting.Lock()
+	ap.targeting.selectedByP = append(ap.targeting.selectedByP, p)
+	ap.targeting.Unlock()
+
+	return order
+}
+
+func (p *player) adjacentPlayers() <-chan *player {
+	ch := make(chan *player, maxProximityEntities)
+
+	go func(p *player, send chan<- *player) {
+		p.proximity.RLock()
+		for _, pp := range p.proximity.players {
+			send <- pp
+		}
+		p.proximity.RUnlock()
+		close(send)
+	}(p, ch)
+
+	return ch
+}
+
+func (p *player) adjacentNpcs() <-chan *npc {
+	ch := make(chan *npc, maxProximityEntities)
+
+	go func(p *player, send chan<- *npc) {
+		p.proximity.RLock()
+		for _, pn := range p.proximity.npcs {
+			send <- pn
+		}
+		p.proximity.RUnlock()
+		close(send)
+	}(p, ch)
+
+	return ch
+}
+
+func (p *player) removeAdjacentPlayer(h uint16) {
+	p.proximity.Lock()
+	delete(p.proximity.players, h)
+	p.proximity.Unlock()
+}
+
+func (p *player) selectedByPlayers() chan *player {
+	ch := make(chan *player, maxProximityEntities)
+
+	go func(p*player, send chan<- *player) {
+		p.targeting.RLock()
+		for _, ap := range p.targeting.selectedByP {
+			send <- ap
+		}
+		p.targeting.RUnlock()
+		close(send)
+	}(p,ch)
+	return ch
+}
+
+func (p *player) selectedByNPCs() chan *npc {
+	ch := make(chan *npc, maxProximityEntities)
+
+	go func(p *player, send chan<- *npc) {
+		p.targeting.RLock()
+		for _, n := range p.targeting.selectedByN {
+			send <- n
+		}
+		p.targeting.RUnlock()
+		close(send)
+	}(p, ch)
+
+	return ch
+}
+
+func (p *player) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
+	var nc = &structs.NcBatTargetInfoCmd{}
+
+	nc.Handle = p.getHandle()
+
+	p.stats.RLock()
+	nc.TargetHP = p.stats.hp
+	nc.TargetMaxHP = p.stats.maxHP
+	nc.TargetSP = p.stats.sp
+	nc.TargetMaxSP = p.stats.maxSP
+	nc.TargetLP = p.stats.lp
+	nc.TargetMaxLP = p.stats.maxLP
+	p.stats.RUnlock()
+
+	p.state.RLock()
+	nc.TargetLevel = p.state.level
+	p.state.RUnlock()
+
+	return nc
+}
+
 func (p *player) load(name string) error {
 	char, err := persistence.GetCharacterByName(name)
 
@@ -374,24 +333,31 @@ func (p *player) load(name string) error {
 		return err
 	}
 
-	p.char = &char
+	p.persistence = &playerPersistence{
+		char: &char,
+	}
 
-	p.current.mapName = char.Location.MapName
-	p.current.mapID = int(char.Location.MapID)
-	p.current.x = char.Location.X
-	p.current.y = char.Location.Y
-	p.current.d = char.Location.D
+	p.baseEntity.current.mapName = char.Location.MapName
+	p.baseEntity.current.mapID = int(char.Location.MapID)
+	p.baseEntity.current.x = char.Location.X
+	p.baseEntity.current.y = char.Location.Y
+	p.baseEntity.current.d = char.Location.D
 
-	p.players = make(map[uint16]*player)
-	p.monsters = make(map[uint16]*monster)
-	p.npcs = make(map[uint16]*npc)
+	p.proximity = &playerProximity{
+		players:  make(map[uint16]*player),
+		npcs:     make(map[uint16]*npc),
+	}
+
+	p.ticks = &entityTicks{}
 
 	p.prompt = &prompt{}
 
-	wg := &sync.WaitGroup{}
-	wg.Add(8)
+	p.targeting = &targeting{}
 
-	errC := make(chan error, 8)
+	wg := &sync.WaitGroup{}
+	wg.Add(7)
+
+	errC := make(chan error, 7)
 
 	go func() {
 		defer wg.Done()
@@ -421,10 +387,9 @@ func (p *player) load(name string) error {
 		defer wg.Done()
 		p.skillData()
 	}()
-	go func() {
-		defer wg.Done()
-		p.passiveData()
-	}()
+
+
+	// check if you can iterate over the channel
 
 	wg.Wait()
 
@@ -440,7 +405,7 @@ func (p *player) itemData() error {
 			box: 8,
 		},
 		inventory: itemBox{
-			box: persistence.BagInventory,
+			box: int(persistence.BagInventory),
 		},
 		miniHouse: itemBox{
 			box: 12,
@@ -450,7 +415,7 @@ func (p *player) itemData() error {
 		},
 	}
 
-	items, err := persistence.GetCharacterItems(int(p.char.ID), persistence.BagInventory)
+	items, err := persistence.GetCharacterItems(int(p.persistence.char.ID), persistence.BagInventory)
 
 	if err != nil {
 		log.Error(err)
@@ -476,25 +441,25 @@ func (p *player) itemData() error {
 		ivs.inventory.items[item.Slot] = loadItem(item)
 	}
 
-	p.Lock()
+	p.dz.Lock()
 	p.inventories = ivs
-	p.Unlock()
+	p.dz.Unlock()
 
 	return nil
 }
 
 func (p *player) viewData() {
 	v := &playerView{ // todo: validation just in case, so we don't log a bad player that could potentially bin other player
-		name:       p.char.Name,
-		class:      p.char.Appearance.Class,
-		gender:     p.char.Appearance.Gender,
-		hairType:   p.char.Appearance.HairType,
-		hairColour: p.char.Appearance.HairColor,
-		faceType:   p.char.Appearance.FaceType,
+		name:       p.persistence.char.Name,
+		class:      p.persistence.char.Appearance.Class,
+		gender:     p.persistence.char.Appearance.Gender,
+		hairType:   p.persistence.char.Appearance.HairType,
+		hairColour: p.persistence.char.Appearance.HairColor,
+		faceType:   p.persistence.char.Appearance.FaceType,
 	}
-	p.Lock()
+	p.dz.Lock()
 	p.view = v
-	p.Unlock()
+	p.dz.Unlock()
 }
 
 func (p *player) stateData() {
@@ -502,7 +467,7 @@ func (p *player) stateData() {
 		prevExp: 100,
 		exp:     150,
 		nextExp: 800,
-		level:   p.char.Attributes.Level,
+		level:   p.persistence.char.Attributes.Level,
 		// player state should also include buffs and debuffs in the future
 		autoPickup:  0,
 		polymorph:   65535,
@@ -510,9 +475,9 @@ func (p *player) stateData() {
 		moverSlot:   0,
 		miniPet:     0,
 	}
-	p.Lock()
+	p.dz.Lock()
 	p.state = s
-	p.Unlock()
+	p.dz.Unlock()
 }
 
 func (p *player) statsData() {
@@ -599,9 +564,9 @@ func (p *player) statsData() {
 			withExtras: 0,
 		},
 	}
-	p.Lock()
+	p.dz.Lock()
 	p.stats = s
-	p.Unlock()
+	p.dz.Unlock()
 }
 
 func (p *player) titleData() {
@@ -617,9 +582,9 @@ func (p *player) titleData() {
 			mobID:   0,
 		},
 	}
-	p.Lock()
+	p.dz.Lock()
 	p.titles = t
-	p.Unlock()
+	p.dz.Unlock()
 }
 
 func (p *player) moneyData() {
@@ -629,59 +594,16 @@ func (p *player) moneyData() {
 		wastedCoins: 0,
 		wastedFame:  0,
 	}
-	p.Lock()
+	p.dz.Lock()
 	p.money = m
-	p.Unlock()
+	p.dz.Unlock()
 }
 
 func (p *player) skillData() {
 	// all learned skills stored in the database
-	p.Lock()
-	p.skills = []skill{}
-	p.Unlock()
-}
-
-func (p *player) passiveData() {
-	p.Lock()
-	p.passives = []passive{}
-	p.Unlock()
-}
-
-func (p *player) ncBriefInfoLoginCharacterCmd() structs.NcBriefInfoLoginCharacterCmd {
-
-	nc := structs.NcBriefInfoLoginCharacterCmd{
-		Handle: p.getHandle(),
-		CharID: structs.Name5{
-			Name: p.view.name,
-		},
-		Coordinates: structs.ShineCoordType{
-			XY: structs.ShineXYType{
-				X: uint32(p.current.x),
-				Y: uint32(p.current.y),
-			},
-			Direction: byte(p.current.d),
-		},
-		Mode:            2,
-		Class:           p.view.class,
-		Shape:           *p.view.protoAvatarShapeInfo(),
-		ShapeData:       structs.NcBriefInfoLoginCharacterCmdShapeData{},
-		Polymorph:       p.state.polymorph,
-		Emoticon:        structs.StopEmoticonDescript{},
-		CharTitle:       structs.CharTitleBriefInfo{},
-		AbstateBit:      structs.AbstateBit{},
-		MyGuild:         0,
-		Type:            0,
-		IsAcademyMember: 0,
-		IsAutoPick:      0,
-		Level:           p.state.level,
-		Animation:       [32]byte{},
-		MoverHandle:     p.state.moverHandle,
-		MoverSlot:       p.state.moverSlot,
-		KQTeamType:      0,
-		UsingMinipet:    p.state.miniPet,
-		Unk:             1,
-	}
-	return nc
+	p.dz.Lock()
+	p.skills = &playerSkills{}
+	p.dz.Unlock()
 }
 
 func (p *player) charParameterData() structs.CharParameterData {
@@ -789,15 +711,6 @@ func (p *player) charParameterData() structs.CharParameterData {
 	}
 }
 
-func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
-	return &structs.ProtoAvatarShapeInfo{
-		BF:        1 | pv.class<<2 | pv.gender<<7,
-		HairType:  pv.hairType,
-		HairColor: pv.hairColour,
-		FaceShape: pv.faceType,
-	}
-}
-
 func (p *player) equip(i *item, slot data.ItemEquipEnum) (itemSlotChange, error) {
 	slotChange := itemSlotChange{
 		from: i.pItem.Slot,
@@ -811,7 +724,7 @@ func (p *player) equip(i *item, slot data.ItemEquipEnum) (itemSlotChange, error)
 			Code: errors.ZoneItemEquipFailed,
 			Details: errors.ErrDetails{
 				"err":     err,
-				"pHandle": p.handle,
+				"pHandle": p.getHandle(),
 			},
 		}
 	}
@@ -826,8 +739,11 @@ func (p *player) equip(i *item, slot data.ItemEquipEnum) (itemSlotChange, error)
 }
 
 func (p *player) newItem(i *item) error {
-	i.pItem = &persistence.Item{}
-	i.pItem.CharacterID = p.char.ID
+	//i.pItem = &persistence.Item{}
+	if i.pItem == nil {
+		i.pItem = &persistence.Item{}
+	}
+	i.pItem.CharacterID = p.persistence.char.ID
 	i.pItem.ShnID = i.itemData.itemInfo.ID
 	i.pItem.ShnInxName = i.itemData.itemInfo.InxName
 	i.pItem.Amount = i.amount
@@ -890,32 +806,87 @@ func (pi *playerInventories) ncCharClientItemCmd() []structs.NcCharClientItemCmd
 	ncs = []structs.NcCharClientItemCmd{
 		{
 			NumOfItem: 0,
-			Box:       pi.equipped.box,
+			Box:       byte(pi.equipped.box),
 			Flag: structs.ProtoNcCharClientItemCmdFlag{
 				BF0: 0,
 			},
 		},
 		{
 			NumOfItem: 0,
-			Box:       pi.inventory.box,
+			Box:        byte(pi.inventory.box),
 			Flag: structs.ProtoNcCharClientItemCmdFlag{
 				BF0: 0,
 			},
 		},
 		{
 			NumOfItem: 0,
-			Box:       pi.miniHouse.box,
+			Box:        byte(pi.miniHouse.box),
 			Flag: structs.ProtoNcCharClientItemCmdFlag{
 				BF0: 0,
 			},
 		},
 		{
 			NumOfItem: 0,
-			Box:       pi.premium.box,
+			Box:        byte(pi.premium.box),
 			Flag: structs.ProtoNcCharClientItemCmdFlag{
 				BF0: 0,
 			},
 		},
 	}
 	return ncs
+}
+
+func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
+	return &structs.ProtoAvatarShapeInfo{
+		BF:        1 | pv.class<<2 | pv.gender<<7,
+		HairType:  pv.hairType,
+		HairColor: pv.hairColour,
+		FaceShape: pv.faceType,
+	}
+}
+
+func lastHeartbeat(p *player) float64 {
+	p.conn.RLock()
+	lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()
+	p.conn.RUnlock()
+	return lastHeartBeat
+}
+
+func ncBriefInfoLoginCharacterCmd(p *player) structs.NcBriefInfoLoginCharacterCmd {
+
+	var nc = structs.NcBriefInfoLoginCharacterCmd{
+		Mode:            2,
+	}
+
+	nc.Handle = p.baseEntity.getHandle()
+
+	p.baseEntity.current.RLock()
+	nc.Coordinates = structs.ShineCoordType{
+		XY: structs.ShineXYType{
+			X: uint32(p.baseEntity.current.x),
+			Y: uint32(p.baseEntity.current.y),
+		},
+		Direction: byte(p.baseEntity.current.d),
+	}
+	p.baseEntity.current.RUnlock()
+
+	p.view.RLock()
+	nc.Shape = *p.view.protoAvatarShapeInfo()
+	nc.CharID =  structs.Name5{
+		Name: p.view.name,
+	}
+
+	nc.Class = p.view.class
+	p.view.RUnlock()
+
+	p.state.RLock()
+	nc.Polymorph = p.state.polymorph
+	nc.Level = p.state.level
+	nc.MoverHandle = p.state.moverHandle
+	nc.MoverSlot = p.state.moverSlot
+	nc.UsingMinipet = p.state.miniPet
+	p.state.RUnlock()
+
+
+	return nc
 }

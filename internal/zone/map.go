@@ -20,20 +20,17 @@ type zoneMap struct {
 	metrics
 }
 
+type entities struct {
+	*players
+	*npcs
+}
+
 // metrics specific to the zone service
 type metrics struct {
 	// every time a player enters or exit a map, update the gauge
 	players prometheus.Gauge
-	// every time a monster dies / respawns, update the gauge
-	monsters prometheus.Gauge
 	// every time a npc dies / respawns, update the gauge
 	npcs prometheus.Gauge
-}
-
-type entities struct {
-	*players
-	*monsters
-	*npcs
 }
 
 func (zm *zoneMap) run() {
@@ -51,6 +48,7 @@ func (zm *zoneMap) run() {
 		defer wg.Done()
 		zm.spawnNPCs()
 	}()
+
 	wg.Wait()
 
 	go zm.removeInactiveHandles()
@@ -90,7 +88,7 @@ func (zm *zoneMap) spawnNPCs() {
 			sem <- 1
 			go func(sn *data.ShineNPC) {
 				defer wg.Done()
-				spawnNPC(sn, zm)
+				zm.spawnNPC(sn)
 				<-sem
 			}(mNpc)
 		}
@@ -100,7 +98,7 @@ func (zm *zoneMap) spawnNPCs() {
 			sem <- 1
 			go func(sn *data.ShineNPC) {
 				defer wg.Done()
-				spawnNPC(sn, zm)
+				zm.spawnNPC(sn)
 				<-sem
 			}(mNpc)
 		}
@@ -108,7 +106,7 @@ func (zm *zoneMap) spawnNPCs() {
 	}
 }
 
-func spawnNPC(sn *data.ShineNPC, zm *zoneMap) {
+func (zm *zoneMap)  spawnNPC(sn *data.ShineNPC) {
 
 	mi, mis := mobDataPointers(sn.MobIndex)
 
@@ -137,7 +135,12 @@ func spawnNPC(sn *data.ShineNPC, zm *zoneMap) {
 
 	n := &npc{
 		baseEntity: baseEntity{
-			handle: h,
+			info: struct {
+				handle uint16
+				sync.RWMutex
+			}{
+				handle:  h,
+			},
 			fallback: &location{
 				x: sn.X,
 				y: sn.Y,
@@ -149,21 +152,27 @@ func spawnNPC(sn *data.ShineNPC, zm *zoneMap) {
 				x:         sn.X,
 				y:         sn.Y,
 				d:         shineD,
-				movements: [15]movement{},
+				movements: []movement{},
 			},
+			next:   nil,
 			events: events{},
 		},
-		hp:            mi.MaxHP,
-		sp:            uint32(mis.MaxSP),
-		mobInfo:       mi,
-		mobInfoServer: mis,
-		npcData:       sn,
-		status: status{
+		stats: &npcStats{
+			hp:            mi.MaxHP,
+			sp:            uint32(mis.MaxSP),
+		},
+		data: &npcStaticData{
+			mobInfo:       mi,
+			mobInfoServer: mis,
+			npcData:       sn,
+		},
+		state: &entityState{
 			idling:   make(chan bool),
 			fighting: make(chan bool),
 			chasing:  make(chan bool),
 			fleeing:  make(chan bool),
 		},
+		ticks: &entityTicks{},
 	}
 
 	zm.entities.npcs.Lock()
@@ -309,15 +318,18 @@ func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.M
 	}
 
 	if spawn {
-		h, err := zm.entities.monsters.new()
+		h, err := zm.entities.npcs.new()
 		if err != nil {
 			log.Error(err)
 			return
 		}
 
-		m := &monster{
+		m := &npc{
+			monster: true,
 			baseEntity: baseEntity{
-				handle: h,
+				info: entityInfo{
+					handle:  h,
+				},
 				fallback: &location{
 					x: x,
 					y: y,
@@ -329,33 +341,35 @@ func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.M
 					x:         x,
 					y:         y,
 					d:         d,
-					movements: [15]movement{},
+					movements: []movement{},
 				},
-				events: events{},
 			},
-			hp:            mi.MaxHP,
-			sp:            uint32(mis.MaxSP),
-			mobInfo:       mi,
-			mobInfoServer: mis,
-			regenData:     &re,
-			status: status{
+			stats: &npcStats{
+				hp:            mi.MaxHP,
+				sp:            uint32(mis.MaxSP),
+			},
+			data: &npcStaticData{
+				mobInfo:       mi,
+				mobInfoServer: mis,
+				regenData:     &re,
+			},
+			state:  &entityState{
 				idling:   make(chan bool),
 				fighting: make(chan bool),
 				chasing:  make(chan bool),
 				fleeing:  make(chan bool),
 			},
+			ticks: &entityTicks{},
 		}
 
-		zm.entities.monsters.Lock()
-		zm.entities.monsters.active[h] = m
-		zm.entities.monsters.Unlock()
+		zm.entities.npcs.Lock()
+		zm.entities.npcs.active[h] = m
+		zm.entities.npcs.Unlock()
 
 		if !staticMonster {
 			// for now its a weird thing, better not to use it
 			//go m.roam(zm)
 		}
-
-		zm.metrics.monsters.Inc()
 
 	}
 

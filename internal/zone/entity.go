@@ -27,6 +27,61 @@ type handler struct {
 	sync.RWMutex
 }
 
+type basicActions interface {
+	move(m *zoneMap, x, y int) error
+}
+
+type location struct {
+	mapID     int
+	mapName   string
+	x, y, d   int
+	movements []movement
+	sync.RWMutex
+}
+
+type movement struct {
+	x, y uint32
+}
+
+type baseEntity struct {
+	info entityInfo
+	fallback *location
+	current  *location
+	next     *location
+	events   events
+	// dangerZone: only to be used when loading or other situation!!
+	//dz sync.RWMutex
+}
+
+type entityInfo struct {
+	handle uint16
+	sync.RWMutex
+}
+
+type targeting struct {
+	selectionOrder byte
+	selectingP     *player
+	selectingN     *npc
+	selectedByP    []*player
+	selectedByN    []*npc
+	sync.RWMutex
+}
+
+type entityState struct {
+	idling   chan bool
+	fighting chan bool
+	chasing  chan bool
+	fleeing  chan bool
+}
+
+type mover struct {
+	baseEntity
+}
+
+var _ entity = (*player)(nil)
+
+var _ entity = (*npc)(nil)
+
 func (h *handler) remove(hid uint16) {
 	h.Lock()
 	delete(h.usedHandles, hid)
@@ -34,14 +89,11 @@ func (h *handler) remove(hid uint16) {
 }
 
 func (h *handler) add(ap *npc) {
+	handle := ap.getHandle()
 	h.Lock()
-	h.usedHandles[ap.handle] = true
+	h.usedHandles[handle] = true
 	h.Unlock()
 }
-
-var _ entity = (*player)(nil)
-var _ entity = (*monster)(nil)
-var _ entity = (*npc)(nil)
 
 func (h *handler) new() (uint16, error) {
 	h.RLock()
@@ -71,49 +123,11 @@ func (h *handler) new() (uint16, error) {
 	return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
 }
 
-type basicActions interface {
-	move(m *zoneMap, x, y int) error
-}
-
-type location struct {
-	mapID     int
-	mapName   string
-	x, y, d   int
-	movements [15]movement
-	sync.RWMutex
-}
-
-type movement struct {
-	x, y uint32
-}
-
-type baseEntity struct {
-	handle   uint16
-	fallback *location
-	current  *location
-	next     *location
-	events
-}
-
-type targeting struct {
-	selectionOrder byte
-	selectingP     *player
-	selectingM     *monster
-	selectingN     *npc
-	selectedByP    []*player
-	selectedByM    []*monster
-	selectedByN    []*npc
-}
-
-type status struct {
-	idling   chan bool
-	fighting chan bool
-	chasing  chan bool
-	fleeing  chan bool
-}
-
 func (b *baseEntity) getHandle() uint16 {
-	return b.handle
+	b.info.RLock()
+	h := b.info.handle
+	b.info.RUnlock()
+	return h
 }
 
 func (b *baseEntity) getLocation() (int, int) {
@@ -127,10 +141,20 @@ func (b *baseEntity) move(m *zoneMap, x, y int) error {
 	return fmt.Errorf("entity %v cannot move to x %v  y %v", b.getHandle(), x, y)
 }
 
-func entityInRange(e1, e2 baseEntity) bool {
+func entityInRange(e1, e2 *location) bool {
 	//return true
-	viewerX, viewerY := igCoordToBitmap(e1.current.x, e1.current.y)
-	targetX, targetY := igCoordToBitmap(e2.current.x, e2.current.y)
+	e1.RLock()
+	vcx := e1.x
+	vcy := e1.y
+	e1.RUnlock()
+
+	e2.RLock()
+	tcx := e2.x
+	tcy := e2.y
+	e2.RUnlock()
+
+	viewerX, viewerY := igCoordToBitmap(vcx, vcy)
+	targetX, targetY := igCoordToBitmap(tcx, tcy)
 
 	maxY := viewerY + lengthY
 	minY := viewerY - lengthY
@@ -146,8 +170,4 @@ func entityInRange(e1, e2 baseEntity) bool {
 	}
 
 	return false
-}
-
-type mover struct {
-	baseEntity
 }

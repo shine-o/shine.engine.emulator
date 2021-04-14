@@ -17,12 +17,13 @@ func TestNewItem_Success(t *testing.T) {
 
 	player := &player{
 		baseEntity: baseEntity{
-			handle:   1,
 			fallback: &location{},
 			current:  &location{},
 			next:     &location{},
 		},
-		char: char,
+		persistence: &playerPersistence{
+			char: char,
+		},
 	}
 
 	err := player.load(char.Name)
@@ -65,12 +66,13 @@ func TestNewItem_WithAttributes(t *testing.T) {
 
 	player := &player{
 		baseEntity: baseEntity{
-			handle:   1,
 			fallback: &location{},
 			current:  &location{},
 			next:     &location{},
 		},
-		char: char,
+		persistence: &playerPersistence{
+			char: char,
+		},
 	}
 
 	err := player.load(char.Name)
@@ -231,12 +233,13 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 
 	player := &player{
 		baseEntity: baseEntity{
-			handle:   1,
 			fallback: &location{},
 			current:  &location{},
 			next:     &location{},
 		},
-		char: char,
+		persistence: &playerPersistence{
+			char: char,
+		},
 	}
 
 	err := player.load(char.Name)
@@ -410,12 +413,13 @@ func TestNewItem_BadItemIndex(t *testing.T) {
 
 	player := &player{
 		baseEntity: baseEntity{
-			handle:   1,
 			fallback: &location{},
 			current:  &location{},
 			next:     &location{},
 		},
-		char: char,
+		persistence: &playerPersistence{
+			char: char,
+		},
 	}
 
 	err := player.load(char.Name)
