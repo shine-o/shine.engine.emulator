@@ -24,6 +24,7 @@ const (
 	ZoneItemEquipFailed
 	ZoneItemMissingData
 	ZoneInventorySlotOccupied
+	ZoneMapNotFound
 
 	UnitTestError
 )

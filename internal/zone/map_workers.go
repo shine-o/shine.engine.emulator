@@ -3,6 +3,7 @@ package zone
 import (
 	"fmt"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"reflect"
@@ -175,7 +176,7 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 				}
 
 				p.dz.Lock()
-				p.next = &location{
+				p.next = location{
 					mapID:     md.ID,
 					mapName:   md.Info.MapName.Name,
 					x:         n.data.npcData.ShinePortal.X,
@@ -217,20 +218,14 @@ func playerPromptReplyLogic(zm *zoneMap, e event) {
 	// for now, its only about portals
 	if isPortal(p.targeting.selectingN) && portalMatchesLocation(p.targeting.selectingN.data.npcData.ShinePortal, p.baseEntity.next) {
 		// move player to map
-		mqe := queryMapEvent{
-			id:  p.next.mapID,
-			zm:  make(chan *zoneMap),
-			err: make(chan error),
-		}
-
-		zoneEvents[queryMap] <- &mqe
-
-		var nzm *zoneMap
-		select {
-		case nzm = <-mqe.zm:
-			break
-		case e := <-mqe.err:
-			log.Error(e)
+		nzm, ok := maps.list[p.next.mapID]
+		if !ok {
+			log.Error(errors.Err{
+				Code:    errors.ZoneMapNotFound,
+				Details: errors.ErrDetails{
+					"mapID": p.next.mapID,
+				},
+			})
 			return
 		}
 
@@ -437,7 +432,7 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 
 		}(ap)
 	}
-	zm.metrics.players.Set(float64(len(zm.entities.players.active)))
+	//zm.metrics.players.Set(float64(len(zm.entities.players.active)))
 }
 
 func playerHandleLogic(e event, zm *zoneMap) {
@@ -454,9 +449,9 @@ func playerHandleLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	ev.player.baseEntity.info.Lock()
+	ev.player.baseEntity.Lock()
 	ev.player.baseEntity.info.handle = handle
-	ev.player.baseEntity.info.Unlock()
+	ev.player.baseEntity.Unlock()
 
 	zm.entities.players.add(ev.player)
 
@@ -575,10 +570,10 @@ func playerWalksLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	p1.current.Lock()
+	p1.baseEntity.Lock()
 	p1.current.x = igX
 	p1.current.y = igY
-	p1.current.Unlock()
+	p1.baseEntity.Unlock()
 
 	nc := structs.NcActSomeoneMoveWalkCmd{
 		Handle: ev.handle,
@@ -632,10 +627,10 @@ func playerRunsLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	p1.current.Lock()
+	p1.baseEntity.Lock()
 	p1.current.x = igX
 	p1.current.y = igY
-	p1.current.Unlock()
+	p1.baseEntity.Unlock()
 
 	nc := structs.NcActSomeoneMoveRunCmd{
 		Handle: ev.handle,
@@ -689,10 +684,10 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	p1.current.Lock()
+	p1.baseEntity.Lock()
 	p1.current.x = igX
 	p1.current.y = igY
-	p1.current.Unlock()
+	p1.baseEntity.Unlock()
 
 	nc := structs.NcActSomeoneStopCmd{
 		Handle:   ev.handle,
@@ -829,7 +824,7 @@ func nearbyPlayers(p1 *player, zm *zoneMap) {
 func nearbyMonsterNpcs(p *player, zm *zoneMap) {
 	for am := range zm.entities.npcs.all() {
 		go func(p *player, n *npc) {
-			if n.monster {
+			if n.baseEntity.info.monster {
 				if npcInRange(p, n) {
 					nc := ncBriefInfoRegenMobCmd(n)
 					networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
@@ -869,7 +864,9 @@ func showAllNPC(p *player, zm *zoneMap) {
 	var npcs structs.NcBriefInfoMobCmd
 
 	for n := range zm.entities.npcs.all() {
-		if !n.monster {
+		n.baseEntity.RLock()
+
+		if !n.baseEntity.info.monster {
 			info := ncBriefInfoRegenMobCmd(n)
 			// if portal, FlagState = 1
 			// FlagData, Destination Map Index
@@ -879,6 +876,9 @@ func showAllNPC(p *player, zm *zoneMap) {
 			}
 			npcs.Mobs = append(npcs.Mobs, info)
 		}
+
+		n.baseEntity.RUnlock()
+
 	}
 
 	npcs.MobNum = byte(len(npcs.Mobs))
@@ -887,9 +887,14 @@ func showAllNPC(p *player, zm *zoneMap) {
 }
 
 func isPortal(n *npc) bool {
-	if n.monster || n.data.npcData == nil {
+
+	n.baseEntity.RLock()
+
+	if n.baseEntity.info.monster || n.data.npcData == nil {
 		return false
 	}
+
+	n.baseEntity.RUnlock()
 
 	if n.data.npcData.ShinePortal == nil {
 		return false
@@ -908,8 +913,11 @@ func isPortal(n *npc) bool {
 	return false
 }
 
-func portalMatchesLocation(portal *data.ShinePortal, next *location) bool {
-	var md *data.Map
+func portalMatchesLocation(portal *data.ShinePortal, next location) bool {
+	var (
+		md *data.Map
+	)
+
 	for i, m := range mapData.Maps {
 		if m.MapInfoIndex == portal.ClientMapIndex {
 			md = mapData.Maps[i]

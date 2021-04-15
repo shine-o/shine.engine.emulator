@@ -2,6 +2,7 @@ package zone
 
 import (
 	"context"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
@@ -32,7 +33,6 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 	// fetch user session
 	var (
-		mqe queryMapEvent
 		pae playerAppearedEvent
 	)
 
@@ -43,20 +43,14 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	mqe = queryMapEvent{
-		id:  session.mapID,
-		zm:  make(chan *zoneMap),
-		err: make(chan error),
-	}
-
-	zoneEvents[queryMap] <- &mqe
-
-	var zm *zoneMap
-	select {
-	case zm = <-mqe.zm:
-		break
-	case e := <-mqe.err:
-		log.Error(e)
+	zm, ok := maps.list[session.mapID]
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneMapNotFound,
+			Details: errors.ErrDetails{
+				"session": session,
+			},
+		})
 		return
 	}
 

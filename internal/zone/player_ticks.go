@@ -116,7 +116,7 @@ func (p *player) nearbyNpcsMaintenance(zm *zoneMap) {
 			}
 
 			for an := range p.adjacentNpcs() {
-				if an.monster {
+				if an.baseEntity.info.monster {
 					go func(p *player, n *npc) {
 						if !npcInRange(p, n) {
 							mh := n.getHandle()

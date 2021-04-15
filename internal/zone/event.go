@@ -46,7 +46,6 @@ const (
 	playerLogoutCancel
 	playerLogoutConclude
 	persistPlayerPosition
-	queryMap
 	changeMap
 
 	// map events

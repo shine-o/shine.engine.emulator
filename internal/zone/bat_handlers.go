@@ -2,6 +2,7 @@ package zone
 
 import (
 	"context"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
@@ -10,8 +11,7 @@ import (
 // 9217
 func ncBatTargetingReq(ctx context.Context, np *networking.Parameters) {
 	var (
-		psee playerSelectsEntityEvent
-		mqe  queryMapEvent
+		e playerSelectsEntityEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -21,43 +21,36 @@ func ncBatTargetingReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	psee = playerSelectsEntityEvent{
+	e = playerSelectsEntityEvent{
 		nc:     &structs.NcBatTargetInfoReq{},
 		handle: session.handle,
 	}
 
-	err := structs.Unpack(np.Command.Base.Data, psee.nc)
+	err := structs.Unpack(np.Command.Base.Data, e.nc)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	mqe = queryMapEvent{
-		id:  session.mapID,
-		zm:  make(chan *zoneMap),
-		err: make(chan error),
-	}
-
-	zoneEvents[queryMap] <- &mqe
-
-	var zm *zoneMap
-	select {
-	case zm = <-mqe.zm:
-		break
-	case e := <-mqe.err:
-		log.Error(e)
+	zm, ok := maps.list[session.mapID]
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneMapNotFound,
+			Details: errors.ErrDetails{
+				"session": session,
+			},
+		})
 		return
 	}
 
-	zm.send[playerSelectsEntity] <- &psee
+	zm.send[playerSelectsEntity] <- &e
 }
 
 func ncBatUntargetReq(ctx context.Context, np *networking.Parameters) {
 
 	// remove current SelectionOrder value for player
 	var (
-		psee playerUnselectsEntityEvent
-		mqe  queryMapEvent
+		e playerUnselectsEntityEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -67,26 +60,20 @@ func ncBatUntargetReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	psee = playerUnselectsEntityEvent{
+	e = playerUnselectsEntityEvent{
 		handle: session.handle,
 	}
 
-	mqe = queryMapEvent{
-		id:  session.mapID,
-		zm:  make(chan *zoneMap),
-		err: make(chan error),
-	}
-
-	zoneEvents[queryMap] <- &mqe
-
-	var zm *zoneMap
-	select {
-	case zm = <-mqe.zm:
-		break
-	case e := <-mqe.err:
-		log.Error(e)
+	zm, ok := maps.list[session.mapID]
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneMapNotFound,
+			Details: errors.ErrDetails{
+				"session": session,
+			},
+		})
 		return
 	}
 
-	zm.send[playerUnselectsEntity] <- &psee
+	zm.send[playerUnselectsEntity] <- &e
 }

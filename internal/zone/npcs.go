@@ -52,7 +52,14 @@ func (n *npcs) add(ap *npc) {
 
 func npcInRange(p *player, n *npc) bool {
 	h := n.getHandle()
-	yes := entityInRange(p.baseEntity.current, n.baseEntity.current)
+	p.baseEntity.RLock()
+	n.baseEntity.RLock()
+	pc := p.baseEntity.current
+	nc := n.baseEntity.current
+	p.baseEntity.RUnlock()
+	n.baseEntity.RUnlock()
+
+	yes := entityInRange(pc, nc)
 
 	if yes {
 		p.proximity.Lock()

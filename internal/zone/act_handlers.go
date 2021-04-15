@@ -2,6 +2,7 @@ package zone
 
 import (
 	"context"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
@@ -11,8 +12,7 @@ import (
 // walk
 func ncActMoveWalkCmd(ctx context.Context, np *networking.Parameters) {
 	var (
-		pwe playerWalksEvent
-		mqe queryMapEvent
+		e playerWalksEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -22,44 +22,35 @@ func ncActMoveWalkCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	pwe = playerWalksEvent{
+	e = playerWalksEvent{
 		nc:     &structs.NcActMoveRunCmd{},
 		handle: session.handle,
 	}
 
-	err := structs.Unpack(np.Command.Base.Data, pwe.nc)
+	err := structs.Unpack(np.Command.Base.Data, e.nc)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	mqe = queryMapEvent{
-		id:  session.mapID,
-		zm:  make(chan *zoneMap),
-		err: make(chan error),
-	}
-
-	zoneEvents[queryMap] <- &mqe
-
-	var zm *zoneMap
-	select {
-	case zm = <-mqe.zm:
-		break
-	case e := <-mqe.err:
-		log.Error(e)
+	zm, ok := maps.list[session.mapID]
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneMapNotFound,
+			Details: errors.ErrDetails{
+				"session": session,
+			},
+		})
 		return
 	}
-
-	zm.send[playerWalks] <- &pwe
+	zm.send[playerWalks] <- &e
 }
 
 // NC_ACT_MOVERUN_CMD
 // 8217
-// run
 func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 	var (
-		pre playerRunsEvent
-		mqe queryMapEvent
+		e playerRunsEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -69,35 +60,29 @@ func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	pre = playerRunsEvent{
+	e = playerRunsEvent{
 		nc:     &structs.NcActMoveRunCmd{},
 		handle: session.handle,
 	}
 
-	err := structs.Unpack(np.Command.Base.Data, pre.nc)
+	err := structs.Unpack(np.Command.Base.Data, e.nc)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	mqe = queryMapEvent{
-		id:  session.mapID,
-		zm:  make(chan *zoneMap),
-		err: make(chan error),
-	}
-
-	zoneEvents[queryMap] <- &mqe
-
-	var zm *zoneMap
-	select {
-	case zm = <-mqe.zm:
-		break
-	case e := <-mqe.err:
-		log.Error(e)
+	zm, ok := maps.list[session.mapID]
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneMapNotFound,
+			Details: errors.ErrDetails{
+				"session": session,
+			},
+		})
 		return
 	}
 
-	zm.send[playerRuns] <- &pre
+	zm.send[playerRuns] <- &e
 }
 
 // NC_ACT_JUMP_CMD
@@ -105,8 +90,7 @@ func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 // jump
 func ncActJumpCmd(ctx context.Context, np *networking.Parameters) {
 	var (
-		pje playerJumpedEvent
-		mqe queryMapEvent
+		e playerJumpedEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -116,28 +100,22 @@ func ncActJumpCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	pje = playerJumpedEvent{
+	e = playerJumpedEvent{
 		handle: session.handle,
 	}
 
-	mqe = queryMapEvent{
-		id:  session.mapID,
-		zm:  make(chan *zoneMap),
-		err: make(chan error),
-	}
-
-	zoneEvents[queryMap] <- &mqe
-
-	var zm *zoneMap
-	select {
-	case zm = <-mqe.zm:
-		break
-	case e := <-mqe.err:
-		log.Error(e)
+	zm, ok := maps.list[session.mapID]
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneMapNotFound,
+			Details: errors.ErrDetails{
+				"session": session,
+			},
+		})
 		return
 	}
 
-	zm.send[playerJumped] <- &pje
+	zm.send[playerJumped] <- &e
 }
 
 // NC_ACT_STOP_REQ
@@ -145,8 +123,7 @@ func ncActJumpCmd(ctx context.Context, np *networking.Parameters) {
 // stop walk/run, a.k.a last known position of entity
 func ncActStopReq(ctx context.Context, np *networking.Parameters) {
 	var (
-		pse playerStoppedEvent
-		mqe queryMapEvent
+		e playerStoppedEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -156,35 +133,29 @@ func ncActStopReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	pse = playerStoppedEvent{
+	e = playerStoppedEvent{
 		nc:     &structs.NcActStopReq{},
 		handle: session.handle,
 	}
 
-	err := structs.Unpack(np.Command.Base.Data, pse.nc)
+	err := structs.Unpack(np.Command.Base.Data, e.nc)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	mqe = queryMapEvent{
-		id:  session.mapID,
-		zm:  make(chan *zoneMap),
-		err: make(chan error),
-	}
-
-	zoneEvents[queryMap] <- &mqe
-
-	var zm *zoneMap
-	select {
-	case zm = <-mqe.zm:
-		break
-	case e := <-mqe.err:
-		log.Error(e)
+	zm, ok := maps.list[session.mapID]
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneMapNotFound,
+			Details: errors.ErrDetails{
+				"session": session,
+			},
+		})
 		return
 	}
 
-	zm.send[playerStopped] <- &pse
+	zm.send[playerStopped] <- &e
 }
 
 // NC_ACT_NPCCLICK_CMD
@@ -192,8 +163,7 @@ func ncActStopReq(ctx context.Context, np *networking.Parameters) {
 // 8202
 func ncActNpcClickCmd(ctx context.Context, np *networking.Parameters) {
 	var (
-		pcne playerClicksOnNpcEvent
-		mqe  queryMapEvent
+		e playerClicksOnNpcEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -203,36 +173,30 @@ func ncActNpcClickCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	pcne = playerClicksOnNpcEvent{
+	e = playerClicksOnNpcEvent{
 		nc:     &structs.NcActNpcClickCmd{},
 		handle: session.handle,
 	}
 
-	err := structs.Unpack(np.Command.Base.Data, pcne.nc)
+	err := structs.Unpack(np.Command.Base.Data, e.nc)
 
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	mqe = queryMapEvent{
-		id:  session.mapID,
-		zm:  make(chan *zoneMap),
-		err: make(chan error),
-	}
-
-	zoneEvents[queryMap] <- &mqe
-
-	var zm *zoneMap
-	select {
-	case zm = <-mqe.zm:
-		break
-	case e := <-mqe.err:
-		log.Error(e)
+	zm, ok := maps.list[session.mapID]
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneMapNotFound,
+			Details: errors.ErrDetails{
+				"session": session,
+			},
+		})
 		return
 	}
 
-	zm.events.send[playerClicksOnNpc] <- &pcne
+	zm.events.send[playerClicksOnNpc] <- &e
 
 }
 
@@ -249,8 +213,7 @@ func ncActNpcClickCmd(ctx context.Context, np *networking.Parameters) {
 // 15362 NC_MENU_SERVERMENU_ACK
 func ncMenuServerMenuAck(ctx context.Context, np *networking.Parameters) {
 	var (
-		ppre playerPromptReplyEvent
-		mqe  queryMapEvent
+		e playerPromptReplyEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -260,35 +223,29 @@ func ncMenuServerMenuAck(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	ppre = playerPromptReplyEvent{
+	e = playerPromptReplyEvent{
 		nc: &structs.NcServerMenuAck{},
 		s:  session,
 	}
 
-	err := structs.Unpack(np.Command.Base.Data, ppre.nc)
+	err := structs.Unpack(np.Command.Base.Data, e.nc)
 
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	mqe = queryMapEvent{
-		id:  session.mapID,
-		zm:  make(chan *zoneMap),
-		err: make(chan error),
-	}
-
-	zoneEvents[queryMap] <- &mqe
-
-	var zm *zoneMap
-	select {
-	case zm = <-mqe.zm:
-		break
-	case e := <-mqe.err:
-		log.Error(e)
+	zm, ok := maps.list[session.mapID]
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneMapNotFound,
+			Details: errors.ErrDetails{
+				"session": session,
+			},
+		})
 		return
 	}
 
-	zm.events.send[playerPromptReply] <- &ppre
+	zm.events.send[playerPromptReply] <- &e
 
 }

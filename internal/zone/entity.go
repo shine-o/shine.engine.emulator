@@ -36,7 +36,6 @@ type location struct {
 	mapName   string
 	x, y, d   int
 	movements []movement
-	sync.RWMutex
 }
 
 type movement struct {
@@ -44,18 +43,18 @@ type movement struct {
 }
 
 type baseEntity struct {
-	info entityInfo
-	fallback *location
-	current  *location
-	next     *location
+	info     entityInfo
+	fallback location
+	current  location
+	next     location
 	events   events
 	// dangerZone: only to be used when loading or other situation!!
-	//dz sync.RWMutex
+	sync.RWMutex
 }
 
 type entityInfo struct {
 	handle uint16
-	sync.RWMutex
+	monster bool
 }
 
 type targeting struct {
@@ -124,9 +123,9 @@ func (h *handler) new() (uint16, error) {
 }
 
 func (b *baseEntity) getHandle() uint16 {
-	b.info.RLock()
+	b.RLock()
 	h := b.info.handle
-	b.info.RUnlock()
+	b.RUnlock()
 	return h
 }
 
@@ -141,20 +140,9 @@ func (b *baseEntity) move(m *zoneMap, x, y int) error {
 	return fmt.Errorf("entity %v cannot move to x %v  y %v", b.getHandle(), x, y)
 }
 
-func entityInRange(e1, e2 *location) bool {
-	//return true
-	e1.RLock()
-	vcx := e1.x
-	vcy := e1.y
-	e1.RUnlock()
-
-	e2.RLock()
-	tcx := e2.x
-	tcy := e2.y
-	e2.RUnlock()
-
-	viewerX, viewerY := igCoordToBitmap(vcx, vcy)
-	targetX, targetY := igCoordToBitmap(tcx, tcy)
+func entityInRange(e1, e2 location) bool {
+	viewerX, viewerY := igCoordToBitmap(e1.x, e1.y)
+	targetX, targetY := igCoordToBitmap(e2.x, e2.y)
 
 	maxY := viewerY + lengthY
 	minY := viewerY - lengthY

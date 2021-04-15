@@ -1,7 +1,7 @@
 package zone
 
 import (
-	"fmt"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
@@ -63,9 +63,9 @@ func (z *zone) playerSession() {
 				newLocation := p.next
 
 				p.dz.Lock()
-				p.fallback = newLocation
-				p.current = newLocation
-				p.next = nil
+				p.baseEntity.fallback = newLocation
+				p.baseEntity.current = newLocation
+
 				p.ticks = &entityTicks{}
 				p.dz.Unlock()
 
@@ -105,25 +105,25 @@ func (z *zone) playerGameData() {
 	}
 }
 
-func (z *zone) mapQueries() {
-	log.Infof("[zone_worker] mapQueries worker")
-	for {
-		select {
-		case e := <-z.recv[queryMap]:
-			go func() {
-				ev, ok := e.(*queryMapEvent)
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(queryMapEvent{}).String(), reflect.TypeOf(ev).String())
-				}
-				zm, ok := z.rm[ev.id]
-				if !ok {
-					ev.err <- fmt.Errorf("map with id %v is not running on this zone", ev.id)
-				}
-				ev.zm <- zm
-			}()
-		}
-	}
-}
+//func (z *zone) mapQueries() {
+//	log.Infof("[zone_worker] mapQueries worker")
+//	for {
+//		select {
+//		case e := <-z.recv[queryMap]:
+//			go func() {
+//				ev, ok := e.(*queryMapEvent)
+//				if !ok {
+//					log.Errorf("expected event type %v but got %v", reflect.TypeOf(queryMapEvent{}).String(), reflect.TypeOf(ev).String())
+//				}
+//				zm, ok := z.rm[ev.id]
+//				if !ok {
+//					ev.err <- fmt.Errorf("map with id %v is not running on this zone", ev.id)
+//				}
+//				ev.zm <- zm
+//			}()
+//		}
+//	}
+//}
 
 func playerSHNLogic(e event) {
 	ev, ok := e.(*playerSHNEvent)
@@ -144,7 +144,6 @@ func playerMapLoginLogic(e event) {
 	var (
 		pse playerSHNEvent
 		pde playerDataEvent
-		qme queryMapEvent
 		phe playerHandleEvent
 	)
 
@@ -186,22 +185,17 @@ func playerMapLoginLogic(e event) {
 		return
 	}
 
-	qme = queryMapEvent{
-		id:  p.current.mapID,
-		zm:  make(chan *zoneMap),
-		err: make(chan error),
-	}
-
-	zoneEvents[queryMap] <- &qme
-
-	var zm *zoneMap
-	select {
-	case zm = <-qme.zm:
-		break
-	case err := <-qme.err:
-		log.Error(err)
+	zm, ok := maps.list[p.current.mapID]
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneMapNotFound,
+			Details: errors.ErrDetails{
+				"mapID": p.current.mapID,
+			},
+		})
 		return
 	}
+
 
 	session, ok := ev.np.Session.(*session)
 
@@ -268,6 +262,7 @@ func playerMapLoginLogic(e event) {
 				Val: 0,
 			},
 		}
+
 		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_BASE_CMD, nc)
 
 		shape := p.view.protoAvatarShapeInfo()
@@ -295,11 +290,7 @@ func playerDataLogic(e event) {
 	}
 
 	p := &player{
-		baseEntity: baseEntity{
-			fallback: &location{},
-			current:  &location{},
-			next:     &location{},
-		},
+		baseEntity: baseEntity{},
 		conn: &playerConnection{
 			lastHeartBeat: time.Now(),
 			close:         ev.net.CloseConnection,
@@ -322,29 +313,14 @@ func hearbeatUpdateLogic(e event) {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(heartbeatUpdateEvent{}).String(), reflect.TypeOf(ev).String())
 	}
 
-	var (
-		mqe      queryMapEvent
-		eventErr = make(chan error)
-	)
-
-	var (
-		mapResult = make(chan *zoneMap)
-		zm        *zoneMap
-	)
-
-	mqe = queryMapEvent{
-		id:  ev.session.mapID,
-		zm:  mapResult,
-		err: eventErr,
-	}
-
-	zoneEvents[queryMap] <- &mqe
-
-	select {
-	case zm = <-mapResult:
-		break
-	case e := <-eventErr:
-		log.Error(e)
+	zm, ok := maps.list[ev.session.mapID]
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneMapNotFound,
+			Details: errors.ErrDetails{
+				"session": ev.session,
+			},
+		})
 		return
 	}
 
@@ -369,7 +345,7 @@ func playerLogoutStartLogic(z *zone, e event) {
 		return
 	}
 
-	m, ok := z.rm[ev.mapID]
+	m, ok := z.rm.list[ev.mapID]
 
 	if !ok {
 		log.Errorf("map with id %v not available", ev.mapID)
@@ -443,13 +419,16 @@ func persistPLayerPositionLogic(e event, z *zone) {
 
 	ev.p.persistence.Lock()
 	c := ev.p.persistence.char
+	ev.p.baseEntity.RLock()
 	c.Location.MapID = uint32(ev.p.current.mapID)
 	c.Location.MapName = ev.p.current.mapName
 	c.Location.X = ev.p.current.x
 	c.Location.Y = ev.p.current.y
 	c.Location.D = ev.p.current.d
-	c.Location.IsKQ = false
+	ev.p.baseEntity.RUnlock()
 	ev.p.persistence.Unlock()
+
+	c.Location.IsKQ = false
 
 	err := persistence.UpdateLocation(c)
 

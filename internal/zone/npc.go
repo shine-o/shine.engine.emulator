@@ -13,7 +13,6 @@ type npc struct {
 	state *entityState
 	stats *npcStats
 	dz    sync.RWMutex
-	monster bool
 }
 
 type npcStats struct {
@@ -48,7 +47,7 @@ func ncBriefInfoRegenMobCmd(n *npc) structs.NcBriefInfoRegenMobCmd {
 		Mode:   byte(n.data.mobInfoServer.EnemyDetect),
 		MobID:  n.data.mobInfo.ID,
 	}
-	n.current.RLock()
+	n.baseEntity.RLock()
 	nc.Coord =  structs.ShineCoordType{
 		XY: structs.ShineXYType{
 			X: uint32(n.current.x),
@@ -56,6 +55,6 @@ func ncBriefInfoRegenMobCmd(n *npc) structs.NcBriefInfoRegenMobCmd {
 		},
 		Direction: uint8(n.current.d),
 	}
-	n.current.RUnlock()
+	n.baseEntity.RUnlock()
 	return nc
 }

@@ -64,7 +64,15 @@ func (p *players) add(ap *player) {
 
 func playerInRange(v, t *player) bool {
 	h := t.getHandle()
-	yes := entityInRange(v.baseEntity.current, t.baseEntity.current)
+
+	v.baseEntity.RLock()
+	t.baseEntity.RLock()
+	vc := v.baseEntity.current
+	tc := t.baseEntity.current
+	v.baseEntity.RUnlock()
+	t.baseEntity.RUnlock()
+
+	yes := entityInRange(vc, tc)
 
 	if yes {
 		v.proximity.Lock()

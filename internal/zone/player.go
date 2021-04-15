@@ -396,50 +396,48 @@ func (p *player) load(name string) error {
 	return <-errC
 }
 
+
+func loadInventory(it persistence.InventoryType, p * player) (itemBox, error)  {
+	var box itemBox
+	items, err := persistence.GetCharacterItems(int(p.persistence.char.ID), it)
+
+	if err != nil {
+		return box, err
+	}
+
+	box.box = int(it)
+	box.items = make(map[int]*item)
+	for _, item := range items {
+		// load with goroutines and waitgroups
+		box.items[item.Slot] = loadItem(item)
+	}
+	return box, nil
+}
+
 func (p *player) itemData() error {
 	// for this character, load all items in each respective box
 	// each item loaded should be validated so that, best way is to iterate all items and for each item launch a routine that validates it and returns the valid item through a channel
 	// we also forward the error channel in case there is an error
-	ivs := &playerInventories{
-		equipped: itemBox{
-			box: 8,
-		},
-		inventory: itemBox{
-			box: int(persistence.BagInventory),
-		},
-		miniHouse: itemBox{
-			box: 12,
-		},
-		premium: itemBox{
-			box: 15,
-		},
-	}
+	var ivs = &playerInventories{}
 
-	items, err := persistence.GetCharacterItems(int(p.persistence.char.ID), persistence.BagInventory)
-
+	eiBox, err := loadInventory( persistence.EquippedInventory, p)
 	if err != nil {
-		log.Error(err)
 		return err
 	}
 
-	ivs.inventory.items = make(map[int]*item)
-
-	for _, item := range items {
-
-		ei, occupied := ivs.inventory.items[item.Slot]
-		if occupied {
-			log.Error(errors.Err{
-				Code: errors.ZoneInventorySlotOccupied,
-				Details: errors.ErrDetails{
-					"itemID": ei.pItem.ID,
-					"slot":   ei.pItem.Slot,
-				},
-			})
-			continue
-		}
-		// load with goroutines and waitgroups
-		ivs.inventory.items[item.Slot] = loadItem(item)
+	biBox, err := loadInventory(persistence.BagInventory, p)
+	if err != nil {
+		return err
 	}
+
+	mhiBox, err := loadInventory(persistence.MiniHouseInventory, p)
+	if err != nil {
+		return err
+	}
+
+	ivs.equipped = eiBox
+	ivs.inventory = biBox
+	ivs.miniHouse = mhiBox
 
 	p.dz.Lock()
 	p.inventories = ivs
@@ -860,7 +858,7 @@ func ncBriefInfoLoginCharacterCmd(p *player) structs.NcBriefInfoLoginCharacterCm
 
 	nc.Handle = p.baseEntity.getHandle()
 
-	p.baseEntity.current.RLock()
+	p.baseEntity.RLock()
 	nc.Coordinates = structs.ShineCoordType{
 		XY: structs.ShineXYType{
 			X: uint32(p.baseEntity.current.x),
@@ -868,7 +866,7 @@ func ncBriefInfoLoginCharacterCmd(p *player) structs.NcBriefInfoLoginCharacterCm
 		},
 		Direction: byte(p.baseEntity.current.d),
 	}
-	p.baseEntity.current.RUnlock()
+	p.baseEntity.RUnlock()
 
 	p.view.RLock()
 	nc.Shape = *p.view.protoAvatarShapeInfo()

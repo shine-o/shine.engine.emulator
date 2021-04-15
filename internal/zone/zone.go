@@ -12,10 +12,12 @@ import (
 	"sync"
 )
 
-type runningMaps map[int]*zoneMap
+type runningMaps struct {
+	list map[int]*zoneMap
+}
 
 type zone struct {
-	rm runningMaps
+	rm *runningMaps
 	*events
 	*dynamicEvents
 	//worldDB *pg.DB
@@ -25,6 +27,7 @@ type zone struct {
 
 var (
 	zoneEvents  sendEvents
+	maps         *runningMaps
 	monsterData *data.MonsterData
 	mapData     *data.MapData
 	npcData     *data.NpcData
@@ -37,11 +40,13 @@ func (z *zone) load() {
 
 	loadGameData(shinePath)
 
-	z.rm = make(runningMaps)
+	z.rm = &runningMaps{
+		list: make(map[int]*zoneMap),
+	}
 
 	zEvents := []eventIndex{
 		playerMapLogin, playerSHN, playerData,
-		heartbeatUpdate, queryMap, playerLogoutStart,
+		heartbeatUpdate,  playerLogoutStart,
 		playerLogoutCancel, playerLogoutConclude, persistPlayerPosition,
 		changeMap,
 	}
@@ -97,6 +102,8 @@ func (z *zone) load() {
 		log.Fatal(err)
 	}
 
+	maps = z.rm
+
 	go z.run()
 }
 
@@ -113,7 +120,7 @@ func (z *zone) addMap(mapId int) {
 		log.Fatal(err)
 	}
 
-	for _, m := range z.rm {
+	for _, m := range z.rm.list {
 		if m.data.MapInfoIndex == md.Info.MapName.Name {
 			log.Errorf("duplicate shn map index id %v %v, skipping", mapId, m.data.MapInfoIndex)
 			return
@@ -169,7 +176,7 @@ func (z *zone) addMap(mapId int) {
 	}
 
 	z.Lock()
-	z.rm[m.data.ID] = m
+	z.rm.list[m.data.ID] = m
 	z.Unlock()
 
 	go m.run()
@@ -180,7 +187,7 @@ func (z *zone) run() {
 	// run query workers
 	num := viper.GetInt("workers.num_zone_workers")
 	for i := 0; i <= num; i++ {
-		go z.mapQueries()
+		//go z.mapQueries()
 		go z.security()
 		go z.playerSession()
 		go z.playerGameData()

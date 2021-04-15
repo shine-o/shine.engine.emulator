@@ -135,18 +135,15 @@ func (zm *zoneMap)  spawnNPC(sn *data.ShineNPC) {
 
 	n := &npc{
 		baseEntity: baseEntity{
-			info: struct {
-				handle uint16
-				sync.RWMutex
-			}{
+			info: entityInfo{
 				handle:  h,
 			},
-			fallback: &location{
+			fallback: location{
 				x: sn.X,
 				y: sn.Y,
 				d: shineD,
 			},
-			current: &location{
+			current: location{
 				mapID:     zm.data.ID,
 				mapName:   zm.data.MapInfoIndex,
 				x:         sn.X,
@@ -154,7 +151,6 @@ func (zm *zoneMap)  spawnNPC(sn *data.ShineNPC) {
 				d:         shineD,
 				movements: []movement{},
 			},
-			next:   nil,
 			events: events{},
 		},
 		stats: &npcStats{
@@ -325,17 +321,17 @@ func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.M
 		}
 
 		m := &npc{
-			monster: true,
 			baseEntity: baseEntity{
 				info: entityInfo{
 					handle:  h,
+					monster: true,
 				},
-				fallback: &location{
+				fallback: location{
 					x: x,
 					y: y,
 					d: d,
 				},
-				current: &location{
+				current: location{
 					mapID:     zm.data.ID,
 					mapName:   zm.data.MapInfoIndex,
 					x:         x,
