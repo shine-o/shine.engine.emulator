@@ -58,7 +58,7 @@ type Character struct {
 	Attributes    *Attributes    `pg:"rel:belongs-to"`
 	Location      *Location      `pg:"rel:belongs-to"`
 	Options       *ClientOptions `pg:"rel:belongs-to"`
-	Items         []Item         `pg:"rel:has-many"`
+	Items         []*Item         `pg:"rel:has-many"`
 	EquippedItems *EquippedItems `pg:"rel:belongs-to"`
 	AdminLevel    uint8          `pg:",notnull,use_zero"`
 	Slot          uint8          `pg:",notnull,use_zero"`
@@ -73,7 +73,7 @@ type Appearance struct {
 	tableName   struct{} `pg:"world.character_appearance"`
 	ID          uint64
 	CharacterID uint64 //
-	//Character   *Character
+	Character   *Character
 	Class     uint8 `pg:",notnull"`
 	Gender    uint8 `pg:",notnull,use_zero"`
 	HairType  uint8 `pg:",notnull,use_zero"`
@@ -89,7 +89,7 @@ type Attributes struct {
 	tableName   struct{} `pg:"world.character_attributes"`
 	ID          uint64
 	CharacterID uint64
-	//Character    *Character
+	Character    *Character
 	Level        uint8  `pg:",notnull"`
 	Experience   uint64 `pg:",notnull,use_zero"`
 	Fame         uint32 `pg:",notnull,use_zero"`
@@ -114,7 +114,7 @@ type Location struct {
 	tableName   struct{} `pg:"world.character_location"`
 	ID          uint64
 	CharacterID uint64 //
-	//Character   *Character
+	Character   *Character
 	MapID     uint32 `pg:",notnull"`
 	MapName   string `pg:",notnull"`
 	X         int    `pg:",notnull"`
@@ -130,7 +130,7 @@ type ClientOptions struct {
 	tableName   struct{} `pg:"world.client_options"`
 	ID          uint64
 	CharacterID uint64 //
-	//Character   *Character
+	Character   *Character
 	GameOptions []byte `pg:",notnull"`
 	Keymap      []byte `pg:",notnull"`
 	Shortcuts   []byte `pg:",notnull"`
@@ -269,6 +269,8 @@ func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq) (*Character, er
 	char.initialClientOptions()
 	char.initialEquippedItems()
 
+	char.initialItems()
+
 	if _, err = tx.Model(char.Appearance).Returning("*").Insert(); err != nil {
 		return char, errors.Err{
 			Code: errors.PersistenceErrDB,
@@ -318,7 +320,41 @@ func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq) (*Character, er
 			},
 		}
 	}
-	return char, tx.Commit()
+
+	err = tx.Commit()
+	if err != nil {
+		return char, errors.Err{
+			Code: errors.PersistenceErrDB,
+			Details: errors.ErrDetails{
+				"err":   err,
+				"txErr": tx.Rollback(),
+			},
+		}
+	}
+
+	itx, err := db.Begin()
+
+	if err != nil {
+		return char, err
+	}
+
+	defer closeTx(itx)
+
+	for _, item := range char.Items {
+		err := item.Insert()
+		if err != nil {
+			return char, errors.Err{
+				Code: errors.PersistenceErrDB,
+				Details: errors.ErrDetails{
+					"err":   err,
+					"txErr": tx.Rollback(),
+				},
+			}
+		}
+	}
+
+	return char, itx.Commit()
+
 }
 
 func GetCharacter(characterID uint64) (Character, error) {
@@ -621,20 +657,47 @@ func (c *Character) initialEquippedItems()  {
 	}
 }
 
-func (c *Character) initialItems()  {
-	//item := Item{
-	//	InventoryType: int(BagInventory),
-	//	Slot:          0,
-	//	CharacterID:   0,
-	//	Character:     nil,
-	//	ShnID:         0,
-	//	ShnInxName:    "",
-	//	Stackable:     false,
-	//	Amount:        0,
-	//	Attributes:    nil,
-	//	CreatedAt:     time.Time{},
-	//	UpdatedAt:     time.Time{},
-	//}
+func (c *Character) initialItems() {
+
+	var (
+		shnID uint16 = 0
+		shnInx = ""
+	)
+
+	switch c.Appearance.Class {
+	case 1:  // fighter
+		shnID = 250
+		shnInx = "ShortSword"
+		break
+
+	case 6:  // cleric
+		shnID = 750
+		shnInx = "ShortMace"
+		break
+
+	case 11: // archer
+		shnID = 1250
+		shnInx = "ShortBow"
+		break
+
+	case 16: // mage
+		shnID = 1750
+		shnInx = "ShortStaff"
+		break
+	}
+
+	item := &Item{
+		InventoryType: int(BagInventory),
+		//InventoryType: int(EquippedInventory),
+		//Slot: 10,
+		CharacterID:   c.ID,
+		Character:     c,
+		ShnID:         shnID,
+		ShnInxName:    shnInx,
+		Stackable:     false,
+		Amount:        1,
+	}
+	c.Items = append(c.Items, item)
 }
 
 // if not 65535, add item to the list
