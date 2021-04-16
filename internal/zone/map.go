@@ -152,6 +152,7 @@ func (zm *zoneMap)  spawnNPC(sn *data.ShineNPC) {
 				movements: []movement{},
 			},
 			events: events{},
+			RWMutex:       &sync.RWMutex{},
 		},
 		stats: &npcStats{
 			hp:            mi.MaxHP,
@@ -168,7 +169,10 @@ func (zm *zoneMap)  spawnNPC(sn *data.ShineNPC) {
 			chasing:  make(chan bool),
 			fleeing:  make(chan bool),
 		},
-		ticks: &entityTicks{},
+		ticks: &entityTicks{
+			RWMutex:       &sync.RWMutex{},
+		},
+		dz:       &sync.RWMutex{},
 	}
 
 	zm.entities.npcs.Lock()
@@ -339,6 +343,7 @@ func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.M
 					d:         d,
 					movements: []movement{},
 				},
+				RWMutex:       &sync.RWMutex{},
 			},
 			stats: &npcStats{
 				hp:            mi.MaxHP,
@@ -355,7 +360,10 @@ func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.M
 				chasing:  make(chan bool),
 				fleeing:  make(chan bool),
 			},
-			ticks: &entityTicks{},
+			ticks: &entityTicks{
+				RWMutex:       &sync.RWMutex{},
+			},
+			dz:       &sync.RWMutex{},
 		}
 
 		zm.entities.npcs.Lock()

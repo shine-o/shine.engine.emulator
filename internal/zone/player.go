@@ -29,7 +29,6 @@ const (
 
 type player struct {
 	baseEntity
-	//todo: group into another struct that can be locked
 	proximity   *playerProximity
 	conn        *playerConnection
 	view        *playerView
@@ -47,43 +46,20 @@ type player struct {
 	persistence *playerPersistence
 
 	// dangerZone: only to be used when loading or other situation!!
-	dz sync.RWMutex
-}
-
-type playerPersistence struct {
-	char        *persistence.Character
-	sync.RWMutex
+	dz * sync.RWMutex
 }
 
 type playerProximity struct {
 	players     map[uint16]*player
 	npcs        map[uint16]*npc
-	sync.RWMutex
-}
-
-type entityTicks struct {
-	list     []*time.Ticker
-	sync.RWMutex
-}
-
-type playerSkills struct {
-	active      []skill
-	passive     []skill
-	sync.RWMutex
-}
-
-type promptAction int
-
-type prompt struct {
-	action int
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 type playerConnection struct {
 	lastHeartBeat time.Time
 	close         chan<- bool
 	outboundData  chan<- []byte
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 type playerView struct {
@@ -93,7 +69,7 @@ type playerView struct {
 	hairType   uint8
 	hairColour uint8
 	faceType   uint8
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 type playerStats struct {
@@ -127,17 +103,7 @@ type playerStats struct {
 	restraintResistance stat
 	poisonResistance    stat
 	rollbackResistance  stat
-	sync.RWMutex
-}
-
-type playerStatPoints struct {
-	str                  uint8
-	end                  uint8
-	dex                  uint8
-	int                  uint8
-	spr                  uint8
-	redistributionPoints uint8
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 type playerState struct {
@@ -151,7 +117,7 @@ type playerState struct {
 	moverSlot   uint8
 	miniPet     uint8
 	justSpawned bool
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 type playerMoney struct {
@@ -159,7 +125,7 @@ type playerMoney struct {
 	fame        uint32
 	wastedCoins uint64
 	wastedFame  uint64
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 type playerTitles struct {
@@ -169,7 +135,7 @@ type playerTitles struct {
 		mobID   uint16
 	}
 	titles []title
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 type playerQuests struct {
@@ -177,7 +143,40 @@ type playerQuests struct {
 	done       []quest
 	doing      []quest
 	repeatable []quest
-	sync.RWMutex
+	*sync.RWMutex
+}
+
+type playerSkills struct {
+	active      []skill
+	passive     []skill
+	*sync.RWMutex
+}
+
+type prompt struct {
+	action int
+	*sync.RWMutex
+}
+
+type entityTicks struct {
+	list     []*time.Ticker
+	*sync.RWMutex
+}
+
+type playerPersistence struct {
+	char        *persistence.Character
+	*sync.RWMutex
+}
+
+type promptAction int
+
+type playerStatPoints struct {
+	str                  uint8
+	end                  uint8
+	dex                  uint8
+	int                  uint8
+	spr                  uint8
+	redistributionPoints uint8
+	*sync.RWMutex
 }
 
 type skill struct {
@@ -335,6 +334,7 @@ func (p *player) load(name string) error {
 
 	p.persistence = &playerPersistence{
 		char: &char,
+		RWMutex:       &sync.RWMutex{},
 	}
 
 	p.baseEntity.current.mapName = char.Location.MapName
@@ -346,13 +346,20 @@ func (p *player) load(name string) error {
 	p.proximity = &playerProximity{
 		players:  make(map[uint16]*player),
 		npcs:     make(map[uint16]*npc),
+		RWMutex:       &sync.RWMutex{},
 	}
 
-	p.ticks = &entityTicks{}
+	p.ticks = &entityTicks{
+		RWMutex:       &sync.RWMutex{},
+	}
 
-	p.prompt = &prompt{}
+	p.prompt = &prompt{
+		RWMutex:       &sync.RWMutex{},
+	}
 
-	p.targeting = &targeting{}
+	p.targeting = &targeting{
+		RWMutex:       &sync.RWMutex{},
+	}
 
 	wg := &sync.WaitGroup{}
 	wg.Add(7)
@@ -418,7 +425,9 @@ func (p *player) itemData() error {
 	// for this character, load all items in each respective box
 	// each item loaded should be validated so that, best way is to iterate all items and for each item launch a routine that validates it and returns the valid item through a channel
 	// we also forward the error channel in case there is an error
-	var ivs = &playerInventories{}
+	var ivs = &playerInventories{
+		RWMutex:       &sync.RWMutex{},
+	}
 
 	eiBox, err := loadInventory( persistence.EquippedInventory, p)
 	if err != nil {
@@ -454,6 +463,7 @@ func (p *player) viewData() {
 		hairType:   p.persistence.char.Appearance.HairType,
 		hairColour: p.persistence.char.Appearance.HairColor,
 		faceType:   p.persistence.char.Appearance.FaceType,
+		RWMutex:       &sync.RWMutex{},
 	}
 	p.dz.Lock()
 	p.view = v
@@ -472,6 +482,7 @@ func (p *player) stateData() {
 		moverHandle: 0,
 		moverSlot:   0,
 		miniPet:     0,
+		RWMutex:       &sync.RWMutex{},
 	}
 	p.dz.Lock()
 	p.state = s
@@ -561,6 +572,7 @@ func (p *player) statsData() {
 			base:       0,
 			withExtras: 0,
 		},
+		RWMutex:       &sync.RWMutex{},
 	}
 	p.dz.Lock()
 	p.stats = s
@@ -579,6 +591,7 @@ func (p *player) titleData() {
 			element: 0,
 			mobID:   0,
 		},
+		RWMutex:       &sync.RWMutex{},
 	}
 	p.dz.Lock()
 	p.titles = t
@@ -591,6 +604,7 @@ func (p *player) moneyData() {
 		fame:        100000,
 		wastedCoins: 0,
 		wastedFame:  0,
+		RWMutex:       &sync.RWMutex{},
 	}
 	p.dz.Lock()
 	p.money = m
@@ -600,7 +614,9 @@ func (p *player) moneyData() {
 func (p *player) skillData() {
 	// all learned skills stored in the database
 	p.dz.Lock()
-	p.skills = &playerSkills{}
+	p.skills = &playerSkills{
+		RWMutex:       &sync.RWMutex{},
+	}
 	p.dz.Unlock()
 }
 

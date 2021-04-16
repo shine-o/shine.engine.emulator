@@ -24,7 +24,7 @@ type entity interface {
 type handler struct {
 	handleIndex uint16
 	usedHandles map[uint16]bool
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 type basicActions interface {
@@ -49,7 +49,7 @@ type baseEntity struct {
 	next     location
 	events   events
 	// dangerZone: only to be used when loading or other situation!!
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 type entityInfo struct {
@@ -63,7 +63,7 @@ type targeting struct {
 	selectingN     *npc
 	selectedByP    []*player
 	selectedByN    []*npc
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 type entityState struct {

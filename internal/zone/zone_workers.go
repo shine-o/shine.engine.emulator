@@ -6,6 +6,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"reflect"
+	"sync"
 	"time"
 )
 
@@ -66,7 +67,9 @@ func (z *zone) playerSession() {
 				p.baseEntity.fallback = newLocation
 				p.baseEntity.current = newLocation
 
-				p.ticks = &entityTicks{}
+				p.ticks = &entityTicks{
+					RWMutex:       &sync.RWMutex{},
+				}
 				p.dz.Unlock()
 
 				p.proximity.Lock()
@@ -290,12 +293,16 @@ func playerDataLogic(e event) {
 	}
 
 	p := &player{
-		baseEntity: baseEntity{},
+		baseEntity: baseEntity{
+			RWMutex:       &sync.RWMutex{},
+		},
 		conn: &playerConnection{
 			lastHeartBeat: time.Now(),
 			close:         ev.net.CloseConnection,
 			outboundData:  ev.net.OutboundSegments.Send,
+			RWMutex:       &sync.RWMutex{},
 		},
+		dz:       &sync.RWMutex{},
 	}
 
 	err := p.load(ev.playerName)

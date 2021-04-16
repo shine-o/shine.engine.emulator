@@ -21,7 +21,7 @@ type zone struct {
 	*events
 	*dynamicEvents
 	//worldDB *pg.DB
-	sync.RWMutex
+	*sync.RWMutex
 	*handler
 }
 
@@ -66,11 +66,13 @@ func (z *zone) load() {
 
 	z.dynamicEvents = &dynamicEvents{
 		events: make(map[string]events),
+		RWMutex:       &sync.RWMutex{},
 	}
 
 	h := &handler{
 		handleIndex: 0,
 		usedHandles: make(map[uint16]bool),
+		RWMutex:       &sync.RWMutex{},
 	}
 
 	z.handler = h
@@ -135,10 +137,12 @@ func (z *zone) addMap(mapId int) {
 			players: &players{
 				handler: z.handler,
 				active:  make(map[uint16]*player),
+				RWMutex:       &sync.RWMutex{},
 			},
 			npcs: &npcs{
 				handler: z.handler,
 				active:  make(map[uint16]*npc),
+				RWMutex:       &sync.RWMutex{},
 			},
 		},
 		events: events{

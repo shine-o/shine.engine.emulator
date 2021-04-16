@@ -8,7 +8,7 @@ import (
 type players struct {
 	*handler
 	active map[uint16]*player
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 func (p *players) all() <-chan *player {

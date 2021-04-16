@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/viper"
 	"net/http"
 	"path/filepath"
+	"sync"
 )
 
 var (
@@ -44,7 +45,9 @@ func Start(cmd *cobra.Command, args []string) {
 
 	log.Infof("starting the service on port: %v", zonePort)
 
-	z := zone{}
+	z := zone{
+		RWMutex:       &sync.RWMutex{},
+	}
 
 	z.load()
 

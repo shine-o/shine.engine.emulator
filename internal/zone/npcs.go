@@ -8,7 +8,7 @@ import (
 type npcs struct {
 	*handler
 	active map[uint16]*npc
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 func (n *npcs) all() <-chan *npc {

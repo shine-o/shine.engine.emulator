@@ -17,7 +17,7 @@ type playerInventories struct {
 	miniHouse itemBox
 	reward    itemBox
 	premium   itemBox
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 type itemBox struct {
@@ -31,7 +31,7 @@ type item struct {
 	stats     itemStats
 	amount    int
 	stackable bool
-	sync.RWMutex
+	*sync.RWMutex
 }
 
 // static is a prefix for items that have stats defined in static files

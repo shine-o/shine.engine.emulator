@@ -12,7 +12,7 @@ type npc struct {
 	ticks *entityTicks
 	state *entityState
 	stats *npcStats
-	dz    sync.RWMutex
+	dz    *sync.RWMutex
 }
 
 type npcStats struct {
