@@ -68,7 +68,7 @@ func (z *zone) playerSession() {
 				p.baseEntity.current = newLocation
 
 				p.ticks = &entityTicks{
-					RWMutex:       &sync.RWMutex{},
+					RWMutex: &sync.RWMutex{},
 				}
 				p.dz.Unlock()
 
@@ -108,26 +108,6 @@ func (z *zone) playerGameData() {
 	}
 }
 
-//func (z *zone) mapQueries() {
-//	log.Infof("[zone_worker] mapQueries worker")
-//	for {
-//		select {
-//		case e := <-z.recv[queryMap]:
-//			go func() {
-//				ev, ok := e.(*queryMapEvent)
-//				if !ok {
-//					log.Errorf("expected event type %v but got %v", reflect.TypeOf(queryMapEvent{}).String(), reflect.TypeOf(ev).String())
-//				}
-//				zm, ok := z.rm[ev.id]
-//				if !ok {
-//					ev.err <- fmt.Errorf("map with id %v is not running on this zone", ev.id)
-//				}
-//				ev.zm <- zm
-//			}()
-//		}
-//	}
-//}
-
 func playerSHNLogic(e event) {
 	ev, ok := e.(*playerSHNEvent)
 	if !ok {
@@ -145,32 +125,32 @@ func playerMapLoginLogic(e event) {
 	}
 
 	var (
-		pse playerSHNEvent
-		pde playerDataEvent
-		phe playerHandleEvent
+		e1 playerSHNEvent
+		e2 playerDataEvent
+		e3 playerHandleEvent
 	)
 
-	pse = playerSHNEvent{
+	e1 = playerSHNEvent{
 		inboundNC: ev.nc,
 		ok:        make(chan bool),
 		err:       make(chan error),
 	}
 
-	zoneEvents[playerSHN] <- &pse
+	zoneEvents[playerSHN] <- &e1
 
-	pde = playerDataEvent{
+	e2 = playerDataEvent{
 		player:     make(chan *player),
 		net:        ev.np,
 		playerName: ev.nc.CharData.CharID.Name,
 		err:        make(chan error),
 	}
 
-	zoneEvents[playerData] <- &pde
+	zoneEvents[playerData] <- &e2
 
 	select {
-	case <-pse.ok:
+	case <-e1.ok:
 		break
-	case err := <-pse.err:
+	case err := <-e1.err:
 		log.Error(err)
 		// fail ack with failure code
 		// drop connection
@@ -179,9 +159,9 @@ func playerMapLoginLogic(e event) {
 
 	var p *player
 	select {
-	case p = <-pde.player:
+	case p = <-e2.player:
 		break
-	case err := <-pde.err:
+	case err := <-e2.err:
 		log.Error(err)
 		// fail ack with failure code
 		// drop connection
@@ -191,14 +171,13 @@ func playerMapLoginLogic(e event) {
 	zm, ok := maps.list[p.current.mapID]
 	if !ok {
 		log.Error(errors.Err{
-			Code:    errors.ZoneMapNotFound,
+			Code: errors.ZoneMapNotFound,
 			Details: errors.ErrDetails{
 				"mapID": p.current.mapID,
 			},
 		})
 		return
 	}
-
 
 	session, ok := ev.np.Session.(*session)
 
@@ -207,81 +186,21 @@ func playerMapLoginLogic(e event) {
 		return
 	}
 
-	phe = playerHandleEvent{
+	e3 = playerHandleEvent{
 		player:  p,
 		session: session,
 		done:    make(chan bool),
 		err:     make(chan error),
 	}
 
-	zm.send[playerHandle] <- &phe
+	zm.send[playerHandle] <- &e3
 
 	select {
-	case <-phe.done:
-
-		nc := &structs.NcCharClientBaseCmd{
-			ChrRegNum: uint32(p.persistence.char.ID),
-			CharName: structs.Name5{
-				Name: p.view.name,
-			},
-			Slot:       p.persistence.char.Slot,
-			Level:      p.state.level,
-			Experience: p.state.exp,
-			PwrStone:   0,
-			GrdStone:   0,
-			HPStone:    p.stats.hpStones,
-			SPStone:    p.stats.spStones,
-			CurHP:      p.stats.hp,
-			CurSP:      p.stats.sp,
-			CurLP:      p.stats.lp,
-			Unk:        1,
-			Fame:       p.money.fame,
-			Cen:        54983635, // ¿?
-			LoginInfo: structs.NcCharBaseCmdLoginLocation{
-				CurrentMap: structs.Name3{
-					Name: p.current.mapName,
-				},
-				CurrentCoord: structs.ShineCoordType{
-					XY: structs.ShineXYType{
-						X: uint32(p.current.x),
-						Y: uint32(p.current.y),
-					},
-					Direction: uint8(p.current.d),
-				},
-			},
-			Stats: structs.CharStats{
-				Strength:          p.stats.points.str,
-				Constitute:        p.stats.points.end,
-				Dexterity:         p.stats.points.dex,
-				Intelligence:      p.stats.points.int,
-				MentalPower:       p.stats.points.spr,
-				RedistributePoint: p.stats.points.redistributionPoints,
-			},
-			IdleTime:   0,
-			PkCount:    p.persistence.char.Attributes.KillPoints,
-			PrisonMin:  0,
-			AdminLevel: p.persistence.char.AdminLevel,
-			Flag: structs.NcCharBaseCmdFlag{
-				Val: 0,
-			},
-		}
-
-		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_BASE_CMD, nc)
-
-		shape := p.view.protoAvatarShapeInfo()
-		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_SHAPE_CMD, shape)
-
-		mapAck := &structs.NcMapLoginAck{
-			Handle: p.getHandle(), // id of the entity inside this map
-			Params: p.charParameterData(),
-			LoginCoord: structs.ShineXYType{
-				X: uint32(p.current.x),
-				Y: uint32(p.current.y),
-			},
-		}
-		networking.Send(p.conn.outboundData, networking.NC_MAP_LOGIN_ACK, mapAck)
-
-	case err := <-phe.err:
+	case <-e3.done:
+		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_BASE_CMD, ncCharClientBase(p))
+		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_SHAPE_CMD, protoAvatarShapeInfo(p.view))
+		networking.Send(p.conn.outboundData, networking.NC_MAP_LOGIN_ACK, ncMapLoginAck(p))
+	case err := <-e3.err:
 		log.Error(err)
 	}
 }
@@ -294,7 +213,7 @@ func playerDataLogic(e event) {
 
 	p := &player{
 		baseEntity: baseEntity{
-			RWMutex:       &sync.RWMutex{},
+			RWMutex: &sync.RWMutex{},
 		},
 		conn: &playerConnection{
 			lastHeartBeat: time.Now(),
@@ -302,7 +221,7 @@ func playerDataLogic(e event) {
 			outboundData:  ev.net.OutboundSegments.Send,
 			RWMutex:       &sync.RWMutex{},
 		},
-		dz:       &sync.RWMutex{},
+		dz: &sync.RWMutex{},
 	}
 
 	err := p.load(ev.playerName)
@@ -323,7 +242,7 @@ func hearbeatUpdateLogic(e event) {
 	zm, ok := maps.list[ev.session.mapID]
 	if !ok {
 		log.Error(errors.Err{
-			Code:    errors.ZoneMapNotFound,
+			Code: errors.ZoneMapNotFound,
 			Details: errors.ErrDetails{
 				"session": ev.session,
 			},
@@ -489,4 +408,80 @@ func playerLogout(z *zone, zm *zoneMap, p *player, sid string) {
 			return
 		}
 	}
+}
+
+func ncMapLoginAck(p *player) *structs.NcMapLoginAck {
+	nc := &structs.NcMapLoginAck{
+		Handle: p.getHandle(), // id of the entity inside this map
+		Params: p.charParameterData(),
+	}
+	p.baseEntity.RLock()
+	nc.LoginCoord = structs.ShineXYType{
+		X: uint32(p.current.x),
+		Y: uint32(p.current.y),
+	}
+	p.baseEntity.RUnlock()
+	return nc
+}
+
+func ncCharClientBase(p *player) *structs.NcCharClientBaseCmd {
+	p.persistence.RLock()
+	p.view.RLock()
+	p.state.RLock()
+	p.stats.RLock()
+	p.money.RLock()
+	p.baseEntity.RLock()
+	nc := &structs.NcCharClientBaseCmd{
+		ChrRegNum: uint32(p.persistence.char.ID),
+		CharName: structs.Name5{
+			Name: p.view.name,
+		},
+		Slot:       p.persistence.char.Slot,
+		Level:      p.state.level,
+		Experience: p.state.exp,
+		PwrStone:   0,
+		GrdStone:   0,
+		HPStone:    p.stats.hpStones,
+		SPStone:    p.stats.spStones,
+		CurHP:      p.stats.hp,
+		CurSP:      p.stats.sp,
+		CurLP:      p.stats.lp,
+		Unk:        1,
+		Fame:       p.money.fame,
+		Cen:        54983635, // ¿?
+		LoginInfo: structs.NcCharBaseCmdLoginLocation{
+			CurrentMap: structs.Name3{
+				Name: p.current.mapName,
+			},
+			CurrentCoord: structs.ShineCoordType{
+				XY: structs.ShineXYType{
+					X: uint32(p.current.x),
+					Y: uint32(p.current.y),
+				},
+				Direction: uint8(p.current.d),
+			},
+		},
+		Stats: structs.CharStats{
+			Strength:          p.stats.points.str,
+			Constitute:        p.stats.points.end,
+			Dexterity:         p.stats.points.dex,
+			Intelligence:      p.stats.points.int,
+			MentalPower:       p.stats.points.spr,
+			RedistributePoint: p.stats.points.redistributionPoints,
+		},
+		IdleTime:   0,
+		PkCount:    p.persistence.char.Attributes.KillPoints,
+		PrisonMin:  0,
+		AdminLevel: p.persistence.char.AdminLevel,
+		Flag: structs.NcCharBaseCmdFlag{
+			Val: 0,
+		},
+	}
+	p.persistence.RUnlock()
+	p.view.RUnlock()
+	p.state.RUnlock()
+	p.stats.RUnlock()
+	p.money.RUnlock()
+	p.baseEntity.RUnlock()
+	return nc
 }

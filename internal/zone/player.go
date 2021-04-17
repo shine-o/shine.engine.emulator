@@ -621,7 +621,9 @@ func (p *player) skillData() {
 }
 
 func (p *player) charParameterData() structs.CharParameterData {
-	return structs.CharParameterData{
+	p.stats.RLock()
+	p.state.RLock()
+	nc := structs.CharParameterData{
 		PrevExp: p.state.prevExp,
 		NextExp: p.state.nextExp,
 		Strength: structs.ShineCharStatVar{
@@ -723,6 +725,9 @@ func (p *player) charParameterData() structs.CharParameterData {
 			Change: p.stats.rollbackResistance.withExtras,
 		},
 	}
+	p.stats.RUnlock()
+	p.state.RUnlock()
+	return nc
 }
 
 func (p *player) equip(i *item, slot data.ItemEquipEnum) (itemSlotChange, error) {
@@ -850,13 +855,16 @@ func (pi *playerInventories) ncCharClientItemCmd() []structs.NcCharClientItemCmd
 	return ncs
 }
 
-func (pv *playerView) protoAvatarShapeInfo() *structs.ProtoAvatarShapeInfo {
-	return &structs.ProtoAvatarShapeInfo{
+func protoAvatarShapeInfo(pv *playerView) *structs.ProtoAvatarShapeInfo {
+	pv.RLock()
+	nc := &structs.ProtoAvatarShapeInfo{
 		BF:        1 | pv.class<<2 | pv.gender<<7,
 		HairType:  pv.hairType,
 		HairColor: pv.hairColour,
 		FaceShape: pv.faceType,
 	}
+	pv.RUnlock()
+	return nc
 }
 
 func lastHeartbeat(p *player) float64 {
@@ -884,23 +892,22 @@ func ncBriefInfoLoginCharacterCmd(p *player) structs.NcBriefInfoLoginCharacterCm
 	}
 	p.baseEntity.RUnlock()
 
+	nc.Shape = *protoAvatarShapeInfo(p.view)
+
 	p.view.RLock()
-	nc.Shape = *p.view.protoAvatarShapeInfo()
 	nc.CharID =  structs.Name5{
 		Name: p.view.name,
 	}
-
-	nc.Class = p.view.class
 	p.view.RUnlock()
 
 	p.state.RLock()
+	nc.Class = p.view.class
 	nc.Polymorph = p.state.polymorph
 	nc.Level = p.state.level
 	nc.MoverHandle = p.state.moverHandle
 	nc.MoverSlot = p.state.moverSlot
 	nc.UsingMinipet = p.state.miniPet
 	p.state.RUnlock()
-
 
 	return nc
 }
