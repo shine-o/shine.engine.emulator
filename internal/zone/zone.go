@@ -20,9 +20,8 @@ type zone struct {
 	rm *runningMaps
 	*events
 	*dynamicEvents
-	//worldDB *pg.DB
-	*sync.RWMutex
 	*handler
+	*sync.RWMutex
 }
 
 var (
@@ -121,7 +120,7 @@ func (z *zone) addMap(mapId int) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	// TODO: loop with channel
 	for _, m := range z.rm.list {
 		if m.data.MapInfoIndex == md.Info.MapName.Name {
 			log.Errorf("duplicate shn map index id %v %v, skipping", mapId, m.data.MapInfoIndex)

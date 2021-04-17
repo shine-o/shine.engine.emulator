@@ -345,7 +345,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 	)
 
 	nc = &structs.ProtoItemPacketInformation{}
-	nc.Location.Inventory = uint16(i.pItem.InventoryType<<10 | i.pItem.Slot&1023)
+	nc.Location.Inventory = uint16(i.pItem.InventoryType << 10 | i.pItem.Slot & 1023)
 	nc.ItemID = i.itemData.itemInfo.ID
 	nc.DataSize = 4
 
@@ -406,7 +406,39 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		itemAttr = bytes
 		break
 	case data.ItemClassWeapon:
-		attr := structs.ShineItemAttrWeapon{}
+		attr := structs.ShineItemAttrWeapon{
+			// TODO: implement Licence feature
+			Licences:                 [3]structs.ShineItemWeaponLicence{
+				{
+					MobID: 65535,
+					BF2:   0,
+				},
+				{
+					MobID: 65535,
+					BF2:   0,
+				},
+				{
+					MobID: 65535,
+					BF2:   0,
+				},
+			},
+			// TODO: implement Gems feature
+			GemSockets:               [3]structs.ShineItemWeaponGemSocket{
+				{
+					GemID:     65535,
+					RestCount: 25,
+				},
+				{
+					GemID:     65535,
+					RestCount: 25,
+				},
+				{
+					GemID:     65535,
+					RestCount: 25,
+				},
+			},
+			MaxSocketCount:           2,
+		}
 		attr.Option = itemOptionStorage(i.stats)
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
@@ -623,7 +655,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 			ItemOptionType: byte(data.ROT_INT),
 		}
 
-		if stats.dexterity.isStatic {
+		if stats.intelligence.isStatic {
 			iose.ItemOptionValue = uint16(stats.intelligence.extra)
 		} else {
 			iose.ItemOptionValue = uint16(stats.intelligence.base)
@@ -637,7 +669,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 			ItemOptionType: byte(data.ROT_MEN),
 		}
 
-		if stats.dexterity.isStatic {
+		if stats.spirit.isStatic {
 			iose.ItemOptionValue = uint16(stats.spirit.extra)
 		} else {
 			iose.ItemOptionValue = uint16(stats.spirit.base)
@@ -651,7 +683,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 			ItemOptionType: byte(data.ROT_TH),
 		}
 
-		if stats.dexterity.isStatic {
+		if stats.aim.isStatic {
 			iose.ItemOptionValue = uint16(stats.aim.extra)
 		} else {
 			iose.ItemOptionValue = uint16(stats.aim.base)
@@ -693,7 +725,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 			ItemOptionType: byte(data.ROT_AC),
 		}
 
-		if stats.physicalAttack.isStatic {
+		if stats.physicalDefense.isStatic {
 			iose.ItemOptionValue = uint16(stats.physicalDefense.extra)
 		} else {
 			iose.ItemOptionValue = uint16(stats.physicalDefense.base)

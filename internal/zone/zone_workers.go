@@ -200,6 +200,7 @@ func playerMapLoginLogic(e event) {
 		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_BASE_CMD, ncCharClientBase(p))
 		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_SHAPE_CMD, protoAvatarShapeInfo(p.view))
 		networking.Send(p.conn.outboundData, networking.NC_MAP_LOGIN_ACK, ncMapLoginAck(p))
+		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_ITEM_CMD, ncCharClientItemCmd(p, persistence.BagInventory))
 	case err := <-e3.err:
 		log.Error(err)
 	}
@@ -483,5 +484,46 @@ func ncCharClientBase(p *player) *structs.NcCharClientBaseCmd {
 	p.stats.RUnlock()
 	p.money.RUnlock()
 	p.baseEntity.RUnlock()
+	return nc
+}
+
+// NC_CHAR_CLIENT_ITEM_CMD
+func ncCharClientItemCmd(p * player, inventoryType persistence.InventoryType) *structs.NcCharClientItemCmd {
+	p.inventories.RLock()
+	defer p.inventories.RUnlock()
+
+	nc := &structs.NcCharClientItemCmd{
+		Box:       byte(inventoryType),
+		Flag:      structs.ProtoNcCharClientItemCmdFlag{
+			BF0: 211,
+		},
+	}
+
+	switch inventoryType {
+	case persistence.EquippedInventory:
+		//p.inventories.inventory.
+		nc.NumOfItem = byte(len(p.inventories.equipped.items))
+		for _, item := range p.inventories.equipped.items {
+			//           v7->location.Inven = ((_WORD)box << 10) ^ slot & 0x3FF;
+			inc, err := protoItemPacketInformation(item)
+				if err != nil {
+					log.Error(err)
+				}
+				nc.Items = append(nc.Items, *inc)
+		}
+		break
+	case persistence.BagInventory:
+		nc.NumOfItem = byte(len(p.inventories.inventory.items))
+		for _, item := range p.inventories.inventory.items {
+			//           v7->location.Inven = ((_WORD)box << 10) ^ slot & 0x3FF;
+			inc, err := protoItemPacketInformation(item)
+			if err != nil {
+				log.Error(err)
+			}
+			nc.Items = append(nc.Items, *inc)
+		}
+		break
+	}
+
 	return nc
 }
