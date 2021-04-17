@@ -6,6 +6,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"reflect"
+	"sync"
 	"testing"
 )
 
@@ -16,11 +17,7 @@ func TestNewItem_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
-		baseEntity: baseEntity{
-			fallback: &location{},
-			current:  &location{},
-			next:     &location{},
-		},
+		baseEntity: baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -65,11 +62,6 @@ func TestNewItem_WithAttributes(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
-		baseEntity: baseEntity{
-			fallback: &location{},
-			current:  &location{},
-			next:     &location{},
-		},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -232,11 +224,7 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
-		baseEntity: baseEntity{
-			fallback: &location{},
-			current:  &location{},
-			next:     &location{},
-		},
+		baseEntity: baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -412,11 +400,7 @@ func TestNewItem_BadItemIndex(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
-		baseEntity: baseEntity{
-			fallback: &location{},
-			current:  &location{},
-			next:     &location{},
-		},
+		baseEntity: baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -1120,16 +1104,80 @@ func TestItemUnEquip_Success(t *testing.T) {
 }
 
 func TestChangeItemSlot_Success(t *testing.T) {
-	t.Fail()
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage")
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	
+	nc := &structs.NcitemRelocateReq{
+		From: structs.ItemInventory{
+			Inventory: 9217,
+		},
+		To:   structs.ItemInventory{
+			Inventory: 9218,
+		},
+	}
+
+	itemSlotChange, err := player.inventories.changeItemSlot(nc)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	// should be nil as I'm moving it to an empty slot
+	if itemSlotChange.to.item != nil {
+		t.Error(errors.Err{
+			Code:    errors.UnitTestError,
+			Message: "item should be nil",
+			Details: errors.ErrDetails{
+				"itemSlotChange": itemSlotChange,
+			},
+		})
+	}
+
+	if itemSlotChange.from.item.pItem.Slot != 2 {
+		t.Errorf("expected slot %v", 2)
+	}
 
 }
 
 func TestChangeItemSlot_NC_Success(t *testing.T) {
-	t.Fail()
+	//itemSlotChange
+	// rnc1 will contain item about the movement 9216 > 9217, including item attributes
+	// rnc2 will contain item about the movement 9217 > 9216, including item attributes (if an item exists)
+	//rnc1, rnc2 := ncItemCellChangeCmd(itemSlotChange)
 
 }
 
 func TestChangeItem_NonExistentSlot(t *testing.T) {
+	//    ERR_BOUND = 586, // 0x024A
+
 	t.Fail()
 
 }
@@ -1141,11 +1189,7 @@ func TestChangeItemSlot_BadItemType(t *testing.T) {
 
 func TestChangeItemSlot_NoItemInSlot(t *testing.T) {
 	t.Fail()
-
-}
-
-func TestDropItem_NonExistingItem(t *testing.T) {
-	t.Fail()
+	//    ERR_BOUND = 586, // 0x024A
 
 }
 

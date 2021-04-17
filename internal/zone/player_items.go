@@ -20,6 +20,89 @@ type playerInventories struct {
 	*sync.RWMutex
 }
 
+func (pi * playerInventories) get(inventoryType persistence.InventoryType, slot int) *item {
+	pi.RLock()
+	defer pi.RUnlock()
+	switch inventoryType {
+	case persistence.EquippedInventory:
+		item, ok := pi.equipped.items[slot]
+		if ok {
+			return item
+		}
+	case persistence.BagInventory:
+		item, ok := pi.inventory.items[slot]
+		if ok {
+			return item
+		}
+	}
+	return nil
+}
+
+func (pi *playerInventories) changeItemSlot(nc  * structs.NcitemRelocateReq) (itemSlotChange, error) {
+	var (
+		change = itemSlotChange{}
+		fromInventoryType =  persistence.InventoryType(nc.From.Inventory >> 10)
+		toInventoryType =  persistence.InventoryType(nc.To.Inventory >> 10)
+		fromInventorySlot = int(nc.From.Inventory & 1023)
+		toInventorySlot = int(nc.To.Inventory & 1023)
+	)
+
+	switch fromInventoryType {
+	case persistence.BagInventory:
+		item := pi.get(fromInventoryType, fromInventorySlot)
+		if item == nil {
+			return change, errors.Err{
+				Code:    errors.ZoneItemSlotChangeNoItem,
+				Details: errors.ErrDetails{
+					"nc": nc,
+				},
+			}
+		}
+		change.from.item  = item
+		change.from.slot  = fromInventorySlot
+		break
+	}
+
+	switch toInventoryType {
+	case persistence.BagInventory:
+		item := pi.get(toInventoryType, toInventorySlot)
+		change.to.item  = item
+		change.to.slot  = toInventorySlot
+		break
+	}
+
+	otherPItem, err := change.from.item.pItem.MoveTo(toInventoryType, toInventorySlot)
+
+	if err != nil {
+		return change, err
+	}
+
+	switch toInventoryType {
+	case persistence.BagInventory:
+		pi.Lock()
+		pi.inventory.items[change.from.slot] = nil
+		pi.inventory.items[change.to.slot] = change.from.item
+		pi.Unlock()
+		break
+	}
+
+	if change.to.item != nil {
+		change.to.item.Lock()
+		change.to.item.pItem = otherPItem
+		change.to.item.Unlock()
+		switch fromInventoryType {
+		case persistence.BagInventory:
+			pi.Lock()
+			pi.inventory.items[change.to.slot] = nil
+			pi.inventory.items[change.from.slot] = change.to.item
+			pi.Unlock()
+			break
+		}
+	}
+
+	return change, nil
+}
+
 type itemBox struct {
 	box   int
 	items map[int]*item
@@ -348,7 +431,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 	nc.Location.Inventory = uint16(i.pItem.InventoryType << 10 | i.pItem.Slot & 1023)
 	nc.ItemID = i.itemData.itemInfo.ID
 	nc.DataSize = 4
-
+	// todo: refactor into functions, including individual case clauses
 	switch i.itemData.itemInfo.Class {
 	case data.ItemClassByteLot:
 	case data.ItemUpRed:

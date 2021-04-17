@@ -1,8 +1,6 @@
 package zone
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"sync"
@@ -207,8 +205,13 @@ type stat struct {
 }
 
 type itemSlotChange struct {
-	from int
-	to   int
+	from itemSlot
+	to   itemSlot
+}
+
+type itemSlot struct {
+	slot int
+	item *item
 }
 
 func (p *player) selectsNPC(n *npc) byte {
@@ -730,32 +733,33 @@ func (p *player) charParameterData() structs.CharParameterData {
 	return nc
 }
 
-func (p *player) equip(i *item, slot data.ItemEquipEnum) (itemSlotChange, error) {
-	slotChange := itemSlotChange{
-		from: i.pItem.Slot,
-		to:   0,
-	}
-
-	uItem, err := i.pItem.MoveTo(persistence.EquippedInventory, int(slot))
-
-	if err != nil {
-		return itemSlotChange{}, errors.Err{
-			Code: errors.ZoneItemEquipFailed,
-			Details: errors.ErrDetails{
-				"err":     err,
-				"pHandle": p.getHandle(),
-			},
-		}
-	}
-
-	slotChange.to = int(slot)
-
-	p.inventories.Lock()
-	i.pItem = uItem
-	p.inventories.Unlock()
-
-	return slotChange, nil
-}
+//
+//func (p *player) equip(i *item, slot data.ItemEquipEnum) (itemSlotChange, error) {
+//	slotChange := itemSlotChange{
+//		from: i.pItem.Slot,
+//		to:   0,
+//	}
+//
+//	uItem, err := i.pItem.MoveTo(persistence.EquippedInventory, int(slot))
+//
+//	if err != nil {
+//		return itemSlotChange{}, errors.Err{
+//			Code: errors.ZoneItemEquipFailed,
+//			Details: errors.ErrDetails{
+//				"err":     err,
+//				"pHandle": p.getHandle(),
+//			},
+//		}
+//	}
+//
+//	slotChange.to = int(slot)
+//
+//	p.inventories.Lock()
+//	i.pItem = uItem
+//	p.inventories.Unlock()
+//
+//	return slotChange, nil
+//}
 
 func (p *player) newItem(i *item) error {
 	//i.pItem = &persistence.Item{}

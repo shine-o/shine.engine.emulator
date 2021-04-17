@@ -224,19 +224,19 @@ func (i *Item) Update() error {
 	return tx.Commit()
 }
 
-func (i Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
+func (i * Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 	var (
-		otherItem Item
+		otherItem = &Item{}
 	)
 	tx, err := db.Begin()
 
 	if err != nil {
-		return &i, err
+		return otherItem, err
 	}
 
 	defer closeTx(tx)
 
-	err = tx.Model(&otherItem).
+	err = tx.Model(otherItem).
 		Where("character_id = ?", i.CharacterID).
 		Where("inventory_type = ?", inventoryType).
 		Where("slot = ?", slot).
@@ -252,9 +252,9 @@ func (i Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 		// to avoid unique constraint error, use buffer inventory
 		i.InventoryType = int(BufferInventory)
 		i.Slot = 0
-		_, err := tx.Model(&i).WherePK().Update()
+		_, err := tx.Model(i).WherePK().Update()
 		if err != nil {
-			return &i, errors.Err{
+			return otherItem, errors.Err{
 				Code: errors.PersistenceErrItemSlotUpdate,
 				Details: errors.ErrDetails{
 					"err":           err,
@@ -272,9 +272,9 @@ func (i Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 		otherItem.InventoryType = originalInventory
 		otherItem.Slot = originalSlot
 
-		_, err = tx.Model(&otherItem).WherePK().Update()
+		_, err = tx.Model(otherItem).WherePK().Update()
 		if err != nil {
-			return &i, errors.Err{
+			return otherItem, errors.Err{
 				Code: errors.PersistenceErrItemSlotUpdate,
 				Details: errors.ErrDetails{
 					"err":           err,
@@ -286,15 +286,17 @@ func (i Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 				},
 			}
 		}
+	} else {
+		otherItem = nil
 	}
 
 	i.InventoryType = int(inventoryType)
 	i.Slot = slot
 
-	_, err = tx.Model(&i).WherePK().Update()
+	_, err = tx.Model(i).WherePK().Update()
 
 	if err != nil {
-		return &i, errors.Err{
+		return otherItem, errors.Err{
 			Code: errors.PersistenceErrItemSlotUpdate,
 			Details: errors.ErrDetails{
 				"err":           err,
@@ -308,7 +310,7 @@ func (i Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 		}
 	}
 
-	return &i, tx.Commit()
+	return otherItem, tx.Commit()
 }
 
 func DeleteItem(itemID int) error {

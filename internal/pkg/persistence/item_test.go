@@ -16,12 +16,14 @@ func TestGetCharacterItems(t *testing.T) {
 	cleanDB()
 
 	newCharacter("mage")
-
-	for i := BagInventoryMin; i < BagInventoryMax; i++ {
+	// -1 making up for default items
+	for i := BagInventoryMin; i < BagInventoryMax-1; i++ {
 		item := &Item{
 			CharacterID:   1,
 			Stackable:     false,
 			Amount:        1,
+			ShnID: 2,
+			ShnInxName: "ShortStaff",
 			InventoryType: int(BagInventory),
 		}
 
@@ -71,7 +73,7 @@ func TestCreateItem_Ok(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if item.Slot != 0 {
+	if item.Slot != 1 {
 		t.Fatalf("slot = %v, expected slot = %v", item.Slot, 0)
 	}
 
@@ -90,7 +92,7 @@ func TestCreateItem_Ok(t *testing.T) {
 		t.Error(err)
 	}
 
-	if item2.Slot != 1 {
+	if item2.Slot != 2 {
 		t.Fatalf("slot = %v, expected slot = %v", item2.Slot, 1)
 	}
 }
@@ -297,7 +299,7 @@ func TestCreateItem_BadPKeys(t *testing.T) {
 	item0 := &Item{
 		CharacterID:   1,
 		InventoryType: int(BagInventory),
-		Slot:          0,
+		Slot:          1,
 		ShnID:         1,
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
@@ -316,7 +318,7 @@ func TestCreateItem_BadPKeys(t *testing.T) {
 	item1 := &Item{
 		CharacterID:   1,
 		InventoryType: int(BagInventory),
-		Slot:          0,
+		Slot:          1,
 		ShnID:         1,
 		ShnInxName:    "ShortStaff",
 		Stackable:     false,
@@ -519,39 +521,17 @@ func TestItemSlot_MoveToUsedSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = item0.MoveTo(BagInventory, 1)
+	uItem1, err := item0.MoveTo(BagInventory, 2)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var uItem0 Item
-	err = db.Model(&uItem0).
-		Where("character_id = ?", 1).
-		Where("inventory_type = ?", BagInventory).
-		Where("slot = ?", 1).
-		Select()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// items should have switched places
-	if uItem0.ID != item0.ID {
-		t.Fatalf("expected id %v, got %v", item0.ID, uItem0.ID)
-	}
-
-	var uItem1 Item
-	err = db.Model(&uItem1).
-		Where("character_id = ?", 1).
-		Where("inventory_type = ?", BagInventory).
-		Where("slot = ?", 0).
-		Select()
-
-	if err != nil {
-		t.Fatal(err)
+	if uItem1 == nil {
+		t.Fatal("item should not be nil")
 	}
 
 	if uItem1.ID != item1.ID {
-		t.Fatalf("expected id %v, got %v", item0.ID, uItem0.ID)
+		t.Fatalf("expected id %v, got %v", item1.ID, uItem1.ID)
 	}
 }
 
@@ -599,8 +579,8 @@ func TestInventoryFull(t *testing.T) {
 	cleanDB()
 
 	newCharacter("mage")
-
-	for i := BagInventoryMin; i < BagInventoryMax; i++ {
+	// -1 making up for default items
+	for i := BagInventoryMin; i < BagInventoryMax-1; i++ {
 		item := &Item{
 			CharacterID:   1,
 			ShnID:         1,
@@ -613,7 +593,7 @@ func TestInventoryFull(t *testing.T) {
 		err := item.Insert()
 
 		if err != nil {
-			t.Fatal("expected error, got nil")
+			t.Fatal(err)
 		}
 
 	}
@@ -699,8 +679,6 @@ func TestInventory_AutomaticSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	//
-
 	err = DeleteItem(2)
 
 	if err != nil {
@@ -725,7 +703,7 @@ func TestInventory_AutomaticSlot(t *testing.T) {
 	var uItem1 Item
 
 	err = db.Model(&uItem1).
-		Where("id = ?", 4).
+		Where("id = ?", 5).
 		Select()
 
 	if uItem1.Slot != 1 {

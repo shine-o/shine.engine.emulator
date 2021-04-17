@@ -630,6 +630,7 @@ func (c *Character) initialClientOptions() {
 	}
 }
 
+// TODO: remove this, as I will be using the equipped inventory to send this data
 func (c *Character) initialEquippedItems()  {
 	c.EquippedItems = &EquippedItems{
 		CharacterID:      c.ID,
