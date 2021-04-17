@@ -80,7 +80,8 @@ func (pi *playerInventories) changeItemSlot(nc  * structs.NcitemRelocateReq) (it
 	switch toInventoryType {
 	case persistence.BagInventory:
 		pi.Lock()
-		pi.inventory.items[change.from.slot] = nil
+		//pi.inventory.items[change.from.slot] = nil
+		delete(pi.inventory.items, change.from.slot)
 		pi.inventory.items[change.to.slot] = change.from.item
 		pi.Unlock()
 		break
@@ -93,7 +94,8 @@ func (pi *playerInventories) changeItemSlot(nc  * structs.NcitemRelocateReq) (it
 		switch fromInventoryType {
 		case persistence.BagInventory:
 			pi.Lock()
-			pi.inventory.items[change.to.slot] = nil
+			delete(pi.inventory.items, change.to.slot)
+			//pi.inventory.items[change.to.slot] = nil
 			pi.inventory.items[change.from.slot] = change.to.item
 			pi.Unlock()
 			break

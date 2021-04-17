@@ -1137,10 +1137,10 @@ func TestChangeItemSlot_Success(t *testing.T) {
 	
 	nc := &structs.NcitemRelocateReq{
 		From: structs.ItemInventory{
-			Inventory: 9217,
+			Inventory: 9216,
 		},
 		To:   structs.ItemInventory{
-			Inventory: 9218,
+			Inventory: 9217,
 		},
 	}
 
@@ -1152,7 +1152,7 @@ func TestChangeItemSlot_Success(t *testing.T) {
 
 	// should be nil as I'm moving it to an empty slot
 	if itemSlotChange.to.item != nil {
-		t.Error(errors.Err{
+		t.Fatal(errors.Err{
 			Code:    errors.UnitTestError,
 			Message: "item should be nil",
 			Details: errors.ErrDetails{
@@ -1161,8 +1161,17 @@ func TestChangeItemSlot_Success(t *testing.T) {
 		})
 	}
 
-	if itemSlotChange.from.item.pItem.Slot != 2 {
-		t.Errorf("expected slot %v", 2)
+	if itemSlotChange.from.item.pItem.Slot != 1 {
+		t.Fatalf("expected slot %v", 1)
+	}
+
+	i, ok := player.inventories.inventory.items[1]
+	if !ok {
+		t.Fatalf("expected an item in inventory, found none")
+	}
+
+	if i.pItem.ID != item.pItem.ID {
+		t.Fatalf("distinct items were found")
 	}
 
 }
