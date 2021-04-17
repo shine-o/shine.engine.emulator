@@ -159,7 +159,7 @@ func createCharacterLogic(e event, w *world) {
 		return
 	}
 
-	char, err := persistence.NewCharacter(s.UserID, ev.nc)
+	char, err := persistence.NewCharacter(s.UserID, ev.nc, false)
 
 	if err != nil {
 		log.Error(err)

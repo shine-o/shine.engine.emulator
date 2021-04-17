@@ -71,7 +71,7 @@ func TestCreateCharacter(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		_, err = NewCharacter(1, &nc)
+		_, err = NewCharacter(1, &nc, false)
 		if err != nil {
 			t.Error(err)
 		}
@@ -437,7 +437,7 @@ func newCharacter(class string) *Character {
 		},
 	}
 
-	char, err := NewCharacter(1, &c)
+	char, err := NewCharacter(1, &c, false)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -471,7 +471,7 @@ func createDummyCharacters() {
 				FaceShape: 0,
 			},
 		}
-		_, err := NewCharacter(1, &c)
+		_, err := NewCharacter(1, &c, false)
 		if err != nil {
 			log.Fatal(err)
 		}

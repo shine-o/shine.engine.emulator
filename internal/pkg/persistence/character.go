@@ -234,7 +234,7 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 }
 
 // NewCharacter creates character for the User with userID and returns data the client can understand
-func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq) (*Character, error) {
+func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq, initialItems bool) (*Character, error) {
 	var char *Character
 	tx, err := db.Begin()
 
@@ -269,7 +269,6 @@ func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq) (*Character, er
 	char.initialClientOptions()
 	char.initialEquippedItems()
 
-	char.initialItems()
 
 	if _, err = tx.Model(char.Appearance).Returning("*").Insert(); err != nil {
 		return char, errors.Err{
@@ -321,27 +320,9 @@ func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq) (*Character, er
 		}
 	}
 
-	err = tx.Commit()
-	if err != nil {
-		return char, errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
-	}
 
-	itx, err := db.Begin()
-
-	if err != nil {
-		return char, err
-	}
-
-	defer closeTx(itx)
-
-	for _, item := range char.Items {
-		err := item.Insert()
+	if initialItems {
+		err = tx.Commit()
 		if err != nil {
 			return char, errors.Err{
 				Code: errors.PersistenceErrDB,
@@ -351,9 +332,33 @@ func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq) (*Character, er
 				},
 			}
 		}
+
+		char.initialItems()
+
+		itx, err := db.Begin()
+
+		if err != nil {
+			return char, err
+		}
+
+		defer closeTx(itx)
+
+		for _, item := range char.Items {
+			err := item.Insert()
+			if err != nil {
+				return char, errors.Err{
+					Code: errors.PersistenceErrDB,
+					Details: errors.ErrDetails{
+						"err":   err,
+						"txErr": tx.Rollback(),
+					},
+				}
+			}
+		}
+		return char, itx.Commit()
 	}
 
-	return char, itx.Commit()
+	return char, tx.Commit()
 
 }
 

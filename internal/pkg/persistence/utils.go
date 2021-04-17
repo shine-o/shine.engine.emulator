@@ -44,7 +44,7 @@ func NewDummyCharacter(class string) *Character {
 		},
 	}
 
-	char, err := NewCharacter(1, &c)
+	char, err := NewCharacter(1, &c, false)
 	if err != nil {
 		log.Fatal(err)
 	}
