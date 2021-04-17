@@ -94,8 +94,7 @@ func (pi *playerInventories) changeItemSlot(nc  * structs.NcitemRelocateReq) (it
 		switch fromInventoryType {
 		case persistence.BagInventory:
 			pi.Lock()
-			delete(pi.inventory.items, change.to.slot)
-			//pi.inventory.items[change.to.slot] = nil
+			//delete(pi.inventory.items, change.to.slot)
 			pi.inventory.items[change.from.slot] = change.to.item
 			pi.Unlock()
 			break
@@ -923,7 +922,9 @@ func chosenStatTypes(amount int, id *itemData) []data.RandomOptionType {
 
 func makeItem(itemIndex string) (*item, itemCreationDetails, error) {
 	var (
-		i   = &item{}
+		i   = &item{
+			RWMutex:   &sync.RWMutex{},
+		}
 		icd = itemCreationDetails{}
 	)
 

@@ -1103,7 +1103,7 @@ func TestItemUnEquip_Success(t *testing.T) {
 
 }
 
-func TestChangeItemSlot_Success(t *testing.T) {
+func TestChangeItemSlot_EmptySlot_Success(t *testing.T) {
 	persistence.CleanDB()
 
 	char := persistence.NewDummyCharacter("mage")
@@ -1171,6 +1171,102 @@ func TestChangeItemSlot_Success(t *testing.T) {
 	}
 
 	if i.pItem.ID != item.pItem.ID {
+		t.Fatalf("distinct items were found")
+	}
+}
+
+func TestChangeItemSlot_OccupiedSlot_Success(t *testing.T) {
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage")
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item1, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcitemRelocateReq{
+		From: structs.ItemInventory{
+			Inventory: 9216,
+		},
+		To:   structs.ItemInventory{
+			Inventory: 9217,
+		},
+	}
+
+	itemSlotChange, err := player.inventories.changeItemSlot(nc)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	if itemSlotChange.to.item == nil {
+		t.Fatal(errors.Err{
+			Code:    errors.UnitTestError,
+			Message: "item should not be nil",
+			Details: errors.ErrDetails{
+				"itemSlotChange": itemSlotChange,
+			},
+		})
+	}
+
+	if itemSlotChange.from.item.pItem.Slot != 1 {
+		t.Fatalf("expected slot %v", 1)
+	}
+
+	i, ok := player.inventories.inventory.items[1]
+	if !ok {
+		t.Fatalf("expected an item in inventory, found none")
+	}
+
+	if i.pItem.ID != item.pItem.ID {
+		t.Fatalf("distinct items were found")
+	}
+
+	//
+	if itemSlotChange.to.item.pItem.Slot != 0 {
+		t.Fatalf("expected slot %v", 0)
+	}
+
+	i1, ok := player.inventories.inventory.items[0]
+	if !ok {
+		t.Fatalf("expected an item in inventory, found none")
+	}
+
+	if i1.pItem.ID != item1.pItem.ID {
 		t.Fatalf("distinct items were found")
 	}
 
