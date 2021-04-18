@@ -51,6 +51,46 @@ func (zm *zoneMap) playerActivity() {
 			go playerSelectsEntityLogic(zm, e)
 		case e := <-zm.recv[playerUnselectsEntity]:
 			go playerUnselectsEntityLogic(zm, e)
+		case e := <-zm.recv[itemIsMoved]:
+			go func() {
+				ev, ok := e.(*itemIsMovedEvent)
+				if !ok {
+					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&itemIsMovedEvent{}).String(), reflect.TypeOf(ev).String())
+					return
+				}
+				player := zm.entities.players.get(ev.session.handle)
+				if player == nil {
+					return
+				}
+
+				change, err := player.inventories.changeItemSlot(ev.nc)
+				if err != nil {
+					log.Error(err)
+					//TODO: check error type, send custom NC_ITEM_RELOC_ACK with error code
+					networking.Send(player.conn.outboundData, networking.NC_ITEM_RELOC_ACK, &structs.NcItemRelocateAck{
+						Code: ItemSlotChangeCommon,
+					})
+					return
+				}
+
+				cc1, cc2, err := ncItemCellChangeCmd(change)
+				if err != nil {
+					log.Error(err)
+					//TODO: check error type, send custom NC_ITEM_RELOC_ACK with error code
+					networking.Send(player.conn.outboundData, networking.NC_ITEM_RELOC_ACK, &structs.NcItemRelocateAck{
+						Code: ItemSlotChangeCommon,
+					})
+					return
+				}
+
+				networking.Send(player.conn.outboundData, networking.NC_ITEM_RELOC_ACK, &structs.NcItemRelocateAck{
+					Code: ItemSlotChangeOk,
+				})
+
+				networking.Send(player.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, cc1)
+				networking.Send(player.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, cc2)
+
+			}()
 		}
 	}
 }
@@ -177,10 +217,10 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 
 				p.dz.Lock()
 				p.next = location{
-					mapID:     md.ID,
-					mapName:   md.Info.MapName.Name,
-					x:         n.data.npcData.ShinePortal.X,
-					y:         n.data.npcData.ShinePortal.Y,
+					mapID:   md.ID,
+					mapName: md.Info.MapName.Name,
+					x:       n.data.npcData.ShinePortal.X,
+					y:       n.data.npcData.ShinePortal.Y,
 				}
 				p.dz.Unlock()
 				return
@@ -221,7 +261,7 @@ func playerPromptReplyLogic(zm *zoneMap, e event) {
 		nzm, ok := maps.list[p.next.mapID]
 		if !ok {
 			log.Error(errors.Err{
-				Code:    errors.ZoneMapNotFound,
+				Code: errors.ZoneMapNotFound,
 				Details: errors.ErrDetails{
 					"mapID": p.next.mapID,
 				},
@@ -253,7 +293,7 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 		return
 	}
 
-	p,n := findFirstEntity(zm, ev.nc.TargetHandle)
+	p, n := findFirstEntity(zm, ev.nc.TargetHandle)
 
 	// set timeout in case of nonexistent handle
 	// or use bool channels, and in the default case check if all three are false and return if so
@@ -406,7 +446,7 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 				return
 			}
 
-			h :=  p.getHandle()
+			h := p.getHandle()
 
 			pde := &playerDisappearedEvent{
 				handle: h,

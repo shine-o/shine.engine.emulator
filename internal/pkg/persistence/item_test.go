@@ -21,8 +21,8 @@ func TestGetCharacterItems(t *testing.T) {
 			CharacterID:   1,
 			Stackable:     false,
 			Amount:        1,
-			ShnID: 2,
-			ShnInxName: "ShortStaff",
+			ShnID:         2,
+			ShnInxName:    "ShortStaff",
 			InventoryType: int(BagInventory),
 		}
 

@@ -16,7 +16,7 @@ type npc struct {
 }
 
 type npcStats struct {
-	hp, sp        uint32
+	hp, sp uint32
 }
 
 type npcStaticData struct {
@@ -28,10 +28,10 @@ type npcStaticData struct {
 
 func ncBatTargetInfoCmd(n *npc) *structs.NcBatTargetInfoCmd {
 	var nc = structs.NcBatTargetInfoCmd{
-		Handle:        n.getHandle(),
-		TargetMaxHP:   n.data.mobInfo.MaxHP, //todo: use the same player stat system for mobs and NPCs
-		TargetMaxSP:   uint32(n.data.mobInfoServer.MaxSP), //todo: use the same player stat system for mobs and NPCs
-		TargetLevel:   byte(n.data.mobInfo.Level),
+		Handle:      n.getHandle(),
+		TargetMaxHP: n.data.mobInfo.MaxHP,               //todo: use the same player stat system for mobs and NPCs
+		TargetMaxSP: uint32(n.data.mobInfoServer.MaxSP), //todo: use the same player stat system for mobs and NPCs
+		TargetLevel: byte(n.data.mobInfo.Level),
 	}
 
 	nc.TargetHP = n.stats.hp
@@ -48,7 +48,7 @@ func ncBriefInfoRegenMobCmd(n *npc) structs.NcBriefInfoRegenMobCmd {
 		MobID:  n.data.mobInfo.ID,
 	}
 	n.baseEntity.RLock()
-	nc.Coord =  structs.ShineCoordType{
+	nc.Coord = structs.ShineCoordType{
 		XY: structs.ShineXYType{
 			X: uint32(n.current.x),
 			Y: uint32(n.current.y),

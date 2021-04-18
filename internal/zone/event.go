@@ -70,6 +70,9 @@ const (
 	playerUnselectsEntity
 	playerClicksOnNpc
 	playerPromptReply
+	itemIsMoved
+
+
 
 	// dynamically registered events
 	// events that are defined at run time

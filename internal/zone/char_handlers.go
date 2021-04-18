@@ -46,7 +46,7 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 	zm, ok := maps.list[session.mapID]
 	if !ok {
 		log.Error(errors.Err{
-			Code:    errors.ZoneMapNotFound,
+			Code: errors.ZoneMapNotFound,
 			Details: errors.ErrDetails{
 				"session": session,
 			},

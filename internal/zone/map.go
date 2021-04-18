@@ -106,7 +106,7 @@ func (zm *zoneMap) spawnNPCs() {
 	}
 }
 
-func (zm *zoneMap)  spawnNPC(sn *data.ShineNPC) {
+func (zm *zoneMap) spawnNPC(sn *data.ShineNPC) {
 
 	mi, mis := mobDataPointers(sn.MobIndex)
 
@@ -136,7 +136,7 @@ func (zm *zoneMap)  spawnNPC(sn *data.ShineNPC) {
 	n := &npc{
 		baseEntity: baseEntity{
 			info: entityInfo{
-				handle:  h,
+				handle: h,
 			},
 			fallback: location{
 				x: sn.X,
@@ -151,12 +151,12 @@ func (zm *zoneMap)  spawnNPC(sn *data.ShineNPC) {
 				d:         shineD,
 				movements: []movement{},
 			},
-			events: events{},
-			RWMutex:       &sync.RWMutex{},
+			events:  events{},
+			RWMutex: &sync.RWMutex{},
 		},
 		stats: &npcStats{
-			hp:            mi.MaxHP,
-			sp:            uint32(mis.MaxSP),
+			hp: mi.MaxHP,
+			sp: uint32(mis.MaxSP),
 		},
 		data: &npcStaticData{
 			mobInfo:       mi,
@@ -170,9 +170,9 @@ func (zm *zoneMap)  spawnNPC(sn *data.ShineNPC) {
 			fleeing:  make(chan bool),
 		},
 		ticks: &entityTicks{
-			RWMutex:       &sync.RWMutex{},
+			RWMutex: &sync.RWMutex{},
 		},
-		dz:       &sync.RWMutex{},
+		dz: &sync.RWMutex{},
 	}
 
 	zm.entities.npcs.Lock()
@@ -343,27 +343,27 @@ func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.M
 					d:         d,
 					movements: []movement{},
 				},
-				RWMutex:       &sync.RWMutex{},
+				RWMutex: &sync.RWMutex{},
 			},
 			stats: &npcStats{
-				hp:            mi.MaxHP,
-				sp:            uint32(mis.MaxSP),
+				hp: mi.MaxHP,
+				sp: uint32(mis.MaxSP),
 			},
 			data: &npcStaticData{
 				mobInfo:       mi,
 				mobInfoServer: mis,
 				regenData:     &re,
 			},
-			state:  &entityState{
+			state: &entityState{
 				idling:   make(chan bool),
 				fighting: make(chan bool),
 				chasing:  make(chan bool),
 				fleeing:  make(chan bool),
 			},
 			ticks: &entityTicks{
-				RWMutex:       &sync.RWMutex{},
+				RWMutex: &sync.RWMutex{},
 			},
-			dz:       &sync.RWMutex{},
+			dz: &sync.RWMutex{},
 		}
 
 		zm.entities.npcs.Lock()

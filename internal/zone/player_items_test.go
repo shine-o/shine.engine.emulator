@@ -1134,12 +1134,12 @@ func TestChangeItemSlot_EmptySlot_Success(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	nc := &structs.NcitemRelocateReq{
 		From: structs.ItemInventory{
 			Inventory: 9216,
 		},
-		To:   structs.ItemInventory{
+		To: structs.ItemInventory{
 			Inventory: 9217,
 		},
 	}
@@ -1222,7 +1222,7 @@ func TestChangeItemSlot_OccupiedSlot_Success(t *testing.T) {
 		From: structs.ItemInventory{
 			Inventory: 9216,
 		},
-		To:   structs.ItemInventory{
+		To: structs.ItemInventory{
 			Inventory: 9217,
 		},
 	}
@@ -1308,7 +1308,7 @@ func TestChangeItemSlot_EmptySlot_NC(t *testing.T) {
 		From: structs.ItemInventory{
 			Inventory: 9216,
 		},
-		To:   structs.ItemInventory{
+		To: structs.ItemInventory{
 			Inventory: 9217,
 		},
 	}
@@ -1328,7 +1328,6 @@ func TestChangeItemSlot_EmptySlot_NC(t *testing.T) {
 		t.Fatalf("mismatched from inventory")
 	}
 
-
 	if enc1.Location.Inventory != nc.To.Inventory {
 		t.Fatalf("mismatched to inventory")
 	}
@@ -1336,7 +1335,6 @@ func TestChangeItemSlot_EmptySlot_NC(t *testing.T) {
 	if len(enc1.Item.ItemAttr) == 0 {
 		t.Fatalf("item attributes length should not be 0")
 	}
-
 
 	if enc2.Exchange.Inventory != nc.To.Inventory {
 		t.Fatalf("mismatched from inventory")
@@ -1399,7 +1397,7 @@ func TestChangeItemSlot_OccupiedSlot_NC(t *testing.T) {
 		From: structs.ItemInventory{
 			Inventory: 9216,
 		},
-		To:   structs.ItemInventory{
+		To: structs.ItemInventory{
 			Inventory: 9217,
 		},
 	}
@@ -1419,7 +1417,6 @@ func TestChangeItemSlot_OccupiedSlot_NC(t *testing.T) {
 		t.Fatalf("mismatched from inventory")
 	}
 
-
 	if enc1.Location.Inventory != nc.To.Inventory {
 		t.Fatalf("mismatched to inventory")
 	}
@@ -1427,7 +1424,6 @@ func TestChangeItemSlot_OccupiedSlot_NC(t *testing.T) {
 	if len(enc1.Item.ItemAttr) == 0 {
 		t.Fatalf("item attributes length should not be 0")
 	}
-
 
 	if enc2.Exchange.Inventory != nc.To.Inventory {
 		t.Fatalf("mismatched from inventory")
@@ -1441,42 +1437,6 @@ func TestChangeItemSlot_OccupiedSlot_NC(t *testing.T) {
 		t.Fatalf("item attributes length should not be 0")
 	}
 
-}
-
-// NC_ITEM_CELLCHANGE_CMD
-func ncItemCellChangeCmd(change itemSlotChange) (*structs.NcItemCellChangeCmd, *structs.NcItemCellChangeCmd, error) {
-	var (
-		nc1 = &structs.NcItemCellChangeCmd{}
-		nc2 = &structs.NcItemCellChangeCmd{}
-	)
-
-	nc1.Exchange.Inventory = change.gameFrom
-	nc1.Location.Inventory = change.gameTo
-	nc1.Item.ItemID = change.from.item.itemData.itemInfo.ID
-	itemAttr, err := itemAttributesBytes(change.from.item)
-
-	if err != nil {
-		return nc1, nc2, err
-	}
-
-	nc1.Item.ItemAttr = itemAttr
-
-	nc2.Exchange.Inventory = change.gameTo
-	nc2.Location.Inventory = change.gameFrom
-	if change.to.item != nil {
-		nc2.Item.ItemID = change.to.item.itemData.itemInfo.ID
-		itemAttr1, err := itemAttributesBytes(change.to.item)
-
-		if err != nil {
-			return nc1, nc2, err
-		}
-
-		nc2.Item.ItemAttr = itemAttr1
-	} else {
-		nc2.Item.ItemID = 65535
-	}
-
-	return nc1, nc2, nil
 }
 
 func TestChangeItem_NonExistentSlot(t *testing.T) {

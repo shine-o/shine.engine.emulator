@@ -53,7 +53,7 @@ type baseEntity struct {
 }
 
 type entityInfo struct {
-	handle uint16
+	handle  uint16
 	monster bool
 }
 

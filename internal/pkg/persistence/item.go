@@ -85,7 +85,7 @@ type ItemParams struct {
 	Attributes  *ItemAttributes
 }
 
-func getInventoryType(val int) InventoryType  {
+func getInventoryType(val int) InventoryType {
 	switch val {
 	case 8:
 		return EquippedInventory
@@ -224,7 +224,7 @@ func (i *Item) Update() error {
 	return tx.Commit()
 }
 
-func (i * Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
+func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 	var (
 		otherItem = &Item{}
 	)
@@ -389,8 +389,8 @@ func GetCharacterItems(characterID int, inventoryType InventoryType) ([]*Item, e
 //		availableSlot = currentSlot+1
 func freeSlot(characterID uint64, inventoryType InventoryType) (int, error) {
 	var (
-		slots []int
-		slot  int
+		slots    []int
+		slot     int
 		min, max int
 	)
 
@@ -442,7 +442,7 @@ func validateItem(item *Item) error {
 
 	if inventoryType == UnknownInventory {
 		return errors.Err{
-			Code:    errors.PersistenceErrUnknownInventory,
+			Code: errors.PersistenceErrUnknownInventory,
 			Details: errors.ErrDetails{
 				"inventoryType": inventoryType,
 			},

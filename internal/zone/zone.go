@@ -26,7 +26,7 @@ type zone struct {
 
 var (
 	zoneEvents  sendEvents
-	maps         *runningMaps
+	maps        *runningMaps
 	monsterData *data.MonsterData
 	mapData     *data.MapData
 	npcData     *data.NpcData
@@ -45,7 +45,7 @@ func (z *zone) load() {
 
 	zEvents := []eventIndex{
 		playerMapLogin, playerSHN, playerData,
-		heartbeatUpdate,  playerLogoutStart,
+		heartbeatUpdate, playerLogoutStart,
 		playerLogoutCancel, playerLogoutConclude, persistPlayerPosition,
 		changeMap,
 	}
@@ -64,14 +64,14 @@ func (z *zone) load() {
 	zoneEvents = z.events.send
 
 	z.dynamicEvents = &dynamicEvents{
-		events: make(map[string]events),
-		RWMutex:       &sync.RWMutex{},
+		events:  make(map[string]events),
+		RWMutex: &sync.RWMutex{},
 	}
 
 	h := &handler{
 		handleIndex: 0,
 		usedHandles: make(map[uint16]bool),
-		RWMutex:       &sync.RWMutex{},
+		RWMutex:     &sync.RWMutex{},
 	}
 
 	z.handler = h
@@ -136,12 +136,12 @@ func (z *zone) addMap(mapId int) {
 			players: &players{
 				handler: z.handler,
 				active:  make(map[uint16]*player),
-				RWMutex:       &sync.RWMutex{},
+				RWMutex: &sync.RWMutex{},
 			},
 			npcs: &npcs{
 				handler: z.handler,
 				active:  make(map[uint16]*npc),
-				RWMutex:       &sync.RWMutex{},
+				RWMutex: &sync.RWMutex{},
 			},
 		},
 		events: events{
@@ -169,7 +169,7 @@ func (z *zone) addMap(mapId int) {
 		queryPlayer, queryMonster,
 		playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
 		unknownHandle, monsterAppeared, monsterDisappeared, monsterWalks, monsterRuns,
-		playerSelectsEntity, playerUnselectsEntity, playerClicksOnNpc, playerPromptReply,
+		playerSelectsEntity, playerUnselectsEntity, playerClicksOnNpc, playerPromptReply, itemIsMoved,
 	}
 
 	for _, index := range events {

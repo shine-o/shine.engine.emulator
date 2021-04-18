@@ -7,14 +7,10 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
-// NC_BRIEFINFO_INFORM_CMD
-// 7169
-func ncBriefInfoInformCmd(ctx context.Context, np *networking.Parameters) {
-	// trigger handleInfo
-	// if targetHandle is within range of affectedHandle
-	//		send NC_BRIEFINFO_LOGINCHARACTER_CMD of the targetHandle to the affectedHandle
+// NC_ITEM_RELOC_REQ(
+func ncItemRelocReq(ctx context.Context, np *networking.Parameters) {
 	var (
-		e unknownHandleEvent
+		e itemIsMovedEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -24,9 +20,9 @@ func ncBriefInfoInformCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	e = unknownHandleEvent{
-		handle: session.handle,
-		nc:     &structs.NcBriefInfoInformCmd{},
+	e = itemIsMovedEvent{
+		nc: &structs.NcitemRelocateReq{},
+		session:  session,
 	}
 
 	err := structs.Unpack(np.Command.Base.Data, e.nc)
@@ -46,5 +42,5 @@ func ncBriefInfoInformCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	zm.send[unknownHandle] <- &e
+	zm.send[itemIsMoved] <- &e
 }

@@ -92,4 +92,3 @@ func adjacentNpcsInform(p *player, zm *zoneMap) {
 		}(p, m)
 	}
 }
-

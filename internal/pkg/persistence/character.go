@@ -58,7 +58,7 @@ type Character struct {
 	Attributes    *Attributes    `pg:"rel:belongs-to"`
 	Location      *Location      `pg:"rel:belongs-to"`
 	Options       *ClientOptions `pg:"rel:belongs-to"`
-	Items         []*Item         `pg:"rel:has-many"`
+	Items         []*Item        `pg:"rel:has-many"`
 	EquippedItems *EquippedItems `pg:"rel:belongs-to"`
 	AdminLevel    uint8          `pg:",notnull,use_zero"`
 	Slot          uint8          `pg:",notnull,use_zero"`
@@ -74,21 +74,21 @@ type Appearance struct {
 	ID          uint64
 	CharacterID uint64 //
 	Character   *Character
-	Class     uint8 `pg:",notnull"`
-	Gender    uint8 `pg:",notnull,use_zero"`
-	HairType  uint8 `pg:",notnull,use_zero"`
-	HairColor uint8 `pg:",notnull,use_zero"`
-	FaceType  uint8 `pg:",notnull,use_zero"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt time.Time `pg:",soft_delete"`
+	Class       uint8 `pg:",notnull"`
+	Gender      uint8 `pg:",notnull,use_zero"`
+	HairType    uint8 `pg:",notnull,use_zero"`
+	HairColor   uint8 `pg:",notnull,use_zero"`
+	FaceType    uint8 `pg:",notnull,use_zero"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   time.Time `pg:",soft_delete"`
 }
 
 // Attributes model for the database layer
 type Attributes struct {
-	tableName   struct{} `pg:"world.character_attributes"`
-	ID          uint64
-	CharacterID uint64
+	tableName    struct{} `pg:"world.character_attributes"`
+	ID           uint64
+	CharacterID  uint64
 	Character    *Character
 	Level        uint8  `pg:",notnull"`
 	Experience   uint64 `pg:",notnull,use_zero"`
@@ -115,15 +115,15 @@ type Location struct {
 	ID          uint64
 	CharacterID uint64 //
 	Character   *Character
-	MapID     uint32 `pg:",notnull"`
-	MapName   string `pg:",notnull"`
-	X         int    `pg:",notnull"`
-	Y         int    `pg:",notnull"`
-	D         int    `pg:",notnull,use_zero"`
-	IsKQ      bool   `pg:",notnull,use_zero"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt time.Time `pg:",soft_delete"`
+	MapID       uint32 `pg:",notnull"`
+	MapName     string `pg:",notnull"`
+	X           int    `pg:",notnull"`
+	Y           int    `pg:",notnull"`
+	D           int    `pg:",notnull,use_zero"`
+	IsKQ        bool   `pg:",notnull,use_zero"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   time.Time `pg:",soft_delete"`
 }
 
 type ClientOptions struct {
@@ -136,7 +136,7 @@ type ClientOptions struct {
 	Shortcuts   []byte `pg:",notnull"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
-	DeletedAt time.Time `pg:",soft_delete"`
+	DeletedAt   time.Time `pg:",soft_delete"`
 }
 
 const (
@@ -269,7 +269,6 @@ func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq, initialItems bo
 	char.initialClientOptions()
 	char.initialEquippedItems()
 
-
 	if _, err = tx.Model(char.Appearance).Returning("*").Insert(); err != nil {
 		return char, errors.Err{
 			Code: errors.PersistenceErrDB,
@@ -319,7 +318,6 @@ func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq, initialItems bo
 			},
 		}
 	}
-
 
 	if initialItems {
 		err = tx.Commit()
@@ -636,7 +634,7 @@ func (c *Character) initialClientOptions() {
 }
 
 // TODO: remove this, as I will be using the equipped inventory to send this data
-func (c *Character) initialEquippedItems()  {
+func (c *Character) initialEquippedItems() {
 	c.EquippedItems = &EquippedItems{
 		CharacterID:      c.ID,
 		Head:             65535,
@@ -666,17 +664,17 @@ func (c *Character) initialEquippedItems()  {
 func (c *Character) initialItems() {
 
 	var (
-		shnID uint16 = 0
-		shnInx = ""
+		shnID  uint16 = 0
+		shnInx        = ""
 	)
 
 	switch c.Appearance.Class {
-	case 1:  // fighter
+	case 1: // fighter
 		shnID = 250
 		shnInx = "ShortSword"
 		break
 
-	case 6:  // cleric
+	case 6: // cleric
 		shnID = 750
 		shnInx = "ShortMace"
 		break
@@ -696,12 +694,12 @@ func (c *Character) initialItems() {
 		InventoryType: int(BagInventory),
 		//InventoryType: int(EquippedInventory),
 		//Slot: 10,
-		CharacterID:   c.ID,
-		Character:     c,
-		ShnID:         shnID,
-		ShnInxName:    shnInx,
-		Stackable:     false,
-		Amount:        1,
+		CharacterID: c.ID,
+		Character:   c,
+		ShnID:       shnID,
+		ShnInxName:  shnInx,
+		Stackable:   false,
+		Amount:      1,
 	}
 	c.Items = append(c.Items, item)
 }

@@ -82,3 +82,8 @@ type NcitemRelocateReq struct {
 	From ItemInventory
 	To   ItemInventory
 }
+
+//struct NC_ITEM_RELOC_ACK
+type NcItemRelocateAck struct {
+	Code uint16
+}

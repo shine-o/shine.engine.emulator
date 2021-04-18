@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"sync"
 	"time"
 )
@@ -17,7 +18,7 @@ func (p *players) all() <-chan *player {
 	ch := make(chan *player, len(p.active))
 	p.RUnlock()
 
-	go func(p* players,send chan<- *player) {
+	go func(p *players, send chan<- *player) {
 		p.RLock()
 		for _, ap := range p.active {
 			send <- ap
@@ -31,8 +32,17 @@ func (p *players) all() <-chan *player {
 
 func (p *players) get(h uint16) *player {
 	p.RLock()
-	player := p.active[h]
-	p.RUnlock()
+	defer 	p.RUnlock()
+	player, ok  := p.active[h]
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneMissingPlayer,
+			Details: errors.ErrDetails{
+				"handle": h,
+			},
+		})
+		return nil
+	}
 	return player
 }
 

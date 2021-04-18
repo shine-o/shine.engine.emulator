@@ -488,13 +488,13 @@ func ncCharClientBase(p *player) *structs.NcCharClientBaseCmd {
 }
 
 // NC_CHAR_CLIENT_ITEM_CMD
-func ncCharClientItemCmd(p * player, inventoryType persistence.InventoryType) *structs.NcCharClientItemCmd {
+func ncCharClientItemCmd(p *player, inventoryType persistence.InventoryType) *structs.NcCharClientItemCmd {
 	p.inventories.RLock()
 	defer p.inventories.RUnlock()
 
 	nc := &structs.NcCharClientItemCmd{
-		Box:       byte(inventoryType),
-		Flag:      structs.ProtoNcCharClientItemCmdFlag{
+		Box: byte(inventoryType),
+		Flag: structs.ProtoNcCharClientItemCmdFlag{
 			BF0: 211,
 		},
 	}
@@ -506,10 +506,10 @@ func ncCharClientItemCmd(p * player, inventoryType persistence.InventoryType) *s
 		for _, item := range p.inventories.equipped.items {
 			//           v7->location.Inven = ((_WORD)box << 10) ^ slot & 0x3FF;
 			inc, err := protoItemPacketInformation(item)
-				if err != nil {
-					log.Error(err)
-				}
-				nc.Items = append(nc.Items, *inc)
+			if err != nil {
+				log.Error(err)
+			}
+			nc.Items = append(nc.Items, *inc)
 		}
 		break
 	case persistence.BagInventory:

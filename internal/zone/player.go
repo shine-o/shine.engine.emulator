@@ -44,12 +44,12 @@ type player struct {
 	persistence *playerPersistence
 
 	// dangerZone: only to be used when loading or other situation!!
-	dz * sync.RWMutex
+	dz *sync.RWMutex
 }
 
 type playerProximity struct {
-	players     map[uint16]*player
-	npcs        map[uint16]*npc
+	players map[uint16]*player
+	npcs    map[uint16]*npc
 	*sync.RWMutex
 }
 
@@ -145,8 +145,8 @@ type playerQuests struct {
 }
 
 type playerSkills struct {
-	active      []skill
-	passive     []skill
+	active  []skill
+	passive []skill
 	*sync.RWMutex
 }
 
@@ -156,12 +156,12 @@ type prompt struct {
 }
 
 type entityTicks struct {
-	list     []*time.Ticker
+	list []*time.Ticker
 	*sync.RWMutex
 }
 
 type playerPersistence struct {
-	char        *persistence.Character
+	char *persistence.Character
 	*sync.RWMutex
 }
 
@@ -206,9 +206,9 @@ type stat struct {
 
 type itemSlotChange struct {
 	gameFrom uint16
-	gameTo uint16
-	from itemSlot
-	to   itemSlot
+	gameTo   uint16
+	from     itemSlot
+	to       itemSlot
 }
 
 type itemSlot struct {
@@ -283,14 +283,14 @@ func (p *player) removeAdjacentPlayer(h uint16) {
 func (p *player) selectedByPlayers() chan *player {
 	ch := make(chan *player, maxProximityEntities)
 
-	go func(p*player, send chan<- *player) {
+	go func(p *player, send chan<- *player) {
 		p.targeting.RLock()
 		for _, ap := range p.targeting.selectedByP {
 			send <- ap
 		}
 		p.targeting.RUnlock()
 		close(send)
-	}(p,ch)
+	}(p, ch)
 	return ch
 }
 
@@ -338,8 +338,8 @@ func (p *player) load(name string) error {
 	}
 
 	p.persistence = &playerPersistence{
-		char: &char,
-		RWMutex:       &sync.RWMutex{},
+		char:    &char,
+		RWMutex: &sync.RWMutex{},
 	}
 
 	p.baseEntity.current.mapName = char.Location.MapName
@@ -349,21 +349,21 @@ func (p *player) load(name string) error {
 	p.baseEntity.current.d = char.Location.D
 
 	p.proximity = &playerProximity{
-		players:  make(map[uint16]*player),
-		npcs:     make(map[uint16]*npc),
-		RWMutex:       &sync.RWMutex{},
+		players: make(map[uint16]*player),
+		npcs:    make(map[uint16]*npc),
+		RWMutex: &sync.RWMutex{},
 	}
 
 	p.ticks = &entityTicks{
-		RWMutex:       &sync.RWMutex{},
+		RWMutex: &sync.RWMutex{},
 	}
 
 	p.prompt = &prompt{
-		RWMutex:       &sync.RWMutex{},
+		RWMutex: &sync.RWMutex{},
 	}
 
 	p.targeting = &targeting{
-		RWMutex:       &sync.RWMutex{},
+		RWMutex: &sync.RWMutex{},
 	}
 
 	wg := &sync.WaitGroup{}
@@ -400,7 +400,6 @@ func (p *player) load(name string) error {
 		p.skillData()
 	}()
 
-
 	// check if you can iterate over the channel
 
 	wg.Wait()
@@ -408,8 +407,7 @@ func (p *player) load(name string) error {
 	return <-errC
 }
 
-
-func loadInventory(it persistence.InventoryType, p * player) (itemBox, error)  {
+func loadInventory(it persistence.InventoryType, p *player) (itemBox, error) {
 	var box itemBox
 	items, err := persistence.GetCharacterItems(int(p.persistence.char.ID), it)
 
@@ -431,10 +429,10 @@ func (p *player) itemData() error {
 	// each item loaded should be validated so that, best way is to iterate all items and for each item launch a routine that validates it and returns the valid item through a channel
 	// we also forward the error channel in case there is an error
 	var ivs = &playerInventories{
-		RWMutex:       &sync.RWMutex{},
+		RWMutex: &sync.RWMutex{},
 	}
 
-	eiBox, err := loadInventory( persistence.EquippedInventory, p)
+	eiBox, err := loadInventory(persistence.EquippedInventory, p)
 	if err != nil {
 		return err
 	}
@@ -468,7 +466,7 @@ func (p *player) viewData() {
 		hairType:   p.persistence.char.Appearance.HairType,
 		hairColour: p.persistence.char.Appearance.HairColor,
 		faceType:   p.persistence.char.Appearance.FaceType,
-		RWMutex:       &sync.RWMutex{},
+		RWMutex:    &sync.RWMutex{},
 	}
 	p.dz.Lock()
 	p.view = v
@@ -487,7 +485,7 @@ func (p *player) stateData() {
 		moverHandle: 0,
 		moverSlot:   0,
 		miniPet:     0,
-		RWMutex:       &sync.RWMutex{},
+		RWMutex:     &sync.RWMutex{},
 	}
 	p.dz.Lock()
 	p.state = s
@@ -577,7 +575,7 @@ func (p *player) statsData() {
 			base:       0,
 			withExtras: 0,
 		},
-		RWMutex:       &sync.RWMutex{},
+		RWMutex: &sync.RWMutex{},
 	}
 	p.dz.Lock()
 	p.stats = s
@@ -596,7 +594,7 @@ func (p *player) titleData() {
 			element: 0,
 			mobID:   0,
 		},
-		RWMutex:       &sync.RWMutex{},
+		RWMutex: &sync.RWMutex{},
 	}
 	p.dz.Lock()
 	p.titles = t
@@ -609,7 +607,7 @@ func (p *player) moneyData() {
 		fame:        100000,
 		wastedCoins: 0,
 		wastedFame:  0,
-		RWMutex:       &sync.RWMutex{},
+		RWMutex:     &sync.RWMutex{},
 	}
 	p.dz.Lock()
 	p.money = m
@@ -620,7 +618,7 @@ func (p *player) skillData() {
 	// all learned skills stored in the database
 	p.dz.Lock()
 	p.skills = &playerSkills{
-		RWMutex:       &sync.RWMutex{},
+		RWMutex: &sync.RWMutex{},
 	}
 	p.dz.Unlock()
 }
@@ -838,21 +836,21 @@ func (pi *playerInventories) ncCharClientItemCmd() []structs.NcCharClientItemCmd
 		},
 		{
 			NumOfItem: 0,
-			Box:        byte(pi.inventory.box),
+			Box:       byte(pi.inventory.box),
 			Flag: structs.ProtoNcCharClientItemCmdFlag{
 				BF0: 0,
 			},
 		},
 		{
 			NumOfItem: 0,
-			Box:        byte(pi.miniHouse.box),
+			Box:       byte(pi.miniHouse.box),
 			Flag: structs.ProtoNcCharClientItemCmdFlag{
 				BF0: 0,
 			},
 		},
 		{
 			NumOfItem: 0,
-			Box:        byte(pi.premium.box),
+			Box:       byte(pi.premium.box),
 			Flag: structs.ProtoNcCharClientItemCmdFlag{
 				BF0: 0,
 			},
@@ -883,7 +881,7 @@ func lastHeartbeat(p *player) float64 {
 func ncBriefInfoLoginCharacterCmd(p *player) structs.NcBriefInfoLoginCharacterCmd {
 
 	var nc = structs.NcBriefInfoLoginCharacterCmd{
-		Mode:            2,
+		Mode: 2,
 	}
 
 	nc.Handle = p.baseEntity.getHandle()
@@ -901,7 +899,7 @@ func ncBriefInfoLoginCharacterCmd(p *player) structs.NcBriefInfoLoginCharacterCm
 	nc.Shape = *protoAvatarShapeInfo(p.view)
 
 	p.view.RLock()
-	nc.CharID =  structs.Name5{
+	nc.CharID = structs.Name5{
 		Name: p.view.name,
 	}
 	p.view.RUnlock()

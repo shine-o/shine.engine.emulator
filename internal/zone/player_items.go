@@ -20,7 +20,7 @@ type playerInventories struct {
 	*sync.RWMutex
 }
 
-func (pi * playerInventories) get(inventoryType persistence.InventoryType, slot int) *item {
+func (pi *playerInventories) get(inventoryType persistence.InventoryType, slot int) *item {
 	pi.RLock()
 	defer pi.RUnlock()
 	switch inventoryType {
@@ -38,13 +38,13 @@ func (pi * playerInventories) get(inventoryType persistence.InventoryType, slot 
 	return nil
 }
 
-func (pi *playerInventories) changeItemSlot(nc  * structs.NcitemRelocateReq) (itemSlotChange, error) {
+func (pi *playerInventories) changeItemSlot(nc *structs.NcitemRelocateReq) (itemSlotChange, error) {
 	var (
-		change = itemSlotChange{}
-		fromInventoryType =  persistence.InventoryType(nc.From.Inventory >> 10)
-		toInventoryType =  persistence.InventoryType(nc.To.Inventory >> 10)
+		change            = itemSlotChange{}
+		fromInventoryType = persistence.InventoryType(nc.From.Inventory >> 10)
+		toInventoryType   = persistence.InventoryType(nc.To.Inventory >> 10)
 		fromInventorySlot = int(nc.From.Inventory & 1023)
-		toInventorySlot = int(nc.To.Inventory & 1023)
+		toInventorySlot   = int(nc.To.Inventory & 1023)
 	)
 
 	change.gameFrom = nc.From.Inventory
@@ -55,22 +55,22 @@ func (pi *playerInventories) changeItemSlot(nc  * structs.NcitemRelocateReq) (it
 		item := pi.get(fromInventoryType, fromInventorySlot)
 		if item == nil {
 			return change, errors.Err{
-				Code:    errors.ZoneItemSlotChangeNoItem,
+				Code: errors.ZoneItemSlotChangeNoItem,
 				Details: errors.ErrDetails{
 					"nc": nc,
 				},
 			}
 		}
-		change.from.item  = item
-		change.from.slot  = fromInventorySlot
+		change.from.item = item
+		change.from.slot = fromInventorySlot
 		break
 	}
 
 	switch toInventoryType {
 	case persistence.BagInventory:
 		item := pi.get(toInventoryType, toInventorySlot)
-		change.to.item  = item
-		change.to.slot  = toInventorySlot
+		change.to.item = item
+		change.to.slot = toInventorySlot
 		break
 	}
 
@@ -425,7 +425,7 @@ func (is *itemStats) staticStats(id *itemData) {
 
 }
 
-func itemAttributesBytes(i*item) ([]byte, error) {
+func itemAttributesBytes(i *item) ([]byte, error) {
 	i.RLock()
 	defer i.RUnlock()
 	var itemAttr []byte
@@ -489,7 +489,7 @@ func itemAttributesBytes(i*item) ([]byte, error) {
 	case data.ItemClassWeapon:
 		attr := structs.ShineItemAttrWeapon{
 			// TODO: implement Licence feature
-			Licences:                 [3]structs.ShineItemWeaponLicence{
+			Licences: [3]structs.ShineItemWeaponLicence{
 				{
 					MobID: 65535,
 					BF2:   0,
@@ -504,7 +504,7 @@ func itemAttributesBytes(i*item) ([]byte, error) {
 				},
 			},
 			// TODO: implement Gems feature
-			GemSockets:               [3]structs.ShineItemWeaponGemSocket{
+			GemSockets: [3]structs.ShineItemWeaponGemSocket{
 				{
 					GemID:     65535,
 					RestCount: 25,
@@ -518,7 +518,7 @@ func itemAttributesBytes(i*item) ([]byte, error) {
 					RestCount: 25,
 				},
 			},
-			MaxSocketCount:           2,
+			MaxSocketCount: 2,
 		}
 		attr.Option = itemOptionStorage(i.stats)
 		bytes, err := structs.Pack(&attr)
@@ -677,7 +677,7 @@ func itemAttributesBytes(i*item) ([]byte, error) {
 		break
 	default:
 		return itemAttr, errors.Err{
-			Code:    errors.ZoneUnknownItemClass,
+			Code: errors.ZoneUnknownItemClass,
 			Details: errors.ErrDetails{
 				"itemID": i.pItem.ID,
 			},
@@ -694,7 +694,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 	)
 
 	nc = &structs.ProtoItemPacketInformation{}
-	nc.Location.Inventory = uint16(i.pItem.InventoryType << 10 | i.pItem.Slot & 1023)
+	nc.Location.Inventory = uint16(i.pItem.InventoryType<<10 | i.pItem.Slot&1023)
 	nc.ItemID = i.itemData.itemInfo.ID
 	nc.DataSize = 4
 
@@ -945,8 +945,8 @@ func chosenStatTypes(amount int, id *itemData) []data.RandomOptionType {
 
 func makeItem(itemIndex string) (*item, itemCreationDetails, error) {
 	var (
-		i   = &item{
-			RWMutex:   &sync.RWMutex{},
+		i = &item{
+			RWMutex: &sync.RWMutex{},
 		}
 		icd = itemCreationDetails{}
 	)
@@ -1050,6 +1050,7 @@ func loadItem(pItem *persistence.Item) *item {
 		},
 		amount:    pItem.Amount,
 		stackable: pItem.Stackable,
+		RWMutex:   &sync.RWMutex{},
 	}
 
 	i.stats.staticStats(i.itemData)
@@ -1150,4 +1151,40 @@ func addRandomOptionCountRow(dropItemIndex string, id *itemData, wg *sync.WaitGr
 			//return
 		}
 	}
+}
+
+// NC_ITEM_CELLCHANGE_CMD
+func ncItemCellChangeCmd(change itemSlotChange) (*structs.NcItemCellChangeCmd, *structs.NcItemCellChangeCmd, error) {
+	var (
+		nc1 = &structs.NcItemCellChangeCmd{}
+		nc2 = &structs.NcItemCellChangeCmd{}
+	)
+
+	nc1.Exchange.Inventory = change.gameFrom
+	nc1.Location.Inventory = change.gameTo
+	nc1.Item.ItemID = change.from.item.itemData.itemInfo.ID
+	itemAttr, err := itemAttributesBytes(change.from.item)
+
+	if err != nil {
+		return nc1, nc2, err
+	}
+
+	nc1.Item.ItemAttr = itemAttr
+
+	nc2.Exchange.Inventory = change.gameTo
+	nc2.Location.Inventory = change.gameFrom
+	if change.to.item != nil {
+		nc2.Item.ItemID = change.to.item.itemData.itemInfo.ID
+		itemAttr1, err := itemAttributesBytes(change.to.item)
+
+		if err != nil {
+			return nc1, nc2, err
+		}
+
+		nc2.Item.ItemAttr = itemAttr1
+	} else {
+		nc2.Item.ItemID = 65535
+	}
+
+	return nc1, nc2, nil
 }

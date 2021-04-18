@@ -34,6 +34,8 @@ const (
 	ZoneItemSlotIsBound
 	ZoneItemSlotGTS //Guild Tournament Storage
 
+	ZoneMissingPlayer
+
 	UnitTestError
 )
 

@@ -69,3 +69,8 @@ type playerPromptReplyEvent struct {
 	nc *structs.NcServerMenuAck
 	s  *session
 }
+
+type itemIsMovedEvent struct {
+	nc *structs.NcitemRelocateReq
+	session  *session
+}

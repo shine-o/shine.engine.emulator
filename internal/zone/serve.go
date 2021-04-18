@@ -46,7 +46,7 @@ func Start(cmd *cobra.Command, args []string) {
 	log.Infof("starting the service on port: %v", zonePort)
 
 	z := zone{
-		RWMutex:       &sync.RWMutex{},
+		RWMutex: &sync.RWMutex{},
 	}
 
 	z.load()
@@ -135,6 +135,9 @@ func Start(cmd *cobra.Command, args []string) {
 			},
 			networking.NC_MENU_SERVERMENU_ACK: networking.ShinePacket{
 				Handler: ncMenuServerMenuAck,
+			},
+			networking.NC_ITEM_RELOC_REQ: networking.ShinePacket{
+				Handler: ncItemRelocReq,
 			},
 		},
 		SessionFactory: sessionFactory{},
