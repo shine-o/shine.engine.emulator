@@ -282,7 +282,6 @@ func playerLogoutStartLogic(z *zone, e event) {
 	p := m.entities.players.get(ev.handle)
 
 	if p == nil {
-		log.Errorf("player with handle %v not available", ev.handle)
 		return
 	}
 

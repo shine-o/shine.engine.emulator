@@ -135,8 +135,8 @@ func TestCharacterNameInUseError(t *testing.T) {
 	if !ok {
 		t.Error("expected an error of type Err")
 	}
-	if errChar.Code != errors.PersistenceErrCharNameTaken {
-		t.Errorf("expected error %v, got %v", errors.PersistenceErrCharNameTaken, errChar.Code)
+	if errChar.Code != errors.PersistenceCharNameTaken {
+		t.Errorf("expected error %v, got %v", errors.PersistenceCharNameTaken, errChar.Code)
 	}
 }
 
@@ -160,8 +160,8 @@ func TestNoSlotAvailableError(t *testing.T) {
 			if !ok {
 				t.Error("unexpected error type")
 			}
-			if cErr.Code != errors.PersistenceErrCharNoSlot {
-				t.Errorf("expected error %v, got %v", errors.PersistenceErrCharNoSlot, cErr.Code)
+			if cErr.Code != errors.PersistenceCharNoSlot {
+				t.Errorf("expected error %v, got %v", errors.PersistenceCharNoSlot, cErr.Code)
 			}
 			return
 		}
@@ -186,8 +186,8 @@ func TestInvalidSlotError(t *testing.T) {
 			if !ok {
 				t.Error("unexpected error type")
 			}
-			if cErr.Code != errors.PersistenceErrCharInvalidSlot {
-				t.Errorf("expected error %v, got %v", errors.PersistenceErrCharInvalidSlot, cErr.Code)
+			if cErr.Code != errors.PersistenceCharInvalidSlot {
+				t.Errorf("expected error %v, got %v", errors.PersistenceCharInvalidSlot, cErr.Code)
 			}
 			return
 		}
@@ -214,8 +214,8 @@ func TestInvalidNameError(t *testing.T) {
 			if !ok {
 				t.Error("unexpected error type")
 			}
-			if cErr.Code != errors.PersistenceErrCharInvalidName {
-				t.Errorf("expected error %v, got %v", errors.PersistenceErrCharInvalidName, cErr.Code)
+			if cErr.Code != errors.PersistenceCharInvalidName {
+				t.Errorf("expected error %v, got %v", errors.PersistenceCharInvalidName, cErr.Code)
 			}
 			return
 		}
@@ -244,8 +244,8 @@ func TestInvalidGenderClassBinaryOperation(t *testing.T) {
 			if !ok {
 				t.Error("expected an error of type Err")
 			}
-			if errChar.Code != errors.PersistenceErrCharInvalidClassGender {
-				t.Errorf("expected error %v, got %v", errors.PersistenceErrCharInvalidClassGender, errChar.Code)
+			if errChar.Code != errors.PersistenceCharInvalidClassGender {
+				t.Errorf("expected error %v, got %v", errors.PersistenceCharInvalidClassGender, errChar.Code)
 			}
 		} else {
 			t.Error("expected an error but got nil")

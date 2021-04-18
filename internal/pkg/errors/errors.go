@@ -5,31 +5,28 @@ import "fmt"
 const (
 	PersistenceErrDB ShineErrorCode = iota
 
-	PersistenceErrItemInvalidAmount
-	PersistenceErrItemInvalidShnId
-	PersistenceErrItemInvalidCharacterId
-	PersistenceErrItemDistinctShnID
-	PersistenceErrItemSlotUpdate
+	PersistenceItemInvalidAmount
+	PersistenceItemInvalidShnId
+	PersistenceItemInvalidCharacterId
+	PersistenceItemDistinctShnID
+	PersistenceItemSlotUpdate
 
-	PersistenceErrInventoryFull
+	PersistenceInventoryFull
 
-	PersistenceErrCharInvalidSlot
-	PersistenceErrCharNameTaken
-	PersistenceErrCharNoSlot
-	PersistenceErrCharInvalidName
-	PersistenceErrCharInvalidClassGender
-	PersistenceErrCharNotExists
-	PersistenceErrUnknownInventory
+	PersistenceCharInvalidSlot
+	PersistenceCharNameTaken
+	PersistenceCharNoSlot
+	PersistenceCharInvalidName
+	PersistenceCharInvalidClassGender
+	PersistenceCharNotExists
+	PersistenceUnknownInventory
+	PersistenceOutOfRangeSlot
 
 	ZoneItemEquipFailed
 	ZoneItemMissingData
 	ZoneInventorySlotOccupied
 	ZoneMapNotFound
 	ZoneUnknownItemClass
-	// 	//    SUCCESS = 577, // 0x0241
-	//	//    ERR_BOUND = 586, // 0x024A
-	//	//    ERR_NORMAL = 587, // 0x024B
-	//	//    ERR_GTS = 588, // 0x024C
 	ZoneItemSlotChangeNoItem
 	ZoneItemSlotIsBound
 	ZoneItemSlotGTS //Guild Tournament Storage

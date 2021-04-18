@@ -15,7 +15,13 @@ const (
 	MiniHouseInventory InventoryType = 12
 
 	BagInventoryMin = 0
-	BagInventoryMax = 117
+	BagInventoryMax = 191
+
+	EquippedInventoryMin = 1
+	EquippedInventoryMax = 29
+
+	MiniHouseInventoryMin = 0
+	MiniHouseInventoryMax = 23
 )
 
 type Item struct {
@@ -168,7 +174,7 @@ func (i *Item) Update() error {
 
 	if i.ShnID != i.ShnID {
 		return errors.Err{
-			Code: errors.PersistenceErrItemDistinctShnID,
+			Code: errors.PersistenceItemDistinctShnID,
 			Details: errors.ErrDetails{
 				"originalShnID": i.ShnID,
 				"newShnID":      i.ShnID,
@@ -224,10 +230,32 @@ func (i *Item) Update() error {
 	return tx.Commit()
 }
 
+func limitExceeded(inventoryType InventoryType, slot int) bool {
+	var max int
+	switch inventoryType {
+	case BagInventory:
+		max = BagInventoryMax
+		break
+	case EquippedInventory:
+		max = EquippedInventoryMax
+		break
+	case MiniHouseInventory:
+		max = MiniHouseInventoryMax
+		break
+	}
+
+	if slot > max {
+		return true
+	}
+
+	return false
+}
+
 func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 	var (
 		otherItem = &Item{}
 	)
+
 	tx, err := db.Begin()
 
 	if err != nil {
@@ -255,7 +283,7 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 		_, err := tx.Model(i).WherePK().Update()
 		if err != nil {
 			return otherItem, errors.Err{
-				Code: errors.PersistenceErrItemSlotUpdate,
+				Code: errors.PersistenceItemSlotUpdate,
 				Details: errors.ErrDetails{
 					"err":           err,
 					"from":          i.Slot,
@@ -275,7 +303,7 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 		_, err = tx.Model(otherItem).WherePK().Update()
 		if err != nil {
 			return otherItem, errors.Err{
-				Code: errors.PersistenceErrItemSlotUpdate,
+				Code: errors.PersistenceItemSlotUpdate,
 				Details: errors.ErrDetails{
 					"err":           err,
 					"from":          i.Slot,
@@ -297,12 +325,12 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 
 	if err != nil {
 		return otherItem, errors.Err{
-			Code: errors.PersistenceErrItemSlotUpdate,
+			Code: errors.PersistenceItemSlotUpdate,
 			Details: errors.ErrDetails{
 				"err":           err,
 				"txErr":         tx.Rollback(),
 				"from":          i.Slot,
-				"to":            otherItem.Slot,
+				"to":            slot,
 				"fromInventory": i.InventoryType,
 				"toInventory":   inventoryType,
 				"shnID":         i.ShnID,
@@ -421,7 +449,7 @@ func freeSlot(characterID uint64, inventoryType InventoryType) (int, error) {
 				break
 			}
 			return slot, errors.Err{
-				Code: errors.PersistenceErrInventoryFull,
+				Code: errors.PersistenceInventoryFull,
 			}
 		}
 		if slots[i+1] > s+1 {
@@ -442,7 +470,7 @@ func validateItem(item *Item) error {
 
 	if inventoryType == UnknownInventory {
 		return errors.Err{
-			Code: errors.PersistenceErrUnknownInventory,
+			Code: errors.PersistenceUnknownInventory,
 			Details: errors.ErrDetails{
 				"inventoryType": inventoryType,
 			},
@@ -451,7 +479,7 @@ func validateItem(item *Item) error {
 
 	if item.Amount == 0 {
 		return errors.Err{
-			Code: errors.PersistenceErrItemInvalidAmount,
+			Code: errors.PersistenceItemInvalidAmount,
 			Details: errors.ErrDetails{
 				"stackable": item.Stackable,
 				"amount":    item.Amount,
@@ -461,7 +489,7 @@ func validateItem(item *Item) error {
 
 	if item.ShnID == 0 {
 		return errors.Err{
-			Code: errors.PersistenceErrItemInvalidShnId,
+			Code: errors.PersistenceItemInvalidShnId,
 			Details: errors.ErrDetails{
 				"shineID": item.ShnID,
 			},
@@ -470,7 +498,7 @@ func validateItem(item *Item) error {
 
 	if item.CharacterID == 0 {
 		return errors.Err{
-			Code: errors.PersistenceErrItemInvalidCharacterId,
+			Code: errors.PersistenceItemInvalidCharacterId,
 			Details: errors.ErrDetails{
 				"characterID": item.CharacterID,
 			},
@@ -480,7 +508,7 @@ func validateItem(item *Item) error {
 	if !item.Stackable {
 		if item.Amount > 1 {
 			return errors.Err{
-				Code: errors.PersistenceErrItemInvalidAmount,
+				Code: errors.PersistenceItemInvalidAmount,
 				Details: errors.ErrDetails{
 					"stackable": item.Stackable,
 					"amount":    item.Amount,
@@ -494,7 +522,7 @@ func validateItem(item *Item) error {
 
 	if err != nil {
 		return errors.Err{
-			Code:    errors.PersistenceErrCharNotExists,
+			Code:    errors.PersistenceCharNotExists,
 			Message: "could not fetch character with id",
 			Details: errors.ErrDetails{
 				"err":          err,

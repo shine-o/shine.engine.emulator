@@ -222,8 +222,8 @@ func TestCreateItem_CharacterNotExist(t *testing.T) {
 		t.Error("expected custom error type Err")
 	}
 
-	if cErr.Code != errors.PersistenceErrCharNotExists {
-		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrCharNotExists, cErr.Code)
+	if cErr.Code != errors.PersistenceCharNotExists {
+		t.Fatalf("expected error code %v, got %v", errors.PersistenceCharNotExists, cErr.Code)
 	}
 
 }
@@ -256,8 +256,8 @@ func TestCreateItem_BadAmount(t *testing.T) {
 		t.Error("expected custom error type Err")
 	}
 
-	if cErr.Code != errors.PersistenceErrItemInvalidAmount {
-		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrItemInvalidAmount, cErr.Code)
+	if cErr.Code != errors.PersistenceItemInvalidAmount {
+		t.Fatalf("expected error code %v, got %v", errors.PersistenceItemInvalidAmount, cErr.Code)
 	}
 
 	// 0 amount
@@ -285,8 +285,8 @@ func TestCreateItem_BadAmount(t *testing.T) {
 		t.Error("expected custom error type Err")
 	}
 
-	if cErr.Code != errors.PersistenceErrItemInvalidAmount {
-		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrItemInvalidAmount, cErr.Code)
+	if cErr.Code != errors.PersistenceItemInvalidAmount {
+		t.Fatalf("expected error code %v, got %v", errors.PersistenceItemInvalidAmount, cErr.Code)
 	}
 
 }
@@ -394,8 +394,8 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 		t.Fatal("expected custom error type Err")
 	}
 
-	if cErr.Code != errors.PersistenceErrItemInvalidAmount {
-		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrItemInvalidAmount, cErr.Code)
+	if cErr.Code != errors.PersistenceItemInvalidAmount {
+		t.Fatalf("expected error code %v, got %v", errors.PersistenceItemInvalidAmount, cErr.Code)
 	}
 
 	// zero amount
@@ -413,8 +413,8 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 		t.Fatal("expected custom error type Err")
 	}
 
-	if cErr.Code != errors.PersistenceErrItemInvalidAmount {
-		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrItemInvalidAmount, cErr.Code)
+	if cErr.Code != errors.PersistenceItemInvalidAmount {
+		t.Fatalf("expected error code %v, got %v", errors.PersistenceItemInvalidAmount, cErr.Code)
 	}
 }
 
@@ -451,8 +451,8 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 //		t.Fatal("expected custom error type Err")
 //	}
 //
-//	if cErr.Code != errors.PersistenceErrItemDistinctShnID {
-//		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrItemDistinctShnID, cErr.Code)
+//	if cErr.Code != errors.PersistenceItemDistinctShnID {
+//		t.Fatalf("expected error code %v, got %v", errors.PersistenceItemDistinctShnID, cErr.Code)
 //	}
 //}
 
@@ -623,8 +623,8 @@ func TestInventoryFull(t *testing.T) {
 		t.Error("expected custom error type Err")
 	}
 
-	if cErr.Code != errors.PersistenceErrInventoryFull {
-		t.Fatalf("expected error code %v, got %v", errors.PersistenceErrInventoryFull, cErr.Code)
+	if cErr.Code != errors.PersistenceInventoryFull {
+		t.Fatalf("expected error code %v, got %v", errors.PersistenceInventoryFull, cErr.Code)
 	}
 
 }

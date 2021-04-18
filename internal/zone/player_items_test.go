@@ -1440,9 +1440,62 @@ func TestChangeItemSlot_OccupiedSlot_NC(t *testing.T) {
 }
 
 func TestChangeItem_NonExistentSlot(t *testing.T) {
-	//    ERR_BOUND = 586, // 0x024A
+	persistence.CleanDB()
 
-	t.Fail()
+	char := persistence.NewDummyCharacter("mage")
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item1, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcitemRelocateReq{
+		From: structs.ItemInventory{
+			Inventory: 9216,
+		},
+		To: structs.ItemInventory{
+			Inventory: 9600,
+		},
+	}
+
+	_, err = player.inventories.changeItemSlot(nc)
+
+	if err != nil {
+		t.Fatal(err)
+	}
 
 }
 

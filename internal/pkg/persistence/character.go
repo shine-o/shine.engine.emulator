@@ -151,7 +151,7 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 
 	if req.SlotNum > 5 {
 		return errors.Err{
-			Code: errors.PersistenceErrCharInvalidSlot,
+			Code: errors.PersistenceCharInvalidSlot,
 			Details: errors.ErrDetails{
 				"userID":   userID,
 				"slotNum":  req.SlotNum,
@@ -168,7 +168,7 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 	if err == nil {
 		//return ErrNameTaken
 		return errors.Err{
-			Code: errors.PersistenceErrCharNameTaken,
+			Code: errors.PersistenceCharNameTaken,
 			Details: errors.ErrDetails{
 				"userID":   userID,
 				"charName": req.Name.Name,
@@ -181,7 +181,7 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 
 	if len(chars) == 6 {
 		return errors.Err{
-			Code: errors.PersistenceErrCharNoSlot,
+			Code: errors.PersistenceCharNoSlot,
 			Details: errors.ErrDetails{
 				"userID": userID,
 			},
@@ -191,7 +191,7 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 	alphaNumeric := regexp.MustCompile(`^[A-Za-z0-9]+$`).MatchString
 	if !alphaNumeric(name) {
 		return errors.Err{
-			Code: errors.PersistenceErrCharInvalidName,
+			Code: errors.PersistenceCharInvalidName,
 			Details: errors.ErrDetails{
 				"userID":   userID,
 				"charName": req.Name.Name,
@@ -206,7 +206,7 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 
 	if isMale > 1 || isMale < 0 {
 		return errors.Err{
-			Code: errors.PersistenceErrCharInvalidClassGender,
+			Code: errors.PersistenceCharInvalidClassGender,
 			Details: errors.ErrDetails{
 				"userID":   userID,
 				"charName": req.Name.Name,
@@ -219,7 +219,7 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 
 	if class < 1 || class > 27 {
 		return errors.Err{
-			Code: errors.PersistenceErrCharInvalidClassGender,
+			Code: errors.PersistenceCharInvalidClassGender,
 			Details: errors.ErrDetails{
 				"userID":   userID,
 				"charName": req.Name.Name,

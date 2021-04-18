@@ -455,9 +455,11 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 			//for t := range allTicks(p) {
 			//	t.Stop()
 			//}
+			p.ticks.Lock()
 			for _, t := range p.ticks.list {
 				t.Stop()
 			}
+			p.ticks.Unlock()
 
 			select {
 			case zm.events.send[playerDisappeared] <- pde:
@@ -708,7 +710,6 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	p1 := zm.entities.players.get(ev.handle)
 
 	if p1 == nil {
-		log.Error("player not found")
 		return
 	}
 

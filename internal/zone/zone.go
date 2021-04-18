@@ -14,6 +14,7 @@ import (
 
 type runningMaps struct {
 	list map[int]*zoneMap
+	*sync.RWMutex
 }
 
 type zone struct {
@@ -41,6 +42,7 @@ func (z *zone) load() {
 
 	z.rm = &runningMaps{
 		list: make(map[int]*zoneMap),
+		RWMutex: &sync.RWMutex{},
 	}
 
 	zEvents := []eventIndex{
@@ -108,6 +110,23 @@ func (z *zone) load() {
 	go z.run()
 }
 
+func (rm * runningMaps)  all() <- chan *zoneMap {
+	rm.RLock()
+	ch := make(chan *zoneMap, len(rm.list))
+	rm.RUnlock()
+
+	go func(rm *runningMaps, send chan<- *zoneMap) {
+		rm.RLock()
+		for _, rm := range rm.list {
+			send <- rm
+		}
+		rm.RUnlock()
+		close(send)
+	}(rm, ch)
+
+	return ch
+}
+
 func (z *zone) addMap(mapId int) {
 	md, ok := mapData.Maps[mapId]
 
@@ -120,8 +139,8 @@ func (z *zone) addMap(mapId int) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// TODO: loop with channel
-	for _, m := range z.rm.list {
+
+	for m := range z.rm.all() {
 		if m.data.MapInfoIndex == md.Info.MapName.Name {
 			log.Errorf("duplicate shn map index id %v %v, skipping", mapId, m.data.MapInfoIndex)
 			return
@@ -178,9 +197,9 @@ func (z *zone) addMap(mapId int) {
 		m.send[index] = c
 	}
 
-	z.Lock()
+	z.rm.Lock()
 	z.rm.list[m.data.ID] = m
-	z.Unlock()
+	z.rm.Unlock()
 
 	go m.run()
 

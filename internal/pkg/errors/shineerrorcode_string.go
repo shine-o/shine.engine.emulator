@@ -9,34 +9,35 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[PersistenceErrDB-0]
-	_ = x[PersistenceErrItemInvalidAmount-1]
-	_ = x[PersistenceErrItemInvalidShnId-2]
-	_ = x[PersistenceErrItemInvalidCharacterId-3]
-	_ = x[PersistenceErrItemDistinctShnID-4]
-	_ = x[PersistenceErrItemSlotUpdate-5]
-	_ = x[PersistenceErrInventoryFull-6]
-	_ = x[PersistenceErrCharInvalidSlot-7]
-	_ = x[PersistenceErrCharNameTaken-8]
-	_ = x[PersistenceErrCharNoSlot-9]
-	_ = x[PersistenceErrCharInvalidName-10]
-	_ = x[PersistenceErrCharInvalidClassGender-11]
-	_ = x[PersistenceErrCharNotExists-12]
-	_ = x[PersistenceErrUnknownInventory-13]
-	_ = x[ZoneItemEquipFailed-14]
-	_ = x[ZoneItemMissingData-15]
-	_ = x[ZoneInventorySlotOccupied-16]
-	_ = x[ZoneMapNotFound-17]
-	_ = x[ZoneUnknownItemClass-18]
-	_ = x[ZoneItemSlotChangeNoItem-19]
-	_ = x[ZoneItemSlotIsBound-20]
-	_ = x[ZoneItemSlotGTS-21]
-	_ = x[ZoneMissingPlayer-22]
-	_ = x[UnitTestError-23]
+	_ = x[PersistenceItemInvalidAmount-1]
+	_ = x[PersistenceItemInvalidShnId-2]
+	_ = x[PersistenceItemInvalidCharacterId-3]
+	_ = x[PersistenceItemDistinctShnID-4]
+	_ = x[PersistenceItemSlotUpdate-5]
+	_ = x[PersistenceInventoryFull-6]
+	_ = x[PersistenceCharInvalidSlot-7]
+	_ = x[PersistenceCharNameTaken-8]
+	_ = x[PersistenceCharNoSlot-9]
+	_ = x[PersistenceCharInvalidName-10]
+	_ = x[PersistenceCharInvalidClassGender-11]
+	_ = x[PersistenceCharNotExists-12]
+	_ = x[PersistenceUnknownInventory-13]
+	_ = x[PersistenceOutOfRangeSlot-14]
+	_ = x[ZoneItemEquipFailed-15]
+	_ = x[ZoneItemMissingData-16]
+	_ = x[ZoneInventorySlotOccupied-17]
+	_ = x[ZoneMapNotFound-18]
+	_ = x[ZoneUnknownItemClass-19]
+	_ = x[ZoneItemSlotChangeNoItem-20]
+	_ = x[ZoneItemSlotIsBound-21]
+	_ = x[ZoneItemSlotGTS-22]
+	_ = x[ZoneMissingPlayer-23]
+	_ = x[UnitTestError-24]
 }
 
-const _ShineErrorCode_name = "PersistenceErrDBPersistenceErrItemInvalidAmountPersistenceErrItemInvalidShnIdPersistenceErrItemInvalidCharacterIdPersistenceErrItemDistinctShnIDPersistenceErrItemSlotUpdatePersistenceErrInventoryFullPersistenceErrCharInvalidSlotPersistenceErrCharNameTakenPersistenceErrCharNoSlotPersistenceErrCharInvalidNamePersistenceErrCharInvalidClassGenderPersistenceErrCharNotExistsPersistenceErrUnknownInventoryZoneItemEquipFailedZoneItemMissingDataZoneInventorySlotOccupiedZoneMapNotFoundZoneUnknownItemClassZoneItemSlotChangeNoItemZoneItemSlotIsBoundZoneItemSlotGTSZoneMissingPlayerUnitTestError"
+const _ShineErrorCode_name = "PersistenceErrDBPersistenceItemInvalidAmountPersistenceItemInvalidShnIdPersistenceItemInvalidCharacterIdPersistenceItemDistinctShnIDPersistenceItemSlotUpdatePersistenceInventoryFullPersistenceCharInvalidSlotPersistenceCharNameTakenPersistenceCharNoSlotPersistenceCharInvalidNamePersistenceCharInvalidClassGenderPersistenceCharNotExistsPersistenceUnknownInventoryPersistenceOutOfRangeSlotZoneItemEquipFailedZoneItemMissingDataZoneInventorySlotOccupiedZoneMapNotFoundZoneUnknownItemClassZoneItemSlotChangeNoItemZoneItemSlotIsBoundZoneItemSlotGTSZoneMissingPlayerUnitTestError"
 
-var _ShineErrorCode_index = [...]uint16{0, 16, 47, 77, 113, 144, 172, 199, 228, 255, 279, 308, 344, 371, 401, 420, 439, 464, 479, 499, 523, 542, 557, 574, 587}
+var _ShineErrorCode_index = [...]uint16{0, 16, 44, 71, 104, 132, 157, 181, 207, 231, 252, 278, 311, 335, 362, 387, 406, 425, 450, 465, 485, 509, 528, 543, 560, 573}
 
 func (i ShineErrorCode) String() string {
 	if i < 0 || i >= ShineErrorCode(len(_ShineErrorCode_index)-1) {
