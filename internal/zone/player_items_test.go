@@ -1272,12 +1272,211 @@ func TestChangeItemSlot_OccupiedSlot_Success(t *testing.T) {
 
 }
 
-func TestChangeItemSlot_NC_Success(t *testing.T) {
-	//itemSlotChange
-	// rnc1 will contain item about the movement 9216 > 9217, including item attributes
-	// rnc2 will contain item about the movement 9217 > 9216, including item attributes (if an item exists)
-	//rnc1, rnc2 := ncItemCellChangeCmd(itemSlotChange)
+func TestChangeItemSlot_EmptySlot_NC(t *testing.T) {
+	persistence.CleanDB()
 
+	char := persistence.NewDummyCharacter("mage")
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcitemRelocateReq{
+		From: structs.ItemInventory{
+			Inventory: 9216,
+		},
+		To:   structs.ItemInventory{
+			Inventory: 9217,
+		},
+	}
+
+	change, err := player.inventories.changeItemSlot(nc)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	enc1, enc2, err := ncItemCellChangeCmd(change)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if enc1.Exchange.Inventory != nc.From.Inventory {
+		t.Fatalf("mismatched from inventory")
+	}
+
+
+	if enc1.Location.Inventory != nc.To.Inventory {
+		t.Fatalf("mismatched to inventory")
+	}
+
+	if len(enc1.Item.ItemAttr) == 0 {
+		t.Fatalf("item attributes length should not be 0")
+	}
+
+
+	if enc2.Exchange.Inventory != nc.To.Inventory {
+		t.Fatalf("mismatched from inventory")
+	}
+
+	if enc2.Location.Inventory != nc.From.Inventory {
+		t.Fatalf("mismatched to inventory")
+	}
+
+	if len(enc2.Item.ItemAttr) != 0 {
+		t.Fatalf("item attributes length should be 0")
+	}
+
+}
+
+func TestChangeItemSlot_OccupiedSlot_NC(t *testing.T) {
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage")
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item1, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcitemRelocateReq{
+		From: structs.ItemInventory{
+			Inventory: 9216,
+		},
+		To:   structs.ItemInventory{
+			Inventory: 9217,
+		},
+	}
+
+	change, err := player.inventories.changeItemSlot(nc)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	enc1, enc2, err := ncItemCellChangeCmd(change)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if enc1.Exchange.Inventory != nc.From.Inventory {
+		t.Fatalf("mismatched from inventory")
+	}
+
+
+	if enc1.Location.Inventory != nc.To.Inventory {
+		t.Fatalf("mismatched to inventory")
+	}
+
+	if len(enc1.Item.ItemAttr) == 0 {
+		t.Fatalf("item attributes length should not be 0")
+	}
+
+
+	if enc2.Exchange.Inventory != nc.To.Inventory {
+		t.Fatalf("mismatched from inventory")
+	}
+
+	if enc2.Location.Inventory != nc.From.Inventory {
+		t.Fatalf("mismatched to inventory")
+	}
+
+	if len(enc2.Item.ItemAttr) == 0 {
+		t.Fatalf("item attributes length should not be 0")
+	}
+
+}
+
+// NC_ITEM_CELLCHANGE_CMD
+func ncItemCellChangeCmd(change itemSlotChange) (*structs.NcItemCellChangeCmd, *structs.NcItemCellChangeCmd, error) {
+	var (
+		nc1 = &structs.NcItemCellChangeCmd{}
+		nc2 = &structs.NcItemCellChangeCmd{}
+	)
+
+	nc1.Exchange.Inventory = change.gameFrom
+	nc1.Location.Inventory = change.gameTo
+	nc1.Item.ItemID = change.from.item.itemData.itemInfo.ID
+	itemAttr, err := itemAttributesBytes(change.from.item)
+
+	if err != nil {
+		return nc1, nc2, err
+	}
+
+	nc1.Item.ItemAttr = itemAttr
+
+	nc2.Exchange.Inventory = change.gameTo
+	nc2.Location.Inventory = change.gameFrom
+	if change.to.item != nil {
+		nc2.Item.ItemID = change.to.item.itemData.itemInfo.ID
+		itemAttr1, err := itemAttributesBytes(change.to.item)
+
+		if err != nil {
+			return nc1, nc2, err
+		}
+
+		nc2.Item.ItemAttr = itemAttr1
+	} else {
+		nc2.Item.ItemID = 65535
+	}
+
+	return nc1, nc2, nil
 }
 
 func TestChangeItem_NonExistentSlot(t *testing.T) {

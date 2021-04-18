@@ -47,6 +47,9 @@ func (pi *playerInventories) changeItemSlot(nc  * structs.NcitemRelocateReq) (it
 		toInventorySlot = int(nc.To.Inventory & 1023)
 	)
 
+	change.gameFrom = nc.From.Inventory
+	change.gameTo = nc.To.Inventory
+
 	switch fromInventoryType {
 	case persistence.BagInventory:
 		item := pi.get(fromInventoryType, fromInventorySlot)
@@ -422,17 +425,11 @@ func (is *itemStats) staticStats(id *itemData) {
 
 }
 
-func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, error) {
-	var (
-		nc       *structs.ProtoItemPacketInformation
-		itemAttr []byte
-	)
+func itemAttributesBytes(i*item) ([]byte, error) {
+	i.RLock()
+	defer i.RUnlock()
+	var itemAttr []byte
 
-	nc = &structs.ProtoItemPacketInformation{}
-	nc.Location.Inventory = uint16(i.pItem.InventoryType << 10 | i.pItem.Slot & 1023)
-	nc.ItemID = i.itemData.itemInfo.ID
-	nc.DataSize = 4
-	// todo: refactor into functions, including individual case clauses
 	switch i.itemData.itemInfo.Class {
 	case data.ItemClassByteLot:
 	case data.ItemUpRed:
@@ -450,7 +447,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrByteLot(i.amount)
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -460,7 +457,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrWordLot(i.amount)
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -468,7 +465,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrDwrdLot(i.amount)
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -476,7 +473,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrQuestItem(i.amount)
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -485,7 +482,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr.Option = itemOptionStorage(i.stats)
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -526,7 +523,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr.Option = itemOptionStorage(i.stats)
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -535,7 +532,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr.Option = itemOptionStorage(i.stats)
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -543,7 +540,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrShield{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -551,7 +548,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrBoot{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -559,7 +556,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrFurniture{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -567,7 +564,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrDecoration{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -575,7 +572,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrBindItem{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -583,7 +580,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrItemChest{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -591,7 +588,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrMiniHouseSkin{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -599,7 +596,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrRiding{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -607,7 +604,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrAmount{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -615,7 +612,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrCostumeWeapon{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -623,7 +620,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrActionItem{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -631,7 +628,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrCapsule{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -639,7 +636,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrMobCardCollectClosed{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -647,7 +644,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrMobCardCollect{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -658,7 +655,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrPet{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -666,7 +663,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrCostumeShield{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
@@ -674,10 +671,36 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 		attr := structs.ShineItemAttrBracelet{}
 		bytes, err := structs.Pack(&attr)
 		if err != nil {
-			return nc, err
+			return itemAttr, err
 		}
 		itemAttr = bytes
 		break
+	default:
+		return itemAttr, errors.Err{
+			Code:    errors.ZoneUnknownItemClass,
+			Details: errors.ErrDetails{
+				"itemID": i.pItem.ID,
+			},
+		}
+	}
+
+	return itemAttr, nil
+}
+
+func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, error) {
+	var (
+		nc       *structs.ProtoItemPacketInformation
+		itemAttr []byte
+	)
+
+	nc = &structs.ProtoItemPacketInformation{}
+	nc.Location.Inventory = uint16(i.pItem.InventoryType << 10 | i.pItem.Slot & 1023)
+	nc.ItemID = i.itemData.itemInfo.ID
+	nc.DataSize = 4
+
+	itemAttr, err := itemAttributesBytes(i)
+	if err != nil {
+		return nc, err
 	}
 
 	nc.ItemAttr = itemAttr

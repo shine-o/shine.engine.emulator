@@ -25,7 +25,7 @@ const (
 	ZoneItemMissingData
 	ZoneInventorySlotOccupied
 	ZoneMapNotFound
-
+	ZoneUnknownItemClass
 	// 	//    SUCCESS = 577, // 0x0241
 	//	//    ERR_BOUND = 586, // 0x024A
 	//	//    ERR_NORMAL = 587, // 0x024B

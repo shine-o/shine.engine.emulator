@@ -205,6 +205,8 @@ type stat struct {
 }
 
 type itemSlotChange struct {
+	gameFrom uint16
+	gameTo uint16
 	from itemSlot
 	to   itemSlot
 }

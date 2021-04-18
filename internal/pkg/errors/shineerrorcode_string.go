@@ -26,15 +26,16 @@ func _() {
 	_ = x[ZoneItemMissingData-15]
 	_ = x[ZoneInventorySlotOccupied-16]
 	_ = x[ZoneMapNotFound-17]
-	_ = x[ZoneItemSlotChangeNoItem-18]
-	_ = x[ZoneItemSlotIsBound-19]
-	_ = x[ZoneItemSlotGTS-20]
-	_ = x[UnitTestError-21]
+	_ = x[ZoneUnknownItemClass-18]
+	_ = x[ZoneItemSlotChangeNoItem-19]
+	_ = x[ZoneItemSlotIsBound-20]
+	_ = x[ZoneItemSlotGTS-21]
+	_ = x[UnitTestError-22]
 }
 
-const _ShineErrorCode_name = "PersistenceErrDBPersistenceErrItemInvalidAmountPersistenceErrItemInvalidShnIdPersistenceErrItemInvalidCharacterIdPersistenceErrItemDistinctShnIDPersistenceErrItemSlotUpdatePersistenceErrInventoryFullPersistenceErrCharInvalidSlotPersistenceErrCharNameTakenPersistenceErrCharNoSlotPersistenceErrCharInvalidNamePersistenceErrCharInvalidClassGenderPersistenceErrCharNotExistsPersistenceErrUnknownInventoryZoneItemEquipFailedZoneItemMissingDataZoneInventorySlotOccupiedZoneMapNotFoundZoneItemSlotChangeNoItemZoneItemSlotIsBoundZoneItemSlotGTSUnitTestError"
+const _ShineErrorCode_name = "PersistenceErrDBPersistenceErrItemInvalidAmountPersistenceErrItemInvalidShnIdPersistenceErrItemInvalidCharacterIdPersistenceErrItemDistinctShnIDPersistenceErrItemSlotUpdatePersistenceErrInventoryFullPersistenceErrCharInvalidSlotPersistenceErrCharNameTakenPersistenceErrCharNoSlotPersistenceErrCharInvalidNamePersistenceErrCharInvalidClassGenderPersistenceErrCharNotExistsPersistenceErrUnknownInventoryZoneItemEquipFailedZoneItemMissingDataZoneInventorySlotOccupiedZoneMapNotFoundZoneUnknownItemClassZoneItemSlotChangeNoItemZoneItemSlotIsBoundZoneItemSlotGTSUnitTestError"
 
-var _ShineErrorCode_index = [...]uint16{0, 16, 47, 77, 113, 144, 172, 199, 228, 255, 279, 308, 344, 371, 401, 420, 439, 464, 479, 503, 522, 537, 550}
+var _ShineErrorCode_index = [...]uint16{0, 16, 47, 77, 113, 144, 172, 199, 228, 255, 279, 308, 344, 371, 401, 420, 439, 464, 479, 499, 523, 542, 557, 570}
 
 func (i ShineErrorCode) String() string {
 	if i < 0 || i >= ShineErrorCode(len(_ShineErrorCode_index)-1) {
