@@ -17,10 +17,12 @@ func TestNewItem_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
-		baseEntity: baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
+			RWMutex : &sync.RWMutex{},
 		},
+		dz : &sync.RWMutex{},
+
 	}
 
 	err := player.load(char.Name)
@@ -64,7 +66,9 @@ func TestNewItem_WithAttributes(t *testing.T) {
 	player := &player{
 		persistence: &playerPersistence{
 			char: char,
+			RWMutex : &sync.RWMutex{},
 		},
+		dz : &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -224,10 +228,11 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
-		baseEntity: baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
+			RWMutex : &sync.RWMutex{},
 		},
+		dz : &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -382,14 +387,7 @@ func TestNewItem_CreateAllItems(t *testing.T) {
 	for _, row := range itemsData.ItemInfo.ShineRow {
 		_, _, err := makeItem(row.InxName)
 		if err != nil {
-			t.Error(errors.Err{
-				Code:    errors.UnitTestError,
-				Message: "error creating item",
-				Details: errors.ErrDetails{
-					"err":       err,
-					"itemIndex": row.InxName,
-				},
-			})
+			t.Error(err)
 		}
 	}
 }
@@ -400,10 +398,11 @@ func TestNewItem_BadItemIndex(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
-		baseEntity: baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
+			RWMutex : &sync.RWMutex{},
 		},
+		dz : &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1493,21 +1492,89 @@ func TestChangeItem_NonExistentSlot(t *testing.T) {
 
 	_, err = player.inventories.changeItemSlot(nc)
 
-	if err != nil {
-		t.Fatal(err)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	cErr, ok := err.(errors.Err)
+
+	if !ok {
+		t.Fatalf("unexpected error type")
+	}
+
+	if cErr.Code != errors.PersistenceOutOfRangeSlot {
+		t.Fatalf("unexpected error code")
 	}
 
 }
 
-func TestChangeItemSlot_BadItemType(t *testing.T) {
-	t.Fail()
-
-}
-
 func TestChangeItemSlot_NoItemInSlot(t *testing.T) {
-	t.Fail()
-	//    ERR_BOUND = 586, // 0x024A
+	persistence.CleanDB()
 
+	char := persistence.NewDummyCharacter("mage")
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item1, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcitemRelocateReq{
+		From: structs.ItemInventory{
+			Inventory: 9250,
+		},
+		To: structs.ItemInventory{
+			Inventory: 9218,
+		},
+	}
+
+	_, err = player.inventories.changeItemSlot(nc)
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	cErr, ok := err.(errors.Err)
+
+	if !ok {
+		t.Fatalf("unexpected error type")
+	}
+
+	if cErr.Code != errors.ZoneItemSlotChangeNoItem {
+		t.Fatalf("unexpected error code")
+	}
 }
 
 func TestSellItem_Success(t *testing.T) {
