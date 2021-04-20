@@ -1226,7 +1226,56 @@ func TestItemEquip_BadItemClass(t *testing.T) {
 }
 
 func TestItemEquip_NoItemInSlot(t *testing.T) {
-	t.Fail()
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage")
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcItemEquipReq{
+		Slot: 3,
+	}
+
+	_, err = player.equip(nc)
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	cErr, ok := err.(errors.Err)
+
+	if !ok {
+		t.Fatal("unexpected error type")
+	}
+
+	if cErr.Code != errors.ZoneItemSlotEquipNoItem {
+		t.Fatal("unexpected error code")
+	}
 }
 
 func TestItemEquip_NC_Failed(t *testing.T) {
@@ -1238,6 +1287,7 @@ func TestItemEquip_NC_Failed(t *testing.T) {
 }
 
 func TestItemEquip_BadSlot(t *testing.T) {
+	// try equipping a material or quest item
 	t.Fail()
 }
 
