@@ -153,9 +153,9 @@ func shnTest() {
 }
 
 func packetDataTest() {
-	var s structs.NcItemCellChangeCmd
+	var s structs.NcItemEquipChangeCmd
 	//hexS := "2424252413cf00000000000000000000000007000300040900021000"
-	hexS := "25242424ffff"
+	hexS := "25240c88f3070000000000000b0000000000ffff00000000ffff000000000000417664614b65646176726100000000000000000000ffffffffffffffffff01000000000000050604000b0600"
 
 	d, err := hex.DecodeString(hexS)
 

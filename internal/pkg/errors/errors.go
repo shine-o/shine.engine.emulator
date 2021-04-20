@@ -28,8 +28,10 @@ const (
 	ZoneMapNotFound
 	ZoneUnknownItemClass
 	ZoneItemSlotChangeNoItem
+	ZoneItemSlotEquipNoItem
 	ZoneItemSlotIsBound
 	ZoneItemSlotGTS //Guild Tournament Storage
+	ZoneItemUnknownInventoryType
 
 	ZoneMissingPlayer
 

@@ -34,6 +34,14 @@ func (pi *playerInventories) get(inventoryType persistence.InventoryType, slot i
 		if ok {
 			return item
 		}
+	default:
+		log.Error(errors.Err{
+			Code:    errors.ZoneItemUnknownInventoryType,
+			Details: errors.ErrDetails{
+				"inventoryType": inventoryType,
+				"slot": slot,
+			},
+		})
 	}
 	return nil
 }
@@ -63,6 +71,7 @@ func (pi *playerInventories) changeItemSlot(nc *structs.NcitemRelocateReq) (item
 		}
 		change.from.item = item
 		change.from.slot = fromInventorySlot
+		change.from.inventoryType = fromInventoryType
 		break
 	}
 
@@ -71,6 +80,7 @@ func (pi *playerInventories) changeItemSlot(nc *structs.NcitemRelocateReq) (item
 		item := pi.get(toInventoryType, toInventorySlot)
 		change.to.item = item
 		change.to.slot = toInventorySlot
+		change.to.inventoryType = toInventoryType
 		break
 	}
 
@@ -186,6 +196,19 @@ type itemData struct {
 type itemCreationDetails struct {
 	randomTypes []data.RandomOptionType
 	randomCount int
+}
+
+type itemSlotChange struct {
+	gameFrom uint16
+	gameTo   uint16
+	from     itemSlot
+	to       itemSlot
+}
+
+type itemSlot struct {
+	slot int
+	inventoryType persistence.InventoryType
+	item *item
 }
 
 func (i *item) generateStats() (int, []data.RandomOptionType) {

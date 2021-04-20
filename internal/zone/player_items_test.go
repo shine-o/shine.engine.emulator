@@ -1017,60 +1017,197 @@ func TestPlayer_DeletesItem(t *testing.T) {
 }
 
 func TestItemEquip_Success(t *testing.T) {
-	t.Fail()
-
 	//    SUCCESS = 641, // 0x0281
 	//    FAILED = 645, // 0x0285
-	//player := &player{
-	//	baseEntity: baseEntity{
-	//		handle: 1,
-	//	},
-	//}
-	//
-	//item := &item{}
-	//
-	//itemSlotChange, err := player.equip(item, data.ItemEquipHat)
-	//
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
-	//
-	//if itemSlotChange.from != 0 {
-	//	t.Fail()
-	//}
-	//
-	//if itemSlotChange.to != 1 {
-	//	t.Fail()
-	//}
-	//
-	//equippedItem, ok := player.inventories.equipped.items[int(data.ItemEquipHat)]
-	//
-	//if !ok {
-	//	t.Fail()
-	//}
-	//
-	//if equippedItem.pItem.ID != item.pItem.ID {
-	//	t.Fail()
-	//}
-	//
-	//clauses := make(map[string]interface{})
-	//
-	//clauses["item_id"] = item.pItem.ID
-	//clauses["character_id"] = player.char.ID
-	//clauses["inventory_type"] = persistence.EquippedInventory
-	//
-	//_, err = persistence.GetItemWhere(clauses, false)
-	//
-	//if err != nil {
-	//	t.Fail()
-	//}
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage")
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcItemEquipReq{
+		Slot: 0,
+	}
+
+	itemSlotChange, err := player.equip(nc)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if itemSlotChange.gameFrom != 9216 {
+		t.Fail()
+	}
+
+	if itemSlotChange.gameTo != 8204 {
+		t.Fail()
+	}
+
+	if itemSlotChange.from.item == nil {
+		t.Fatal("from item should not be nil")
+	}
+
+	if itemSlotChange.to.item != nil {
+		t.Fatal("to item should be nil, as no item is equipped")
+	}
+
+	equippedItem, ok := player.inventories.equipped.items[12]
+
+	if !ok {
+		t.Fatal("item is expected to be in slot")
+	}
+
+	_, ok = player.inventories.inventory.items[0]
+
+	if ok {
+		t.Fatal("item is NOT expected to be in slot")
+	}
+
+	if equippedItem.itemData.itemInfo.InxName != item.itemData.itemInfo.InxName || equippedItem.pItem.ID != item.pItem.ID{
+		t.Fatalf("mismatched items")
+	}
+
+	if equippedItem.pItem.InventoryType != int(persistence.EquippedInventory) {
+		t.Fatalf("unexpected inventory type")
+	}
+
+	if equippedItem.pItem.Slot != 12 {
+		t.Fatalf("unexpected inventory type")
+	}
+
+	_, ok = player.inventories.inventory.items[0]
+
+	if ok {
+		t.Fatal("item is NOT expected to be in slot")
+	}
+
 }
 
-func TestItemEquip_NC_Success(t *testing.T) {
+func TestItemEquip_Success_ReplaceItem(t *testing.T) {
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage")
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcItemEquipReq{
+		Slot: 0,
+	}
+
+	_, err = player.equip(nc)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// create new item that will take the slot 0 that was recently occupied
+	item2, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item2)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc2 := &structs.NcItemEquipReq{
+		Slot: 1,
+	}
+
+	itemSlotChange2, err := player.equip(nc2)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if itemSlotChange2.to.item == nil {
+		t.Fatal("equipped item should not be nil")
+	}
+
+	inventoryItem, ok := player.inventories.inventory.items[0]
+
+	if !ok {
+		t.Fatal("inventoryItem should not be nil")
+	}
+
+	// check that it matches the first equipped item
+	if inventoryItem.pItem.ID != item.pItem.ID {
+		t.Fatal("items do not match")
+	}
+
+	equippedItem, ok := player.inventories.equipped.items[12]
+
+	if !ok {
+		t.Fatal("item is expected to be in slot")
+	}
+
+	// assert it matches the second equipped item
+	if equippedItem.pItem.ID != item2.pItem.ID{
+		t.Fatalf("mismatched items")
+	}
+}
+
+func TestItemEquip_Success_NC(t *testing.T) {
 	t.Fail()
 }
 
-func TestItemEquip_Failed(t *testing.T) {
+func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
+	t.Fail()
+}
+
+func TestItemEquip_BadItemEquip(t *testing.T) {
 	// p.equipItem(item{}) (itemSlotChange{}, error)
 	// err := error.(ErrorCodeZone)
 	// err.Code = ItemEquipFailed
@@ -1078,6 +1215,18 @@ func TestItemEquip_Failed(t *testing.T) {
 	//
 	t.Fail()
 
+}
+
+func TestItemEquip_LowLevel(t *testing.T) {
+	t.Fail()
+}
+
+func TestItemEquip_BadItemClass(t *testing.T) {
+	t.Fail()
+}
+
+func TestItemEquip_NoItemInSlot(t *testing.T) {
+	t.Fail()
 }
 
 func TestItemEquip_NC_Failed(t *testing.T) {
@@ -1575,6 +1724,10 @@ func TestChangeItemSlot_NoItemInSlot(t *testing.T) {
 	if cErr.Code != errors.ZoneItemSlotChangeNoItem {
 		t.Fatalf("unexpected error code")
 	}
+}
+
+func TestChangeItem_InDropState(t *testing.T) {
+	t.Fail()
 }
 
 func TestSellItem_Success(t *testing.T) {

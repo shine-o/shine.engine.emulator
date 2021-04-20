@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"sync"
@@ -204,18 +205,6 @@ type stat struct {
 	withExtras uint32
 }
 
-type itemSlotChange struct {
-	gameFrom uint16
-	gameTo   uint16
-	from     itemSlot
-	to       itemSlot
-}
-
-type itemSlot struct {
-	slot int
-	item *item
-}
-
 func (p *player) selectsNPC(n *npc) byte {
 	var order byte
 	p.targeting.Lock()
@@ -405,23 +394,6 @@ func (p *player) load(name string) error {
 	wg.Wait()
 
 	return <-errC
-}
-
-func loadInventory(it persistence.InventoryType, p *player) (itemBox, error) {
-	var box itemBox
-	items, err := persistence.GetCharacterItems(int(p.persistence.char.ID), it)
-
-	if err != nil {
-		return box, err
-	}
-
-	box.box = int(it)
-	box.items = make(map[int]*item)
-	for _, item := range items {
-		// load with goroutines and waitgroups
-		box.items[item.Slot] = loadItem(item)
-	}
-	return box, nil
 }
 
 func (p *player) itemData() error {
@@ -733,36 +705,81 @@ func (p *player) charParameterData() structs.CharParameterData {
 	return nc
 }
 
-//
-//func (p *player) equip(i *item, slot data.ItemEquipEnum) (itemSlotChange, error) {
-//	slotChange := itemSlotChange{
-//		from: i.pItem.Slot,
-//		to:   0,
-//	}
-//
-//	uItem, err := i.pItem.MoveTo(persistence.EquippedInventory, int(slot))
-//
-//	if err != nil {
-//		return itemSlotChange{}, errors.Err{
-//			Code: errors.ZoneItemEquipFailed,
-//			Details: errors.ErrDetails{
-//				"err":     err,
-//				"pHandle": p.getHandle(),
-//			},
-//		}
-//	}
-//
-//	slotChange.to = int(slot)
-//
-//	p.inventories.Lock()
-//	i.pItem = uItem
-//	p.inventories.Unlock()
-//
-//	return slotChange, nil
-//}
+func (p *player) equip(nc * structs.NcItemEquipReq) (itemSlotChange, error) {
+	var (
+		change itemSlotChange
+		fromItem *item
+		toItem *item
+		slot = int(nc.Slot)
+	)
+
+	item := p.inventories.get(persistence.BagInventory, slot)
+	if item == nil {
+		p.persistence.RLock()
+		characterName := p.persistence.char.Name
+		p.persistence.RUnlock()
+		return change, errors.Err{
+			Code:    errors.ZoneItemSlotEquipNoItem,
+			Details: errors.ErrDetails{
+				"slot": nc.Slot,
+				"handle": p.getHandle(),
+				"characterName": characterName,
+			},
+		}
+	}
+
+	fromItem = item
+
+	// slot that will be occupied
+	equip := int(item.itemData.itemInfo.Equip)
+
+	equippedItem := p.inventories.get(persistence.EquippedInventory, equip)
+
+	if equippedItem != nil {
+		toItem = equippedItem
+	}
+
+	opItem, err := item.pItem.MoveTo(persistence.EquippedInventory, equip)
+
+	if err != nil {
+		return change ,err
+	}
+
+	p.inventories.Lock()
+
+	if toItem != nil {
+		toItem.Lock()
+		toItem.pItem = opItem
+		toItem.Unlock()
+		delete(p.inventories.equipped.items, equip)
+		p.inventories.inventory.items[slot] = toItem
+	}
+
+	p.inventories.equipped.items[equip] = fromItem
+	delete(p.inventories.inventory.items, slot)
+
+	p.inventories.Unlock()
+
+	change = itemSlotChange{
+		gameFrom: uint16(persistence.BagInventory) << 10 | uint16(slot) & 1023,
+		gameTo:   uint16(item.pItem.InventoryType << 10 | item.pItem.Slot & 1023),
+		from:     itemSlot{
+			slot:         slot,
+			inventoryType: persistence.BagInventory,
+			item: fromItem,
+		},
+		to:       itemSlot{
+			slot:          equip,
+			inventoryType: persistence.EquippedInventory,
+			item:          toItem,
+		},
+	}
+	//
+
+	return change, nil
+}
 
 func (p *player) newItem(i *item) error {
-	//i.pItem = &persistence.Item{}
 	if i.pItem == nil {
 		i.pItem = &persistence.Item{}
 	}
@@ -823,40 +840,28 @@ func (p *player) newItem(i *item) error {
 	return nil
 }
 
-func (pi *playerInventories) ncCharClientItemCmd() []structs.NcCharClientItemCmd {
-	var ncs []structs.NcCharClientItemCmd
-	// for now empty, later on process each box type item
-	ncs = []structs.NcCharClientItemCmd{
-		{
-			NumOfItem: 0,
-			Box:       byte(pi.equipped.box),
-			Flag: structs.ProtoNcCharClientItemCmdFlag{
-				BF0: 0,
-			},
-		},
-		{
-			NumOfItem: 0,
-			Box:       byte(pi.inventory.box),
-			Flag: structs.ProtoNcCharClientItemCmdFlag{
-				BF0: 0,
-			},
-		},
-		{
-			NumOfItem: 0,
-			Box:       byte(pi.miniHouse.box),
-			Flag: structs.ProtoNcCharClientItemCmdFlag{
-				BF0: 0,
-			},
-		},
-		{
-			NumOfItem: 0,
-			Box:       byte(pi.premium.box),
-			Flag: structs.ProtoNcCharClientItemCmdFlag{
-				BF0: 0,
-			},
-		},
+func loadInventory(it persistence.InventoryType, p *player) (itemBox, error) {
+	var box itemBox
+	items, err := persistence.GetCharacterItems(int(p.persistence.char.ID), it)
+
+	if err != nil {
+		return box, err
 	}
-	return ncs
+
+	box.box = int(it)
+	box.items = make(map[int]*item)
+	for _, item := range items {
+		// load with goroutines and waitgroups
+		box.items[item.Slot] = loadItem(item)
+	}
+	return box, nil
+}
+
+func lastHeartbeat(p *player) float64 {
+	p.conn.RLock()
+	lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()
+	p.conn.RUnlock()
+	return lastHeartBeat
 }
 
 func protoAvatarShapeInfo(pv *playerView) *structs.ProtoAvatarShapeInfo {
@@ -869,13 +874,6 @@ func protoAvatarShapeInfo(pv *playerView) *structs.ProtoAvatarShapeInfo {
 	}
 	pv.RUnlock()
 	return nc
-}
-
-func lastHeartbeat(p *player) float64 {
-	p.conn.RLock()
-	lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()
-	p.conn.RUnlock()
-	return lastHeartBeat
 }
 
 func ncBriefInfoLoginCharacterCmd(p *player) structs.NcBriefInfoLoginCharacterCmd {

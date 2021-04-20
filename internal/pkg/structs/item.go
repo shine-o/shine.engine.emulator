@@ -87,3 +87,10 @@ type NcitemRelocateReq struct {
 type NcItemRelocateAck struct {
 	Code uint16
 }
+
+//struct PROTO_NC_ITEM_EQUIPCHANGE_CMD
+type NcItemEquipChangeCmd struct {
+	From ItemInventory
+	EquipSlot byte
+	ItemData ShineItemVar
+}

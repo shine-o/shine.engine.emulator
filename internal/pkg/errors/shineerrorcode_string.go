@@ -29,15 +29,17 @@ func _() {
 	_ = x[ZoneMapNotFound-18]
 	_ = x[ZoneUnknownItemClass-19]
 	_ = x[ZoneItemSlotChangeNoItem-20]
-	_ = x[ZoneItemSlotIsBound-21]
-	_ = x[ZoneItemSlotGTS-22]
-	_ = x[ZoneMissingPlayer-23]
-	_ = x[UnitTestError-24]
+	_ = x[ZoneItemSlotEquipNoItem-21]
+	_ = x[ZoneItemSlotIsBound-22]
+	_ = x[ZoneItemSlotGTS-23]
+	_ = x[ZoneItemUnknownInventoryType-24]
+	_ = x[ZoneMissingPlayer-25]
+	_ = x[UnitTestError-26]
 }
 
-const _ShineErrorCode_name = "PersistenceErrDBPersistenceItemInvalidAmountPersistenceItemInvalidShnIdPersistenceItemInvalidCharacterIdPersistenceItemDistinctShnIDPersistenceItemSlotUpdatePersistenceInventoryFullPersistenceCharInvalidSlotPersistenceCharNameTakenPersistenceCharNoSlotPersistenceCharInvalidNamePersistenceCharInvalidClassGenderPersistenceCharNotExistsPersistenceUnknownInventoryPersistenceOutOfRangeSlotZoneItemEquipFailedZoneItemMissingDataZoneInventorySlotOccupiedZoneMapNotFoundZoneUnknownItemClassZoneItemSlotChangeNoItemZoneItemSlotIsBoundZoneItemSlotGTSZoneMissingPlayerUnitTestError"
+const _ShineErrorCode_name = "PersistenceErrDBPersistenceItemInvalidAmountPersistenceItemInvalidShnIdPersistenceItemInvalidCharacterIdPersistenceItemDistinctShnIDPersistenceItemSlotUpdatePersistenceInventoryFullPersistenceCharInvalidSlotPersistenceCharNameTakenPersistenceCharNoSlotPersistenceCharInvalidNamePersistenceCharInvalidClassGenderPersistenceCharNotExistsPersistenceUnknownInventoryPersistenceOutOfRangeSlotZoneItemEquipFailedZoneItemMissingDataZoneInventorySlotOccupiedZoneMapNotFoundZoneUnknownItemClassZoneItemSlotChangeNoItemZoneItemSlotEquipNoItemZoneItemSlotIsBoundZoneItemSlotGTSZoneItemUnknownInventoryTypeZoneMissingPlayerUnitTestError"
 
-var _ShineErrorCode_index = [...]uint16{0, 16, 44, 71, 104, 132, 157, 181, 207, 231, 252, 278, 311, 335, 362, 387, 406, 425, 450, 465, 485, 509, 528, 543, 560, 573}
+var _ShineErrorCode_index = [...]uint16{0, 16, 44, 71, 104, 132, 157, 181, 207, 231, 252, 278, 311, 335, 362, 387, 406, 425, 450, 465, 485, 509, 532, 551, 566, 594, 611, 624}
 
 func (i ShineErrorCode) String() string {
 	if i < 0 || i >= ShineErrorCode(len(_ShineErrorCode_index)-1) {
