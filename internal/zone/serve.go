@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	log = shinelog.NewLogger("zone", "./output", logrus.DebugLevel)
+	log = shinelog.NewLogger("zone", "../../output", logrus.DebugLevel)
 )
 
 // Start initializes the TCP server and all the needed services and configuration for the zone

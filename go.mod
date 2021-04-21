@@ -12,7 +12,7 @@ require (
 	github.com/go-pg/migrations/v8 v8.1.0
 	github.com/go-pg/pg/extra/pgdebug v0.2.0 // indirect
 	github.com/go-pg/pg/v10 v10.9.1
-	github.com/go-pg/pg/v9 v9.2.0
+	github.com/go-pg/pg/v9 v9.2.0 // indirect
 	github.com/go-pg/urlstruct v1.0.1 // indirect
 	github.com/go-redis/redis/v7 v7.4.0
 	github.com/go-restruct/restruct v1.2.0-alpha
@@ -50,6 +50,7 @@ require (
 	github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77 // indirect
 	golang.org/x/crypto v0.0.0-20210415154028-4f45737414dc // indirect
 	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb
+	golang.org/x/mod v0.4.2 // indirect
 	golang.org/x/net v0.0.0-20210420210106-798c2154c571 // indirect
 	golang.org/x/sys v0.0.0-20210420205809-ac73e9fd8988 // indirect
 	golang.org/x/tools v0.1.0 // indirect

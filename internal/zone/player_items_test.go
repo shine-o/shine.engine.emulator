@@ -1207,7 +1207,7 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 }
 
 func TestItemEquip_BadItemEquip(t *testing.T) {
-	t.Fail()
+	//t.Fail()
 	persistence.CleanDB()
 
 	char := persistence.NewDummyCharacter("mage")

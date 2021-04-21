@@ -16,7 +16,7 @@ import (
 	"time"
 )
 
-var log = shinelog.NewLogger("networking default", "./output", logrus.DebugLevel)
+var log = shinelog.NewLogger("networking", "../../output", logrus.DebugLevel)
 
 type ShineService struct {
 	Settings

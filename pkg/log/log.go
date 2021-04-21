@@ -14,7 +14,7 @@ func NewLogger(name, outputFolder string, level logrus.Level) *logger.Logger {
 			logger.Fatalf("Failed to create output folder: %v", err)
 		}
 	}
-	path := fmt.Sprintf("./output/%v.log", name)
+	path := fmt.Sprintf("%v/%v.log", outputFolder, name)
 	lf, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
 
 	if err != nil {

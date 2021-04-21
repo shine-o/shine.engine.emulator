@@ -18,7 +18,6 @@ func TestMain(m *testing.M) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	log = logger.Init("test logger", true, false, ioutil.Discard)
-	log.Info("test logger")
 
 	persistence.InitDB(database.ConnectionParams{
 		User:     "user",
