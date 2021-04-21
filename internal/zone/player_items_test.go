@@ -1264,11 +1264,11 @@ func TestItemEquip_BadItemEquip(t *testing.T) {
 
 }
 
-func TestItemEquip_LowLevel(t *testing.T) {
+func TestItemEquip_BadItemClass(t *testing.T) {
 	t.Fail()
 }
 
-func TestItemEquip_BadItemClass(t *testing.T) {
+func TestItemEquip_LowLevel(t *testing.T) {
 	t.Fail()
 }
 

@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
@@ -705,8 +706,19 @@ func (p *player) charParameterData() structs.CharParameterData {
 	return nc
 }
 
-func canBeEquipped(equip int) bool  {
+func canBeEquipped(equip int, class int) bool  {
 	if equip >= 1 && equip <= 29 {
+		return true
+	}
+
+	switch data.ItemClassEnum(class) {
+	case data.ItemBracelet:
+	case data.ItemCosShield:
+	case data.ItemClassBoot:
+	case data.ItemClassShield:
+	case data.ItemClassArmor:
+	case data.ItemClassWeapon:
+	case data.ItemClassAmulet:
 		return true
 	}
 
@@ -740,8 +752,9 @@ func (p *player) equip(nc * structs.NcItemEquipReq) (itemSlotChange, error) {
 
 	// slot that will be occupied
 	equip := int(item.itemData.itemInfo.Equip)
+	class := int(item.itemData.itemInfo.Class)
 
-	if !canBeEquipped(equip) {
+	if !canBeEquipped(equip, class) {
 		return change, errors.Err{
 			Code:    errors.ZoneItemEquipBadType,
 			Details: errors.ErrDetails{
