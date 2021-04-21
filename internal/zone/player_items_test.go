@@ -1016,8 +1016,8 @@ func TestPlayer_DeletesItem(t *testing.T) {
 }
 
 func TestItemEquip_Success(t *testing.T) {
-	//    SUCCESS = 641, // 0x0281
-	//    FAILED = 645, // 0x0285
+	//	ItemEquipSuccess = 641
+	//	ItemEquipFailed = 645
 	persistence.CleanDB()
 
 	char := persistence.NewDummyCharacter("mage")
@@ -1201,14 +1201,20 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 }
 
 func TestItemEquip_Success_NC(t *testing.T) {
-	t.Fail()
+	//t.Fail()
+	// NC_ITEM_EQUIPCHANGE_CMD
+	// NC_ITEM_EQUIP_ACK
+	// NC_ITEM_CELLCHANGE_CMD - has no item data
 }
 
 func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 	t.Fail()
+	// NC_ITEM_EQUIPCHANGE_CMD
+	// NC_ITEM_EQUIP_ACK
+	// NC_ITEM_CELLCHANGE_CMD - has item data
 }
 
-func TestItemEquip_BadItemEquip(t *testing.T) {
+func TestItemEquip_BadItemEquipOrClass(t *testing.T) {
 	persistence.CleanDB()
 
 	char := persistence.NewDummyCharacter("mage")
@@ -1262,10 +1268,6 @@ func TestItemEquip_BadItemEquip(t *testing.T) {
 		t.Fatal("unexpected error code")
 	}
 
-}
-
-func TestItemEquip_BadItemClass(t *testing.T) {
-	t.Fail()
 }
 
 func TestItemEquip_LowLevel(t *testing.T) {
@@ -1328,7 +1330,6 @@ func TestItemEquip_NoItemInSlot(t *testing.T) {
 }
 
 func TestItemEquip_NC_Failed(t *testing.T) {
-	//    FAILED = 645, // 0x0285
 	// nc := itemEquipFailNc(err) structs.NcItemEquipFailNc ?
 	//nc.Code == 645
 	t.Fail()
@@ -1346,6 +1347,11 @@ func TestItemUnEquip_NC_Success(t *testing.T) {
 }
 
 func TestItemUnEquip_Success(t *testing.T) {
+	t.Fail()
+
+}
+
+func TestItemUnEquip_InventoryFull(t *testing.T) {
 	t.Fail()
 
 }
