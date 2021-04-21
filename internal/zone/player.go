@@ -705,6 +705,14 @@ func (p *player) charParameterData() structs.CharParameterData {
 	return nc
 }
 
+func canBeEquipped(equip int) bool  {
+	if equip >= 1 && equip <= 29 {
+		return true
+	}
+
+	return false
+}
+
 func (p *player) equip(nc * structs.NcItemEquipReq) (itemSlotChange, error) {
 	var (
 		change itemSlotChange
@@ -721,7 +729,7 @@ func (p *player) equip(nc * structs.NcItemEquipReq) (itemSlotChange, error) {
 		return change, errors.Err{
 			Code:    errors.ZoneItemSlotEquipNoItem,
 			Details: errors.ErrDetails{
-				"slot": nc.Slot,
+				"slot": slot,
 				"handle": p.getHandle(),
 				"characterName": characterName,
 			},
@@ -732,6 +740,17 @@ func (p *player) equip(nc * structs.NcItemEquipReq) (itemSlotChange, error) {
 
 	// slot that will be occupied
 	equip := int(item.itemData.itemInfo.Equip)
+
+	if !canBeEquipped(equip) {
+		return change, errors.Err{
+			Code:    errors.ZoneItemEquipBadType,
+			Details: errors.ErrDetails{
+				"slot": slot,
+				"handle": p.getHandle(),
+				"equip": equip,
+			},
+		}
+	}
 
 	equippedItem := p.inventories.get(persistence.EquippedInventory, equip)
 

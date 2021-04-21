@@ -1209,13 +1209,14 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 }
 
 func TestItemEquip_BadItemEquip(t *testing.T) {
-	//t.Fail()
 	persistence.CleanDB()
 
 	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: baseEntity{
+			RWMutex: &sync.RWMutex{},
+		},
 		persistence: &playerPersistence{
 			char: char,
 		},
