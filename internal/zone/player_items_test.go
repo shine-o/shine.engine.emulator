@@ -1113,7 +1113,9 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: baseEntity{
+			RWMutex:  &sync.RWMutex{},
+		},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -1275,7 +1277,9 @@ func TestItemEquip_NoItemInSlot(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: baseEntity{
+			RWMutex: &sync.RWMutex{},
+		},
 		persistence: &playerPersistence{
 			char: char,
 		},
