@@ -948,32 +948,31 @@ func Test_AllItems_With_Attributes_NC(t *testing.T) {
 
 func TestNewItemStack_Success(t *testing.T) {
 	t.Fail()
-
 }
 
 func TestNewItemStack_ItemNotStackable(t *testing.T) {
 	t.Fail()
-
 }
 
 func TestSplitItemStack_Success(t *testing.T) {
 	t.Fail()
-
 }
 
 func TestSplitItemStack_NC_Success(t *testing.T) {
 	t.Fail()
-
 }
 
 func TestSplitItemStack_BadDivision(t *testing.T) {
 	t.Fail()
-
 }
 
 func TestSplitItemStack_ItemNotStackable(t *testing.T) {
 	t.Fail()
+}
 
+func TestSplitItemStack_ChangeSlotWhileSplitting(t *testing.T) {
+	// should fail with error
+	t.Fail()
 }
 
 func TestSoftDeleteItem_Success(t *testing.T) {
@@ -1208,12 +1207,57 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 }
 
 func TestItemEquip_BadItemEquip(t *testing.T) {
-	// p.equipItem(item{}) (itemSlotChange{}, error)
-	// err := error.(ErrorCodeZone)
-	// err.Code = ItemEquipFailed
-	// err.Details["pHandle"]
-	//
 	t.Fail()
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage")
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, _, err := makeItem("El5")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcItemEquipReq{
+		Slot: 0,
+	}
+
+	_, err = player.equip(nc)
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	cErr, ok := err.(errors.Err)
+
+	if !ok {
+		t.Fatal("unexpected error type")
+	}
+
+	if cErr.Code != errors.ZoneItemEquipBadType {
+		t.Fatal("unexpected error code")
+	}
 
 }
 

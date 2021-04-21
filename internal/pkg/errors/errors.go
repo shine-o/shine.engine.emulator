@@ -32,7 +32,7 @@ const (
 	ZoneItemSlotIsBound
 	ZoneItemSlotGTS //Guild Tournament Storage
 	ZoneItemUnknownInventoryType
-
+	ZoneItemEquipBadType
 	ZoneMissingPlayer
 
 	UnitTestError
