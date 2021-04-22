@@ -5,7 +5,6 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"reflect"
 	"strings"
@@ -403,7 +402,7 @@ func itemEquipLogic(e event, zm *zoneMap) {
 		}
 	}
 
-	nc1, err := ncItemEquipChangeCmd(ev1.change)
+	nc1, _, err := ncItemEquipChangeCmd(ev1.change)
 	if err != nil {
 		networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
 			Code: ItemEquipFailed,
@@ -449,9 +448,9 @@ func itemUnEquipLogic(e event, zm *zoneMap) {
 	}
 
 	ev1 = &eduUnEquipItemEvent{
-		slot:      int(ev.nc.SlotEquip),
-		inventory: persistence.InventoryType(ev.nc.SlotInven),
-		err:       make(chan error),
+		from: int(ev.nc.SlotEquip),
+		to:   int(ev.nc.SlotInven),
+		err:  make(chan error),
 	}
 
 	player.events.send[eduUnEquipItem] <- ev1
@@ -462,11 +461,12 @@ func itemUnEquipLogic(e event, zm *zoneMap) {
 			networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
 				Code: ItemEquipFailed,
 			})
+			log.Error(err)
 			return
 		}
 	}
 
-	nc1, err := ncItemEquipChangeCmd(ev1.change)
+	_, nc1, err := ncItemEquipChangeCmd(ev1.change)
 	if err != nil {
 		networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
 			Code: ItemEquipFailed,
@@ -475,7 +475,7 @@ func itemUnEquipLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	_, nc2, err := ncItemCellChangeCmd(ev1.change)
+	nc2, _, err := ncItemCellChangeCmd(ev1.change)
 	if err != nil {
 		networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
 			Code: ItemEquipFailed,

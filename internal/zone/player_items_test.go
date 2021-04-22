@@ -1237,7 +1237,7 @@ func TestItemEquip_Success_NC(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	nc1, err := ncItemEquipChangeCmd(itemSlotChange)
+	nc1, _, err := ncItemEquipChangeCmd(itemSlotChange)
 
 	if err != nil {
 		t.Fatal(err)
@@ -1343,7 +1343,7 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	nc3, err := ncItemEquipChangeCmd(itemSlotChange)
+	nc3, _, err := ncItemEquipChangeCmd(itemSlotChange)
 
 	if err != nil {
 		t.Fatal(err)

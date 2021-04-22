@@ -1218,8 +1218,13 @@ func ncItemCellChangeCmd(change itemSlotChange) (*structs.NcItemCellChangeCmd, *
 
 // NC_ITEM_EQUIPCHANGE_CMD
 // data about the recently equipped item
-func ncItemEquipChangeCmd(change itemSlotChange) (structs.NcItemEquipChangeCmd, error) {
-	nc := structs.NcItemEquipChangeCmd{
+func ncItemEquipChangeCmd(change itemSlotChange) (structs.NcItemEquipChangeCmd, structs.NcItemEquipChangeCmd, error) {
+	var (
+		fromNc structs.NcItemEquipChangeCmd
+		toNc structs.NcItemEquipChangeCmd
+	)
+
+	fromNc = structs.NcItemEquipChangeCmd{
 		From: structs.ItemInventory{
 			Inventory: change.gameFrom,
 		},
@@ -1229,13 +1234,33 @@ func ncItemEquipChangeCmd(change itemSlotChange) (structs.NcItemEquipChangeCmd, 
 		},
 	}
 
-	itemAttr, err := itemAttributesBytes(change.from.item)
+	fromAttr, err := itemAttributesBytes(change.from.item)
 
 	if err != nil {
-		return nc, err
+		return fromNc,toNc, err
 	}
 
-	nc.ItemData.ItemAttr = itemAttr
+	fromNc.ItemData.ItemAttr = fromAttr
 
-	return nc, nil
+	toNc = structs.NcItemEquipChangeCmd{
+		From: structs.ItemInventory{
+			Inventory: change.gameTo,
+		},
+		EquipSlot: byte(change.from.slot),
+		ItemData: structs.ShineItemVar{
+			ItemID: 65535,
+		},
+	}
+
+	if change.to.item != nil {
+		toAttr, err := itemAttributesBytes(change.to.item)
+
+		if err != nil {
+			return fromNc, toNc, err
+		}
+		toNc.ItemData.ItemID = change.to.item.itemData.itemInfo.ID
+		toNc.ItemData.ItemAttr = toAttr
+	}
+
+	return fromNc,toNc, nil
 }

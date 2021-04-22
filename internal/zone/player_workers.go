@@ -36,7 +36,9 @@ func eduUnequipItemLogic(e event, player *player) {
 		})
 		return
 	}
-	//player.e
+	change, err := player.unEquip(ev.from, ev.to)
+	ev.change = change
+	ev.err <- err
 }
 
 // combination of events that must be processed in order
