@@ -146,7 +146,6 @@ func Start(cmd *cobra.Command, args []string) {
 			networking.NC_ITEM_UNEQUIP_REQ: networking.ShinePacket{
 				Handler: ncItemEquipReq,
 			},
-
 		},
 		SessionFactory: sessionFactory{},
 	}

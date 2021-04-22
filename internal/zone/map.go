@@ -151,7 +151,7 @@ func (zm *zoneMap) spawnNPC(sn *data.ShineNPC) {
 				d:         shineD,
 				movements: []movement{},
 			},
-			events:  events{},
+			events: events{},
 		},
 		stats: &npcStats{
 			hp: mi.MaxHP,

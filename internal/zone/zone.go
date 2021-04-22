@@ -41,7 +41,7 @@ func (z *zone) load() {
 	loadGameData(shinePath)
 
 	z.rm = &runningMaps{
-		list: make(map[int]*zoneMap),
+		list:    make(map[int]*zoneMap),
 		RWMutex: &sync.RWMutex{},
 	}
 
@@ -103,7 +103,7 @@ func (z *zone) load() {
 	go z.run()
 }
 
-func (rm * runningMaps)  all() <- chan *zoneMap {
+func (rm *runningMaps) all() <-chan *zoneMap {
 	rm.RLock()
 	ch := make(chan *zoneMap, len(rm.list))
 	rm.RUnlock()

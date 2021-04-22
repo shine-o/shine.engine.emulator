@@ -270,9 +270,9 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 
 	if limitExceeded(inventoryType, slot) {
 		return otherItem, errors.Err{
-			Code:    errors.PersistenceOutOfRangeSlot,
+			Code: errors.PersistenceOutOfRangeSlot,
 			Details: errors.ErrDetails{
-				"slot": slot,
+				"slot":          slot,
 				"inventoryType": inventoryType,
 			},
 		}

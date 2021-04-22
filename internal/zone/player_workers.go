@@ -51,14 +51,14 @@ func (p *player) eduPlayerEvents002() {
 	}
 }
 
-func eduEquipItemLogic(e event, player * player)  {
+func eduEquipItemLogic(e event, player *player) {
 	ev, ok := e.(*eduEquipItemEvent)
 	if !ok {
 		log.Error(errors.Err{
-			Code:    errors.ZoneUnexpectedEvent,
+			Code: errors.ZoneUnexpectedEvent,
 			Details: errors.ErrDetails{
 				"expected": reflect.TypeOf(eduEquipItemEvent{}).String(),
-				"actual":  reflect.TypeOf(ev).String(),
+				"actual":   reflect.TypeOf(ev).String(),
 			},
 		})
 		return
@@ -72,10 +72,10 @@ func eduPositionLogic(e event, player *player) {
 	ev, ok := e.(*eduPositionEvent)
 	if !ok {
 		log.Error(errors.Err{
-			Code:    errors.ZoneUnexpectedEvent,
+			Code: errors.ZoneUnexpectedEvent,
 			Details: errors.ErrDetails{
 				"expected": reflect.TypeOf(eduPositionEvent{}).String(),
-				"actual":  reflect.TypeOf(ev).String(),
+				"actual":   reflect.TypeOf(ev).String(),
 			},
 		})
 		return

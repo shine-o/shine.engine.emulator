@@ -46,7 +46,7 @@ type movement struct {
 type baseEntity struct {
 	info     entityInfo
 	fallback location
-	previous  location
+	previous location
 	current  location
 	next     location
 	events   events
@@ -147,11 +147,11 @@ func (b *baseEntity) move(m *zoneMap, igX, igY int) error {
 	b.current.y = igY
 	b.Unlock()
 	return errors.Err{
-		Code:    errors.ZoneMapCollisionDetected,
+		Code: errors.ZoneMapCollisionDetected,
 		Details: errors.ErrDetails{
 			"entity": b.getHandle(),
-			"igX": igX,
-			"igY": igY,
+			"igX":    igX,
+			"igY":    igY,
 		},
 	}
 }

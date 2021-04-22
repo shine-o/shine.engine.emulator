@@ -108,8 +108,6 @@ var (
 	}
 )
 
-
-
 func (de *dynamicEvents) add(sid string, i eventIndex) chan event {
 	de.Lock()
 	_, ok := de.events[sid]

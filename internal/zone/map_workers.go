@@ -368,7 +368,6 @@ func playerUnselectsEntityLogic(zm *zoneMap, e event) {
 	vp.targeting.RUnlock()
 }
 
-
 func itemEquipLogic(e event, zm *zoneMap) {
 	var (
 		ev  *itemEquipEvent
@@ -716,8 +715,8 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	//			if fails return to position 1 in queue
 	//		broadcast to players within range
 	var (
-		ev * playerWalksEvent
-		ev1 * eduPositionEvent
+		ev  *playerWalksEvent
+		ev1 *eduPositionEvent
 	)
 	ev, ok := e.(*playerWalksEvent)
 	if !ok {
@@ -741,16 +740,16 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	igY := int(ev.nc.To.Y)
 
 	ev1 = &eduPositionEvent{
-		x:      igX,
-		y:      igY,
-		zm:     zm,
-		err:    make(chan error),
+		x:   igX,
+		y:   igY,
+		zm:  zm,
+		err: make(chan error),
 	}
 
 	p1.events.send[eduPosition] <- ev1
 
 	select {
-	case err := <- ev1.err:
+	case err := <-ev1.err:
 		if err != nil {
 			log.Error(err)
 			return
@@ -785,8 +784,8 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	//		broadcast to players within range
 	// 		add to movements array
 	var (
-		ev * playerRunsEvent
-		ev1 * eduPositionEvent
+		ev  *playerRunsEvent
+		ev1 *eduPositionEvent
 	)
 
 	ev, ok := e.(*playerRunsEvent)
@@ -808,16 +807,16 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	igY := int(ev.nc.To.Y)
 
 	ev1 = &eduPositionEvent{
-		x:      igX,
-		y:      igY,
-		zm:     zm,
-		err:    make(chan error),
+		x:   igX,
+		y:   igY,
+		zm:  zm,
+		err: make(chan error),
 	}
 
 	p1.events.send[eduPosition] <- ev1
 
 	select {
-	case err := <- ev1.err:
+	case err := <-ev1.err:
 		if err != nil {
 			log.Error(err)
 			return
@@ -849,8 +848,8 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	//		verify collision
 	//		broadcast to players within range
 	var (
-		ev * playerStoppedEvent
-		ev1 * eduPositionEvent
+		ev  *playerStoppedEvent
+		ev1 *eduPositionEvent
 	)
 	ev, ok := e.(*playerStoppedEvent)
 	if !ok {
@@ -868,16 +867,16 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	igY := int(ev.nc.Location.Y)
 
 	ev1 = &eduPositionEvent{
-		x:      igX,
-		y:      igY,
-		zm:     zm,
-		err:    make(chan error),
+		x:   igX,
+		y:   igY,
+		zm:  zm,
+		err: make(chan error),
 	}
 
 	p1.events.send[eduPosition] <- ev1
 
 	select {
-	case err := <- ev1.err:
+	case err := <-ev1.err:
 		if err != nil {
 			log.Error(err)
 			return

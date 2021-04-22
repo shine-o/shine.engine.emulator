@@ -32,11 +32,11 @@ func (p *players) all() <-chan *player {
 
 func (p *players) get(h uint16) *player {
 	p.RLock()
-	defer 	p.RUnlock()
-	player, ok  := p.active[h]
+	defer p.RUnlock()
+	player, ok := p.active[h]
 	if !ok {
 		log.Error(errors.Err{
-			Code:    errors.ZoneMissingPlayer,
+			Code: errors.ZoneMissingPlayer,
 			Details: errors.ErrDetails{
 				"handle": h,
 			},

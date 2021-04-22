@@ -3,7 +3,7 @@ package zone
 import "testing"
 
 func Test_Load_NPC_Ok(t *testing.T) {
-	
+
 }
 
 func Test_Load_MonsterNPC_Ok(t *testing.T) {

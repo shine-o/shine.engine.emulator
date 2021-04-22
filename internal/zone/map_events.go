@@ -71,16 +71,16 @@ type playerPromptReplyEvent struct {
 }
 
 type itemIsMovedEvent struct {
-	nc *structs.NcitemRelocateReq
-	session  *session
+	nc      *structs.NcitemRelocateReq
+	session *session
 }
 
 type itemEquipEvent struct {
-	nc * structs.NcItemEquipReq
-	session  *session
+	nc      *structs.NcItemEquipReq
+	session *session
 }
 
 type itemUnEquipEvent struct {
-	nc * structs.NcItemUnequipReq
-	session  *session
+	nc      *structs.NcItemUnequipReq
+	session *session
 }

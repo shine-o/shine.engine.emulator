@@ -720,7 +720,7 @@ func (p *player) charParameterData() structs.CharParameterData {
 	return nc
 }
 
-func canBeEquipped(equip int, class int) bool  {
+func canBeEquipped(equip int, class int) bool {
 	if equip >= 1 && equip <= 29 {
 		return true
 	}
@@ -741,9 +741,9 @@ func canBeEquipped(equip int, class int) bool  {
 
 func (p *player) equip(slot int) (itemSlotChange, error) {
 	var (
-		change itemSlotChange
+		change   itemSlotChange
 		fromItem *item
-		toItem *item
+		toItem   *item
 	)
 
 	fromItem = p.inventories.get(persistence.BagInventory, slot)
@@ -752,10 +752,10 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 		characterName := p.persistence.char.Name
 		p.persistence.RUnlock()
 		return change, errors.Err{
-			Code:    errors.ZoneItemSlotEquipNoItem,
+			Code: errors.ZoneItemSlotEquipNoItem,
 			Details: errors.ErrDetails{
-				"slot": slot,
-				"handle": p.getHandle(),
+				"slot":          slot,
+				"handle":        p.getHandle(),
 				"characterName": characterName,
 			},
 		}
@@ -767,11 +767,11 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 
 	if !canBeEquipped(equip, class) {
 		return change, errors.Err{
-			Code:    errors.ZoneItemEquipBadType,
+			Code: errors.ZoneItemEquipBadType,
 			Details: errors.ErrDetails{
-				"slot": slot,
+				"slot":   slot,
 				"handle": p.getHandle(),
-				"equip": equip,
+				"equip":  equip,
 			},
 		}
 	}
@@ -785,7 +785,7 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 	opItem, err := fromItem.pItem.MoveTo(persistence.EquippedInventory, equip)
 
 	if err != nil {
-		return change ,err
+		return change, err
 	}
 
 	p.inventories.Lock()
@@ -802,14 +802,14 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 	p.inventories.Unlock()
 
 	change = itemSlotChange{
-		gameFrom: uint16(persistence.BagInventory) << 10 | uint16(slot) & 1023,
-		gameTo:   uint16(fromItem.pItem.InventoryType << 10 | fromItem.pItem.Slot & 1023),
-		from:     itemSlot{
-			slot:         slot,
+		gameFrom: uint16(persistence.BagInventory)<<10 | uint16(slot)&1023,
+		gameTo:   uint16(fromItem.pItem.InventoryType<<10 | fromItem.pItem.Slot&1023),
+		from: itemSlot{
+			slot:          slot,
 			inventoryType: persistence.BagInventory,
-			item: fromItem,
+			item:          fromItem,
 		},
-		to:       itemSlot{
+		to: itemSlot{
 			slot:          equip,
 			inventoryType: persistence.EquippedInventory,
 			item:          toItem,
@@ -821,9 +821,9 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 
 func (p *player) unEquip(from, to int) (itemSlotChange, error) {
 	var (
-		change itemSlotChange
+		change   itemSlotChange
 		fromItem *item
-		toItem *item
+		toItem   *item
 	)
 
 	fromItem = p.inventories.get(persistence.EquippedInventory, from)
@@ -832,10 +832,10 @@ func (p *player) unEquip(from, to int) (itemSlotChange, error) {
 		characterName := p.persistence.char.Name
 		p.persistence.RUnlock()
 		return change, errors.Err{
-			Code:    errors.ZoneItemSlotEquipNoItem,
+			Code: errors.ZoneItemSlotEquipNoItem,
 			Details: errors.ErrDetails{
-				"equip": from,
-				"handle": p.getHandle(),
+				"equip":         from,
+				"handle":        p.getHandle(),
 				"characterName": characterName,
 			},
 		}
@@ -847,10 +847,10 @@ func (p *player) unEquip(from, to int) (itemSlotChange, error) {
 		characterName := p.persistence.char.Name
 		p.persistence.RUnlock()
 		return change, errors.Err{
-			Code:    errors.ZoneItemSlotInUse,
+			Code: errors.ZoneItemSlotInUse,
 			Details: errors.ErrDetails{
-				"equip": from,
-				"handle": p.getHandle(),
+				"equip":         from,
+				"handle":        p.getHandle(),
 				"characterName": characterName,
 			},
 		}
@@ -868,14 +868,14 @@ func (p *player) unEquip(from, to int) (itemSlotChange, error) {
 	p.inventories.Unlock()
 
 	change = itemSlotChange{
-		gameFrom: uint16(persistence.EquippedInventory) << 10 | uint16(from) & 1023,
-		gameTo:   uint16(persistence.BagInventory) 		<< 10 |  uint16(to) & 1023,
-		from:     itemSlot{
-			slot:         from,
+		gameFrom: uint16(persistence.EquippedInventory)<<10 | uint16(from)&1023,
+		gameTo:   uint16(persistence.BagInventory)<<10 | uint16(to)&1023,
+		from: itemSlot{
+			slot:          from,
 			inventoryType: persistence.BagInventory,
-			item: fromItem,
+			item:          fromItem,
 		},
-		to:       itemSlot{
+		to: itemSlot{
 			slot:          to,
 			inventoryType: persistence.EquippedInventory,
 			item:          toItem,

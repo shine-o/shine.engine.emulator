@@ -21,8 +21,8 @@ func ncItemRelocReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	e = itemIsMovedEvent{
-		nc: &structs.NcitemRelocateReq{},
-		session:  session,
+		nc:      &structs.NcitemRelocateReq{},
+		session: session,
 	}
 
 	err := structs.Unpack(np.Command.Base.Data, e.nc)
@@ -59,8 +59,8 @@ func ncItemEquipReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	e = itemEquipEvent{
-		nc: &structs.NcItemEquipReq{},
-		session:  session,
+		nc:      &structs.NcItemEquipReq{},
+		session: session,
 	}
 
 	err := structs.Unpack(np.Command.Base.Data, e.nc)
@@ -98,8 +98,8 @@ func ncItemUnEquipReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	e = itemUnEquipEvent{
-		nc: &structs.NcItemUnequipReq{},
-		session:  session,
+		nc:      &structs.NcItemUnequipReq{},
+		session: session,
 	}
 
 	err := structs.Unpack(np.Command.Base.Data, e.nc)

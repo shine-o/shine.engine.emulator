@@ -90,9 +90,9 @@ type NcItemRelocateAck struct {
 
 //struct PROTO_NC_ITEM_EQUIPCHANGE_CMD
 type NcItemEquipChangeCmd struct {
-	From ItemInventory
+	From      ItemInventory
 	EquipSlot byte
-	ItemData ShineItemVar
+	ItemData  ShineItemVar
 }
 
 // NcItemEquipAck

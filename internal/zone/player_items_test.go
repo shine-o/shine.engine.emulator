@@ -18,11 +18,10 @@ func TestNewItem_Success(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char: char,
-			RWMutex : &sync.RWMutex{},
+			char:    char,
+			RWMutex: &sync.RWMutex{},
 		},
-		dz : &sync.RWMutex{},
-
+		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -65,10 +64,10 @@ func TestNewItem_WithAttributes(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char: char,
-			RWMutex : &sync.RWMutex{},
+			char:    char,
+			RWMutex: &sync.RWMutex{},
 		},
-		dz : &sync.RWMutex{},
+		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -229,10 +228,10 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char: char,
-			RWMutex : &sync.RWMutex{},
+			char:    char,
+			RWMutex: &sync.RWMutex{},
 		},
-		dz : &sync.RWMutex{},
+		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -399,10 +398,10 @@ func TestNewItem_BadItemIndex(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char: char,
-			RWMutex : &sync.RWMutex{},
+			char:    char,
+			RWMutex: &sync.RWMutex{},
 		},
-		dz : &sync.RWMutex{},
+		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1085,7 +1084,7 @@ func TestItemEquip_Success(t *testing.T) {
 		t.Fatal("item is NOT expected to be in slot")
 	}
 
-	if equippedItem.itemData.itemInfo.InxName != item.itemData.itemInfo.InxName || equippedItem.pItem.ID != item.pItem.ID{
+	if equippedItem.itemData.itemInfo.InxName != item.itemData.itemInfo.InxName || equippedItem.pItem.ID != item.pItem.ID {
 		t.Fatalf("mismatched items")
 	}
 
@@ -1191,7 +1190,7 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 	}
 
 	// assert it matches the second equipped item
-	if equippedItem.pItem.ID != item2.pItem.ID{
+	if equippedItem.pItem.ID != item2.pItem.ID {
 		t.Fatalf("mismatched items")
 	}
 }
@@ -1286,8 +1285,7 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage")
 
 	player := &player{
-		baseEntity: baseEntity{
-		},
+		baseEntity: baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -1384,8 +1382,6 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 	if len(nc4.Item.ItemAttr) == 0 {
 		t.Fatal("unexpected length for item attributes")
 	}
-
-
 
 }
 
@@ -1554,7 +1550,6 @@ func TestItemUnEquip_Success(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 
 	nc1 := &structs.NcItemUnequipReq{
 		SlotEquip: 12,

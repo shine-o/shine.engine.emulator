@@ -36,10 +36,10 @@ func (pi *playerInventories) get(inventoryType persistence.InventoryType, slot i
 		}
 	default:
 		log.Error(errors.Err{
-			Code:    errors.ZoneItemUnknownInventoryType,
+			Code: errors.ZoneItemUnknownInventoryType,
 			Details: errors.ErrDetails{
 				"inventoryType": inventoryType,
-				"slot": slot,
+				"slot":          slot,
 			},
 		})
 	}
@@ -54,7 +54,7 @@ func (pi *playerInventories) moveItem(from, to uint16) (itemSlotChange, error) {
 		fromInventoryType = persistence.InventoryType(from >> 10)
 		toInventoryType   = persistence.InventoryType(to >> 10)
 		fromInventorySlot = int(from & 1023)
-		toInventorySlot   = int(to& 1023)
+		toInventorySlot   = int(to & 1023)
 	)
 
 	change.gameFrom = from
@@ -68,7 +68,7 @@ func (pi *playerInventories) moveItem(from, to uint16) (itemSlotChange, error) {
 				Code: errors.ZoneItemSlotChangeNoItem,
 				Details: errors.ErrDetails{
 					"from": from,
-					"to": to,
+					"to":   to,
 				},
 			}
 		}
@@ -209,9 +209,9 @@ type itemSlotChange struct {
 }
 
 type itemSlot struct {
-	slot int
+	slot          int
 	inventoryType persistence.InventoryType
-	item *item
+	item          *item
 }
 
 func (i *item) generateStats() (int, []data.RandomOptionType) {
@@ -1220,12 +1220,12 @@ func ncItemCellChangeCmd(change itemSlotChange) (*structs.NcItemCellChangeCmd, *
 // data about the recently equipped item
 func ncItemEquipChangeCmd(change itemSlotChange) (structs.NcItemEquipChangeCmd, error) {
 	nc := structs.NcItemEquipChangeCmd{
-		From:      structs.ItemInventory{
+		From: structs.ItemInventory{
 			Inventory: change.gameFrom,
 		},
 		EquipSlot: byte(change.to.slot),
-		ItemData:  structs.ShineItemVar{
-			ItemID:   change.from.item.itemData.itemInfo.ID,
+		ItemData: structs.ShineItemVar{
+			ItemID: change.from.item.itemData.itemInfo.ID,
 		},
 	}
 
