@@ -1549,26 +1549,39 @@ func TestItemUnEquip_Success(t *testing.T) {
 		Slot: 0,
 	}
 
-	itemSlotChange, err := player.unEquip(int(nc.Slot))
+	_, err = player.equip(int(nc.Slot))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+
+	nc1 := &structs.NcItemUnequipReq{
+		SlotEquip: 12,
+		SlotInven: 0,
+	}
+
+	itemSlotChange, err := player.unEquip(int(nc1.SlotEquip), int(nc1.SlotInven))
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	if itemSlotChange.gameFrom != 8204 {
-		t.Fail()
+		t.Fatal("unexpected value")
 	}
 
 	if itemSlotChange.gameTo != 9216 {
-		t.Fail()
+		t.Fatal("unexpected value")
+	}
+
+	if itemSlotChange.to.item != nil {
+		t.Fatal("from item should be nil")
 	}
 
 	if itemSlotChange.from.item == nil {
 		t.Fatal("from item should not be nil")
-	}
 
-	if itemSlotChange.to.item != nil {
-		t.Fatal("to item should be nil, as no item is equipped")
 	}
 
 }

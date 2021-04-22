@@ -261,7 +261,13 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 	if err != nil {
 		return otherItem, err
 	}
-	
+
+	_, err = freeSlot(i.CharacterID, inventoryType)
+
+	if err != nil {
+		return otherItem, err
+	}
+
 	if limitExceeded(inventoryType, slot) {
 		return otherItem, errors.Err{
 			Code:    errors.PersistenceOutOfRangeSlot,

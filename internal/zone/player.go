@@ -746,8 +746,8 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 		toItem *item
 	)
 
-	item := p.inventories.get(persistence.BagInventory, slot)
-	if item == nil {
+	fromItem = p.inventories.get(persistence.BagInventory, slot)
+	if fromItem == nil {
 		p.persistence.RLock()
 		characterName := p.persistence.char.Name
 		p.persistence.RUnlock()
@@ -761,11 +761,9 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 		}
 	}
 
-	fromItem = item
-
 	// slot that will be occupied
-	equip := int(item.itemData.itemInfo.Equip)
-	class := int(item.itemData.itemInfo.Class)
+	equip := int(fromItem.itemData.itemInfo.Equip)
+	class := int(fromItem.itemData.itemInfo.Class)
 
 	if !canBeEquipped(equip, class) {
 		return change, errors.Err{
@@ -784,14 +782,13 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 		toItem = equippedItem
 	}
 
-	opItem, err := item.pItem.MoveTo(persistence.EquippedInventory, equip)
+	opItem, err := fromItem.pItem.MoveTo(persistence.EquippedInventory, equip)
 
 	if err != nil {
 		return change ,err
 	}
 
 	p.inventories.Lock()
-
 	if toItem != nil {
 		toItem.Lock()
 		toItem.pItem = opItem
@@ -801,14 +798,12 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 	} else {
 		delete(p.inventories.inventory.items, slot)
 	}
-
 	p.inventories.equipped.items[equip] = fromItem
-
 	p.inventories.Unlock()
 
 	change = itemSlotChange{
 		gameFrom: uint16(persistence.BagInventory) << 10 | uint16(slot) & 1023,
-		gameTo:   uint16(item.pItem.InventoryType << 10 | item.pItem.Slot & 1023),
+		gameTo:   uint16(fromItem.pItem.InventoryType << 10 | fromItem.pItem.Slot & 1023),
 		from:     itemSlot{
 			slot:         slot,
 			inventoryType: persistence.BagInventory,
@@ -820,7 +815,72 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 			item:          toItem,
 		},
 	}
-	//
+
+	return change, nil
+}
+
+func (p *player) unEquip(from, to int) (itemSlotChange, error) {
+	var (
+		change itemSlotChange
+		fromItem *item
+		toItem *item
+	)
+
+	fromItem = p.inventories.get(persistence.EquippedInventory, from)
+	if fromItem == nil {
+		p.persistence.RLock()
+		characterName := p.persistence.char.Name
+		p.persistence.RUnlock()
+		return change, errors.Err{
+			Code:    errors.ZoneItemSlotEquipNoItem,
+			Details: errors.ErrDetails{
+				"equip": from,
+				"handle": p.getHandle(),
+				"characterName": characterName,
+			},
+		}
+	}
+
+	toItem = p.inventories.get(persistence.BagInventory, to)
+	if toItem != nil {
+		p.persistence.RLock()
+		characterName := p.persistence.char.Name
+		p.persistence.RUnlock()
+		return change, errors.Err{
+			Code:    errors.ZoneItemSlotInUse,
+			Details: errors.ErrDetails{
+				"equip": from,
+				"handle": p.getHandle(),
+				"characterName": characterName,
+			},
+		}
+	}
+
+	_, err := fromItem.pItem.MoveTo(persistence.BagInventory, to)
+
+	if err != nil {
+		return change, err
+	}
+
+	p.inventories.Lock()
+	delete(p.inventories.equipped.items, from)
+	p.inventories.inventory.items[to] = fromItem
+	p.inventories.Unlock()
+
+	change = itemSlotChange{
+		gameFrom: uint16(persistence.EquippedInventory) << 10 | uint16(from) & 1023,
+		gameTo:   uint16(persistence.BagInventory) 		<< 10 |  uint16(to) & 1023,
+		from:     itemSlot{
+			slot:         from,
+			inventoryType: persistence.BagInventory,
+			item: fromItem,
+		},
+		to:       itemSlot{
+			slot:          to,
+			inventoryType: persistence.EquippedInventory,
+			item:          toItem,
+		},
+	}
 
 	return change, nil
 }
@@ -884,10 +944,6 @@ func (p *player) newItem(i *item) error {
 	p.inventories.Unlock()
 
 	return nil
-}
-
-func (p *player) unEquip(slot int) (itemSlotChange, error) {
-
 }
 
 func loadInventory(it persistence.InventoryType, p *player) (itemBox, error) {

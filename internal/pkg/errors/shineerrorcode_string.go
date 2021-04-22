@@ -31,18 +31,19 @@ func _() {
 	_ = x[ZoneItemSlotChangeNoItem-20]
 	_ = x[ZoneItemSlotEquipNoItem-21]
 	_ = x[ZoneItemSlotIsBound-22]
-	_ = x[ZoneItemSlotGTS-23]
-	_ = x[ZoneItemUnknownInventoryType-24]
-	_ = x[ZoneItemEquipBadType-25]
-	_ = x[ZoneMissingPlayer-26]
-	_ = x[ZoneUnexpectedEvent-27]
-	_ = x[ZoneMapCollisionDetected-28]
-	_ = x[UnitTestError-29]
+	_ = x[ZoneItemSlotInUse-23]
+	_ = x[ZoneItemSlotGTS-24]
+	_ = x[ZoneItemUnknownInventoryType-25]
+	_ = x[ZoneItemEquipBadType-26]
+	_ = x[ZoneMissingPlayer-27]
+	_ = x[ZoneUnexpectedEvent-28]
+	_ = x[ZoneMapCollisionDetected-29]
+	_ = x[UnitTestError-30]
 }
 
-const _ShineErrorCode_name = "PersistenceErrDBPersistenceItemInvalidAmountPersistenceItemInvalidShnIdPersistenceItemInvalidCharacterIdPersistenceItemDistinctShnIDPersistenceItemSlotUpdatePersistenceInventoryFullPersistenceCharInvalidSlotPersistenceCharNameTakenPersistenceCharNoSlotPersistenceCharInvalidNamePersistenceCharInvalidClassGenderPersistenceCharNotExistsPersistenceUnknownInventoryPersistenceOutOfRangeSlotZoneItemEquipFailedZoneItemMissingDataZoneInventorySlotOccupiedZoneMapNotFoundZoneUnknownItemClassZoneItemSlotChangeNoItemZoneItemSlotEquipNoItemZoneItemSlotIsBoundZoneItemSlotGTSZoneItemUnknownInventoryTypeZoneItemEquipBadTypeZoneMissingPlayerZoneUnexpectedEventZoneMapCollisionDetectedUnitTestError"
+const _ShineErrorCode_name = "PersistenceErrDBPersistenceItemInvalidAmountPersistenceItemInvalidShnIdPersistenceItemInvalidCharacterIdPersistenceItemDistinctShnIDPersistenceItemSlotUpdatePersistenceInventoryFullPersistenceCharInvalidSlotPersistenceCharNameTakenPersistenceCharNoSlotPersistenceCharInvalidNamePersistenceCharInvalidClassGenderPersistenceCharNotExistsPersistenceUnknownInventoryPersistenceOutOfRangeSlotZoneItemEquipFailedZoneItemMissingDataZoneInventorySlotOccupiedZoneMapNotFoundZoneUnknownItemClassZoneItemSlotChangeNoItemZoneItemSlotEquipNoItemZoneItemSlotIsBoundZoneItemSlotInUseZoneItemSlotGTSZoneItemUnknownInventoryTypeZoneItemEquipBadTypeZoneMissingPlayerZoneUnexpectedEventZoneMapCollisionDetectedUnitTestError"
 
-var _ShineErrorCode_index = [...]uint16{0, 16, 44, 71, 104, 132, 157, 181, 207, 231, 252, 278, 311, 335, 362, 387, 406, 425, 450, 465, 485, 509, 532, 551, 566, 594, 614, 631, 650, 674, 687}
+var _ShineErrorCode_index = [...]uint16{0, 16, 44, 71, 104, 132, 157, 181, 207, 231, 252, 278, 311, 335, 362, 387, 406, 425, 450, 465, 485, 509, 532, 551, 568, 583, 611, 631, 648, 667, 691, 704}
 
 func (i ShineErrorCode) String() string {
 	if i < 0 || i >= ShineErrorCode(len(_ShineErrorCode_index)-1) {

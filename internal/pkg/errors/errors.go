@@ -30,6 +30,7 @@ const (
 	ZoneItemSlotChangeNoItem
 	ZoneItemSlotEquipNoItem
 	ZoneItemSlotIsBound
+	ZoneItemSlotInUse
 	ZoneItemSlotGTS //Guild Tournament Storage
 	ZoneItemUnknownInventoryType
 	ZoneItemEquipBadType
