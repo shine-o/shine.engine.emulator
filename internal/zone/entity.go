@@ -2,6 +2,7 @@ package zone
 
 import (
 	"fmt"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"sync"
 )
 
@@ -45,6 +46,7 @@ type movement struct {
 type baseEntity struct {
 	info     entityInfo
 	fallback location
+	previous  location
 	current  location
 	next     location
 	events   events
@@ -133,16 +135,30 @@ func (b *baseEntity) getLocation() (int, int) {
 	return b.current.x, b.current.y
 }
 
-func (b *baseEntity) move(m *zoneMap, x, y int) error {
-	if canWalk(m.walkableX, m.walkableY, x, y) {
+func (b *baseEntity) move(m *zoneMap, igX, igY int) error {
+	rX, rY := bitmapCoordinates(igX, igY)
+	if canWalk(m.walkableX, m.walkableY, rX, rY) {
 		return nil
 	}
-	return fmt.Errorf("entity %v cannot move to x %v  y %v", b.getHandle(), x, y)
+	b.Lock()
+	b.previous.x = b.current.x
+	b.previous.y = b.current.y
+	b.current.x = igX
+	b.current.y = igY
+	b.Unlock()
+	return errors.Err{
+		Code:    errors.ZoneMapCollisionDetected,
+		Details: errors.ErrDetails{
+			"entity": b.getHandle(),
+			"igX": igX,
+			"igY": igY,
+		},
+	}
 }
 
 func entityInRange(e1, e2 location) bool {
-	viewerX, viewerY := igCoordToBitmap(e1.x, e1.y)
-	targetX, targetY := igCoordToBitmap(e2.x, e2.y)
+	viewerX, viewerY := bitmapCoordinates(e1.x, e1.y)
+	targetX, targetY := bitmapCoordinates(e2.x, e2.y)
 
 	maxY := viewerY + lengthY
 	minY := viewerY - lengthY

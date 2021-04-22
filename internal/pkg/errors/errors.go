@@ -34,7 +34,8 @@ const (
 	ZoneItemUnknownInventoryType
 	ZoneItemEquipBadType
 	ZoneMissingPlayer
-
+	ZoneUnexpectedEvent
+	ZoneMapCollisionDetected
 	UnitTestError
 )
 

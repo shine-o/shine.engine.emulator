@@ -12,7 +12,7 @@ type event interface {
 	//erroneous() <-chan error
 }
 
-type eventIndex uint32
+type eventIndex int
 
 type sendEvents map[eventIndex]chan<- event
 
@@ -72,7 +72,12 @@ const (
 	playerPromptReply
 	itemIsMoved
 
-
+	//entity data update events
+	eduPosition
+	eduState
+	eduStats
+	eduEquipItem
+	eduUnEquipItem
 
 	// dynamically registered events
 	// events that are defined at run time
@@ -82,7 +87,6 @@ const (
 
 func (de *dynamicEvents) add(sid string, i eventIndex) chan event {
 	de.Lock()
-	defer de.Unlock()
 	_, ok := de.events[sid]
 	if !ok {
 		de.events[sid] = events{
@@ -93,5 +97,6 @@ func (de *dynamicEvents) add(sid string, i eventIndex) chan event {
 	c := make(chan event)
 	de.events[sid].send[i] = c
 	de.events[sid].recv[i] = c
+	de.Unlock()
 	return c
 }

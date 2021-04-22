@@ -407,7 +407,7 @@ func validateLocation(zm *zoneMap, x, y, numSteps, speed int) bool {
 				break
 			}
 
-			rx, ry := igCoordToBitmap(lx, ly)
+			rx, ry := bitmapCoordinates(lx, ly)
 			if canWalk(zm.walkableX, zm.walkableY, rx, ry) {
 				continue
 			}
@@ -420,7 +420,7 @@ func validateLocation(zm *zoneMap, x, y, numSteps, speed int) bool {
 }
 
 // translates in game coordinates to SHBD coordinates
-func igCoordToBitmap(x, y int) (int, int) {
+func bitmapCoordinates(x, y int) (int, int) {
 	rX := (x * 8) / 50
 	rY := (y * 8) / 50
 	return rX, rY

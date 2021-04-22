@@ -332,6 +332,24 @@ func (p *player) load(name string) error {
 		RWMutex: &sync.RWMutex{},
 	}
 
+	p.baseEntity.events = events{
+		send: make(sendEvents),
+		recv: make(recvEvents),
+	}
+
+	pEvents := []eventIndex{
+		eduPosition, eduState, eduStats, eduEquipItem, eduUnEquipItem,
+	}
+
+	for _, ev := range pEvents {
+		c := make(chan event, 5)
+		p.baseEntity.events.send[ev] = c
+		p.baseEntity.events.recv[ev] = c
+	}
+
+	go p.eduPlayerEvents001()
+	go p.eduPlayerEvents002()
+
 	p.baseEntity.current.mapName = char.Location.MapName
 	p.baseEntity.current.mapID = int(char.Location.MapID)
 	p.baseEntity.current.x = char.Location.X

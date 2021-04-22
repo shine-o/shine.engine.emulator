@@ -581,6 +581,10 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	// 		verify speed ( default 30 for unmounted/unbuffed player)
 	//			if fails return to position 1 in queue
 	//		broadcast to players within range
+	var (
+		ev * playerWalksEvent
+		ev1 * eduPositionEvent
+	)
 	ev, ok := e.(*playerWalksEvent)
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
@@ -602,20 +606,23 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	igX := int(ev.nc.To.X)
 	igY := int(ev.nc.To.Y)
 
-	rX, rY := igCoordToBitmap(igX, igY)
-
-	err := p1.move(zm, rX, rY)
-
-	if err != nil {
-		// extra validation steps to avoid speed hacks
-		log.Error(err)
-		return
+	ev1 = &eduPositionEvent{
+		player: p1,
+		x:      igX,
+		y:      igY,
+		zm:     zm,
+		err:    make(chan error),
 	}
 
-	p1.baseEntity.Lock()
-	p1.current.x = igX
-	p1.current.y = igY
-	p1.baseEntity.Unlock()
+	p1.events.send[eduPosition] <- ev1
+
+	select {
+	case err := <- ev1.err:
+		if err != nil {
+			log.Error(err)
+			return
+		}
+	}
 
 	nc := structs.NcActSomeoneMoveWalkCmd{
 		Handle: ev.handle,
@@ -644,6 +651,11 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	//			if fails return to position 1 in queue
 	//		broadcast to players within range
 	// 		add to movements array
+	var (
+		ev * playerRunsEvent
+		ev1 * eduPositionEvent
+	)
+
 	ev, ok := e.(*playerRunsEvent)
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
@@ -653,26 +665,32 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	p1 := zm.entities.players.get(ev.handle)
 
 	if p1 == nil {
-		log.Error("player not found")
 		return
 	}
+
+	// check if distance is too high
+	// check if distance matches the applied mount or speed buffs
 
 	igX := int(ev.nc.To.X)
 	igY := int(ev.nc.To.Y)
 
-	rX, rY := igCoordToBitmap(igX, igY)
-
-	err := p1.move(zm, rX, rY)
-	if err != nil {
-		// extra validation steps to avoid speed hacks
-		log.Error(err)
-		return
+	ev1 = &eduPositionEvent{
+		player: p1,
+		x:      igX,
+		y:      igY,
+		zm:     zm,
+		err:    make(chan error),
 	}
 
-	p1.baseEntity.Lock()
-	p1.current.x = igX
-	p1.current.y = igY
-	p1.baseEntity.Unlock()
+	p1.events.send[eduPosition] <- ev1
+
+	select {
+	case err := <- ev1.err:
+		if err != nil {
+			log.Error(err)
+			return
+		}
+	}
 
 	nc := structs.NcActSomeoneMoveRunCmd{
 		Handle: ev.handle,
@@ -690,9 +708,6 @@ func playerRunsLogic(e event, zm *zoneMap) {
 			}
 		}(ap)
 	}
-
-	//go adjacentMonstersInform(p1, zm)
-
 }
 
 func playerStoppedLogic(e event, zm *zoneMap) {
@@ -701,6 +716,10 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	// for every stop
 	//		verify collision
 	//		broadcast to players within range
+	var (
+		ev * playerStoppedEvent
+		ev1 * eduPositionEvent
+	)
 	ev, ok := e.(*playerStoppedEvent)
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerStoppedEvent{}).String(), reflect.TypeOf(ev).String())
@@ -716,19 +735,23 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	igX := int(ev.nc.Location.X)
 	igY := int(ev.nc.Location.Y)
 
-	rX, rY := igCoordToBitmap(igX, igY)
-
-	err := p1.move(zm, rX, rY)
-
-	if err != nil {
-		log.Error(err)
-		return
+	ev1 = &eduPositionEvent{
+		player: p1,
+		x:      igX,
+		y:      igY,
+		zm:     zm,
+		err:    make(chan error),
 	}
 
-	p1.baseEntity.Lock()
-	p1.current.x = igX
-	p1.current.y = igY
-	p1.baseEntity.Unlock()
+	p1.events.send[eduPosition] <- ev1
+
+	select {
+	case err := <- ev1.err:
+		if err != nil {
+			log.Error(err)
+			return
+		}
+	}
 
 	nc := structs.NcActSomeoneStopCmd{
 		Handle:   ev.handle,
