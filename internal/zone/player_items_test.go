@@ -1576,19 +1576,92 @@ func TestItemUnEquip_Success(t *testing.T) {
 
 	if itemSlotChange.from.item == nil {
 		t.Fatal("from item should not be nil")
+	}
+}
 
+func TestItemUnEquip_InventoryFull(t *testing.T) {
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage")
+
+	player := &player{
+		persistence: &playerPersistence{
+			char:    char,
+			RWMutex: &sync.RWMutex{},
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, _, err := makeItem("ShortStaff")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcItemEquipReq{
+		Slot: 0,
+	}
+
+	_, err = player.equip(int(nc.Slot))
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < persistence.BagInventoryMax; i++ {
+		item, _, err := makeItem("ShortStaff")
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = player.newItem(item)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	nc1 := &structs.NcItemUnequipReq{
+		SlotEquip: 12,
+		SlotInven: 0,
+	}
+
+	_, err = player.unEquip(int(nc1.SlotEquip), int(nc1.SlotInven))
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	cErr, ok := err.(errors.Err)
+
+	if !ok {
+		t.Fatal("unexpected error type")
+	}
+
+	if cErr.Code != errors.ZoneItemSlotInUse {
+		t.Fatalf("unexpected error code %v", cErr.Code)
 	}
 
 }
 
-func TestItemUnEquip_InventoryFull(t *testing.T) {
-	t.Fail()
-}
-
-func TestItemUnEquip_First_Slot_Available(t *testing.T) {
-	t.Fail()
-	// assert the item is moved to the first slot available in the inventory
-}
+//func TestItemUnEquip_First_Slot_Available(t *testing.T) {
+//	t.Fail()
+//	// assert the item is moved to the first slot available in the inventory
+//}
 
 func TestChangeItemSlot_EmptySlot_Success(t *testing.T) {
 	persistence.CleanDB()
