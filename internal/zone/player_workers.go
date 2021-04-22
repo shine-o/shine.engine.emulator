@@ -16,12 +16,27 @@ func (p *player) eduPlayerEvents001() {
 		case e := <-p.events.recv[eduState]:
 			log.Info(e)
 		case e := <-p.events.recv[eduEquipItem]:
-			log.Info(e)
+			eduEquipItemLogic(e, p)
 		case e := <-p.events.recv[eduUnEquipItem]:
-			log.Info(e)
-
+			eduUnequipItemLogic(e, p)
+			//case e := <-p.events.recv[eduUseItem]:
 		}
 	}
+}
+
+func eduUnequipItemLogic(e event, player *player) {
+	ev, ok := e.(*eduUnEquipItemEvent)
+	if !ok {
+		log.Error(errors.Err{
+			Code: errors.ZoneUnexpectedEvent,
+			Details: errors.ErrDetails{
+				"expected": reflect.TypeOf(eduUnEquipItemEvent{}).String(),
+				"actual":   reflect.TypeOf(ev).String(),
+			},
+		})
+		return
+	}
+	//player.e
 }
 
 // combination of events that must be processed in order
@@ -30,14 +45,30 @@ func (p *player) eduPlayerEvents002() {
 	for {
 		select {
 		case e := <-p.events.recv[eduPosition]:
-			updatePlayerPosition(e)
-			//case e := <-p.events.recv[eduUseItem]:
+			eduPositionLogic(e, p)
 
 		}
 	}
 }
 
-func updatePlayerPosition(e event) {
+func eduEquipItemLogic(e event, player * player)  {
+	ev, ok := e.(*eduEquipItemEvent)
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneUnexpectedEvent,
+			Details: errors.ErrDetails{
+				"expected": reflect.TypeOf(eduEquipItemEvent{}).String(),
+				"actual":  reflect.TypeOf(ev).String(),
+			},
+		})
+		return
+	}
+	change, err := player.equip(ev.slot)
+	ev.change = change
+	ev.err <- err
+}
+
+func eduPositionLogic(e event, player *player) {
 	ev, ok := e.(*eduPositionEvent)
 	if !ok {
 		log.Error(errors.Err{
@@ -49,6 +80,6 @@ func updatePlayerPosition(e event) {
 		})
 		return
 	}
-	err := ev.player.move(ev.zm, ev.x, ev.y)
+	err := player.move(ev.zm, ev.x, ev.y)
 	ev.err <- err
 }

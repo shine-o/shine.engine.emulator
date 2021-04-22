@@ -71,6 +71,8 @@ const (
 	playerClicksOnNpc
 	playerPromptReply
 	itemIsMoved
+	itemEquip
+	itemUnEquip
 
 	//entity data update events
 	eduPosition
@@ -84,6 +86,29 @@ const (
 	dLogoutCancel
 	dLogoutConclude
 )
+
+var (
+	zEvents = []eventIndex{
+		playerMapLogin, playerSHN, playerData,
+		heartbeatUpdate, playerLogoutStart,
+		playerLogoutCancel, playerLogoutConclude, persistPlayerPosition,
+		changeMap,
+	}
+	mapEvents = []eventIndex{
+		playerHandle,
+		playerHandleMaintenance,
+		queryPlayer, queryMonster,
+		playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
+		unknownHandle, monsterAppeared, monsterDisappeared, monsterWalks, monsterRuns,
+		playerSelectsEntity, playerUnselectsEntity, playerClicksOnNpc, playerPromptReply, itemIsMoved, itemEquip, itemUnEquip,
+	}
+
+	playerEvents = []eventIndex{
+		eduPosition, eduState, eduStats, eduEquipItem, eduUnEquipItem,
+	}
+)
+
+
 
 func (de *dynamicEvents) add(sid string, i eventIndex) chan event {
 	de.Lock()

@@ -152,7 +152,6 @@ func (zm *zoneMap) spawnNPC(sn *data.ShineNPC) {
 				movements: []movement{},
 			},
 			events:  events{},
-			RWMutex: &sync.RWMutex{},
 		},
 		stats: &npcStats{
 			hp: mi.MaxHP,
@@ -343,7 +342,6 @@ func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.M
 					d:         d,
 					movements: []movement{},
 				},
-				RWMutex: &sync.RWMutex{},
 			},
 			stats: &npcStats{
 				hp: mi.MaxHP,

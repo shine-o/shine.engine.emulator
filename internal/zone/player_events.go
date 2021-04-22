@@ -1,5 +1,7 @@
 package zone
 
+import "github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
+
 // 	eduPosition
 //	eduState
 //	eduStats
@@ -7,7 +9,6 @@ package zone
 //	eduUnEquipItem
 
 type eduPositionEvent struct {
-	player * player
 	x, y int
 	zm * zoneMap
 	err chan error
@@ -17,6 +18,15 @@ type eduStateEvent struct {}
 
 type eduStatsEvent struct {}
 
-type eduEquipItemEvent struct {}
+type eduEquipItemEvent struct {
+	slot int
+	change itemSlotChange
+	err chan error
+}
 
-type eduUnEquipItemEvent struct {}
+type eduUnEquipItemEvent struct {
+	slot int
+	inventory persistence.InventoryType
+	change itemSlotChange
+	err chan error
+}

@@ -45,13 +45,6 @@ func (z *zone) load() {
 		RWMutex: &sync.RWMutex{},
 	}
 
-	zEvents := []eventIndex{
-		playerMapLogin, playerSHN, playerData,
-		heartbeatUpdate, playerLogoutStart,
-		playerLogoutCancel, playerLogoutConclude, persistPlayerPosition,
-		changeMap,
-	}
-
 	z.events = &events{
 		send: make(sendEvents),
 		recv: make(recvEvents),
@@ -182,16 +175,7 @@ func (z *zone) addMap(mapId int) {
 	m.metrics.players.Set(0)
 	m.metrics.npcs.Set(0)
 
-	events := []eventIndex{
-		playerHandle,
-		playerHandleMaintenance,
-		queryPlayer, queryMonster,
-		playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
-		unknownHandle, monsterAppeared, monsterDisappeared, monsterWalks, monsterRuns,
-		playerSelectsEntity, playerUnselectsEntity, playerClicksOnNpc, playerPromptReply, itemIsMoved,
-	}
-
-	for _, index := range events {
+	for _, index := range mapEvents {
 		c := make(chan event, 500)
 		m.recv[index] = c
 		m.send[index] = c

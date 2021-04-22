@@ -74,3 +74,13 @@ type itemIsMovedEvent struct {
 	nc *structs.NcitemRelocateReq
 	session  *session
 }
+
+type itemEquipEvent struct {
+	nc * structs.NcItemEquipReq
+	session  *session
+}
+
+type itemUnEquipEvent struct {
+	nc * structs.NcItemUnequipReq
+	session  *session
+}

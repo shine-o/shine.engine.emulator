@@ -46,17 +46,19 @@ func (pi *playerInventories) get(inventoryType persistence.InventoryType, slot i
 	return nil
 }
 
-func (pi *playerInventories) changeItemSlot(nc *structs.NcitemRelocateReq) (itemSlotChange, error) {
+// move item from one inventory/slot to another inventory/slot
+// the input from/to are values sent by the client
+func (pi *playerInventories) moveItem(from, to uint16) (itemSlotChange, error) {
 	var (
 		change            = itemSlotChange{}
-		fromInventoryType = persistence.InventoryType(nc.From.Inventory >> 10)
-		toInventoryType   = persistence.InventoryType(nc.To.Inventory >> 10)
-		fromInventorySlot = int(nc.From.Inventory & 1023)
-		toInventorySlot   = int(nc.To.Inventory & 1023)
+		fromInventoryType = persistence.InventoryType(from >> 10)
+		toInventoryType   = persistence.InventoryType(to >> 10)
+		fromInventorySlot = int(from & 1023)
+		toInventorySlot   = int(to& 1023)
 	)
 
-	change.gameFrom = nc.From.Inventory
-	change.gameTo = nc.To.Inventory
+	change.gameFrom = from
+	change.gameTo = to
 
 	switch fromInventoryType {
 	case persistence.BagInventory:
@@ -65,7 +67,8 @@ func (pi *playerInventories) changeItemSlot(nc *structs.NcitemRelocateReq) (item
 			return change, errors.Err{
 				Code: errors.ZoneItemSlotChangeNoItem,
 				Details: errors.ErrDetails{
-					"nc": nc,
+					"from": from,
+					"to": to,
 				},
 			}
 		}
@@ -1177,6 +1180,7 @@ func addRandomOptionCountRow(dropItemIndex string, id *itemData, wg *sync.WaitGr
 }
 
 // NC_ITEM_CELLCHANGE_CMD
+// info about a slot change between items
 func ncItemCellChangeCmd(change itemSlotChange) (*structs.NcItemCellChangeCmd, *structs.NcItemCellChangeCmd, error) {
 	var (
 		nc1 = &structs.NcItemCellChangeCmd{}
@@ -1210,4 +1214,28 @@ func ncItemCellChangeCmd(change itemSlotChange) (*structs.NcItemCellChangeCmd, *
 	}
 
 	return nc1, nc2, nil
+}
+
+// NC_ITEM_EQUIPCHANGE_CMD
+// data about the recently equipped item
+func ncItemEquipChangeCmd(change itemSlotChange) (structs.NcItemEquipChangeCmd, error) {
+	nc := structs.NcItemEquipChangeCmd{
+		From:      structs.ItemInventory{
+			Inventory: change.gameFrom,
+		},
+		EquipSlot: byte(change.to.slot),
+		ItemData:  structs.ShineItemVar{
+			ItemID:   change.from.item.itemData.itemInfo.ID,
+		},
+	}
+
+	itemAttr, err := itemAttributesBytes(change.from.item)
+
+	if err != nil {
+		return nc, err
+	}
+
+	nc.ItemData.ItemAttr = itemAttr
+
+	return nc, nil
 }

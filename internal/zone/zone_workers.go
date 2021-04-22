@@ -213,9 +213,7 @@ func playerDataLogic(e event) {
 	}
 
 	p := &player{
-		baseEntity: baseEntity{
-			RWMutex: &sync.RWMutex{},
-		},
+		baseEntity: baseEntity{},
 		conn: &playerConnection{
 			lastHeartBeat: time.Now(),
 			close:         ev.net.CloseConnection,

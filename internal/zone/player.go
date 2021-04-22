@@ -337,11 +337,7 @@ func (p *player) load(name string) error {
 		recv: make(recvEvents),
 	}
 
-	pEvents := []eventIndex{
-		eduPosition, eduState, eduStats, eduEquipItem, eduUnEquipItem,
-	}
-
-	for _, ev := range pEvents {
+	for _, ev := range playerEvents {
 		c := make(chan event, 5)
 		p.baseEntity.events.send[ev] = c
 		p.baseEntity.events.recv[ev] = c
@@ -743,12 +739,11 @@ func canBeEquipped(equip int, class int) bool  {
 	return false
 }
 
-func (p *player) equip(nc * structs.NcItemEquipReq) (itemSlotChange, error) {
+func (p *player) equip(slot int) (itemSlotChange, error) {
 	var (
 		change itemSlotChange
 		fromItem *item
 		toItem *item
-		slot = int(nc.Slot)
 	)
 
 	item := p.inventories.get(persistence.BagInventory, slot)
@@ -803,10 +798,11 @@ func (p *player) equip(nc * structs.NcItemEquipReq) (itemSlotChange, error) {
 		toItem.Unlock()
 		delete(p.inventories.equipped.items, equip)
 		p.inventories.inventory.items[slot] = toItem
+	} else {
+		delete(p.inventories.inventory.items, slot)
 	}
 
 	p.inventories.equipped.items[equip] = fromItem
-	delete(p.inventories.inventory.items, slot)
 
 	p.inventories.Unlock()
 
@@ -888,6 +884,10 @@ func (p *player) newItem(i *item) error {
 	p.inventories.Unlock()
 
 	return nil
+}
+
+func (p *player) unEquip(slot int) (itemSlotChange, error) {
+
 }
 
 func loadInventory(it persistence.InventoryType, p *player) (itemBox, error) {

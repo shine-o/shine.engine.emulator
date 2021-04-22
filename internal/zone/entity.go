@@ -51,7 +51,7 @@ type baseEntity struct {
 	next     location
 	events   events
 	// dangerZone: only to be used when loading or other situation!!
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type entityInfo struct {

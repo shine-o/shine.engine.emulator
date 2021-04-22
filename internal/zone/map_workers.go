@@ -5,6 +5,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"reflect"
 	"strings"
@@ -52,45 +53,11 @@ func (zm *zoneMap) playerActivity() {
 		case e := <-zm.recv[playerUnselectsEntity]:
 			go playerUnselectsEntityLogic(zm, e)
 		case e := <-zm.recv[itemIsMoved]:
-			go func() {
-				ev, ok := e.(*itemIsMovedEvent)
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&itemIsMovedEvent{}).String(), reflect.TypeOf(ev).String())
-					return
-				}
-				player := zm.entities.players.get(ev.session.handle)
-				if player == nil {
-					return
-				}
-
-				change, err := player.inventories.changeItemSlot(ev.nc)
-				if err != nil {
-					log.Error(err)
-					//TODO: check error type, send custom NC_ITEM_RELOC_ACK with error code
-					networking.Send(player.conn.outboundData, networking.NC_ITEM_RELOC_ACK, &structs.NcItemRelocateAck{
-						Code: ItemSlotChangeCommon,
-					})
-					return
-				}
-
-				cc1, cc2, err := ncItemCellChangeCmd(change)
-				if err != nil {
-					log.Error(err)
-					//TODO: check error type, send custom NC_ITEM_RELOC_ACK with error code
-					networking.Send(player.conn.outboundData, networking.NC_ITEM_RELOC_ACK, &structs.NcItemRelocateAck{
-						Code: ItemSlotChangeCommon,
-					})
-					return
-				}
-
-				networking.Send(player.conn.outboundData, networking.NC_ITEM_RELOC_ACK, &structs.NcItemRelocateAck{
-					Code: ItemSlotChangeOk,
-				})
-
-				networking.Send(player.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, cc1)
-				networking.Send(player.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, cc2)
-
-			}()
+			go itemIsMovedLogic(e, zm)
+		case e := <-zm.recv[itemEquip]:
+			go itemEquipLogic(e, zm)
+		case e := <-zm.recv[itemUnEquip]:
+			go itemUnEquipLogic(e, zm)
 		}
 	}
 }
@@ -401,6 +368,173 @@ func playerUnselectsEntityLogic(zm *zoneMap, e event) {
 	vp.targeting.RUnlock()
 }
 
+
+func itemEquipLogic(e event, zm *zoneMap) {
+	var (
+		ev  *itemEquipEvent
+		ev1 *eduEquipItemEvent
+	)
+
+	ev, ok := e.(*itemEquipEvent)
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&itemEquipEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
+	player := zm.entities.players.get(ev.session.handle)
+
+	if player == nil {
+		return
+	}
+
+	ev1 = &eduEquipItemEvent{
+		slot: int(ev.nc.Slot),
+		err:  make(chan error),
+	}
+
+	player.events.send[eduEquipItem] <- ev1
+
+	select {
+	case err := <-ev1.err:
+		if err != nil {
+			networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+				Code: ItemEquipFailed,
+			})
+			return
+		}
+	}
+
+	nc1, err := ncItemEquipChangeCmd(ev1.change)
+	if err != nil {
+		networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+			Code: ItemEquipFailed,
+		})
+		log.Error(err)
+		return
+	}
+
+	_, nc2, err := ncItemCellChangeCmd(ev1.change)
+	if err != nil {
+		networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+			Code: ItemEquipFailed,
+		})
+		log.Error(err)
+		return
+	}
+
+	networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIPCHANGE_CMD, &nc1)
+
+	networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+		Code: ItemEquipSuccess,
+	})
+
+	networking.Send(player.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, nc2)
+}
+
+func itemUnEquipLogic(e event, zm *zoneMap) {
+	var (
+		ev  *itemUnEquipEvent
+		ev1 *eduUnEquipItemEvent
+	)
+
+	ev, ok := e.(*itemUnEquipEvent)
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&itemUnEquipEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
+	player := zm.entities.players.get(ev.session.handle)
+
+	if player == nil {
+		return
+	}
+
+	ev1 = &eduUnEquipItemEvent{
+		slot:      int(ev.nc.SlotEquip),
+		inventory: persistence.InventoryType(ev.nc.SlotInven),
+		err:       make(chan error),
+	}
+
+	player.events.send[eduUnEquipItem] <- ev1
+
+	select {
+	case err := <-ev1.err:
+		if err != nil {
+			networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+				Code: ItemEquipFailed,
+			})
+			return
+		}
+	}
+
+	nc1, err := ncItemEquipChangeCmd(ev1.change)
+	if err != nil {
+		networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+			Code: ItemEquipFailed,
+		})
+		log.Error(err)
+		return
+	}
+
+	_, nc2, err := ncItemCellChangeCmd(ev1.change)
+	if err != nil {
+		networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+			Code: ItemEquipFailed,
+		})
+		log.Error(err)
+		return
+	}
+
+	networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIPCHANGE_CMD, &nc1)
+
+	networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+		Code: ItemEquipSuccess,
+	})
+
+	networking.Send(player.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, nc2)
+}
+
+func itemIsMovedLogic(e event, zm *zoneMap) {
+	ev, ok := e.(*itemIsMovedEvent)
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&itemIsMovedEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
+	player := zm.entities.players.get(ev.session.handle)
+
+	if player == nil {
+		return
+	}
+
+	change, err := player.inventories.moveItem(ev.nc.From.Inventory, ev.nc.To.Inventory)
+	if err != nil {
+		log.Error(err)
+		//TODO: check error type, send custom NC_ITEM_RELOC_ACK with error code
+		networking.Send(player.conn.outboundData, networking.NC_ITEM_RELOC_ACK, &structs.NcItemRelocateAck{
+			Code: ItemSlotChangeCommon,
+		})
+		return
+	}
+
+	cc1, cc2, err := ncItemCellChangeCmd(change)
+	if err != nil {
+		log.Error(err)
+		//TODO: check error type, send custom NC_ITEM_RELOC_ACK with error code
+		networking.Send(player.conn.outboundData, networking.NC_ITEM_RELOC_ACK, &structs.NcItemRelocateAck{
+			Code: ItemSlotChangeCommon,
+		})
+		return
+	}
+
+	networking.Send(player.conn.outboundData, networking.NC_ITEM_RELOC_ACK, &structs.NcItemRelocateAck{
+		Code: ItemSlotChangeOk,
+	})
+
+	networking.Send(player.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, cc1)
+	networking.Send(player.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, cc2)
+}
+
 func npcWalksLogic(zm *zoneMap, e event) {
 	ev, ok := e.(*npcWalksEvent)
 	if !ok {
@@ -607,7 +741,6 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	igY := int(ev.nc.To.Y)
 
 	ev1 = &eduPositionEvent{
-		player: p1,
 		x:      igX,
 		y:      igY,
 		zm:     zm,
@@ -675,7 +808,6 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	igY := int(ev.nc.To.Y)
 
 	ev1 = &eduPositionEvent{
-		player: p1,
 		x:      igX,
 		y:      igY,
 		zm:     zm,
@@ -736,7 +868,6 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	igY := int(ev.nc.Location.Y)
 
 	ev1 = &eduPositionEvent{
-		player: p1,
 		x:      igX,
 		y:      igY,
 		zm:     zm,

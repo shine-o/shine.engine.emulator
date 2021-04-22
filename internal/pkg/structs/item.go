@@ -94,3 +94,8 @@ type NcItemEquipChangeCmd struct {
 	EquipSlot byte
 	ItemData ShineItemVar
 }
+
+// NcItemEquipAck
+type NcItemEquipAck struct {
+	Code uint16
+}
