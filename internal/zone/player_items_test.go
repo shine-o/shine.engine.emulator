@@ -31,7 +31,7 @@ func TestNewItem_Success(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -77,7 +77,7 @@ func TestNewItem_WithAttributes(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, _, err := makeItem(itemInxName)
+	item, _, err := makeItem(itemInxName, makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -241,7 +241,7 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, _, err := makeItem(itemInxName)
+	item, _, err := makeItem(itemInxName, makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -384,7 +384,7 @@ func TestNewItem_CreateAllItems(t *testing.T) {
 	persistence.CleanDB()
 
 	for _, row := range itemsData.ItemInfo.ShineRow {
-		_, _, err := makeItem(row.InxName)
+		_, _, err := makeItem(row.InxName, makeItemOptions{})
 		if err != nil {
 			t.Error(err)
 		}
@@ -411,7 +411,7 @@ func TestNewItem_BadItemIndex(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	_, _, err = makeItem("badindex")
+	_, _, err = makeItem("badindex", makeItemOptions{})
 
 	if err == nil {
 		t.Fatal("expected error, got null")
@@ -422,7 +422,7 @@ func Test_AllItems_NC(t *testing.T) {
 	persistence.CleanDB()
 
 	for _, row := range itemsData.ItemInfo.ShineRow {
-		item, _, err := makeItem(row.InxName)
+		item, _, err := makeItem(row.InxName, makeItemOptions{})
 		if err != nil {
 			continue
 		}
@@ -850,7 +850,7 @@ func Test_AllItems_With_Attributes_NC(t *testing.T) {
 	persistence.CleanDB()
 
 	for _, row := range itemsData.ItemInfo.ShineRow {
-		item, icd, err := makeItem(row.InxName)
+		item, icd, err := makeItem(row.InxName, makeItemOptions{})
 		if err != nil {
 			continue
 		}
@@ -946,7 +946,33 @@ func Test_AllItems_With_Attributes_NC(t *testing.T) {
 }
 
 func TestNewItemStack_Success(t *testing.T) {
-	t.Fail()
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage", false)
+
+	player := &player{
+		persistence: &playerPersistence{
+			char:    char,
+			RWMutex: &sync.RWMutex{},
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is persisted here
+	err = player.newItem(item)
 }
 
 func TestNewItemStack_ItemNotStackable(t *testing.T) {
@@ -1136,7 +1162,7 @@ func TestItemEquip_Success(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -1225,7 +1251,7 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -1238,7 +1264,7 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 	}
 
 	// create new item that will take the slot 0 that was recently occupied
-	item2, _, err := makeItem("ShortStaff")
+	item2, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -1317,7 +1343,7 @@ func TestItemEquip_Success_NC(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -1400,7 +1426,7 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -1413,7 +1439,7 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 	}
 
 	// create new item that will take the slot 0 that was recently occupied
-	item2, _, err := makeItem("ShortStaff")
+	item2, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -1507,7 +1533,7 @@ func TestItemEquip_BadItemEquipOrClass(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, _, err := makeItem("El5")
+	item, _, err := makeItem("El5", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -1565,7 +1591,7 @@ func TestItemEquip_NoItemInSlot(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -1631,7 +1657,7 @@ func TestItemUnEquip_Success(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -1701,7 +1727,7 @@ func TestItemUnEquip_InventoryFull(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -1724,7 +1750,7 @@ func TestItemUnEquip_InventoryFull(t *testing.T) {
 	}
 
 	for i := 0; i < persistence.BagInventoryMax; i++ {
-		item, _, err := makeItem("ShortStaff")
+		item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 		if err != nil {
 			t.Fatal(err)
@@ -1785,7 +1811,7 @@ func TestChangeItemSlot_EmptySlot_Success(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -1856,7 +1882,7 @@ func TestChangeItemSlot_OccupiedSlot_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -1868,7 +1894,7 @@ func TestChangeItemSlot_OccupiedSlot_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	item1, _, err := makeItem("ShortStaff")
+	item1, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -1954,7 +1980,7 @@ func TestChangeItemSlot_EmptySlot_NC(t *testing.T) {
 	}
 
 	// item is not persisted here, only in memory
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -2031,7 +2057,7 @@ func TestChangeItemSlot_OccupiedSlot_NC(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -2043,7 +2069,7 @@ func TestChangeItemSlot_OccupiedSlot_NC(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	item1, _, err := makeItem("ShortStaff")
+	item1, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -2120,7 +2146,7 @@ func TestChangeItem_NonExistentSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -2132,7 +2158,7 @@ func TestChangeItem_NonExistentSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	item1, _, err := makeItem("ShortStaff")
+	item1, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -2190,7 +2216,7 @@ func TestChangeItemSlot_NoItemInSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	item, _, err := makeItem("ShortStaff")
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)
@@ -2202,7 +2228,7 @@ func TestChangeItemSlot_NoItemInSlot(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	item1, _, err := makeItem("ShortStaff")
+	item1, _, err := makeItem("ShortStaff", makeItemOptions{})
 
 	if err != nil {
 		t.Fatal(err)

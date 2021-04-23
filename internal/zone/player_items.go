@@ -969,7 +969,11 @@ func chosenStatTypes(amount int, id *itemData) []data.RandomOptionType {
 	return types[:amount]
 }
 
-func makeItem(itemIndex string) (*item, itemCreationDetails, error) {
+type makeItemOptions struct {
+
+}
+
+func makeItem(itemIndex string, options makeItemOptions) (*item, itemCreationDetails, error) {
 	var (
 		i = &item{
 			RWMutex: &sync.RWMutex{},

@@ -1058,8 +1058,6 @@ func showAllNPC(p *player, zm *zoneMap) {
 	var npcs structs.NcBriefInfoMobCmd
 
 	for n := range zm.entities.npcs.all() {
-		n.baseEntity.RLock()
-
 		if !n.baseEntity.info.monster {
 			info := ncBriefInfoRegenMobCmd(n)
 			// if portal, FlagState = 1
@@ -1071,7 +1069,6 @@ func showAllNPC(p *player, zm *zoneMap) {
 			npcs.Mobs = append(npcs.Mobs, info)
 		}
 
-		n.baseEntity.RUnlock()
 
 	}
 

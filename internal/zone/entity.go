@@ -137,23 +137,26 @@ func (b *baseEntity) getLocation() (int, int) {
 
 func (b *baseEntity) move(m *zoneMap, igX, igY int) error {
 	rX, rY := bitmapCoordinates(igX, igY)
-	if canWalk(m.walkableX, m.walkableY, rX, rY) {
-		return nil
+
+	if !canWalk(m.walkableX, m.walkableY, rX, rY) {
+		return errors.Err{
+			Code: errors.ZoneMapCollisionDetected,
+			Details: errors.ErrDetails{
+				"entity": b.getHandle(),
+				"igX":    igX,
+				"igY":    igY,
+			},
+		}
 	}
+
 	b.Lock()
 	b.previous.x = b.current.x
 	b.previous.y = b.current.y
 	b.current.x = igX
 	b.current.y = igY
 	b.Unlock()
-	return errors.Err{
-		Code: errors.ZoneMapCollisionDetected,
-		Details: errors.ErrDetails{
-			"entity": b.getHandle(),
-			"igX":    igX,
-			"igY":    igY,
-		},
-	}
+
+	return nil
 }
 
 func entityInRange(e1, e2 location) bool {

@@ -244,14 +244,14 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 		PacketData:    dp.packet.Base.JSON(),
 	}
 
-	nr, err := ncStructRepresentation(dp.packet.Base.OperationCode, dp.packet.Base.Data)
-	if err == nil {
-		pv.NcRepresentation = nr
-		//b, _ := json.Marshal(pv.ncRepresentation)
-		//log.Info(string(b))
-	} else {
-		//log.Error(err)
-	}
+	//nr, err := ncStructRepresentation(dp.packet.Base.OperationCode, dp.packet.Base.Data)
+	//if err == nil {
+	//	pv.NcRepresentation = nr
+	//	//b, _ := json.Marshal(pv.ncRepresentation)
+	//	//log.Info(string(b))
+	//} else {
+	//	//log.Error(err)
+	//}
 
 	var tPorts string
 
