@@ -14,7 +14,7 @@ import (
 func TestNewItem_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -60,7 +60,7 @@ func TestNewItem_WithAttributes(t *testing.T) {
 	persistence.CleanDB()
 
 	itemInxName := "KarenStaff"
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -224,7 +224,7 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 	persistence.CleanDB()
 
 	itemInxName := "KarenStaff"
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -394,7 +394,7 @@ func TestNewItem_CreateAllItems(t *testing.T) {
 func TestNewItem_BadItemIndex(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -980,23 +980,125 @@ func TestSoftDeleteItem_Success(t *testing.T) {
 }
 
 func TestLoadNewPlayer_Mage_EquippedItems(t *testing.T) {
-	// should have 1 staff
-	t.Fail()
+	// should have 1 staff in slot 12
+	persistence.CleanDB()
 
+	char := persistence.NewDummyCharacter("mage", true)
+
+	player := &player{
+		persistence: &playerPersistence{
+			char:    char,
+			RWMutex: &sync.RWMutex{},
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item, ok := player.inventories.equipped.items[12]
+
+	if !ok {
+		t.Fatal("expected to have an item, got nil")
+	}
+
+	if item.itemData.itemInfo.InxName != "ShortStaff" {
+		t.Fatal("unexpected item index")
+	}
 }
 
 func TestLoadNewPlayer_Warrior_EquippedItems(t *testing.T) {
-	t.Fail()
+	// should have 1 staff in slot 12
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("fighter", true)
+
+	player := &player{
+		persistence: &playerPersistence{
+			char:    char,
+			RWMutex: &sync.RWMutex{},
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item, ok := player.inventories.equipped.items[12]
+
+	if !ok {
+		t.Fatal("expected to have an item, got nil")
+	}
+
+	if item.itemData.itemInfo.InxName != "ShortSword" {
+		t.Fatal("unexpected item index")
+	}
 }
 
 func TestLoadNewPlayer_Archer_EquippedItems(t *testing.T) {
-	t.Fail()
+	persistence.CleanDB()
 
+	char := persistence.NewDummyCharacter("archer", true)
+
+	player := &player{
+		persistence: &playerPersistence{
+			char:    char,
+			RWMutex: &sync.RWMutex{},
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item, ok := player.inventories.equipped.items[10]
+
+	if !ok {
+		t.Fatal("expected to have an item, got nil")
+	}
+
+	if item.itemData.itemInfo.InxName != "ShortBow" {
+		t.Fatal("unexpected item index")
+	}
 }
 
 func TestLoadNewPlayer_Cleric_EquippedItems(t *testing.T) {
-	t.Fail()
+	persistence.CleanDB()
 
+	char := persistence.NewDummyCharacter("cleric", true)
+
+	player := &player{
+		persistence: &playerPersistence{
+			char:    char,
+			RWMutex: &sync.RWMutex{},
+		},
+		dz: &sync.RWMutex{},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	item, ok := player.inventories.equipped.items[12]
+
+	if !ok {
+		t.Fatal("expected to have an item, got nil")
+	}
+
+	if item.itemData.itemInfo.InxName != "ShortMace" {
+		t.Fatal("unexpected item index")
+	}
 }
 
 func TestPlayer_PicksUpItem(t *testing.T) {
@@ -1017,7 +1119,7 @@ func TestPlayer_DeletesItem(t *testing.T) {
 func TestItemEquip_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1107,7 +1209,7 @@ func TestItemEquip_Success(t *testing.T) {
 func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1198,7 +1300,7 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 func TestItemEquip_Success_NC(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1282,7 +1384,7 @@ func TestItemEquip_Success_NC(t *testing.T) {
 func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1388,7 +1490,7 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 func TestItemEquip_BadItemEquipOrClass(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1446,7 +1548,7 @@ func TestItemEquip_LowLevel(t *testing.T) {
 func TestItemEquip_NoItemInSlot(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1512,7 +1614,7 @@ func TestItemUnEquip_Success(t *testing.T) {
 	//t.Fail()
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1582,7 +1684,7 @@ func TestItemUnEquip_Success(t *testing.T) {
 func TestItemUnEquip_InventoryFull(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -1666,7 +1768,7 @@ func TestItemUnEquip_InventoryFull(t *testing.T) {
 func TestChangeItemSlot_EmptySlot_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1738,7 +1840,7 @@ func TestChangeItemSlot_EmptySlot_Success(t *testing.T) {
 func TestChangeItemSlot_OccupiedSlot_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1835,7 +1937,7 @@ func TestChangeItemSlot_OccupiedSlot_Success(t *testing.T) {
 func TestChangeItemSlot_EmptySlot_NC(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1913,7 +2015,7 @@ func TestChangeItemSlot_EmptySlot_NC(t *testing.T) {
 func TestChangeItemSlot_OccupiedSlot_NC(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2002,7 +2104,7 @@ func TestChangeItemSlot_OccupiedSlot_NC(t *testing.T) {
 func TestChangeItem_NonExistentSlot(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2072,7 +2174,7 @@ func TestChangeItem_NonExistentSlot(t *testing.T) {
 func TestChangeItemSlot_NoItemInSlot(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage")
+	char := persistence.NewDummyCharacter("mage", false)
 
 	player := &player{
 		baseEntity: baseEntity{},

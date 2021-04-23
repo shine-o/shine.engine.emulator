@@ -662,38 +662,41 @@ func (c *Character) initialEquippedItems() {
 }
 
 func (c *Character) initialItems() {
-
 	var (
 		shnID  uint16 = 0
 		shnInx        = ""
+		slot int
 	)
 
 	switch c.Appearance.Class {
 	case 1: // fighter
 		shnID = 250
 		shnInx = "ShortSword"
+		slot = 12
 		break
 
 	case 6: // cleric
 		shnID = 750
 		shnInx = "ShortMace"
+		slot = 12
 		break
 
 	case 11: // archer
 		shnID = 1250
 		shnInx = "ShortBow"
+		slot = 10
 		break
 
 	case 16: // mage
 		shnID = 1750
 		shnInx = "ShortStaff"
+		slot = 12
 		break
 	}
 
 	item := &Item{
-		InventoryType: int(BagInventory),
-		//InventoryType: int(EquippedInventory),
-		//Slot: 10,
+		InventoryType: int(EquippedInventory),
+		Slot: slot,
 		CharacterID: c.ID,
 		Character:   c,
 		ShnID:       shnID,
@@ -702,130 +705,4 @@ func (c *Character) initialItems() {
 		Amount:      1,
 	}
 	c.Items = append(c.Items, item)
-}
-
-// if not 65535, add item to the list
-// todo: shn item processing
-// get all items where character id and inventory type (8 for equipped items) match
-func (c *Character) getItemsByInventory(inventoryType uint8) *structs.NcCharClientItemCmd {
-	nc := &structs.NcCharClientItemCmd{
-		NumOfItem: 0,
-		Box:       inventoryType,
-		Flag: structs.ProtoNcCharClientItemCmdFlag{
-			BF0: 183,
-		},
-	}
-	var items []Item
-	err := db.Model(&items).
-		Where("character_id = ?", c.ID).
-		Where("inventory_type = ?", inventoryType).
-		Select()
-
-	switch inventoryType {
-	case 8:
-		nc.Flag.BF0 = 183
-		break
-	case 9:
-		nc.Flag.BF0 = 165
-		break
-	case 12:
-		nc.Flag.BF0 = 209
-		break
-	case 15:
-		nc.Flag.BF0 = 243
-		break
-	}
-
-	if err != nil {
-		return nc
-	}
-
-	return nc
-}
-
-// NcRepresentation returns a struct that can be serialized into bytes and can be sent to the client
-func (c *Character) NcRepresentation() structs.AvatarInformation {
-	nc := structs.AvatarInformation{
-		ChrRegNum: uint32(c.ID),
-		Name: structs.Name5{
-			Name: c.Name,
-		},
-		Level: uint16(c.Attributes.Level),
-		Slot:  c.Slot,
-		LoginMap: structs.Name3{
-			Name: c.Location.MapName,
-		},
-		DelInfo: structs.ProtoAvatarDeleteInfo{},
-		Shape:   c.Appearance.NcRepresentation(),
-		Equip:   c.EquippedItems.NcRepresentation(),
-		TutorialInfo: structs.ProtoTutorialInfo{ // x(
-			TutorialState: 2,
-			TutorialStep:  byte(0),
-		},
-	}
-	return nc
-}
-
-// NcRepresentation returns a struct that can be serialized into bytes and can be sent to the client
-func (cei *EquippedItems) NcRepresentation() structs.ProtoEquipment {
-	return structs.ProtoEquipment{
-		EquHead:         cei.Head,
-		EquMouth:        cei.ApparelFace,
-		EquRightHand:    cei.RightHand,
-		EquBody:         cei.Body,
-		EquLeftHand:     cei.LeftHand,
-		EquPant:         cei.Pants,
-		EquBoot:         cei.Boots,
-		EquAccBoot:      cei.ApparelBoots,
-		EquAccPant:      cei.ApparelPants,
-		EquAccBody:      cei.ApparelBody,
-		EquAccHeadA:     cei.ApparelHead,
-		EquMinimonR:     cei.RightMiniPet,
-		EquEye:          cei.Face,
-		EquAccLeftHand:  cei.ApparelLeftHand,
-		EquAccRightHand: cei.ApparelRightHand,
-		EquAccBack:      cei.ApparelBack,
-		EquCosEff:       cei.ApparelAura,
-		EquAccHip:       cei.ApparelTail,
-		EquMinimon:      cei.LeftMiniPet,
-		EquAccShield:    cei.ApparelShield,
-		Upgrade:         structs.EquipmentUpgrade{},
-	}
-}
-
-// NcRepresentation returns a struct that can be serialized into bytes and can be sent to the client
-func (ca *Appearance) NcRepresentation() structs.ProtoAvatarShapeInfo {
-	return structs.ProtoAvatarShapeInfo{
-		BF:        1 | ca.Class<<2 | ca.Gender<<7,
-		HairType:  ca.HairType,
-		HairColor: ca.HairColor,
-		FaceShape: ca.FaceType,
-	}
-}
-
-func NcGameOptions(data []byte) (structs.NcCharOptionImproveGetGameOptionCmd, error) {
-	nc := structs.NcCharOptionImproveGetGameOptionCmd{}
-	err := structs.Unpack(data, &nc)
-	if err != nil {
-		return nc, err
-	}
-	return nc, nil
-}
-
-func NcKeyMap(data []byte) (structs.NcCharGetKeyMapCmd, error) {
-	nc := structs.NcCharGetKeyMapCmd{}
-	err := structs.Unpack(data, &nc)
-	if err != nil {
-		return nc, err
-	}
-	return nc, nil
-}
-
-func NcShortcutData(data []byte) (structs.NcCharGetShortcutDataCmd, error) {
-	nc := structs.NcCharGetShortcutDataCmd{}
-	err := structs.Unpack(data, &nc)
-	if err != nil {
-		return nc, err
-	}
-	return nc, nil
 }

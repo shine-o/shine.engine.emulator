@@ -114,13 +114,15 @@ func (i *Item) Insert() error {
 		return err
 	}
 
-	slot, err := freeSlot(i.CharacterID, InventoryType(i.InventoryType))
+	if InventoryType(i.InventoryType) != EquippedInventory {
+		slot, err := freeSlot(i.CharacterID, InventoryType(i.InventoryType))
 
-	if err != nil {
-		return err
+		if err != nil {
+			return err
+		}
+
+		i.Slot = slot
 	}
-
-	i.Slot = slot
 
 	tx, err := db.Begin()
 

@@ -10,19 +10,19 @@ import (
 // NC_CHAR_LOGIN_REQ
 func ncCharLoginReq(ctx context.Context, np *networking.Parameters) {
 	var (
-		nc structs.NcCharLoginReq
-		cl characterLoginEvent
+		e characterLoginEvent
 	)
 
-	if err := structs.Unpack(np.Command.Base.Data, &nc); err != nil {
+
+	e = characterLoginEvent{
+		nc: &structs.NcCharLoginReq{},
+		np: np,
+	}
+
+	if err := structs.Unpack(np.Command.Base.Data, e.nc); err != nil {
 		log.Error(err)
 		return
 	}
 
-	cl = characterLoginEvent{
-		nc: &nc,
-		np: np,
-	}
-
-	worldEvents[characterLogin] <- &cl
+	worldEvents[characterLogin] <- &e
 }

@@ -25,3 +25,4 @@ output/*
 files
 /internal/zone/output/
 /internal/login/output/
+/internal/world/output/

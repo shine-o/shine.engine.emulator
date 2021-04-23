@@ -84,8 +84,9 @@ func TestPackets(t *testing.T) {
 	netPackets := netPackets()
 
 	files := []string{
-		"../../../test-data/packets-1612910284-version-1.02.295.json",
-		"../../../test-data/packets-1613170127-version-1.02.295.json",
+		"../../test-data/packets-1612910284-version-1.02.296.json",
+		"../../test-data/packets-1613170127-version-1.02.296.json",
+		"../../test-data/packets-1613328603-version-1.02.296.json",
 	}
 
 	for _, f := range files {

@@ -14,9 +14,9 @@ func (w *world) characterCRUD() {
 	for {
 		select {
 		case e := <-w.recv[createCharacter]:
-			go createCharacterLogic(e, w)
+			go createCharacterLogic(e)
 		case e := <-w.recv[deleteCharacter]:
-			go deleteCharacterLogic(e, w)
+			go deleteCharacterLogic(e)
 		}
 	}
 }
@@ -26,40 +26,87 @@ func (w *world) characterSession() {
 	for {
 		select {
 		case e := <-w.recv[characterLogin]:
-			go characterLoginLogic(e, w)
+			go characterLoginLogic(e)
 		case e := <-w.recv[characterSettings]:
 			go characterSettingsLogic(e)
 		case e := <-w.recv[updateShortcuts]:
-			go updateShortcutsLogic(w, e)
+			go updateShortcutsLogic(e)
 		case e := <-w.recv[updateGameSettings]:
 			log.Info(e)
 		case e := <-w.recv[updateKeymap]:
 			log.Info(e)
 		case e := <-w.recv[characterSelect]:
-			go characterSelectLogic(e, w)
+			go characterSelectLogic(e)
 		}
 	}
 }
 
-func characterSelectLogic(e event, w *world) {
-	ev, ok := e.(*characterSelectEvent)
+func createCharacterLogic(e event) {
+	ev, ok := e.(*createCharacterEvent)
 
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&characterSelectEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&createCharacterEvent{}).String(), reflect.TypeOf(ev).String())
 		return
 	}
 
-	nc, err := userCharacters(ev.session)
+	s, ok := ev.np.Session.(*session)
+
+	if !ok {
+		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
+	}
+
+	err := persistence.ValidateCharacter(s.UserID, ev.nc)
+
+	if err != nil {
+		log.Error(err)
+		ncAvatarCreateFailAck(ev.np, 385)
+
+		return
+	}
+
+	char, err := persistence.NewCharacter(s.UserID, ev.nc, true)
+
+	if err != nil {
+		log.Error(err)
+		ncAvatarCreateFailAck(ev.np, 385)
+		return
+	}
+
+	nc := structs.NcAvatarCreateSuccAck{
+		NumOfAvatar: 1,
+		Avatar:      avatarInformation(char),
+	}
+
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_AVATAR_CREATESUCC_ACK, &nc)
+}
+
+func deleteCharacterLogic(e event) {
+	ev, ok := e.(*deleteCharacterEvent)
+
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&deleteCharacterEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
+	s, ok := ev.np.Session.(*session)
+	if !ok {
+		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
+	}
+
+	err := persistence.DeleteCharacter(s.UserID, int(ev.nc.Slot))
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	//networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGOUT_DB, &nc)
-	networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGINWORLD_ACK, &nc)
+	nc := &structs.NcAvatarEraseSuccAck{
+		Slot: ev.nc.Slot,
+	}
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_AVATAR_ERASESUCC_ACK, nc)
+
 }
 
-func characterLoginLogic(e event, w *world) {
+func characterLoginLogic(e event) {
 	ev, ok := e.(*characterLoginEvent)
 
 	if !ok {
@@ -108,99 +155,6 @@ func characterLoginLogic(e event, w *world) {
 	worldEvents[characterSettings] <- &cs
 }
 
-func zoneConnectionInfo(char persistence.Character) (structs.NcCharLoginAck, error) {
-	var nc structs.NcCharLoginAck
-	conn, err := newRPCClient("zone_master")
-	if err != nil {
-		return nc, err
-	}
-
-	c := zm.NewMasterClient(conn)
-
-	ctx, cancel := context.WithTimeout(context.Background(), gRPCTimeout)
-	defer cancel()
-	ci, err := c.WhereIsMap(ctx, &zm.MapQuery{
-		ID: int32(char.Location.MapID),
-	})
-
-	if err != nil {
-		return nc, err
-	}
-
-	nc = structs.NcCharLoginAck{
-		ZoneIP: structs.Name4{
-			Name: ci.IP,
-		},
-		ZonePort: uint16(ci.Port),
-	}
-	return nc, nil
-}
-
-func createCharacterLogic(e event, w *world) {
-	ev, ok := e.(*createCharacterEvent)
-
-	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&createCharacterEvent{}).String(), reflect.TypeOf(ev).String())
-		return
-	}
-
-	s, ok := ev.np.Session.(*session)
-
-	if !ok {
-		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
-	}
-
-	err := persistence.ValidateCharacter(s.UserID, ev.nc)
-
-	if err != nil {
-		log.Error(err)
-		ncAvatarCreateFailAck(ev.np, 385)
-
-		return
-	}
-
-	char, err := persistence.NewCharacter(s.UserID, ev.nc, true)
-
-	if err != nil {
-		log.Error(err)
-		ncAvatarCreateFailAck(ev.np, 385)
-		return
-	}
-
-	nc := structs.NcAvatarCreateSuccAck{
-		NumOfAvatar: 1,
-		Avatar:      char.NcRepresentation(),
-	}
-
-	networking.Send(ev.np.OutboundSegments.Send, networking.NC_AVATAR_CREATESUCC_ACK, &nc)
-}
-
-func deleteCharacterLogic(e event, w *world) {
-	ev, ok := e.(*deleteCharacterEvent)
-
-	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&deleteCharacterEvent{}).String(), reflect.TypeOf(ev).String())
-		return
-	}
-
-	s, ok := ev.np.Session.(*session)
-	if !ok {
-		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
-	}
-
-	err := persistence.DeleteCharacter(s.UserID, int(ev.nc.Slot))
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	nc := &structs.NcAvatarEraseSuccAck{
-		Slot: ev.nc.Slot,
-	}
-	networking.Send(ev.np.OutboundSegments.Send, networking.NC_AVATAR_ERASESUCC_ACK, nc)
-
-}
-
 func characterSettingsLogic(e event) {
 	ev, ok := e.(*characterSettingsEvent)
 
@@ -209,21 +163,21 @@ func characterSettingsLogic(e event) {
 		return
 	}
 
-	gameOptions, err := persistence.NcGameOptions(ev.char.Options.GameOptions)
+	gameOptions, err := ncGameOptions(ev.char.Options.GameOptions)
 
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	keyMap, err := persistence.NcKeyMap(ev.char.Options.Keymap)
+	keyMap, err := ncKeyMap(ev.char.Options.Keymap)
 
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	shortcuts, err := persistence.NcShortcutData(ev.char.Options.Shortcuts)
+	shortcuts, err := ncShortcutData(ev.char.Options.Shortcuts)
 
 	if err != nil {
 		log.Error(err)
@@ -236,7 +190,7 @@ func characterSettingsLogic(e event) {
 
 }
 
-func updateShortcutsLogic(w *world, e event) {
+func updateShortcutsLogic(e event) {
 	ev, ok := e.(*updateShortcutsEvent)
 
 	if !ok {
@@ -297,4 +251,137 @@ func updateShortcutsLogic(w *world, e event) {
 	nc := structs.NcCharOptionImproveShortcutDataAck{ErrCode: 8448}
 
 	networking.Send(ev.np.OutboundSegments.Send, networking.NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_ACK, &nc)
+}
+
+func characterSelectLogic(e event) {
+	ev, ok := e.(*characterSelectEvent)
+
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&characterSelectEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
+	nc, err := userCharacters(ev.session)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	//networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGOUT_DB, &nc)
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGINWORLD_ACK, &nc)
+}
+
+func zoneConnectionInfo(char persistence.Character) (structs.NcCharLoginAck, error) {
+	var nc structs.NcCharLoginAck
+	conn, err := newRPCClient("zone_master")
+	if err != nil {
+		return nc, err
+	}
+
+	c := zm.NewMasterClient(conn)
+
+	ctx, cancel := context.WithTimeout(context.Background(), gRPCTimeout)
+	defer cancel()
+	ci, err := c.WhereIsMap(ctx, &zm.MapQuery{
+		ID: int32(char.Location.MapID),
+	})
+
+	if err != nil {
+		return nc, err
+	}
+
+	nc = structs.NcCharLoginAck{
+		ZoneIP: structs.Name4{
+			Name: ci.IP,
+		},
+		ZonePort: uint16(ci.Port),
+	}
+	return nc, nil
+}
+
+// NcRepresentation returns a struct that can be serialized into bytes and can be sent to the client
+func avatarInformation(c *persistence.Character) structs.AvatarInformation {
+	nc := structs.AvatarInformation{
+		ChrRegNum: uint32(c.ID),
+		Name: structs.Name5{
+			Name: c.Name,
+		},
+		Level: uint16(c.Attributes.Level),
+		Slot:  c.Slot,
+		LoginMap: structs.Name3{
+			Name: c.Location.MapName,
+		},
+		DelInfo: structs.ProtoAvatarDeleteInfo{},
+		Shape:   protoAvatarShapeInfo(c.Appearance),
+		Equip:   protoEquipment(c.EquippedItems),
+		TutorialInfo: structs.ProtoTutorialInfo{ // x(
+			TutorialState: 2,
+			TutorialStep:  byte(0),
+		},
+	}
+	return nc
+}
+
+// NcRepresentation returns a struct that can be serialized into bytes and can be sent to the client
+func protoEquipment(cei *persistence.EquippedItems) structs.ProtoEquipment {
+	return structs.ProtoEquipment{
+		EquHead:         cei.Head,
+		EquMouth:        cei.ApparelFace,
+		EquRightHand:    cei.RightHand,
+		EquBody:         cei.Body,
+		EquLeftHand:     cei.LeftHand,
+		EquPant:         cei.Pants,
+		EquBoot:         cei.Boots,
+		EquAccBoot:      cei.ApparelBoots,
+		EquAccPant:      cei.ApparelPants,
+		EquAccBody:      cei.ApparelBody,
+		EquAccHeadA:     cei.ApparelHead,
+		EquMinimonR:     cei.RightMiniPet,
+		EquEye:          cei.Face,
+		EquAccLeftHand:  cei.ApparelLeftHand,
+		EquAccRightHand: cei.ApparelRightHand,
+		EquAccBack:      cei.ApparelBack,
+		EquCosEff:       cei.ApparelAura,
+		EquAccHip:       cei.ApparelTail,
+		EquMinimon:      cei.LeftMiniPet,
+		EquAccShield:    cei.ApparelShield,
+		Upgrade:         structs.EquipmentUpgrade{},
+	}
+}
+
+// NcRepresentation returns a struct that can be serialized into bytes and can be sent to the client
+func protoAvatarShapeInfo(ca *persistence.Appearance) structs.ProtoAvatarShapeInfo {
+	return structs.ProtoAvatarShapeInfo{
+		BF:        1 | ca.Class<<2 | ca.Gender<<7,
+		HairType:  ca.HairType,
+		HairColor: ca.HairColor,
+		FaceShape: ca.FaceType,
+	}
+}
+
+func ncGameOptions(data []byte) (structs.NcCharOptionImproveGetGameOptionCmd, error) {
+	nc := structs.NcCharOptionImproveGetGameOptionCmd{}
+	err := structs.Unpack(data, &nc)
+	if err != nil {
+		return nc, err
+	}
+	return nc, nil
+}
+
+func ncKeyMap(data []byte) (structs.NcCharGetKeyMapCmd, error) {
+	nc := structs.NcCharGetKeyMapCmd{}
+	err := structs.Unpack(data, &nc)
+	if err != nil {
+		return nc, err
+	}
+	return nc, nil
+}
+
+func ncShortcutData(data []byte) (structs.NcCharGetShortcutDataCmd, error) {
+	nc := structs.NcCharGetShortcutDataCmd{}
+	err := structs.Unpack(data, &nc)
+	if err != nil {
+		return nc, err
+	}
+	return nc, nil
 }

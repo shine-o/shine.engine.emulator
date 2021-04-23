@@ -56,8 +56,7 @@ func ncCharOptionGetWindowPosAck(np *networking.Parameters) {
 // NC_CHAR_OPTION_IMPROVE_SET_SHORTCUTDATA_REQ
 // 28727
 func ncCharOptionImproveSetShortcutDataReq(ctx context.Context, np *networking.Parameters) {
-	var nc structs.NcCharOptionSetShortcutDataReq
-	var use updateShortcutsEvent
+	var e updateShortcutsEvent
 
 	session, ok := np.Session.(*session)
 
@@ -66,16 +65,16 @@ func ncCharOptionImproveSetShortcutDataReq(ctx context.Context, np *networking.P
 		return
 	}
 
-	err := structs.Unpack(np.Command.Base.Data, &nc)
+	e = updateShortcutsEvent{
+		nc:          structs.NcCharOptionSetShortcutDataReq{},
+		np:          np,
+		characterID: session.characterID,
+	}
+
+	err := structs.Unpack(np.Command.Base.Data, e.nc)
 	if err != nil {
 		return
 	}
 
-	use = updateShortcutsEvent{
-		np:          np,
-		nc:          nc,
-		characterID: session.characterID,
-	}
-
-	worldEvents[updateShortcuts] <- &use
+	worldEvents[updateShortcuts] <- &e
 }

@@ -12,18 +12,7 @@ func (w *world) session() {
 	for {
 		select {
 		case e := <-w.recv[serverTime]:
-			go func() {
-				ev, ok := e.(*serverTimeEvent)
-
-				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(&serverTimeEvent{}).String(), reflect.TypeOf(ev).String())
-					return
-				}
-
-				nc := worldTime()
-
-				networking.Send(ev.np.OutboundSegments.Send, networking.NC_MISC_GAMETIME_ACK, &nc)
-			}()
+			go serverTimeLogic(e)
 		case e := <-w.recv[serverSelect]:
 			go serverSelectLogic(e, w)
 		case e := <-w.recv[serverSelectToken]:
@@ -32,17 +21,27 @@ func (w *world) session() {
 	}
 }
 
-func worldTime() structs.NcMiscGameTimeAck {
+func serverTimeLogic(e event) {
+	ev, ok := e.(*serverTimeEvent)
+
+	if !ok {
+		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&serverTimeEvent{}).String(), reflect.TypeOf(ev).String())
+		return
+	}
+
 	t := time.Now()
 	hour := byte(t.Hour())
 	minute := byte(t.Minute())
 	second := byte(t.Second())
 
-	return structs.NcMiscGameTimeAck{
+	nc :=  &structs.NcMiscGameTimeAck{
 		Hour:   hour,
 		Minute: minute,
 		Second: second,
 	}
+
+	networking.Send(ev.np.OutboundSegments.Send, networking.NC_MISC_GAMETIME_ACK, nc)
+
 }
 
 func serverSelectLogic(e event, w *world) {

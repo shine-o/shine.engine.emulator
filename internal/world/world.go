@@ -141,7 +141,7 @@ func userCharacters(ws *session) (structs.NcUserLoginWorldAck, error) {
 
 	if len(chars) > 0 {
 		for _, c := range chars {
-			avatars = append(avatars, c.NcRepresentation())
+			avatars = append(avatars, avatarInformation(c))
 		}
 	}
 

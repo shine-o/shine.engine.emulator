@@ -10,22 +10,21 @@ import (
 // NC_AVATAR_CREATE_REQ
 func ncAvatarCreateReq(ctx context.Context, np *networking.Parameters) {
 	var (
-		nc  structs.NcAvatarCreateReq
-		cce createCharacterEvent
+		e createCharacterEvent
 	)
 
-	err := structs.Unpack(np.Command.Base.Data, &nc)
+	e = createCharacterEvent{
+		nc: &structs.NcAvatarCreateReq{},
+		np: np,
+	}
+
+	err := structs.Unpack(np.Command.Base.Data, e.nc)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	cce = createCharacterEvent{
-		nc: &nc,
-		np: np,
-	}
-
-	worldEvents[createCharacter] <- &cce
+	worldEvents[createCharacter] <- &e
 }
 
 // NcAvatarCreateFailAck sends error message to the client when character creation fails
@@ -41,21 +40,20 @@ func ncAvatarCreateFailAck(np *networking.Parameters, errCode uint16) {
 // NC_AVATAR_ERASE_REQ
 func ncAvatarEraseReq(ctx context.Context, np *networking.Parameters) {
 	var (
-		nc  structs.NcAvatarEraseReq
-		dce deleteCharacterEvent
+		e deleteCharacterEvent
 	)
 
-	if err := structs.Unpack(np.Command.Base.Data, &nc); err != nil {
+	e = deleteCharacterEvent{
+		nc: &structs.NcAvatarEraseReq{},
+		np: np,
+	}
+
+	if err := structs.Unpack(np.Command.Base.Data, e.nc); err != nil {
 		// todo: error nc if possible
 		log.Error(err)
 		return
 	}
 
-	dce = deleteCharacterEvent{
-		nc: &nc,
-		np: np,
-	}
-
-	worldEvents[deleteCharacter] <- &dce
+	worldEvents[deleteCharacter] <- &e
 
 }

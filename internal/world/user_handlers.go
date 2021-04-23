@@ -11,34 +11,35 @@ import (
 // verify account and character data
 // NC_USER_LOGINWORLD_REQ
 func ncUserLoginWorldReq(ctx context.Context, np *networking.Parameters) {
-	var sse serverSelectEvent
-	nc := structs.NcUserLoginWorldReq{}
-	err := structs.Unpack(np.Command.Base.Data, &nc)
+	var e serverSelectEvent
+
+	e = serverSelectEvent{
+		nc: &structs.NcUserLoginWorldReq{},
+		np: np,
+	}
+
+	err := structs.Unpack(np.Command.Base.Data, e.nc)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	sse = serverSelectEvent{
-		nc: &nc,
-		np: np,
-	}
-
-	worldEvents[serverSelect] <- &sse
+	worldEvents[serverSelect] <- &e
 }
 
 // NcUserWillWorldSelectReq handles a petition to return to server select
 // NC_USER_WILL_WORLD_SELECT_REQ
 func ncUserWillWorldSelectReq(ctx context.Context, np *networking.Parameters) {
-	sste := serverSelectTokenEvent{
+	worldEvents[serverSelectToken] <- &serverSelectTokenEvent{
 		np: np,
 	}
-	worldEvents[serverSelectToken] <- &sste
 }
 
 // NC_USER_AVATAR_LIST_REQ
 // 3103
 func ncUserAvatarListReq(ctx context.Context, np *networking.Parameters) {
+	var e characterSelectEvent
+
 	session, ok := np.Session.(*session)
 
 	if !ok {
@@ -46,10 +47,10 @@ func ncUserAvatarListReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	cs := characterSelectEvent{
+	e = characterSelectEvent{
 		np:      np,
 		session: session,
 	}
 
-	worldEvents[characterSelect] <- &cs
+	worldEvents[characterSelect] <- &e
 }

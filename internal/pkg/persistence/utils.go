@@ -6,7 +6,7 @@ import (
 )
 
 // NewDummyCharacter to be used only for testing purposes where a character is needed
-func NewDummyCharacter(class string) *Character {
+func NewDummyCharacter(class string, initialItems bool) *Character {
 	var (
 		bitField byte
 		name     string
@@ -44,7 +44,7 @@ func NewDummyCharacter(class string) *Character {
 		},
 	}
 
-	char, err := NewCharacter(1, &c, false)
+	char, err := NewCharacter(1, &c, initialItems)
 	if err != nil {
 		log.Fatal(err)
 	}

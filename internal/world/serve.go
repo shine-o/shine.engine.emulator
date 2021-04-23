@@ -16,7 +16,7 @@ import (
 	"path/filepath"
 )
 
-var log = shinelog.NewLogger("world", "./output", logrus.DebugLevel)
+var log = shinelog.NewLogger("world", "../../output", logrus.DebugLevel)
 
 // Start the service service
 // that is, use networking library to handle TCP connection

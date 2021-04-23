@@ -201,6 +201,7 @@ func playerMapLoginLogic(e event) {
 		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_SHAPE_CMD, protoAvatarShapeInfo(p.view))
 		networking.Send(p.conn.outboundData, networking.NC_MAP_LOGIN_ACK, ncMapLoginAck(p))
 		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_ITEM_CMD, ncCharClientItemCmd(p, persistence.BagInventory))
+		networking.Send(p.conn.outboundData, networking.NC_CHAR_CLIENT_ITEM_CMD, ncCharClientItemCmd(p, persistence.EquippedInventory))
 	case err := <-e3.err:
 		log.Error(err)
 	}
