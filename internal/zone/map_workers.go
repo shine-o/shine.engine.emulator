@@ -379,9 +379,9 @@ func itemEquipLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	player := zm.entities.players.get(ev.session.handle)
+	p := zm.entities.players.get(ev.session.handle)
 
-	if player == nil {
+	if p == nil {
 		return
 	}
 
@@ -390,12 +390,12 @@ func itemEquipLogic(e event, zm *zoneMap) {
 		err:  make(chan error),
 	}
 
-	player.events.send[eduEquipItem] <- ev1
+	p.events.send[eduEquipItem] <- ev1
 
 	select {
 	case err := <-ev1.err:
 		if err != nil {
-			networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+			networking.Send(p.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
 				Code: ItemEquipFailed,
 			})
 			return
@@ -404,7 +404,7 @@ func itemEquipLogic(e event, zm *zoneMap) {
 
 	nc1, _, err := ncItemEquipChangeCmd(ev1.change)
 	if err != nil {
-		networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+		networking.Send(p.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
 			Code: ItemEquipFailed,
 		})
 		log.Error(err)
@@ -413,20 +413,60 @@ func itemEquipLogic(e event, zm *zoneMap) {
 
 	_, nc2, err := ncItemCellChangeCmd(ev1.change)
 	if err != nil {
-		networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+		networking.Send(p.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
 			Code: ItemEquipFailed,
 		})
 		log.Error(err)
 		return
 	}
 
-	networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIPCHANGE_CMD, &nc1)
+	networking.Send(p.conn.outboundData, networking.NC_ITEM_EQUIPCHANGE_CMD, &nc1)
 
-	networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+	networking.Send(p.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
 		Code: ItemEquipSuccess,
 	})
 
-	networking.Send(player.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, nc2)
+	networking.Send(p.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, nc2)
+
+	var (
+		ph = p.getHandle()
+	)
+
+	switch ev1.change.from.item.itemData.itemInfo.Class {
+	case data.ItemClassWeapon, data.ItemClassShield:
+		nc3 := &structs.NcBriefInfoChangeWeaponCmd{
+			UpgradeInfo:      structs.NcBriefInfoChangeUpgradeCmd{
+				Handle:  ph,
+				Item:    ev1.change.from.item.itemData.itemInfo.ID,
+				Slot:    byte(ev1.change.from.item.itemData.itemInfo.Equip),
+			},
+		}
+		for ap := range zm.entities.players.all() {
+			go func(p1, p2 *player, nc * structs.NcBriefInfoChangeWeaponCmd) {
+				if p1.getHandle() != p2.getHandle() {
+					if playerInRange(p2, p1) {
+						networking.Send(p2.conn.outboundData, networking.NC_BRIEFINFO_CHANGEWEAPON_CMD, nc)
+					}
+				}
+			}(p, ap, nc3)
+		}
+		break
+	case data.ItemClassArmor, data.ItemClassBoot, data.ItemClassAmulet,data.ItemBracelet:
+		nc3 := &structs.NcBriefInfoChangeUpgradeCmd{
+			Handle:  ph,
+			Item:    ev1.change.from.item.itemData.itemInfo.ID,
+			Slot:    byte(ev1.change.from.item.itemData.itemInfo.Equip),
+		}
+		for ap := range zm.entities.players.all() {
+			go func(p1, p2 *player, nc * structs.NcBriefInfoChangeUpgradeCmd) {
+				if p1.getHandle() != p2.getHandle() {
+					if playerInRange(p2, p1) {
+						networking.Send(p2.conn.outboundData, networking.NC_BRIEFINFO_CHANGEUPGRADE_CMD, nc)
+					}
+				}
+			}(p, ap, nc3)
+		}
+	}
 }
 
 func itemUnEquipLogic(e event, zm *zoneMap) {
