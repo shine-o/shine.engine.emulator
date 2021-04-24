@@ -52,7 +52,7 @@ type player struct {
 type playerProximity struct {
 	players map[uint16]*player
 	npcs    map[uint16]*npc
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type playerConnection struct {
@@ -365,7 +365,6 @@ func (p *player) load(name string) error {
 	p.proximity = &playerProximity{
 		players: make(map[uint16]*player),
 		npcs:    make(map[uint16]*npc),
-		RWMutex: &sync.RWMutex{},
 	}
 
 	p.ticks = &entityTicks{

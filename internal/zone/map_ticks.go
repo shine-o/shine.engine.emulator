@@ -3,17 +3,16 @@ package zone
 import "time"
 
 func (zm *zoneMap) removeInactiveHandles() {
-	log.Infof("[map_ticks] heartbeat ticker/worker for map %v", zm.data.Info.MapName)
-	tick := time.Tick(1 * time.Second)
+	log.Infof("[map_ticks] removeInactiveHandles ticker/worker for map %v", zm.data.Info.MapName)
+	tick := time.Tick(200 * time.Millisecond)
 	for {
 		select {
 		case <-tick:
 			select {
 			case zm.send[playerHandleMaintenance] <- &emptyEvent{}:
-				//log.Infof("executing playerHandleMaintenance for %v", zm.data.Info.MapName)
 				break
 			default:
-				log.Infof("failed toexecuting playerHandleMaintenance for %v", zm.data.Info.MapName)
+				log.Infof("failed executing playerHandleMaintenance for %v", zm.data.Info.MapName)
 			}
 		}
 	}

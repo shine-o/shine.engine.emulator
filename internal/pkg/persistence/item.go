@@ -457,6 +457,8 @@ func freeSlot(characterID uint64, inventoryType InventoryType) (int, error) {
 		break
 	case BufferInventory:
 	case EquippedInventory:
+		min = EquippedInventoryMin
+		max = EquippedInventoryMax
 	case MiniHouseInventory:
 	}
 

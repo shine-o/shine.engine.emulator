@@ -71,38 +71,17 @@ func (zm *zoneMap) spawnNPCs() {
 		var (
 			sem     = make(chan int, 100)
 			wg      sync.WaitGroup
-			portals []*data.ShineNPC
-			normal  []*data.ShineNPC
 		)
-
-		for _, mNpc := range npcs {
-			if mNpc.ShinePortal != nil {
-				portals = append(portals, mNpc)
-			} else {
-				normal = append(normal, mNpc)
-			}
-		}
-
-		for _, mNpc := range portals {
+		for _, npc := range npcs {
 			wg.Add(1)
 			sem <- 1
 			go func(sn *data.ShineNPC) {
 				defer wg.Done()
 				zm.spawnNPC(sn)
 				<-sem
-			}(mNpc)
+			}(npc)
 		}
-
-		for _, mNpc := range normal {
-			wg.Add(1)
-			sem <- 1
-			go func(sn *data.ShineNPC) {
-				defer wg.Done()
-				zm.spawnNPC(sn)
-				<-sem
-			}(mNpc)
-		}
-
+		wg.Wait()
 	}
 }
 
@@ -125,7 +104,7 @@ func (zm *zoneMap) spawnNPC(sn *data.ShineNPC) {
 		log.Error(err)
 		return
 	}
-	//             Position = new Position(X, Y, (byte)(RotationInt < 0 ? ((360 + RotationInt) / 2) : (RotationInt / 2)));
+
 	var shineD int
 	if sn.D < 0 {
 		shineD = (360 + sn.D) / 2
@@ -135,9 +114,8 @@ func (zm *zoneMap) spawnNPC(sn *data.ShineNPC) {
 
 	n := &npc{
 		baseEntity: baseEntity{
-			info: entityInfo{
-				handle: h,
-			},
+			handle: h,
+			eType: isNPC,
 			fallback: location{
 				x: sn.X,
 				y: sn.Y,
@@ -325,10 +303,8 @@ func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.M
 
 		m := &npc{
 			baseEntity: baseEntity{
-				info: entityInfo{
-					handle:  h,
-					monster: true,
-				},
+				handle:  h,
+				eType: isMonster,
 				fallback: location{
 					x: x,
 					y: y,

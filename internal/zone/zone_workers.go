@@ -250,10 +250,9 @@ func hearbeatUpdateLogic(e event) {
 		return
 	}
 
-	p := zm.entities.players.get(ev.session.handle)
-
-	if p == nil {
-		log.Errorf("nil player with handle %v", ev.session.handle)
+	p, err := zm.entities.players.get(ev.session.handle)
+	if err != nil {
+		log.Error(err)
 		return
 	}
 
@@ -271,16 +270,16 @@ func playerLogoutStartLogic(z *zone, e event) {
 		return
 	}
 
-	m, ok := z.rm.list[ev.mapID]
+	zm, ok := z.rm.list[ev.mapID]
 
 	if !ok {
 		log.Errorf("map with id %v not available", ev.mapID)
 		return
 	}
 
-	p := m.entities.players.get(ev.handle)
-
-	if p == nil {
+	p, err := zm.entities.players.get(ev.handle)
+	if err != nil {
+		log.Error(err)
 		return
 	}
 
@@ -290,7 +289,7 @@ func playerLogoutStartLogic(z *zone, e event) {
 
 	z.dynamicEvents.add(sid, dLogoutConclude)
 
-	playerLogout(z, m, p, sid)
+	playerLogout(z, zm, p, sid)
 }
 
 func playerLogoutCancelLogic(z *zone, e event) {

@@ -51,10 +51,9 @@ func (p *player) persistPosition() {
 	}
 }
 
-// remove entities that are outside the view range of the player
-func (p *player) nearbyPlayersMaintenance(zm *zoneMap) {
-
-	log.Infof("[player_ticks] nearbyEntities for handle %v", p.getHandle())
+// add or remove entities that are inside or outside the range of the player
+func (p *player) proximityPlayerMaintenance(zm *zoneMap) {
+	log.Infof("[player_ticks] proximityPlayerMaintenance for handle %v", p.getHandle())
 	tick := time.NewTicker(200 * time.Millisecond)
 	p.ticks.Lock()
 	p.ticks.list = append(p.ticks.list, tick)
@@ -75,6 +74,10 @@ func (p *player) nearbyPlayersMaintenance(zm *zoneMap) {
 					p1.proximity.RUnlock()
 
 					if !exists && playerInRange(p1, p2) {
+						p1.proximity.Lock()
+						p1.proximity.players[p2.getHandle()] = p2
+						p1.proximity.Unlock()
+
 						nc := ncBriefInfoLoginCharacterCmd(p2)
 						networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, &nc)
 					}
@@ -84,14 +87,13 @@ func (p *player) nearbyPlayersMaintenance(zm *zoneMap) {
 			for ap := range p.adjacentPlayers() {
 				go checkRemoval(p, ap)
 			}
-
 		}
 	}
 }
 
-func (p *player) nearbyNpcsMaintenance(zm *zoneMap) {
-	log.Infof("[player_ticks] nearbyNpcsMaintenance for handle %v", p.getHandle())
-	tick := time.NewTicker(200 * time.Millisecond)
+func (p *player) proximityMonsterNpcMaintenance(zm *zoneMap) {
+	log.Infof("[player_ticks] proximityMonsterNpcMaintenance for handle %v", p.getHandle())
+	tick := time.NewTicker(100 * time.Millisecond)
 
 	p.ticks.Lock()
 	p.ticks.list = append(p.ticks.list, tick)
@@ -104,19 +106,25 @@ func (p *player) nearbyNpcsMaintenance(zm *zoneMap) {
 			// for each monster
 			// if nearby, add to known nearby
 			for nn := range zm.entities.npcs.all() {
-				go func(p *player, n *npc) {
-					p.proximity.RLock()
-					_, exists := p.proximity.npcs[n.getHandle()]
-					p.proximity.RUnlock()
-					if !exists && npcInRange(p, n) {
-						nc := ncBriefInfoRegenMobCmd(n)
-						networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
-					}
-				}(p, nn)
+				if nn.baseEntity.eType == isMonster {
+					go func(p *player, n *npc) {
+						nh := n.getHandle()
+						p.proximity.RLock()
+						_, exists := p.proximity.npcs[nh]
+						p.proximity.RUnlock()
+						if !exists && npcInRange(p, n) {
+							p.proximity.Lock()
+							p.proximity.npcs[nh] = n
+							p.proximity.Unlock()
+							nc := ncBriefInfoRegenMobCmd(n)
+							networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
+						}
+					}(p, nn)
+				}
 			}
 
 			for an := range p.adjacentNpcs() {
-				if an.baseEntity.info.monster {
+				if an.baseEntity.eType == isMonster {
 					go func(p *player, n *npc) {
 						if !npcInRange(p, n) {
 							mh := n.getHandle()
@@ -138,29 +146,28 @@ func (p *player) nearbyNpcsMaintenance(zm *zoneMap) {
 // if foreign player timed out or is not in range
 // send packet to the client to notify of player disappearance
 func checkRemoval(p1, p2 *player) {
-	fh := p2.getHandle()
+	p2h := p2.getHandle()
 
 	if justSpawned(p2) {
 		return
 	}
 
 	if lastHeartbeat(p2) > playerHeartbeatLimit {
-		p1.removeAdjacentPlayer(fh)
+		p1.removeAdjacentPlayer(p2h)
 		return
 	}
 
 	if !playerInRange(p1, p2) {
 		nc := structs.NcBriefInfoDeleteHandleCmd{
-			Handle: p2.getHandle(),
+			Handle: p2h,
 		}
 		networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_BRIEFINFODELETE_CMD, &nc)
-		p1.removeAdjacentPlayer(fh)
+		p1.removeAdjacentPlayer(p2h)
 	}
 }
 
 func justSpawned(p *player) bool {
 	p.state.RLock()
-	js := p.state.justSpawned
-	p.state.RUnlock()
-	return js
+	defer 	p.state.RUnlock()
+	return p.state.justSpawned
 }

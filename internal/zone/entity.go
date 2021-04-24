@@ -43,8 +43,17 @@ type movement struct {
 	x, y uint32
 }
 
+type entityType int
+
+const (
+	isMonster entityType = iota
+	isPlayer
+	isNPC
+)
+
 type baseEntity struct {
-	info     entityInfo
+	handle   uint16
+	eType    entityType
 	fallback location
 	previous location
 	current  location
@@ -52,11 +61,6 @@ type baseEntity struct {
 	events   events
 	// dangerZone: only to be used when loading or other situation!!
 	sync.RWMutex
-}
-
-type entityInfo struct {
-	handle  uint16
-	monster bool
 }
 
 type targeting struct {
@@ -126,7 +130,7 @@ func (h *handler) new() (uint16, error) {
 
 func (b *baseEntity) getHandle() uint16 {
 	b.RLock()
-	h := b.info.handle
+	h := b.handle
 	b.RUnlock()
 	return h
 }

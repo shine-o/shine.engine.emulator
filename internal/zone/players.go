@@ -30,20 +30,19 @@ func (p *players) all() <-chan *player {
 	return ch
 }
 
-func (p *players) get(h uint16) *player {
+func (p *players) get(h uint16) (*player, error) {
 	p.RLock()
 	defer p.RUnlock()
 	player, ok := p.active[h]
 	if !ok {
-		log.Error(errors.Err{
+		return nil, errors.Err{
 			Code: errors.ZoneMissingPlayer,
 			Details: errors.ErrDetails{
 				"handle": h,
 			},
-		})
-		return nil
+		}
 	}
-	return player
+	return player, nil
 }
 
 func (p *players) remove(h uint16) {
@@ -73,8 +72,6 @@ func (p *players) add(ap *player) {
 }
 
 func playerInRange(v, t *player) bool {
-	h := t.getHandle()
-
 	v.baseEntity.RLock()
 	t.baseEntity.RLock()
 	vc := v.baseEntity.current
@@ -82,13 +79,9 @@ func playerInRange(v, t *player) bool {
 	v.baseEntity.RUnlock()
 	t.baseEntity.RUnlock()
 
-	yes := entityInRange(vc, tc)
-
-	if yes {
-		v.proximity.Lock()
-		v.proximity.players[h] = t
-		v.proximity.Unlock()
+	if entityInRange(tc, vc) {
 		return true
 	}
+
 	return false
 }
