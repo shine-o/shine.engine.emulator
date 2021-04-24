@@ -441,9 +441,9 @@ func itemUnEquipLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	player := zm.entities.players.get(ev.session.handle)
+	p := zm.entities.players.get(ev.session.handle)
 
-	if player == nil {
+	if p == nil {
 		return
 	}
 
@@ -453,12 +453,12 @@ func itemUnEquipLogic(e event, zm *zoneMap) {
 		err:  make(chan error),
 	}
 
-	player.events.send[eduUnEquipItem] <- ev1
+	p.events.send[eduUnEquipItem] <- ev1
 
 	select {
 	case err := <-ev1.err:
 		if err != nil {
-			networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+			networking.Send(p.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
 				Code: ItemEquipFailed,
 			})
 			log.Error(err)
@@ -468,7 +468,7 @@ func itemUnEquipLogic(e event, zm *zoneMap) {
 
 	_, nc1, err := ncItemEquipChangeCmd(ev1.change)
 	if err != nil {
-		networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+		networking.Send(p.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
 			Code: ItemEquipFailed,
 		})
 		log.Error(err)
@@ -477,20 +477,36 @@ func itemUnEquipLogic(e event, zm *zoneMap) {
 
 	nc2, _, err := ncItemCellChangeCmd(ev1.change)
 	if err != nil {
-		networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+		networking.Send(p.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
 			Code: ItemEquipFailed,
 		})
 		log.Error(err)
 		return
 	}
 
-	networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIPCHANGE_CMD, &nc1)
+	networking.Send(p.conn.outboundData, networking.NC_ITEM_EQUIPCHANGE_CMD, &nc1)
 
-	networking.Send(player.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
+	networking.Send(p.conn.outboundData, networking.NC_ITEM_EQUIP_ACK, &structs.NcItemEquipAck{
 		Code: ItemEquipSuccess,
 	})
 
-	networking.Send(player.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, nc2)
+	networking.Send(p.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, nc2)
+
+	//NC_BRIEFINFO_UNEQUIP_CMD
+	nc3 := &structs.NcBriefInfoUnEquipCmd{
+		Handle: p.getHandle(),
+		Slot:   ev.nc.SlotEquip,
+	}
+
+	for ap := range zm.entities.players.all() {
+		go func(p1, p2 *player, nc *structs.NcBriefInfoUnEquipCmd) {
+			if p1.getHandle() != p2.getHandle() {
+				if playerInRange(p2, p1) {
+					go networking.Send(p2.conn.outboundData, networking.NC_BRIEFINFO_UNEQUIP_CMD, nc)
+				}
+			}
+		}(p, ap, nc3)
+	}
 }
 
 func itemIsMovedLogic(e event, zm *zoneMap) {
@@ -652,7 +668,7 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 
 	var wg sync.WaitGroup
 
-	wg.Add(4)
+	wg.Add(5)
 	go func() {
 		defer wg.Done()
 		newPlayer(p1, zm)
@@ -673,15 +689,95 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 		showAllNPC(p1, zm)
 	}()
 
+	go func() {
+		defer wg.Done()
+		equippedItems(p1)
+	}()
+
 	wg.Wait()
 
-	go p1.heartbeat()
 
+	go p1.heartbeat()
 	go p1.persistPosition()
 	go p1.nearbyPlayersMaintenance(zm)
 	go p1.nearbyNpcsMaintenance(zm)
 
 	//go adjacentMonstersInform(p1, zm)
+}
+
+// send data about equippedID or unequipped slots
+// this is used on changing maps, for example when you leave the KQ arena and the hammer is automatically removed when you leave the map
+func equippedItems(p1 *player) {
+	var (
+		nc1 []structs.NcBriefInfoUnEquipCmd
+		nc2 []structs.NcBriefInfoChangeWeaponCmd
+		nc3 []structs.NcBriefInfoChangeUpgradeCmd
+		nc4 []structs.NcBriefInfoChangeDecorateCmd
+	)
+
+	p1h := p1.getHandle()
+	p1.inventories.RLock()
+	for i := 1; i <= 29; i++ {
+		eItem, ok := p1.inventories.equipped.items[i]
+		if !ok {
+			nc1 = append(nc1, structs.NcBriefInfoUnEquipCmd{
+				Handle: p1h,
+				Slot:   byte(i),
+			})
+			continue
+		}
+
+		eItem.RLock()
+		switch eItem.itemData.itemInfo.Class {
+		case data.ItemClassArmor:
+		case data.ItemClassAmulet:
+		case data.ItemBracelet:
+		case data.ItemClassShield:
+		case data.ItemClassBoot:
+			nc3 = append(nc3, structs.NcBriefInfoChangeUpgradeCmd{
+				Handle: p1h,
+				Item:   eItem.itemData.itemInfo.ID,
+				//Slot:   byte(eItem.itemData.itemInfo.Equip),
+			})
+			break
+		case data.ItemClassWeapon:
+			nc2 = append(nc2, structs.NcBriefInfoChangeWeaponCmd{
+				UpgradeInfo: structs.NcBriefInfoChangeUpgradeCmd{
+					Handle: p1h,
+					Item:   eItem.itemData.itemInfo.ID,
+					//Slot:   byte(eItem.itemData.itemInfo.Equip),
+				},
+				CurrentMobID:     65535,
+				CurrentKillLevel: 255,
+			})
+			break
+		case data.ItemCosWeapon:
+		case data.ItemCosShield:
+		case data.ItemClassDecoration:
+			nc4 = append(nc4, structs.NcBriefInfoChangeDecorateCmd{
+				Handle: p1h,
+				Item:   eItem.itemData.itemInfo.ID,
+				//Slot:   byte(eItem.itemData.itemInfo.Equip),
+			})
+			break
+		}
+		eItem.RUnlock()
+
+	}
+	p1.inventories.RUnlock()
+
+	for _, nc := range nc1 {
+		networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_UNEQUIP_CMD, &nc)
+	}
+	for _, nc := range nc2 {
+		networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_CHANGEWEAPON_CMD, &nc)
+	}
+	for _, nc := range nc3 {
+		networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_CHANGEUPGRADE_CMD, &nc)
+	}
+	for _, nc := range nc4 {
+		networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_CHANGEDECORATE_CMD, &nc)
+	}
 }
 
 func playerDisappearedLogic(e event, zm *zoneMap) {
@@ -1068,7 +1164,6 @@ func showAllNPC(p *player, zm *zoneMap) {
 			}
 			npcs.Mobs = append(npcs.Mobs, info)
 		}
-
 
 	}
 

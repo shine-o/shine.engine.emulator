@@ -27,6 +27,7 @@ type ShineCoordType struct {
 //union PROTO_NC_BRIEFINFO_LOGINCHARACTER_CMD::<unnamed-type-shapedata>
 type NcBriefInfoLoginCharacterCmdShapeData struct {
 	Data [45]byte //
+	//Data []byte //
 	//NotCamp CharBriefInfoNotCamped
 }
 
@@ -48,16 +49,18 @@ type CharBriefInfoBooth struct {
 	SignBoard StreetBoothSignBoard
 }
 
-//struct CHARBRIEFINFO_RIDE::RideInfo
-type CharBriefInfoRideInfo struct {
-	Horse uint16
-}
-
 //struct CHARBRIEFINFO_RIDE
 type CharBriefInfoRide struct {
 	Equip    ProtoEquipment
 	RideInfo CharBriefInfoRideInfo
 }
+
+
+//struct CHARBRIEFINFO_RIDE::RideInfo
+type CharBriefInfoRideInfo struct {
+	Horse uint16
+}
+
 
 //struct STOPEMOTICON_DESCRIPT
 type StopEmoticonDescript struct {

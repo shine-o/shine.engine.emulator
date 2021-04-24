@@ -131,7 +131,7 @@ type item struct {
 	stats     itemStats
 	amount    int
 	stackable bool
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 // static is a prefix for items that have stats defined in static files
@@ -975,9 +975,7 @@ type makeItemOptions struct {
 
 func makeItem(itemIndex string, options makeItemOptions) (*item, itemCreationDetails, error) {
 	var (
-		i = &item{
-			RWMutex: &sync.RWMutex{},
-		}
+		i = &item{}
 		icd = itemCreationDetails{}
 	)
 
@@ -1080,7 +1078,6 @@ func loadItem(pItem *persistence.Item) *item {
 		},
 		amount:    pItem.Amount,
 		stackable: pItem.Stackable,
-		RWMutex:   &sync.RWMutex{},
 	}
 
 	i.stats.staticStats(i.itemData)
@@ -1221,7 +1218,7 @@ func ncItemCellChangeCmd(change itemSlotChange) (*structs.NcItemCellChangeCmd, *
 }
 
 // NC_ITEM_EQUIPCHANGE_CMD
-// data about the recently equipped item
+// data about the recently equippedID item
 func ncItemEquipChangeCmd(change itemSlotChange) (structs.NcItemEquipChangeCmd, structs.NcItemEquipChangeCmd, error) {
 	var (
 		fromNc structs.NcItemEquipChangeCmd

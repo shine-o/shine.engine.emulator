@@ -1197,7 +1197,7 @@ func TestItemEquip_Success(t *testing.T) {
 	}
 
 	if itemSlotChange.to.item != nil {
-		t.Fatal("to item should be nil, as no item is equipped")
+		t.Fatal("to item should be nil, as no item is equippedID")
 	}
 
 	equippedItem, ok := player.inventories.equipped.items[12]
@@ -1297,7 +1297,7 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 	}
 
 	if itemSlotChange2.to.item == nil {
-		t.Fatal("equipped item should not be nil")
+		t.Fatal("equippedID item should not be nil")
 	}
 
 	inventoryItem, ok := player.inventories.inventory.items[1]
@@ -1306,7 +1306,7 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 		t.Fatal("inventoryItem should not be nil")
 	}
 
-	// check that it matches the first equipped item
+	// check that it matches the first equippedID item
 	if inventoryItem.pItem.ID != item.pItem.ID {
 		t.Fatal("items do not match")
 	}
@@ -1317,7 +1317,7 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 		t.Fatal("item is expected to be in slot")
 	}
 
-	// assert it matches the second equipped item
+	// assert it matches the second equippedID item
 	if equippedItem.pItem.ID != item2.pItem.ID {
 		t.Fatalf("mismatched items")
 	}

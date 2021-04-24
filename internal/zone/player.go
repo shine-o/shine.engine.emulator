@@ -106,7 +106,17 @@ type playerStats struct {
 	*sync.RWMutex
 }
 
+type playerCondition int
+
+const (
+	camping playerCondition = iota
+	normal
+	vendor
+	riding
+)
+
 type playerState struct {
+	current     playerCondition
 	prevExp     uint64
 	exp         uint64
 	nextExp     uint64
@@ -462,6 +472,7 @@ func (p *player) viewData() {
 
 func (p *player) stateData() {
 	s := &playerState{
+		current: normal,
 		prevExp: 100,
 		exp:     150,
 		nextExp: 800,
@@ -472,6 +483,7 @@ func (p *player) stateData() {
 		moverHandle: 0,
 		moverSlot:   0,
 		miniPet:     0,
+		justSpawned: false,
 		RWMutex:     &sync.RWMutex{},
 	}
 	p.dz.Lock()
@@ -481,9 +493,9 @@ func (p *player) stateData() {
 
 func (p *player) statsData() {
 	// given all:
-	//  class base stats for current level, equipped items, charged buffs, buffs/debuffs, assigned stat points
-	// calculate base stats (class base stats for current level, assigned stat points) , and stats with gear on (equipped items, charged buffs, buffs/debuffs)
-	// given that equipped
+	//  class base stats for current level, equippedID items, charged buffs, buffs/debuffs, assigned stat points
+	// calculate base stats (class base stats for current level, assigned stat points) , and stats with gear on (equippedID items, charged buffs, buffs/debuffs)
+	// given that equippedID
 	s := &playerStats{
 		str: stat{
 			base:       0,
@@ -982,6 +994,103 @@ func protoAvatarShapeInfo(pv *playerView) *structs.ProtoAvatarShapeInfo {
 	return nc
 }
 
+func shapeData(p *player) structs.NcBriefInfoLoginCharacterCmdShapeData {
+	var (
+		nc        structs.NcBriefInfoLoginCharacterCmdShapeData
+		shapeData []byte
+	)
+
+	switch p.state.current {
+	case vendor:
+		//var inc = structs.CharBriefInfoBooth{
+		//	Camp: structs.CharBriefInfoCamp{
+		//		MiniHouse: 0,
+		//		Dummy:     [10]byte{},
+		//	},
+		//	IsSelling: 1,
+		//	SignBoard: structs.StreetBoothSignBoard{
+		//		Text: "tutti frutti",
+		//	},
+		//}
+		//d, err := structs.Pack(&inc)
+		//if err != nil {
+		//	log.Error(err)
+		//	break
+		//}
+		//shapeData = d
+		break
+	case camping:
+		//struct CHARBRIEFINFO_CAMP
+		//type CharBriefInfoCamp struct {
+		//	MiniHouse uint16
+		//	Dummy     [10]byte //
+		//}
+		break
+	case normal:
+		inc := structs.CharBriefInfoNotCamp{
+			Equip: structs.ProtoEquipment{
+				EquHead:         equippedID(p.inventories, data.ItemEquipHat),
+				EquMouth:        equippedID(p.inventories, data.ItemEquipMouth),
+				EquRightHand:    equippedID(p.inventories, data.ItemEquipRightHand),
+				EquBody:         equippedID(p.inventories, data.ItemEquipBody),
+				EquLeftHand:     equippedID(p.inventories, data.ItemEquipLeftHand),
+				EquPant:         equippedID(p.inventories, data.ItemEquipLeg),
+				EquBoot:         equippedID(p.inventories, data.ItemEquipShoes),
+				EquAccBoot:      equippedID(p.inventories, data.ItemEquipShoesAcc),
+				EquAccPant:      equippedID(p.inventories, data.ItemEquipLegAcc),
+				EquAccBody:      equippedID(p.inventories, data.ItemEquipBodyAcc),
+				EquAccHeadA:     equippedID(p.inventories, data.ItemEquipHatAcc),
+				EquMinimonR:     equippedID(p.inventories, data.ItemEquipMinimonR),
+				EquEye:          equippedID(p.inventories, data.ItemEquipEye),
+				EquAccLeftHand:  equippedID(p.inventories, data.ItemEquipLeftHandAcc),
+				EquAccRightHand: equippedID(p.inventories, data.ItemEquipRightHandAcc),
+				EquAccBack:      equippedID(p.inventories, data.ItemEquipBack),
+				EquCosEff:       equippedID(p.inventories, data.ItemEquipCosEff),
+				EquAccHip:       equippedID(p.inventories, data.ItemEquipTail),
+				EquMinimon:      equippedID(p.inventories, data.ItemEquipMinimon),
+				EquAccShield:    equippedID(p.inventories, data.ItemEquipShieldAcc),
+				Upgrade: structs.EquipmentUpgrade{
+					Gap: [2]uint8{0,12},
+					//Gap: 12,
+					BF2: 1,
+				},
+			},
+		}
+		d, err := structs.Pack(&inc)
+		if err != nil {
+			log.Error(err)
+			break
+		}
+		shapeData = d
+		break
+	case riding:
+		////struct CHARBRIEFINFO_RIDE
+		//type CharBriefInfoRide struct {
+		//	Equip    ProtoEquipment
+		//	RideInfo CharBriefInfoRideInfo
+		//}
+		break
+	}
+
+	for i, d := range shapeData {
+		nc.Data[i] = d
+	}
+
+	return nc
+}
+
+// will return either the itemID or 65535
+func equippedID(pi *playerInventories, equip data.ItemEquipEnum) uint16 {
+	var id uint16 = 65535
+	pi.RLock()
+	item, ok := pi.equipped.items[int(equip)]
+	if ok {
+		id = item.itemData.itemInfo.ID
+	}
+	pi.RUnlock()
+	return id
+}
+
 func ncBriefInfoLoginCharacterCmd(p *player) structs.NcBriefInfoLoginCharacterCmd {
 
 	var nc = structs.NcBriefInfoLoginCharacterCmd{
@@ -1001,6 +1110,7 @@ func ncBriefInfoLoginCharacterCmd(p *player) structs.NcBriefInfoLoginCharacterCm
 	p.baseEntity.RUnlock()
 
 	nc.Shape = *protoAvatarShapeInfo(p.view)
+	nc.ShapeData = shapeData(p)
 
 	p.view.RLock()
 	nc.CharID = structs.Name5{

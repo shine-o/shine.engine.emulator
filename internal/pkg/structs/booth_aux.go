@@ -2,7 +2,8 @@ package structs
 
 //struct STREETBOOTH_SIGNBOARD
 type StreetBoothSignBoard struct {
-	Text [30]byte
+	//Text [30]byte
+	Text string `struct:"[30]byte"`
 }
 
 //struct PROTO_NC_BOOTH_ENTRY_SELL_ACK::BoothItemList

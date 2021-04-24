@@ -370,7 +370,7 @@ func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error
 		return ncStructData(&nc, data)
 	case 7172:
 		// NC_BRIEFINFO_UNEQUIP_CMD
-		nc := structs.NcBriefInfoUnequipCmd{}
+		nc := structs.NcBriefInfoUnEquipCmd{}
 		return ncStructData(&nc, data)
 	case 9258:
 		// NC_BAT_ABSTATEINFORM_NOEFFECT_CMD

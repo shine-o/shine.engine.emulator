@@ -58,8 +58,15 @@ type ProtoAvatarShapeInfo struct {
 }
 
 //struct PROTO_EQUIPMENT::<unnamed-type-upgrade>
+//  __int8 lefthand : 4;
+//  __int8 righthand : 4;
+//  __int8 body : 4;
+//  __int8 leg : 4;
+//  __int8 shoes : 4;
 type EquipmentUpgrade struct {
+	// first byte is the upgrade level
 	Gap [2]uint8 `struct:"[2]uint8"`
+	//Gap uint16
 	BF2 byte
 }
 

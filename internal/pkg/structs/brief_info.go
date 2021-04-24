@@ -24,7 +24,7 @@ type NcBriefInfoDroppedItemCmd struct {
 type NcBriefInfoChangeDecorateCmd struct {
 	Handle  uint16
 	Item    uint16
-	SlotNum byte
+	Slot byte
 }
 
 //struct PROTO_NC_BRIEFINFO_MOB_CMD
@@ -34,7 +34,7 @@ type NcBriefInfoMobCmd struct {
 }
 
 //struct PROTO_NC_BRIEFINFO_UNEQUIP_CMD
-type NcBriefInfoUnequipCmd struct {
+type NcBriefInfoUnEquipCmd struct {
 	Handle uint16
 	Slot   byte
 }
@@ -84,7 +84,7 @@ type NcBriefInfoChangeUpgradeCmd struct {
 	Handle  uint16
 	Item    uint16
 	Upgrade byte
-	SlotNum byte
+	Slot byte
 }
 
 //struct PROTO_NC_BRIEFINFO_MOVER_CMD
