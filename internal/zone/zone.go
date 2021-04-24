@@ -12,17 +12,17 @@ import (
 	"sync"
 )
 
-type runningMaps struct {
-	list map[int]*zoneMap
-	*sync.RWMutex
-}
-
 type zone struct {
 	rm *runningMaps
 	*events
 	*dynamicEvents
 	*handler
-	*sync.RWMutex
+	sync.RWMutex
+}
+
+type runningMaps struct {
+	list map[int]*zoneMap
+	sync.RWMutex
 }
 
 var (
@@ -41,8 +41,7 @@ func (z *zone) load() {
 	loadGameData(shinePath)
 
 	z.rm = &runningMaps{
-		list:    make(map[int]*zoneMap),
-		RWMutex: &sync.RWMutex{},
+		list: make(map[int]*zoneMap),
 	}
 
 	z.events = &events{
@@ -59,14 +58,12 @@ func (z *zone) load() {
 	zoneEvents = z.events.send
 
 	z.dynamicEvents = &dynamicEvents{
-		events:  make(map[string]events),
-		RWMutex: &sync.RWMutex{},
+		events: make(map[string]events),
 	}
 
 	h := &handler{
 		handleIndex: 0,
 		usedHandles: make(map[uint16]bool),
-		RWMutex:     &sync.RWMutex{},
 	}
 
 	z.handler = h
@@ -103,23 +100,6 @@ func (z *zone) load() {
 	go z.run()
 }
 
-func (rm *runningMaps) all() <-chan *zoneMap {
-	rm.RLock()
-	ch := make(chan *zoneMap, len(rm.list))
-	rm.RUnlock()
-
-	go func(rm *runningMaps, send chan<- *zoneMap) {
-		rm.RLock()
-		for _, rm := range rm.list {
-			send <- rm
-		}
-		rm.RUnlock()
-		close(send)
-	}(rm, ch)
-
-	return ch
-}
-
 func (z *zone) addMap(mapId int) {
 	md, ok := mapData.Maps[mapId]
 
@@ -133,7 +113,7 @@ func (z *zone) addMap(mapId int) {
 		log.Fatal(err)
 	}
 
-	for m := range z.rm.all() {
+	for m := range z.allMaps() {
 		if m.data.MapInfoIndex == md.Info.MapName.Name {
 			log.Errorf("duplicate shn map index id %v %v, skipping", mapId, m.data.MapInfoIndex)
 			return
@@ -198,6 +178,23 @@ func (z *zone) run() {
 		go z.playerSession()
 		go z.playerGameData()
 	}
+}
+
+func (z *zone) allMaps() <-chan *zoneMap {
+	z.rm.RLock()
+	ch := make(chan *zoneMap, len(z.rm.list))
+	z.rm.RUnlock()
+
+	go func(rm *runningMaps, send chan<- *zoneMap) {
+		rm.RLock()
+		for _, rm := range rm.list {
+			send <- rm
+		}
+		rm.RUnlock()
+		close(send)
+	}(z.rm, ch)
+
+	return ch
 }
 
 func loadGameData(filesPath string) {

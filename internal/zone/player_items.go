@@ -970,12 +970,11 @@ func chosenStatTypes(amount int, id *itemData) []data.RandomOptionType {
 }
 
 type makeItemOptions struct {
-
 }
 
 func makeItem(itemIndex string, options makeItemOptions) (*item, itemCreationDetails, error) {
 	var (
-		i = &item{}
+		i   = &item{}
 		icd = itemCreationDetails{}
 	)
 
@@ -1222,7 +1221,7 @@ func ncItemCellChangeCmd(change itemSlotChange) (*structs.NcItemCellChangeCmd, *
 func ncItemEquipChangeCmd(change itemSlotChange) (structs.NcItemEquipChangeCmd, structs.NcItemEquipChangeCmd, error) {
 	var (
 		fromNc structs.NcItemEquipChangeCmd
-		toNc structs.NcItemEquipChangeCmd
+		toNc   structs.NcItemEquipChangeCmd
 	)
 
 	fromNc = structs.NcItemEquipChangeCmd{
@@ -1238,7 +1237,7 @@ func ncItemEquipChangeCmd(change itemSlotChange) (structs.NcItemEquipChangeCmd, 
 	fromAttr, err := itemAttributesBytes(change.from.item)
 
 	if err != nil {
-		return fromNc,toNc, err
+		return fromNc, toNc, err
 	}
 
 	fromNc.ItemData.ItemAttr = fromAttr
@@ -1263,5 +1262,5 @@ func ncItemEquipChangeCmd(change itemSlotChange) (structs.NcItemEquipChangeCmd, 
 		toNc.ItemData.ItemAttr = toAttr
 	}
 
-	return fromNc,toNc, nil
+	return fromNc, toNc, nil
 }

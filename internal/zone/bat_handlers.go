@@ -8,7 +8,6 @@ import (
 )
 
 // NC_BAT_TARGETTING_REQ
-// 9217
 func ncBatTargetingReq(ctx context.Context, np *networking.Parameters) {
 	var (
 		e playerSelectsEntityEvent
@@ -46,6 +45,7 @@ func ncBatTargetingReq(ctx context.Context, np *networking.Parameters) {
 	zm.send[playerSelectsEntity] <- &e
 }
 
+// NC_BAT_UNTARGET_REQ
 func ncBatUntargetReq(ctx context.Context, np *networking.Parameters) {
 
 	// remove current SelectionOrder value for player

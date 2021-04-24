@@ -6,7 +6,6 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"reflect"
-	"sync"
 	"testing"
 )
 
@@ -18,10 +17,8 @@ func TestNewItem_Success(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char:    char,
-			RWMutex: &sync.RWMutex{},
+			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -64,10 +61,8 @@ func TestNewItem_WithAttributes(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char:    char,
-			RWMutex: &sync.RWMutex{},
+			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -228,10 +223,8 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char:    char,
-			RWMutex: &sync.RWMutex{},
+			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -398,10 +391,8 @@ func TestNewItem_BadItemIndex(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char:    char,
-			RWMutex: &sync.RWMutex{},
+			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -952,10 +943,8 @@ func TestNewItemStack_Success(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char:    char,
-			RWMutex: &sync.RWMutex{},
+			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1002,7 +991,6 @@ func TestSplitItemStack_ChangeSlotWhileSplitting(t *testing.T) {
 
 func TestSoftDeleteItem_Success(t *testing.T) {
 	t.Fail()
-
 }
 
 func TestLoadNewPlayer_Mage_EquippedItems(t *testing.T) {
@@ -1013,10 +1001,8 @@ func TestLoadNewPlayer_Mage_EquippedItems(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char:    char,
-			RWMutex: &sync.RWMutex{},
+			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1044,10 +1030,8 @@ func TestLoadNewPlayer_Warrior_EquippedItems(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char:    char,
-			RWMutex: &sync.RWMutex{},
+			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1074,10 +1058,8 @@ func TestLoadNewPlayer_Archer_EquippedItems(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char:    char,
-			RWMutex: &sync.RWMutex{},
+			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1104,10 +1086,8 @@ func TestLoadNewPlayer_Cleric_EquippedItems(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char:    char,
-			RWMutex: &sync.RWMutex{},
+			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1152,7 +1132,6 @@ func TestItemEquip_Success(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1242,7 +1221,6 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1333,7 +1311,6 @@ func TestItemEquip_Success_NC(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1417,7 +1394,6 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1523,7 +1499,6 @@ func TestItemEquip_BadItemEquipOrClass(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1581,7 +1556,6 @@ func TestItemEquip_NoItemInSlot(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1635,7 +1609,6 @@ func TestItemUnEquip_Success(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1702,10 +1675,8 @@ func TestItemUnEquip_InventoryFull(t *testing.T) {
 
 	player := &player{
 		persistence: &playerPersistence{
-			char:    char,
-			RWMutex: &sync.RWMutex{},
+			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1785,7 +1756,6 @@ func TestItemUnEquip_NonExistentSlot(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1854,7 +1824,6 @@ func TestChangeItemSlot_EmptySlot_Success(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -1926,7 +1895,6 @@ func TestChangeItemSlot_OccupiedSlot_Success(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -2023,7 +1991,6 @@ func TestChangeItemSlot_EmptySlot_NC(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -2101,7 +2068,6 @@ func TestChangeItemSlot_OccupiedSlot_NC(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -2190,7 +2156,6 @@ func TestChangeItem_NonExistentSlot(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)
@@ -2260,7 +2225,6 @@ func TestChangeItemSlot_NoItemInSlot(t *testing.T) {
 		persistence: &playerPersistence{
 			char: char,
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := player.load(char.Name)

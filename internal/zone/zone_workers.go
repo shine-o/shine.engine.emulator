@@ -6,7 +6,6 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"reflect"
-	"sync"
 	"time"
 )
 
@@ -63,14 +62,12 @@ func (z *zone) playerSession() {
 
 				newLocation := p.next
 
-				p.dz.Lock()
+				p.Lock()
 				p.baseEntity.fallback = newLocation
 				p.baseEntity.current = newLocation
 
-				p.ticks = &entityTicks{
-					RWMutex: &sync.RWMutex{},
-				}
-				p.dz.Unlock()
+				p.ticks = &entityTicks{}
+				p.Unlock()
 
 				p.proximity.Lock()
 				p.proximity.players = make(map[uint16]*player)
@@ -103,7 +100,7 @@ func (z *zone) playerGameData() {
 	for {
 		select {
 		case e := <-z.recv[persistPlayerPosition]:
-			go persistPLayerPositionLogic(e, z)
+			go persistPLayerPositionLogic(e)
 		}
 	}
 }
@@ -219,9 +216,7 @@ func playerDataLogic(e event) {
 			lastHeartBeat: time.Now(),
 			close:         ev.net.CloseConnection,
 			outboundData:  ev.net.OutboundSegments.Send,
-			RWMutex:       &sync.RWMutex{},
 		},
-		dz: &sync.RWMutex{},
 	}
 
 	err := p.load(ev.playerName)
@@ -334,7 +329,7 @@ func playerLogoutConcludeLogic(z *zone, e event) {
 	}
 }
 
-func persistPLayerPositionLogic(e event, z *zone) {
+func persistPLayerPositionLogic(e event) {
 	ev, ok := e.(*persistPlayerPositionEvent)
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(persistPlayerPositionEvent{}).String(), reflect.TypeOf(ev).String())

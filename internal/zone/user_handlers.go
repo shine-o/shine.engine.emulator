@@ -5,11 +5,10 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 )
 
-//3096
 // NC_USER_NORMALLOGOUT_CMD
 func ncUserNormalLogoutCmd(ctx context.Context, np *networking.Parameters) {
 	var (
-		plce playerLogoutConcludeEvent
+		e playerLogoutConcludeEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -19,15 +18,15 @@ func ncUserNormalLogoutCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	plce = playerLogoutConcludeEvent{
+	e = playerLogoutConcludeEvent{
 		sessionID: session.id,
 		err:       make(chan error),
 	}
 
-	zoneEvents[playerLogoutConclude] <- &plce
+	zoneEvents[playerLogoutConclude] <- &e
 
 	select {
-	case e := <-plce.err:
+	case e := <-e.err:
 		log.Error(e)
 	}
 }

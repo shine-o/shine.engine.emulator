@@ -55,12 +55,10 @@ type CharBriefInfoRide struct {
 	RideInfo CharBriefInfoRideInfo
 }
 
-
 //struct CHARBRIEFINFO_RIDE::RideInfo
 type CharBriefInfoRideInfo struct {
 	Horse uint16
 }
-
 
 //struct STOPEMOTICON_DESCRIPT
 type StopEmoticonDescript struct {

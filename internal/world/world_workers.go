@@ -34,7 +34,7 @@ func serverTimeLogic(e event) {
 	minute := byte(t.Minute())
 	second := byte(t.Second())
 
-	nc :=  &structs.NcMiscGameTimeAck{
+	nc := &structs.NcMiscGameTimeAck{
 		Hour:   hour,
 		Minute: minute,
 		Second: second,

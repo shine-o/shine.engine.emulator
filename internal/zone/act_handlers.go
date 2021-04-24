@@ -8,8 +8,6 @@ import (
 )
 
 // NC_ACT_MOVEWALK_CMD
-// 8215
-// walk
 func ncActMoveWalkCmd(ctx context.Context, np *networking.Parameters) {
 	var (
 		e playerWalksEvent
@@ -47,7 +45,6 @@ func ncActMoveWalkCmd(ctx context.Context, np *networking.Parameters) {
 }
 
 // NC_ACT_MOVERUN_CMD
-// 8217
 func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 	var (
 		e playerRunsEvent
@@ -86,8 +83,6 @@ func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 }
 
 // NC_ACT_JUMP_CMD
-// 8228
-// jump
 func ncActJumpCmd(ctx context.Context, np *networking.Parameters) {
 	var (
 		e playerJumpedEvent
@@ -119,8 +114,6 @@ func ncActJumpCmd(ctx context.Context, np *networking.Parameters) {
 }
 
 // NC_ACT_STOP_REQ
-// 8210
-// stop walk/run, a.k.a last known position of entity
 func ncActStopReq(ctx context.Context, np *networking.Parameters) {
 	var (
 		e playerStoppedEvent
@@ -159,8 +152,6 @@ func ncActStopReq(ctx context.Context, np *networking.Parameters) {
 }
 
 // NC_ACT_NPCCLICK_CMD
-// outbound
-// 8202
 func ncActNpcClickCmd(ctx context.Context, np *networking.Parameters) {
 	var (
 		e playerClicksOnNpcEvent
@@ -207,10 +198,9 @@ func ncActNpcClickCmd(ctx context.Context, np *networking.Parameters) {
 // 6170
 
 // NC_MAP_LINKOTHER_CMD
-// 6154
 // send zone connection info
 
-// 15362 NC_MENU_SERVERMENU_ACK
+// NC_MENU_SERVERMENU_ACK
 func ncMenuServerMenuAck(ctx context.Context, np *networking.Parameters) {
 	var (
 		e playerPromptReplyEvent
@@ -247,5 +237,4 @@ func ncMenuServerMenuAck(ctx context.Context, np *networking.Parameters) {
 	}
 
 	zm.events.send[playerPromptReply] <- &e
-
 }

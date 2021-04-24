@@ -184,7 +184,6 @@ func packetDataTest() {
 	//	logger.Error(err)
 	//}
 
-
 }
 
 func shbdTest() {

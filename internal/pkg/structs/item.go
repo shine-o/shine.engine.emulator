@@ -103,6 +103,6 @@ type NcItemEquipAck struct {
 // PROTO_NC_ITEM_SPLIT_REQ
 type NcItemSplitReq struct {
 	From ItemInventory
-	To ItemInventory
-	Lot	uint32
+	To   ItemInventory
+	Lot  uint32
 }

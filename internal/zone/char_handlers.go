@@ -10,8 +10,8 @@ import (
 // NC_MAP_LOGIN_REQ
 func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 	var (
-		nc   structs.NcMapLoginReq
-		pmle playerMapLoginEvent
+		nc structs.NcMapLoginReq
+		e  playerMapLoginEvent
 	)
 
 	err := structs.Unpack(np.Command.Base.Data, &nc)
@@ -20,20 +20,19 @@ func ncMapLoginReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	pmle = playerMapLoginEvent{
+	e = playerMapLoginEvent{
 		nc: nc,
 		np: np,
 	}
 
-	zoneEvents[playerMapLogin] <- &pmle
+	zoneEvents[playerMapLogin] <- &e
 }
 
 // NC_MAP_LOGINCOMPLETE_CMD
-// 6147
 func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 	// fetch user session
 	var (
-		pae playerAppearedEvent
+		e playerAppearedEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -54,18 +53,18 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	pae = playerAppearedEvent{
+	e = playerAppearedEvent{
 		handle: session.handle,
 	}
 
-	zm.send[playerAppeared] <- &pae
+	zm.send[playerAppeared] <- &e
 
 }
 
-//4210
+//NC_CHAR_LOGOUTCANCEL_CMD
 func ncCharLogoutCancelCmd(ctx context.Context, np *networking.Parameters) {
 	var (
-		plce playerLogoutCancelEvent
+		e playerLogoutCancelEvent
 	)
 
 	session, ok := np.Session.(*session)
@@ -75,11 +74,11 @@ func ncCharLogoutCancelCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	plce = playerLogoutCancelEvent{
+	e = playerLogoutCancelEvent{
 		sessionID: session.id,
 	}
 
-	zoneEvents[playerLogoutCancel] <- &plce
+	zoneEvents[playerLogoutCancel] <- &e
 }
 
 //NC_CHAR_LOGOUTREADY_CMD

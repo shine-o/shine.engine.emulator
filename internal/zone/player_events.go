@@ -1,11 +1,5 @@
 package zone
 
-// 	eduPosition
-//	eduState
-//	eduStats
-//	eduEquipItem
-//	eduUnEquipItem
-
 type eduPositionEvent struct {
 	x, y int
 	zm   *zoneMap
@@ -23,7 +17,7 @@ type eduEquipItemEvent struct {
 }
 
 type eduUnEquipItemEvent struct {
-	from, to     int
-	change    itemSlotChange
-	err       chan error
+	from, to int
+	change   itemSlotChange
+	err      chan error
 }

@@ -1,7 +1,6 @@
 package zone
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"sync"
 )
 
@@ -63,27 +62,4 @@ func npcInRange(p *player, n *npc) bool {
 	}
 
 	return false
-}
-
-func knownNpc(p *player, nh uint16) bool {
-	p.proximity.RLock()
-	_, ok := p.proximity.npcs[nh]
-	p.proximity.RUnlock()
-	if ok {
-		return true
-	}
-	return false
-}
-
-func adjacentNpcsInform(p *player, zm *zoneMap) {
-	for m := range zm.entities.npcs.all() {
-		go func(p *player, n *npc) {
-			if !knownNpc(p, n.getHandle()) {
-				if npcInRange(p, n) {
-					nc := ncBriefInfoRegenMobCmd(n)
-					networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
-				}
-			}
-		}(p, m)
-	}
 }

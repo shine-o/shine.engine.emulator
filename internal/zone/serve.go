@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/viper"
 	"net/http"
 	"path/filepath"
-	"sync"
 )
 
 var (
@@ -23,11 +22,6 @@ var (
 
 // Start initializes the TCP server and all the needed services and configuration for the zone
 func Start(cmd *cobra.Command, args []string) {
-	//defer func() {
-	//	if r := recover(); r != nil {
-	//		log.Error(r)
-	//	}
-	//}()
 	go func() {
 		enabled := viper.GetBool("metrics.enabled")
 		if enabled {
@@ -45,9 +39,7 @@ func Start(cmd *cobra.Command, args []string) {
 
 	log.Infof("starting the service on port: %v", zonePort)
 
-	z := zone{
-		RWMutex: &sync.RWMutex{},
-	}
+	z := zone{}
 
 	z.load()
 

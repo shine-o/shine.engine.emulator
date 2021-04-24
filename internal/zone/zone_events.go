@@ -5,12 +5,6 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
-type queryPlayerEvent struct {
-	handle uint16
-	p      chan *player
-	err    chan error
-}
-
 type playerSHNEvent struct {
 	inboundNC structs.NcMapLoginReq
 	ok        chan bool

@@ -3,7 +3,6 @@ package zone
 import (
 	"bytes"
 	"github.com/RoaringBitmap/roaring"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/spf13/viper"
@@ -23,14 +22,6 @@ type zoneMap struct {
 type entities struct {
 	*players
 	*npcs
-}
-
-// metrics specific to the zone service
-type metrics struct {
-	// every time a player enters or exit a map, update the gauge
-	players prometheus.Gauge
-	// every time a npc dies / respawns, update the gauge
-	npcs prometheus.Gauge
 }
 
 func (zm *zoneMap) run() {
@@ -69,8 +60,8 @@ func (zm *zoneMap) spawnNPCs() {
 
 	if ok {
 		var (
-			sem     = make(chan int, 100)
-			wg      sync.WaitGroup
+			sem = make(chan int, 100)
+			wg  sync.WaitGroup
 		)
 		for _, npc := range npcs {
 			wg.Add(1)
@@ -115,7 +106,7 @@ func (zm *zoneMap) spawnNPC(sn *data.ShineNPC) {
 	n := &npc{
 		baseEntity: baseEntity{
 			handle: h,
-			eType: isNPC,
+			eType:  isNPC,
 			fallback: location{
 				x: sn.X,
 				y: sn.Y,
@@ -146,10 +137,7 @@ func (zm *zoneMap) spawnNPC(sn *data.ShineNPC) {
 			chasing:  make(chan bool),
 			fleeing:  make(chan bool),
 		},
-		ticks: &entityTicks{
-			RWMutex: &sync.RWMutex{},
-		},
-		dz: &sync.RWMutex{},
+		ticks: &entityTicks{},
 	}
 
 	zm.entities.npcs.Lock()
@@ -303,8 +291,8 @@ func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.M
 
 		m := &npc{
 			baseEntity: baseEntity{
-				handle:  h,
-				eType: isMonster,
+				handle: h,
+				eType:  isMonster,
 				fallback: location{
 					x: x,
 					y: y,
@@ -334,10 +322,7 @@ func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.M
 				chasing:  make(chan bool),
 				fleeing:  make(chan bool),
 			},
-			ticks: &entityTicks{
-				RWMutex: &sync.RWMutex{},
-			},
-			dz: &sync.RWMutex{},
+			ticks: &entityTicks{},
 		}
 
 		zm.entities.npcs.Lock()

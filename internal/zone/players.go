@@ -70,18 +70,3 @@ func (p *players) add(ap *player) {
 		p.state.Unlock()
 	}(ap)
 }
-
-func playerInRange(v, t *player) bool {
-	v.baseEntity.RLock()
-	t.baseEntity.RLock()
-	vc := v.baseEntity.current
-	tc := t.baseEntity.current
-	v.baseEntity.RUnlock()
-	t.baseEntity.RUnlock()
-
-	if entityInRange(tc, vc) {
-		return true
-	}
-
-	return false
-}

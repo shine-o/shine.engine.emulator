@@ -1,31 +1,14 @@
 package zone
 
 import (
-	"fmt"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"sync"
-)
-
-const (
-	//lengthX = 512
-	//lengthY = 512
-	//lengthX = 256
-	//lengthY = 256
-	lengthX     = 225
-	lengthY     = 225
-	maxAttempts = 1500
 )
 
 type entity interface {
 	basicActions
 	getHandle() uint16
 	getLocation() (int, int)
-}
-
-type handler struct {
-	handleIndex uint16
-	usedHandles map[uint16]bool
-	*sync.RWMutex
 }
 
 type basicActions interface {
@@ -45,12 +28,6 @@ type movement struct {
 
 type entityType int
 
-const (
-	isMonster entityType = iota
-	isPlayer
-	isNPC
-)
-
 type baseEntity struct {
 	handle   uint16
 	eType    entityType
@@ -69,7 +46,7 @@ type targeting struct {
 	selectingN     *npc
 	selectedByP    []*player
 	selectedByN    []*npc
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type entityState struct {
@@ -83,50 +60,22 @@ type mover struct {
 	baseEntity
 }
 
+const (
+	//lengthX = 512
+	//lengthY = 512
+	lengthX = 256
+	lengthY = 256
+)
+
+const (
+	isMonster entityType = iota
+	isPlayer
+	isNPC
+)
+
 var _ entity = (*player)(nil)
 
 var _ entity = (*npc)(nil)
-
-func (h *handler) remove(hid uint16) {
-	h.Lock()
-	delete(h.usedHandles, hid)
-	h.Unlock()
-}
-
-func (h *handler) add(ap *npc) {
-	handle := ap.getHandle()
-	h.Lock()
-	h.usedHandles[handle] = true
-	h.Unlock()
-}
-
-func (h *handler) new() (uint16, error) {
-	h.RLock()
-	index := h.handleIndex
-	h.RUnlock()
-	attempts := maxAttempts
-	for attempts != 0 {
-
-		index++
-		h.RLock()
-		_, used := h.usedHandles[index]
-		h.RUnlock()
-
-		attempts--
-
-		if used {
-			continue
-		}
-
-		h.Lock()
-		h.handleIndex = index
-		h.Unlock()
-
-		return index, nil
-	}
-
-	return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
-}
 
 func (b *baseEntity) getHandle() uint16 {
 	b.RLock()

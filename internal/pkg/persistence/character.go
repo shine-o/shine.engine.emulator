@@ -665,7 +665,7 @@ func (c *Character) initialItems() {
 	var (
 		shnID  uint16 = 0
 		shnInx        = ""
-		slot int
+		slot   int
 	)
 
 	switch c.Appearance.Class {
@@ -696,13 +696,13 @@ func (c *Character) initialItems() {
 
 	item := &Item{
 		InventoryType: int(EquippedInventory),
-		Slot: slot,
-		CharacterID: c.ID,
-		Character:   c,
-		ShnID:       shnID,
-		ShnInxName:  shnInx,
-		Stackable:   false,
-		Amount:      1,
+		Slot:          slot,
+		CharacterID:   c.ID,
+		Character:     c,
+		ShnID:         shnID,
+		ShnInxName:    shnInx,
+		Stackable:     false,
+		Amount:        1,
 	}
 	c.Items = append(c.Items, item)
 }

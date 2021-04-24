@@ -18,13 +18,26 @@ func (p *player) eduPlayerEvents001() {
 		case e := <-p.events.recv[eduEquipItem]:
 			eduEquipItemLogic(e, p)
 		case e := <-p.events.recv[eduUnEquipItem]:
-			eduUnequipItemLogic(e, p)
+			eduUnEquipItemLogic(e, p)
 			//case e := <-p.events.recv[eduUseItem]:
 		}
 	}
 }
 
-func eduUnequipItemLogic(e event, player *player) {
+// combination of events that must be processed in order
+// the reasoning is to avoid certain events changing data at the same time
+func (p *player) eduPlayerEvents002() {
+	log.Infof("[player_worker] eduPlayerEvents002 worker for player %v", p.getHandle())
+	for {
+		select {
+		case e := <-p.events.recv[eduPosition]:
+			eduPositionLogic(e, p)
+
+		}
+	}
+}
+
+func eduUnEquipItemLogic(e event, player *player) {
 	ev, ok := e.(*eduUnEquipItemEvent)
 	if !ok {
 		log.Error(errors.Err{
@@ -39,18 +52,6 @@ func eduUnequipItemLogic(e event, player *player) {
 	change, err := player.unEquip(ev.from, ev.to)
 	ev.change = change
 	ev.err <- err
-}
-
-// combination of events that must be processed in order
-func (p *player) eduPlayerEvents002() {
-	log.Infof("[player_worker] eduPlayerEvents002 worker for player %v", p.getHandle())
-	for {
-		select {
-		case e := <-p.events.recv[eduPosition]:
-			eduPositionLogic(e, p)
-
-		}
-	}
 }
 
 func eduEquipItemLogic(e event, player *player) {

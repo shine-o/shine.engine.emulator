@@ -13,7 +13,6 @@ func ncCharLoginReq(ctx context.Context, np *networking.Parameters) {
 		e characterLoginEvent
 	)
 
-
 	e = characterLoginEvent{
 		nc: &structs.NcCharLoginReq{},
 		np: np,

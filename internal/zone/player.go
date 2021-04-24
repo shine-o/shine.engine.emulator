@@ -46,7 +46,7 @@ type player struct {
 	persistence *playerPersistence
 
 	// dangerZone: only to be used when loading or other situation!!
-	dz *sync.RWMutex
+	sync.RWMutex
 }
 
 type playerProximity struct {
@@ -59,7 +59,7 @@ type playerConnection struct {
 	lastHeartBeat time.Time
 	close         chan<- bool
 	outboundData  chan<- []byte
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type playerView struct {
@@ -69,7 +69,7 @@ type playerView struct {
 	hairType   uint8
 	hairColour uint8
 	faceType   uint8
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type playerStats struct {
@@ -103,7 +103,7 @@ type playerStats struct {
 	restraintResistance stat
 	poisonResistance    stat
 	rollbackResistance  stat
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type playerCondition int
@@ -127,7 +127,7 @@ type playerState struct {
 	moverSlot   uint8
 	miniPet     uint8
 	justSpawned bool
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type playerMoney struct {
@@ -135,7 +135,7 @@ type playerMoney struct {
 	fame        uint32
 	wastedCoins uint64
 	wastedFame  uint64
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type playerTitles struct {
@@ -145,7 +145,7 @@ type playerTitles struct {
 		mobID   uint16
 	}
 	titles []title
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type playerQuests struct {
@@ -153,28 +153,28 @@ type playerQuests struct {
 	done       []quest
 	doing      []quest
 	repeatable []quest
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type playerSkills struct {
 	active  []skill
 	passive []skill
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type prompt struct {
 	action int
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type entityTicks struct {
 	list []*time.Ticker
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type playerPersistence struct {
 	char *persistence.Character
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type promptAction int
@@ -186,7 +186,7 @@ type playerStatPoints struct {
 	int                  uint8
 	spr                  uint8
 	redistributionPoints uint8
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 type skill struct {
@@ -338,8 +338,7 @@ func (p *player) load(name string) error {
 	}
 
 	p.persistence = &playerPersistence{
-		char:    &char,
-		RWMutex: &sync.RWMutex{},
+		char: &char,
 	}
 
 	p.baseEntity.events = events{
@@ -367,17 +366,11 @@ func (p *player) load(name string) error {
 		npcs:    make(map[uint16]*npc),
 	}
 
-	p.ticks = &entityTicks{
-		RWMutex: &sync.RWMutex{},
-	}
+	p.ticks = &entityTicks{}
 
-	p.prompt = &prompt{
-		RWMutex: &sync.RWMutex{},
-	}
+	p.prompt = &prompt{}
 
-	p.targeting = &targeting{
-		RWMutex: &sync.RWMutex{},
-	}
+	p.targeting = &targeting{}
 
 	wg := &sync.WaitGroup{}
 	wg.Add(7)
@@ -447,9 +440,9 @@ func (p *player) itemData() error {
 	ivs.inventory = biBox
 	ivs.miniHouse = mhiBox
 
-	p.dz.Lock()
+	p.Lock()
 	p.inventories = ivs
-	p.dz.Unlock()
+	p.Unlock()
 
 	return nil
 }
@@ -462,11 +455,10 @@ func (p *player) viewData() {
 		hairType:   p.persistence.char.Appearance.HairType,
 		hairColour: p.persistence.char.Appearance.HairColor,
 		faceType:   p.persistence.char.Appearance.FaceType,
-		RWMutex:    &sync.RWMutex{},
 	}
-	p.dz.Lock()
+	p.Lock()
 	p.view = v
-	p.dz.Unlock()
+	p.Unlock()
 }
 
 func (p *player) stateData() {
@@ -483,11 +475,10 @@ func (p *player) stateData() {
 		moverSlot:   0,
 		miniPet:     0,
 		justSpawned: false,
-		RWMutex:     &sync.RWMutex{},
 	}
-	p.dz.Lock()
+	p.Lock()
 	p.state = s
-	p.dz.Unlock()
+	p.Unlock()
 }
 
 func (p *player) statsData() {
@@ -573,11 +564,10 @@ func (p *player) statsData() {
 			base:       0,
 			withExtras: 0,
 		},
-		RWMutex: &sync.RWMutex{},
 	}
-	p.dz.Lock()
+	p.Lock()
 	p.stats = s
-	p.dz.Unlock()
+	p.Unlock()
 }
 
 func (p *player) titleData() {
@@ -592,11 +582,10 @@ func (p *player) titleData() {
 			element: 0,
 			mobID:   0,
 		},
-		RWMutex: &sync.RWMutex{},
 	}
-	p.dz.Lock()
+	p.Lock()
 	p.titles = t
-	p.dz.Unlock()
+	p.Unlock()
 }
 
 func (p *player) moneyData() {
@@ -605,20 +594,17 @@ func (p *player) moneyData() {
 		fame:        100000,
 		wastedCoins: 0,
 		wastedFame:  0,
-		RWMutex:     &sync.RWMutex{},
 	}
-	p.dz.Lock()
+	p.Lock()
 	p.money = m
-	p.dz.Unlock()
+	p.Unlock()
 }
 
 func (p *player) skillData() {
 	// all learned skills stored in the database
-	p.dz.Lock()
-	p.skills = &playerSkills{
-		RWMutex: &sync.RWMutex{},
-	}
-	p.dz.Unlock()
+	p.Lock()
+	p.skills = &playerSkills{}
+	p.Unlock()
 }
 
 func (p *player) charParameterData() structs.CharParameterData {
@@ -957,6 +943,21 @@ func (p *player) newItem(i *item) error {
 	return nil
 }
 
+func playerInRange(v, t *player) bool {
+	v.baseEntity.RLock()
+	t.baseEntity.RLock()
+	vc := v.baseEntity.current
+	tc := t.baseEntity.current
+	v.baseEntity.RUnlock()
+	t.baseEntity.RUnlock()
+
+	if entityInRange(tc, vc) {
+		return true
+	}
+
+	return false
+}
+
 func loadInventory(it persistence.InventoryType, p *player) (itemBox, error) {
 	var box itemBox
 	items, err := persistence.GetCharacterItems(int(p.persistence.char.ID), it)
@@ -979,6 +980,63 @@ func lastHeartbeat(p *player) float64 {
 	lastHeartBeat := time.Since(p.conn.lastHeartBeat).Seconds()
 	p.conn.RUnlock()
 	return lastHeartBeat
+}
+
+// will return either the itemID or 65535
+func equippedID(pi *playerInventories, equip data.ItemEquipEnum) uint16 {
+	var id uint16 = 65535
+	pi.RLock()
+	item, ok := pi.equipped.items[int(equip)]
+	if ok {
+		id = item.itemData.itemInfo.ID
+	}
+	pi.RUnlock()
+	return id
+}
+
+func justSpawned(p *player) bool {
+	p.state.RLock()
+	defer p.state.RUnlock()
+	return p.state.justSpawned
+}
+
+func ncBriefInfoLoginCharacterCmd(p *player) structs.NcBriefInfoLoginCharacterCmd {
+
+	var nc = structs.NcBriefInfoLoginCharacterCmd{
+		Mode: 2,
+	}
+
+	nc.Handle = p.baseEntity.getHandle()
+
+	p.baseEntity.RLock()
+	nc.Coordinates = structs.ShineCoordType{
+		XY: structs.ShineXYType{
+			X: uint32(p.baseEntity.current.x),
+			Y: uint32(p.baseEntity.current.y),
+		},
+		Direction: byte(p.baseEntity.current.d),
+	}
+	p.baseEntity.RUnlock()
+
+	nc.Shape = *protoAvatarShapeInfo(p.view)
+	nc.ShapeData = shapeData(p)
+
+	p.view.RLock()
+	nc.CharID = structs.Name5{
+		Name: p.view.name,
+	}
+	p.view.RUnlock()
+
+	p.state.RLock()
+	nc.Class = p.view.class
+	nc.Polymorph = p.state.polymorph
+	nc.Level = p.state.level
+	nc.MoverHandle = p.state.moverHandle
+	nc.MoverSlot = p.state.moverSlot
+	nc.UsingMinipet = p.state.miniPet
+	p.state.RUnlock()
+
+	return nc
 }
 
 func protoAvatarShapeInfo(pv *playerView) *structs.ProtoAvatarShapeInfo {
@@ -1049,7 +1107,7 @@ func shapeData(p *player) structs.NcBriefInfoLoginCharacterCmdShapeData {
 				EquMinimon:      equippedID(p.inventories, data.ItemEquipMinimon),
 				EquAccShield:    equippedID(p.inventories, data.ItemEquipShieldAcc),
 				Upgrade: structs.EquipmentUpgrade{
-					Gap: [2]uint8{0,12},
+					Gap: [2]uint8{0, 12},
 					//Gap: 12,
 					BF2: 1,
 				},
@@ -1074,57 +1132,6 @@ func shapeData(p *player) structs.NcBriefInfoLoginCharacterCmdShapeData {
 	for i, d := range shapeData {
 		nc.Data[i] = d
 	}
-
-	return nc
-}
-
-// will return either the itemID or 65535
-func equippedID(pi *playerInventories, equip data.ItemEquipEnum) uint16 {
-	var id uint16 = 65535
-	pi.RLock()
-	item, ok := pi.equipped.items[int(equip)]
-	if ok {
-		id = item.itemData.itemInfo.ID
-	}
-	pi.RUnlock()
-	return id
-}
-
-func ncBriefInfoLoginCharacterCmd(p *player) structs.NcBriefInfoLoginCharacterCmd {
-
-	var nc = structs.NcBriefInfoLoginCharacterCmd{
-		Mode: 2,
-	}
-
-	nc.Handle = p.baseEntity.getHandle()
-
-	p.baseEntity.RLock()
-	nc.Coordinates = structs.ShineCoordType{
-		XY: structs.ShineXYType{
-			X: uint32(p.baseEntity.current.x),
-			Y: uint32(p.baseEntity.current.y),
-		},
-		Direction: byte(p.baseEntity.current.d),
-	}
-	p.baseEntity.RUnlock()
-
-	nc.Shape = *protoAvatarShapeInfo(p.view)
-	nc.ShapeData = shapeData(p)
-
-	p.view.RLock()
-	nc.CharID = structs.Name5{
-		Name: p.view.name,
-	}
-	p.view.RUnlock()
-
-	p.state.RLock()
-	nc.Class = p.view.class
-	nc.Polymorph = p.state.polymorph
-	nc.Level = p.state.level
-	nc.MoverHandle = p.state.moverHandle
-	nc.MoverSlot = p.state.moverSlot
-	nc.UsingMinipet = p.state.miniPet
-	p.state.RUnlock()
 
 	return nc
 }

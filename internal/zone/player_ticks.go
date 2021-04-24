@@ -165,9 +165,3 @@ func checkRemoval(p1, p2 *player) {
 		p1.removeAdjacentPlayer(p2h)
 	}
 }
-
-func justSpawned(p *player) bool {
-	p.state.RLock()
-	defer 	p.state.RUnlock()
-	return p.state.justSpawned
-}

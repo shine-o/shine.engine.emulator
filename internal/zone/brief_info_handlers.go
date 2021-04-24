@@ -8,7 +8,6 @@ import (
 )
 
 // NC_BRIEFINFO_INFORM_CMD
-// 7169
 func ncBriefInfoInformCmd(ctx context.Context, np *networking.Parameters) {
 	// trigger handleInfo
 	// if targetHandle is within range of affectedHandle

@@ -7,7 +7,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
-// NC_ITEM_RELOC_REQ(
+// NC_ITEM_RELOC_REQ
 func ncItemRelocReq(ctx context.Context, np *networking.Parameters) {
 	var (
 		e itemIsMovedEvent

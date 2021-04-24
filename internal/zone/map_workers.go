@@ -88,20 +88,6 @@ func (zm *zoneMap) monsterActivity() {
 	}
 }
 
-func (zm *zoneMap) playerQueries() {
-	log.Infof("[map_worker] playerQueries worker for map %v", zm.data.Info.MapName)
-	for {
-		select {
-		case e := <-zm.recv[queryPlayer]:
-			ev, ok := e.(*queryPlayerEvent)
-			if !ok {
-				log.Errorf("expected event type %v but got %v", reflect.TypeOf(&queryPlayerEvent{}).String(), reflect.TypeOf(ev).String())
-				return
-			}
-		}
-	}
-}
-
 func (zm *zoneMap) monsterQueries() {
 	log.Infof("[map_worker] monsterQueries worker for map %v", zm.data.Info.MapName)
 	for {
@@ -179,14 +165,14 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 					return
 				}
 
-				p.dz.Lock()
+				p.Lock()
 				p.next = location{
 					mapID:   md.ID,
 					mapName: md.Info.MapName.Name,
 					x:       n.data.npcData.ShinePortal.X,
 					y:       n.data.npcData.ShinePortal.Y,
 				}
-				p.dz.Unlock()
+				p.Unlock()
 				return
 			}
 			break
@@ -430,21 +416,21 @@ func itemEquipLogic(e event, zm *zoneMap) {
 	switch ev1.change.from.item.itemData.itemInfo.Class {
 	case data.ItemClassWeapon, data.ItemClassShield:
 		nc3 := &structs.NcBriefInfoChangeWeaponCmd{
-			UpgradeInfo:      structs.NcBriefInfoChangeUpgradeCmd{
-				Handle:  ph,
-				Item:    ev1.change.from.item.itemData.itemInfo.ID,
-				Slot:    byte(ev1.change.from.item.itemData.itemInfo.Equip),
+			UpgradeInfo: structs.NcBriefInfoChangeUpgradeCmd{
+				Handle: ph,
+				Item:   ev1.change.from.item.itemData.itemInfo.ID,
+				Slot:   byte(ev1.change.from.item.itemData.itemInfo.Equip),
 			},
 		}
-		mapEpicenterBroadcast(zm, p,networking.NC_BRIEFINFO_CHANGEWEAPON_CMD, nc3)
+		mapEpicenterBroadcast(zm, p, networking.NC_BRIEFINFO_CHANGEWEAPON_CMD, nc3)
 		break
-	case data.ItemClassArmor, data.ItemClassBoot, data.ItemClassAmulet,data.ItemBracelet:
+	case data.ItemClassArmor, data.ItemClassBoot, data.ItemClassAmulet, data.ItemBracelet:
 		nc3 := &structs.NcBriefInfoChangeUpgradeCmd{
-			Handle:  ph,
-			Item:    ev1.change.from.item.itemData.itemInfo.ID,
-			Slot:    byte(ev1.change.from.item.itemData.itemInfo.Equip),
+			Handle: ph,
+			Item:   ev1.change.from.item.itemData.itemInfo.ID,
+			Slot:   byte(ev1.change.from.item.itemData.itemInfo.Equip),
 		}
-		mapEpicenterBroadcast(zm, p,networking.NC_BRIEFINFO_CHANGEUPGRADE_CMD, nc3)
+		mapEpicenterBroadcast(zm, p, networking.NC_BRIEFINFO_CHANGEUPGRADE_CMD, nc3)
 		break
 	}
 }
@@ -1152,7 +1138,7 @@ func showAllNPC(p *player, zm *zoneMap) {
 
 func isPortal(n *npc) bool {
 
-	if n.baseEntity.eType == isMonster || n.data.npcData == nil || n.data.npcData.ShinePortal == nil{
+	if n.baseEntity.eType == isMonster || n.data.npcData == nil || n.data.npcData.ShinePortal == nil {
 		return false
 	}
 
@@ -1193,7 +1179,7 @@ func portalMatchesLocation(portal *data.ShinePortal, next location) bool {
 }
 
 // broadcast data to all players on map given an epicenter player
-func mapEpicenterBroadcast(zm * zoneMap, epicenter *player, code networking.OperationCode, nc interface{})  {
+func mapEpicenterBroadcast(zm *zoneMap, epicenter *player, code networking.OperationCode, nc interface{}) {
 	for p := range zm.entities.players.all() {
 		go func(p1, p2 *player, nc interface{}) {
 			if p1.getHandle() != p2.getHandle() {
