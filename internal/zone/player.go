@@ -747,7 +747,7 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 		toItem   *item
 	)
 
-	fromItem = p.inventories.get(persistence.BagInventory, slot)
+	fromItem, _ = p.inventories.get(persistence.BagInventory, slot)
 	if fromItem == nil {
 		p.persistence.RLock()
 		characterName := p.persistence.char.Name
@@ -777,7 +777,7 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 		}
 	}
 
-	equippedItem := p.inventories.get(persistence.EquippedInventory, equip)
+	equippedItem, _ := p.inventories.get(persistence.EquippedInventory, equip)
 
 	if equippedItem != nil {
 		toItem = equippedItem
@@ -827,7 +827,7 @@ func (p *player) unEquip(from, to int) (itemSlotChange, error) {
 		toItem   *item
 	)
 
-	fromItem = p.inventories.get(persistence.EquippedInventory, from)
+	fromItem, _ = p.inventories.get(persistence.EquippedInventory, from)
 	if fromItem == nil {
 		p.persistence.RLock()
 		characterName := p.persistence.char.Name
@@ -842,7 +842,7 @@ func (p *player) unEquip(from, to int) (itemSlotChange, error) {
 		}
 	}
 
-	toItem = p.inventories.get(persistence.BagInventory, to)
+	toItem, _ = p.inventories.get(persistence.BagInventory, to)
 	if toItem != nil {
 		p.persistence.RLock()
 		characterName := p.persistence.char.Name

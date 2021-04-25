@@ -33,6 +33,9 @@ const (
 	ZoneItemSlotInUse
 	ZoneItemSlotGTS //Guild Tournament Storage
 	ZoneItemUnknownInventoryType
+	ZoneItemDeleteNoItem
+	ZoneItemNoItemInSlot
+	ZoneItemSlotIsOccupied
 	ZoneItemEquipBadType
 	ZoneMissingPlayer
 	ZoneUnexpectedEvent

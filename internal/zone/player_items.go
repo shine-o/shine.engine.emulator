@@ -22,101 +22,223 @@ type playerInventories struct {
 	sync.RWMutex
 }
 
-func (pi *playerInventories) get(inventoryType persistence.InventoryType, slot int) *item {
+func (pi *playerInventories) get(inventoryType persistence.InventoryType, slot int) (*item, error) {
 	pi.RLock()
 	defer pi.RUnlock()
 	switch inventoryType {
 	case persistence.EquippedInventory:
 		item, ok := pi.equipped.items[slot]
-		if ok {
-			return item
+		if !ok {
+			return nil, errors.Err{
+				Code: errors.ZoneItemNoItemInSlot,
+				Details: errors.ErrDetails{
+					"inventoryType": inventoryType,
+					"slot":          slot,
+				},
+			}
 		}
+		return item, nil
 	case persistence.BagInventory:
 		item, ok := pi.inventory.items[slot]
-		if ok {
-			return item
+		if !ok {
+			return nil, errors.Err{
+				Code: errors.ZoneItemNoItemInSlot,
+				Details: errors.ErrDetails{
+					"inventoryType": inventoryType,
+					"slot":          slot,
+				},
+			}
 		}
-	default:
-		log.Error(errors.Err{
-			Code: errors.ZoneItemUnknownInventoryType,
-			Details: errors.ErrDetails{
-				"inventoryType": inventoryType,
-				"slot":          slot,
-			},
-		})
+		return item, nil
+	case persistence.DepositInventory:
+		item, ok := pi.deposit.items[slot]
+		if !ok {
+			return nil, errors.Err{
+				Code: errors.ZoneItemNoItemInSlot,
+				Details: errors.ErrDetails{
+					"inventoryType": inventoryType,
+					"slot":          slot,
+				},
+			}
+		}
+		return item, nil
 	}
-	return nil
+
+	return nil, errors.Err{
+		Code: errors.ZoneItemUnknownInventoryType,
+		Details: errors.ErrDetails{
+			"inventoryType": inventoryType,
+			"slot":          slot,
+		},
+	}
+}
+
+func (pi *playerInventories) delete(inventoryType persistence.InventoryType, slot int) error {
+	pi.RLock()
+	defer pi.RUnlock()
+	switch inventoryType {
+	case persistence.BagInventory:
+		_, ok := pi.inventory.items[slot]
+		if !ok {
+			return errors.Err{
+				Code: errors.ZoneItemDeleteNoItem,
+				Details: errors.ErrDetails{
+					"inventoryType": inventoryType,
+					"slot":          slot,
+				},
+			}
+		}
+		delete(pi.inventory.items, slot)
+		return nil
+	case persistence.DepositInventory:
+		_, ok := pi.deposit.items[slot]
+		if !ok {
+			return errors.Err{
+				Code: errors.ZoneItemDeleteNoItem,
+				Details: errors.ErrDetails{
+					"inventoryType": inventoryType,
+					"slot":          slot,
+				},
+			}
+		}
+		delete(pi.deposit.items, slot)
+		return nil
+	}
+
+	return errors.Err{
+	Code: errors.ZoneItemUnknownInventoryType,
+		Details: errors.ErrDetails{
+		"inventoryType": inventoryType,
+		"slot":          slot,
+		},
+	}
+}
+
+func (pi *playerInventories) add(inventoryType persistence.InventoryType, slot int, item * item) error {
+	pi.RLock()
+	defer pi.RUnlock()
+	switch inventoryType {
+	case persistence.BagInventory:
+		_, ok := pi.inventory.items[slot]
+		if ok {
+			return errors.Err{
+				Code: errors.ZoneItemSlotIsOccupied,
+				Details: errors.ErrDetails{
+					"inventoryType": inventoryType,
+					"slot":          slot,
+				},
+			}
+		}
+		pi.inventory.items[slot] = item
+		return nil
+	case persistence.DepositInventory:
+		_, ok := pi.deposit.items[slot]
+		if ok {
+			return errors.Err{
+				Code: errors.ZoneItemSlotIsOccupied,
+				Details: errors.ErrDetails{
+					"inventoryType": inventoryType,
+					"slot":          slot,
+				},
+			}
+		}
+		pi.deposit.items[slot] = item
+		return nil
+	case persistence.EquippedInventory:
+		_, ok := pi.equipped.items[slot]
+		if ok {
+			return errors.Err{
+				Code: errors.ZoneItemSlotIsOccupied,
+				Details: errors.ErrDetails{
+					"inventoryType": inventoryType,
+					"slot":          slot,
+				},
+			}
+		}
+		pi.equipped.items[slot] = item
+		return nil
+	}
+
+	return errors.Err{
+		Code: errors.ZoneItemUnknownInventoryType,
+		Details: errors.ErrDetails{
+			"inventoryType": inventoryType,
+			"slot":          slot,
+		},
+	}
 }
 
 // move item from one inventory/slot to another inventory/slot
 // the input from/to are values sent by the client
 func (pi *playerInventories) moveItem(from, to uint16) (itemSlotChange, error) {
 	var (
-		change            = itemSlotChange{}
+		change              itemSlotChange
 		fromInventoryType = persistence.InventoryType(from >> 10)
 		toInventoryType   = persistence.InventoryType(to >> 10)
 		fromInventorySlot = int(from & 1023)
 		toInventorySlot   = int(to & 1023)
+		fromItem * item
+		toItem * item
 	)
 
-	change.gameFrom = from
-	change.gameTo = to
-
-	switch fromInventoryType {
-	case persistence.BagInventory:
-		item := pi.get(fromInventoryType, fromInventorySlot)
-		if item == nil {
-			return change, errors.Err{
-				Code: errors.ZoneItemSlotChangeNoItem,
-				Details: errors.ErrDetails{
-					"from": from,
-					"to":   to,
-				},
-			}
-		}
-		change.from.item = item
-		change.from.slot = fromInventorySlot
-		change.from.inventoryType = fromInventoryType
-		break
-	}
-
-	switch toInventoryType {
-	case persistence.BagInventory:
-		item := pi.get(toInventoryType, toInventorySlot)
-		change.to.item = item
-		change.to.slot = toInventorySlot
-		change.to.inventoryType = toInventoryType
-		break
-	}
-
-	otherPItem, err := change.from.item.pItem.MoveTo(toInventoryType, toInventorySlot)
+	fromItem, err := pi.get(fromInventoryType, fromInventorySlot)
 
 	if err != nil {
 		return change, err
 	}
 
-	switch toInventoryType {
-	case persistence.BagInventory:
-		pi.Lock()
-		//pi.inventory.items[change.from.slot] = nil
-		delete(pi.inventory.items, change.from.slot)
-		pi.inventory.items[change.to.slot] = change.from.item
-		pi.Unlock()
-		break
+	toItem, _ = pi.get(toInventoryType, toInventorySlot)
+
+	opItem, err := fromItem.pItem.MoveTo(toInventoryType, toInventorySlot)
+
+	if err != nil {
+		return change, err
 	}
 
-	if change.to.item != nil {
-		change.to.item.Lock()
-		change.to.item.pItem = otherPItem
-		change.to.item.Unlock()
-		switch fromInventoryType {
-		case persistence.BagInventory:
-			pi.Lock()
-			//delete(pi.inventory.items, change.to.slot)
-			pi.inventory.items[change.from.slot] = change.to.item
-			pi.Unlock()
-			break
+	err = pi.delete(fromInventoryType, fromInventorySlot)
+
+	if err != nil {
+		return change, err
+	}
+
+	if toItem != nil {
+		err = pi.delete(toInventoryType, toInventorySlot)
+
+		if err != nil {
+			return change, err
 		}
+	}
+
+	err = pi.add(toInventoryType, toInventorySlot, fromItem)
+
+	if err != nil {
+		return change, err
+	}
+
+	// switch slots
+	if toItem != nil {
+		toItem.Lock()
+		toItem.pItem = opItem
+		toItem.Unlock()
+		err := pi.add(fromInventoryType, fromInventorySlot, toItem)
+		if err != nil {
+			return change, err
+		}
+	}
+
+	change = itemSlotChange{
+		gameFrom: from,
+		gameTo:   to,
+		from:     itemSlot{
+			slot:          fromInventorySlot,
+			inventoryType: fromInventoryType,
+			item:          fromItem,
+		},
+		to:       itemSlot{
+			slot:          toInventorySlot,
+			inventoryType: toInventoryType,
+			item:          toItem,
+		},
 	}
 
 	return change, nil

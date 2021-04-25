@@ -1813,6 +1813,132 @@ func TestItemUnEquip_NonExistentSlot(t *testing.T) {
 //	// assert the item is moved to the first slot available in the inventory
 //}
 
+func TestOpen_Deposit_Success(t *testing.T) {
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage", false)
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < persistence.DepositInventoryMax; i++ {
+		item, _, err := makeItem("ShortStaff", makeItemOptions{
+			overrideInventory: true,
+			inventoryType:     persistence.DepositInventory,
+		})
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = player.newItem(item)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	deposit := playerDeposit(player.inventories)
+
+	for i, page := range deposit {
+		if page.maxPages != 4 {
+			t.Errorf("unexpected number of pages %v", page.maxPages)
+		}
+
+		if page.currentPage != i {
+			t.Errorf("unexpected current page %v", page.currentPage)
+		}
+
+		if len(page.items) != 36 {
+			t.Errorf("unexpected item count %v", len(page.items))
+		}
+	}
+}
+
+func TestOpen_Deposit_NC_Success(t *testing.T) {
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage", false)
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < persistence.DepositInventoryMax; i++ {
+		item, _, err := makeItem("ShortStaff", makeItemOptions{
+			overrideInventory: true,
+			inventoryType:     persistence.DepositInventory,
+		})
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = player.newItem(item)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	deposit := playerDeposit(player.inventories)
+	// INFO : 2021/04/25 01:38:42.724707 handlers.go:272: 2021-04-25 01:38:42.715758 +0200 CEST 9120->40575 inbound NC_ACT_NPCMENUOPEN_REQ {"packetType":"small","length":4,"department":8,"command":"1C","opCode":8220,"data":"6c00","rawData":"041c206c00","friendlyName":""}
+	//INFO : 2021/04/25 01:38:45.942966 handlers.go:272: 2021-04-25 01:38:45.932944 +0200 CEST 40575->9120 outbound NC_ACT_NPCMENUOPEN_ACK {"packetType":"small","length":3,"department":8,"command":"1D","opCode":8221,"data":"01","rawData":"031d2001","friendlyName":""}
+	//  send as many of these packets as needed:
+	//  inbound NC_MENU_OPENSTORAGE_CMD {"packetType":"big","length":1460,"department":15,"command":"8","opCode":15368,
+	for i, page := range deposit {
+		nc := ncMenuOpenStorageCmd(page)
+
+		if nc.Cen != 0 {
+			t.Errorf("unexpected value %v", nc.Cen)
+		}
+
+		if nc.CountItems != byte(len(page.items)) {
+			t.Errorf("unexpected value %v", nc.CountItems)
+		}
+
+		if len(nc.Items) != len(page.items) {
+			t.Errorf("unexpected value %v", len(nc.Items))
+		}
+
+		if nc.CurrentPage != byte(i) {
+			t.Errorf("unexpected value %v", nc.CurrentPage)
+		}
+
+		if nc.MaxPage != byte(len(deposit)) {
+			t.Errorf("unexpected value %v", nc.MaxPage)
+		}
+
+		if nc.OpenType != 0 {
+			t.Errorf("unexpected value %v", nc.OpenType)
+		}
+
+		_, err := structs.Pack(&nc)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+}
+
 func TestChangeItemSlot_Inventory_EmptySlot_Success(t *testing.T) {
 	persistence.CleanDB()
 
@@ -1868,6 +1994,10 @@ func TestChangeItemSlot_Inventory_EmptySlot_Success(t *testing.T) {
 				"itemSlotChange": itemSlotChange,
 			},
 		})
+	}
+
+	if itemSlotChange.from.item.pItem.InventoryType != int(persistence.BagInventory) {
+		t.Fatalf("unexpected inventoryType %v", itemSlotChange.from.item.pItem.InventoryType)
 	}
 
 	if itemSlotChange.from.item.pItem.Slot != 1 {
@@ -1955,6 +2085,10 @@ func TestChangeItemSlot_Inventory_OccupiedSlot_Success(t *testing.T) {
 		t.Fatalf("expected slot %v", 1)
 	}
 
+	if itemSlotChange.from.item.pItem.InventoryType != int(persistence.BagInventory) {
+		t.Fatalf("unexpected inventoryType %v", itemSlotChange.from.item.pItem.InventoryType)
+	}
+
 	i, ok := player.inventories.inventory.items[1]
 	if !ok {
 		t.Fatalf("expected an item in inventory, found none")
@@ -1967,6 +2101,10 @@ func TestChangeItemSlot_Inventory_OccupiedSlot_Success(t *testing.T) {
 	//
 	if itemSlotChange.to.item.pItem.Slot != 0 {
 		t.Fatalf("expected slot %v", 0)
+	}
+
+	if itemSlotChange.to.item.pItem.InventoryType != int(persistence.BagInventory) {
+		t.Fatalf("unexpected inventoryType %v", itemSlotChange.to.item.pItem.InventoryType)
 	}
 
 	i1, ok := player.inventories.inventory.items[0]
@@ -2277,8 +2415,8 @@ func TestChangeItemSlot_Inventory_NoItemInSlot(t *testing.T) {
 		t.Fatalf("unexpected error type")
 	}
 
-	if cErr.Code != errors.ZoneItemSlotChangeNoItem {
-		t.Fatalf("unexpected error code")
+	if cErr.Code != errors.ZoneItemNoItemInSlot {
+		t.Fatalf("unexpected error code %v", cErr.Code)
 	}
 }
 
@@ -2290,143 +2428,96 @@ func TestChangeItemSlot_Inventory_To_Deposit_Success(t *testing.T) {
 	t.Fail()
 }
 
-func TestOpen_Deposit_Success(t *testing.T) {
-	persistence.CleanDB()
-
-	char := persistence.NewDummyCharacter("mage", false)
-
-	player := &player{
-		baseEntity: baseEntity{},
-		persistence: &playerPersistence{
-			char: char,
-		},
-	}
-
-	err := player.load(char.Name)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for i := 0; i < persistence.DepositInventoryMax; i++ {
-		item, _, err := makeItem("ShortStaff", makeItemOptions{
-			overrideInventory: true,
-			inventoryType:     persistence.DepositInventory,
-		})
-
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = player.newItem(item)
-
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	deposit := playerDeposit(player.inventories)
-
-	for i, page := range deposit {
-		if page.maxPages != 4 {
-			t.Errorf("unexpected number of pages %v", page.maxPages)
-		}
-
-		if page.currentPage != i {
-			t.Errorf("unexpected current page %v", page.currentPage)
-		}
-
-		if len(page.items) != 36 {
-			t.Errorf("unexpected item count %v", len(page.items))
-		}
-	}
-}
-
-func TestOpen_Deposit_NC_Success(t *testing.T) {
-	persistence.CleanDB()
-
-	char := persistence.NewDummyCharacter("mage", false)
-
-	player := &player{
-		baseEntity: baseEntity{},
-		persistence: &playerPersistence{
-			char: char,
-		},
-	}
-
-	err := player.load(char.Name)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	for i := 0; i < persistence.DepositInventoryMax; i++ {
-		item, _, err := makeItem("ShortStaff", makeItemOptions{
-			overrideInventory: true,
-			inventoryType:     persistence.DepositInventory,
-		})
-
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		err = player.newItem(item)
-
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	deposit := playerDeposit(player.inventories)
-	// INFO : 2021/04/25 01:38:42.724707 handlers.go:272: 2021-04-25 01:38:42.715758 +0200 CEST 9120->40575 inbound NC_ACT_NPCMENUOPEN_REQ {"packetType":"small","length":4,"department":8,"command":"1C","opCode":8220,"data":"6c00","rawData":"041c206c00","friendlyName":""}
-	//INFO : 2021/04/25 01:38:45.942966 handlers.go:272: 2021-04-25 01:38:45.932944 +0200 CEST 40575->9120 outbound NC_ACT_NPCMENUOPEN_ACK {"packetType":"small","length":3,"department":8,"command":"1D","opCode":8221,"data":"01","rawData":"031d2001","friendlyName":""}
-	//  send as many of these packets as needed:
-	//  inbound NC_MENU_OPENSTORAGE_CMD {"packetType":"big","length":1460,"department":15,"command":"8","opCode":15368,
-	for i, page := range deposit {
-		nc := ncMenuOpenStorageCmd(page)
-
-		if nc.Cen != 0 {
-			t.Errorf("unexpected value %v", nc.Cen)
-		}
-
-		if nc.CountItems != byte(len(page.items)) {
-			t.Errorf("unexpected value %v", nc.CountItems)
-		}
-
-		if len(nc.Items) != len(page.items) {
-			t.Errorf("unexpected value %v", len(nc.Items))
-		}
-
-		if nc.CurrentPage != byte(i) {
-			t.Errorf("unexpected value %v", nc.CurrentPage)
-		}
-
-		if nc.MaxPage != byte(len(deposit)) {
-			t.Errorf("unexpected value %v", nc.MaxPage)
-		}
-
-		if nc.OpenType != 0 {
-			t.Errorf("unexpected value %v", nc.OpenType)
-		}
-
-		_, err := structs.Pack(&nc)
-		if err != nil {
-			t.Error(err)
-		}
-	}
-}
-
 func TestChangeItemSlot_Inventory_To_MHInventory_Success(t *testing.T) { t.Fail() }
 
 func TestChangeItemSlot_Inventory_To_RewardInventory_Should_Fail(t *testing.T) { t.Fail() }
 
 func TestChangeItemSlot_Inventory_To_PremiumInventory_Should_Fail(t *testing.T) { t.Fail() }
 
-func TestChangeItemSlot_Deposit_EmptySlot_Success(t *testing.T) { t.Fail() }
+func TestChangeItemSlot_Deposit_EmptySlot_Success(t *testing.T) {
+	persistence.CleanDB()
 
-func TestChangeItemSlot_Deposit_OccupiedSlot_Success(t *testing.T) { t.Fail() }
+	char := persistence.NewDummyCharacter("mage", false)
 
-func TestChangeItemSlot_Deposit_NonExistentSlot(t *testing.T) { t.Fail() }
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, _, err := makeItem("ShortStaff", makeItemOptions{})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcitemRelocateReq{
+		From: structs.ItemInventory{
+			Inventory: 9216,
+		},
+		To: structs.ItemInventory{
+			Inventory: 6144,
+		},
+	}
+
+	itemSlotChange, err := player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	// should be nil as I'm moving it to an empty slot
+	if itemSlotChange.to.item != nil {
+		t.Fatal(errors.Err{
+			Code:    errors.UnitTestError,
+			Message: "item should be nil",
+			Details: errors.ErrDetails{
+				"itemSlotChange": itemSlotChange,
+			},
+		})
+	}
+
+	if itemSlotChange.from.item.pItem.InventoryType != int(persistence.DepositInventory) {
+		t.Fatalf("unexpected inventoryType %v", itemSlotChange.from.item.pItem.InventoryType)
+	}
+
+	if itemSlotChange.from.item.pItem.Slot != 0 {
+		t.Fatalf("unexpected slot %v", itemSlotChange.from.item.pItem.Slot)
+	}
+
+	i, ok := player.inventories.deposit.items[0]
+	if !ok {
+		t.Fatalf("expected an item in inventory, found none")
+	}
+
+	if i.pItem.ID != item.pItem.ID {
+		t.Fatalf("distinct items were found")
+	}
+
+	//t.Fail()
+}
+
+func TestChangeItemSlot_Deposit_OccupiedSlot_Success(t *testing.T) {
+	t.Fail()
+}
+
+func TestChangeItemSlot_Deposit_NonExistentSlot(t *testing.T) {
+	t.Fail()
+}
 
 func TestChangeItemSlot_Deposit_NoItemInSlot(t *testing.T) { t.Fail() }
 
@@ -2467,12 +2558,10 @@ func TestChangeItemSlot_MHInventory_Equip(t *testing.T) {
 
 func TestSellItem_Success(t *testing.T) {
 	t.Fail()
-
 }
 
 func TestSellItem_NonExistingItem(t *testing.T) {
 	t.Fail()
-
 }
 
 func TestBuyItem_Success(t *testing.T) {
@@ -2482,7 +2571,6 @@ func TestBuyItem_Success(t *testing.T) {
 
 func TestOneUseItem_Success(t *testing.T) {
 	t.Fail()
-
 }
 
 // Like mounts, quest items
