@@ -135,3 +135,9 @@ type ChargedItems struct {
 	//Count int
 	Items [24]ChargedItemInfo
 }
+
+// NC_ITEM_REWARDINVENOPEN_ACK
+type NcItemRewardInvenOpenAck struct {
+	Count byte
+	Items []ItemPacketInfo `struct:"sizefrom=Count"`
+}

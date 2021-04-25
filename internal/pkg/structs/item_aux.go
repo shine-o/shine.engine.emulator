@@ -15,7 +15,6 @@ type ShineItemVar struct {
 type ItemPacketInfo struct {
 	DataSize byte
 	Location ItemInventory
-	//struct SHINE_ITEM_STRUCT
 	ItemID   uint16
 	ItemAttr []byte `struct-size:"DataSize - 4"`
 }
