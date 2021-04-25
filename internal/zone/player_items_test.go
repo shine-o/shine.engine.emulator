@@ -2290,10 +2290,6 @@ func TestChangeItemSlot_Inventory_InDropState(t *testing.T) {
 
 func TestChangeItemSlot_Inventory_To_Deposit_Success(t *testing.T) {
 	t.Fail()
-	// INFO : 2021/04/25 01:38:42.724707 handlers.go:272: 2021-04-25 01:38:42.715758 +0200 CEST 9120->40575 inbound NC_ACT_NPCMENUOPEN_REQ {"packetType":"small","length":4,"department":8,"command":"1C","opCode":8220,"data":"6c00","rawData":"041c206c00","friendlyName":""}
-	//INFO : 2021/04/25 01:38:45.942966 handlers.go:272: 2021-04-25 01:38:45.932944 +0200 CEST 40575->9120 outbound NC_ACT_NPCMENUOPEN_ACK {"packetType":"small","length":3,"department":8,"command":"1D","opCode":8221,"data":"01","rawData":"031d2001","friendlyName":""}
-	//  send as many of these packets as needed:
-	//  inbound NC_MENU_OPENSTORAGE_CMD {"packetType":"big","length":1460,"department":15,"command":"8","opCode":15368,
 }
 
 func TestOpen_Deposit_Success(t *testing.T) {
@@ -2317,7 +2313,7 @@ func TestOpen_Deposit_Success(t *testing.T) {
 	for i := 0; i < persistence.DepositInventoryMax; i++ {
 		item, _, err := makeItem("ShortStaff", makeItemOptions{
 			overrideInventory: true,
-			inventoryType: persistence.DepositInventory,
+			inventoryType:     persistence.DepositInventory,
 		})
 
 		if err != nil {
@@ -2348,10 +2344,109 @@ func TestOpen_Deposit_Success(t *testing.T) {
 	}
 }
 
+func TestOpen_Deposit_NC_Success(t *testing.T) {
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage", false)
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < persistence.DepositInventoryMax; i++ {
+		item, _, err := makeItem("ShortStaff", makeItemOptions{
+			overrideInventory: true,
+			inventoryType:     persistence.DepositInventory,
+		})
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = player.newItem(item)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	deposit := playerDeposit(player.inventories)
+	// INFO : 2021/04/25 01:38:42.724707 handlers.go:272: 2021-04-25 01:38:42.715758 +0200 CEST 9120->40575 inbound NC_ACT_NPCMENUOPEN_REQ {"packetType":"small","length":4,"department":8,"command":"1C","opCode":8220,"data":"6c00","rawData":"041c206c00","friendlyName":""}
+	//INFO : 2021/04/25 01:38:45.942966 handlers.go:272: 2021-04-25 01:38:45.932944 +0200 CEST 40575->9120 outbound NC_ACT_NPCMENUOPEN_ACK {"packetType":"small","length":3,"department":8,"command":"1D","opCode":8221,"data":"01","rawData":"031d2001","friendlyName":""}
+	//  send as many of these packets as needed:
+	//  inbound NC_MENU_OPENSTORAGE_CMD {"packetType":"big","length":1460,"department":15,"command":"8","opCode":15368,
+	for i, page := range deposit {
+		nc := ncMenuOpenStorageCmd(page)
+
+		if nc.Cen != 0 {
+			t.Errorf("unexpected value %v", nc.Cen)
+		}
+
+		if nc.CountItems != byte(len(page.items)) {
+			t.Errorf("unexpected value %v", nc.CountItems)
+		}
+
+		if len(nc.Items) != len(page.items) {
+			t.Errorf("unexpected value %v", len(nc.Items))
+		}
+
+		if nc.CurrentPage != byte(i) {
+			t.Errorf("unexpected value %v", nc.CurrentPage)
+		}
+
+		if nc.MaxPage != byte(len(deposit)) {
+			t.Errorf("unexpected value %v", nc.MaxPage)
+		}
+
+		if nc.OpenType != 0 {
+			t.Errorf("unexpected value %v", nc.OpenType)
+		}
+
+		_, err := structs.Pack(&nc)
+		if err != nil {
+			t.Error(err)
+		}
+	}
+}
+
+func ncMenuOpenStorageCmd(page depositPage) structs.NcMenuOpenStorageCmd {
+	var nc structs.NcMenuOpenStorageCmd
+	nc.MaxPage = byte(page.maxPages)
+	nc.CurrentPage = byte(page.currentPage)
+
+	for _, item := range page.items {
+		var itemNC structs.ProtoItemPacketInformation
+		attr, err := itemAttributesBytes(item)
+		if err != nil {
+			log.Error(err)
+		}
+		itemNC.ItemID = item.itemData.itemInfo.ID
+		item.RLock()
+		itemNC.Location.Inventory = uint16(item.pItem.InventoryType<<10 | item.pItem.Slot&1023)
+		item.RUnlock()
+		itemNC.ItemAttr = attr
+		itemNC.DataSize = byte(len(attr) + 4)
+		nc.Items = append(nc.Items, itemNC)
+	}
+
+	nc.CountItems = byte(len(nc.Items))
+
+	return nc
+}
+
 func playerDeposit(inventories *playerInventories) []depositPage {
 	var (
 		pages []depositPage
-		keys []int
+		keys  []int
 		items []*item
 	)
 
@@ -2370,7 +2465,7 @@ func playerDeposit(inventories *playerInventories) []depositPage {
 	total := len(items)
 	prev := 0
 	limit := persistence.DepositInventoryPageLimit
-	maxPages := persistence.DepositInventoryMax/limit
+	maxPages := persistence.DepositInventoryMax / limit
 	remaining := total
 	for i := 0; i < maxPages; i++ {
 		dp := depositPage{
@@ -2397,9 +2492,9 @@ func playerDeposit(inventories *playerInventories) []depositPage {
 }
 
 type depositPage struct {
-	maxPages int
+	maxPages    int
 	currentPage int
-	items []*item
+	items       []*item
 }
 
 func TestChangeItemSlot_Inventory_To_MHInventory_Success(t *testing.T) { t.Fail() }
