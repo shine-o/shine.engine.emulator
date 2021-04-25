@@ -13,6 +13,7 @@ const (
 	EquippedInventory  InventoryType = 8
 	BagInventory       InventoryType = 9
 	DepositInventory   InventoryType = 6
+	RewardInventory    InventoryType = 2
 	MiniHouseInventory InventoryType = 12
 
 	BufferInventoryMin = 0
@@ -250,6 +251,9 @@ func limitExceeded(inventoryType InventoryType, slot int) bool {
 		break
 	case EquippedInventory:
 		max = EquippedInventoryMax
+		break
+	case DepositInventory:
+		max = DepositInventoryMax
 		break
 	case MiniHouseInventory:
 		max = MiniHouseInventoryMax
