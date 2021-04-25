@@ -21,8 +21,8 @@ const (
 	BagInventoryMin = 0
 	BagInventoryMax = 191
 
-	DepositInventoryMin = 0
-	DepositInventoryMax = 144
+	DepositInventoryMin       = 0
+	DepositInventoryMax       = 144
 	DepositInventoryPageLimit = 36
 
 	EquippedInventoryMin = 1

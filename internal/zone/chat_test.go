@@ -4,7 +4,7 @@ import "testing"
 
 type chatType int
 
-const(
+const (
 	whisper chatType = iota
 	guild
 	party
@@ -16,24 +16,24 @@ type chatLine interface {
 	chatType() chatType
 }
 
-type whisperLine struct {}
-type guildLine struct {}
-type partyLine struct {}
-type academyLine struct {}
+type whisperLine struct{}
+type guildLine struct{}
+type partyLine struct{}
+type academyLine struct{}
 
-func Test_Chat_Process_Whisper_Command(t *testing.T)  {
+func Test_Chat_Process_Whisper_Command(t *testing.T) {
 	t.Fail()
 }
 
-func Test_Chat_Process_Guild_Command(t *testing.T)  {
+func Test_Chat_Process_Guild_Command(t *testing.T) {
 	t.Fail()
 }
 
-func Test_Chat_Process_Academy_Command(t *testing.T)  {
+func Test_Chat_Process_Academy_Command(t *testing.T) {
 	t.Fail()
 }
 
-func Test_Chat_Process_Party_Command(t *testing.T)  {
+func Test_Chat_Process_Party_Command(t *testing.T) {
 	t.Fail()
 }
 
@@ -49,4 +49,3 @@ func Test_Chat_Process_Party_Command(t *testing.T)  {
 
 // party (not in any party)
 // INFO : 2021/04/24 23:58:09.306052 handlers.go:267: 2021-04-24 23:58:09.30302 +0200 CEST 39878->9120 outbound NC_ACT_PARTYCHAT_REQ {"packetType":"small","length":8,"department":8,"command":"14","opCode":8212,"data":"000461647361","rawData":"081420000461647361","friendlyName":""}
-

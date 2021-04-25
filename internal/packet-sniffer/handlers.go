@@ -262,7 +262,7 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 		tPorts = ss.transport.String()
 	}
 
-	if strings.Contains(fmt.Sprint(dp.packet.Base.OperationCodeName), "_BAT_") || strings.Contains(fmt.Sprint(dp.packet.Base.OperationCodeName), "_ABSTATE")   {
+	if strings.Contains(fmt.Sprint(dp.packet.Base.OperationCodeName), "_BAT_") || strings.Contains(fmt.Sprint(dp.packet.Base.OperationCodeName), "_ABSTATE") {
 		return
 	}
 

@@ -6,11 +6,9 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"reflect"
-	"sort"
 	"testing"
 )
 
-//
 func TestNewItem_Success(t *testing.T) {
 	persistence.CleanDB()
 
@@ -2416,85 +2414,6 @@ func TestOpen_Deposit_NC_Success(t *testing.T) {
 			t.Error(err)
 		}
 	}
-}
-
-func ncMenuOpenStorageCmd(page depositPage) structs.NcMenuOpenStorageCmd {
-	var nc structs.NcMenuOpenStorageCmd
-	nc.MaxPage = byte(page.maxPages)
-	nc.CurrentPage = byte(page.currentPage)
-
-	for _, item := range page.items {
-		var itemNC structs.ProtoItemPacketInformation
-		attr, err := itemAttributesBytes(item)
-		if err != nil {
-			log.Error(err)
-		}
-		itemNC.ItemID = item.itemData.itemInfo.ID
-		item.RLock()
-		itemNC.Location.Inventory = uint16(item.pItem.InventoryType<<10 | item.pItem.Slot&1023)
-		item.RUnlock()
-		itemNC.ItemAttr = attr
-		itemNC.DataSize = byte(len(attr) + 4)
-		nc.Items = append(nc.Items, itemNC)
-	}
-
-	nc.CountItems = byte(len(nc.Items))
-
-	return nc
-}
-
-func playerDeposit(inventories *playerInventories) []depositPage {
-	var (
-		pages []depositPage
-		keys  []int
-		items []*item
-	)
-
-	inventories.RLock()
-
-	for k, _ := range inventories.deposit.items {
-		keys = append(keys, k)
-	}
-
-	sort.Ints(keys)
-
-	for _, k := range keys {
-		items = append(items, inventories.deposit.items[k])
-	}
-
-	total := len(items)
-	prev := 0
-	limit := persistence.DepositInventoryPageLimit
-	maxPages := persistence.DepositInventoryMax / limit
-	remaining := total
-	for i := 0; i < maxPages; i++ {
-		dp := depositPage{
-			maxPages:    maxPages,
-			currentPage: i,
-		}
-		if total > 0 {
-			if remaining > 0 {
-				if remaining > limit {
-					dp.items = append(dp.items, items[prev:prev+limit]...)
-					prev += limit
-					remaining -= limit
-				} else {
-					dp.items = append(dp.items, items[prev:]...)
-					remaining -= len(items[prev:])
-				}
-			}
-		}
-
-		pages = append(pages, dp)
-	}
-	inventories.RUnlock()
-	return pages
-}
-
-type depositPage struct {
-	maxPages    int
-	currentPage int
-	items       []*item
 }
 
 func TestChangeItemSlot_Inventory_To_MHInventory_Success(t *testing.T) { t.Fail() }

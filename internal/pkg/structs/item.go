@@ -109,10 +109,10 @@ type NcItemSplitReq struct {
 
 // struct __unaligned __declspec(align(4)) PROTO_NC_MENU_OPENSTORAGE_CMD
 type NcMenuOpenStorageCmd struct {
-	Cen uint64
-	MaxPage byte
+	Cen         uint64
+	MaxPage     byte
 	CurrentPage byte
-	OpenType byte
-	CountItems byte
-	Items []ProtoItemPacketInformation `struct:"sizefrom=CountItems"`
+	OpenType    byte
+	CountItems  byte
+	Items       []ProtoItemPacketInformation `struct:"sizefrom=CountItems"`
 }
