@@ -417,9 +417,7 @@ func (p *player) itemData() error {
 	// for this character, load all items in each respective box
 	// each item loaded should be validated so that, best way is to iterate all items and for each item launch a routine that validates it and returns the valid item through a channel
 	// we also forward the error channel in case there is an error
-	var ivs = &playerInventories{
-		RWMutex: &sync.RWMutex{},
-	}
+	var ivs = &playerInventories{}
 
 	eiBox, err := loadInventory(persistence.EquippedInventory, p)
 	if err != nil {
@@ -427,6 +425,11 @@ func (p *player) itemData() error {
 	}
 
 	biBox, err := loadInventory(persistence.BagInventory, p)
+	if err != nil {
+		return err
+	}
+
+	diBox, err := loadInventory(persistence.DepositInventory, p)
 	if err != nil {
 		return err
 	}
@@ -439,6 +442,7 @@ func (p *player) itemData() error {
 	ivs.equipped = eiBox
 	ivs.inventory = biBox
 	ivs.miniHouse = mhiBox
+	ivs.deposit = diBox
 
 	p.Lock()
 	p.inventories = ivs
@@ -937,7 +941,12 @@ func (p *player) newItem(i *item) error {
 	}
 
 	p.inventories.Lock()
-	p.inventories.inventory.items[i.pItem.Slot] = i
+	switch persistence.InventoryType(i.pItem.InventoryType) {
+	case persistence.BagInventory:
+		p.inventories.inventory.items[i.pItem.Slot] = i
+	case persistence.DepositInventory:
+		p.inventories.deposit.items[i.pItem.Slot] = i
+	}
 	p.inventories.Unlock()
 
 	return nil

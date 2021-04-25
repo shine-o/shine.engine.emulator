@@ -10,6 +10,55 @@ import (
 	"testing"
 )
 
+func TestPackets(t *testing.T) {
+	netPackets := netPackets()
+
+	files := []string{
+		"../../test-data/packets-1612910284-version-1.02.296.json",
+		"../../test-data/packets-1613170127-version-1.02.296.json",
+		"../../test-data/packets-1613328603-version-1.02.296.json",
+	}
+
+	for _, f := range files {
+		packetData := utils.LoadPacketData(f)
+		for opCode, packet := range netPackets {
+			dataStrings, ok := packetData[uint16(opCode)]
+			if ok {
+				for _, dataString := range dataStrings {
+					if dataString == "" {
+						continue
+					}
+
+					data, err := hex.DecodeString(dataString)
+					if err != nil {
+						t.Error(errors.Err{
+							Code:    errors.UnitTestError,
+							Message: "",
+							Details: errors.ErrDetails{
+								"err":    err,
+								"struct": reflect.TypeOf(packet.NcStruct).String(),
+								"data":   dataString,
+							},
+						})
+					}
+					err = utils.TestPacket(packet, data)
+					if err != nil {
+						t.Error(errors.Err{
+							Code:    errors.UnitTestError,
+							Message: "",
+							Details: errors.ErrDetails{
+								"err":    err,
+								"struct": reflect.TypeOf(packet.NcStruct).String(),
+								"data":   dataString,
+							},
+						})
+					}
+				}
+			}
+		}
+	}
+}
+
 func netPackets() utils.TargetPackets {
 	tp := utils.TargetPackets{
 		networking.NC_MISC_SEED_ACK: {
@@ -131,53 +180,4 @@ func netPackets() utils.TargetPackets {
 		},
 	}
 	return tp
-}
-
-func TestPackets(t *testing.T) {
-	netPackets := netPackets()
-
-	files := []string{
-		"../../test-data/packets-1612910284-version-1.02.296.json",
-		"../../test-data/packets-1613170127-version-1.02.296.json",
-		"../../test-data/packets-1613328603-version-1.02.296.json",
-	}
-
-	for _, f := range files {
-		packetData := utils.LoadPacketData(f)
-		for opCode, packet := range netPackets {
-			dataStrings, ok := packetData[uint16(opCode)]
-			if ok {
-				for _, dataString := range dataStrings {
-					if dataString == "" {
-						continue
-					}
-
-					data, err := hex.DecodeString(dataString)
-					if err != nil {
-						t.Error(errors.Err{
-							Code:    errors.UnitTestError,
-							Message: "",
-							Details: errors.ErrDetails{
-								"err":    err,
-								"struct": reflect.TypeOf(packet.NcStruct).String(),
-								"data":   dataString,
-							},
-						})
-					}
-					err = utils.TestPacket(packet, data)
-					if err != nil {
-						t.Error(errors.Err{
-							Code:    errors.UnitTestError,
-							Message: "",
-							Details: errors.ErrDetails{
-								"err":    err,
-								"struct": reflect.TypeOf(packet.NcStruct).String(),
-								"data":   dataString,
-							},
-						})
-					}
-				}
-			}
-		}
-	}
 }

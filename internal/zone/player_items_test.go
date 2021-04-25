@@ -6,6 +6,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"reflect"
+	"sort"
 	"testing"
 )
 
@@ -1814,7 +1815,7 @@ func TestItemUnEquip_NonExistentSlot(t *testing.T) {
 //	// assert the item is moved to the first slot available in the inventory
 //}
 
-func TestChangeItemSlot_EmptySlot_Success(t *testing.T) {
+func TestChangeItemSlot_Inventory_EmptySlot_Success(t *testing.T) {
 	persistence.CleanDB()
 
 	char := persistence.NewDummyCharacter("mage", false)
@@ -1885,7 +1886,7 @@ func TestChangeItemSlot_EmptySlot_Success(t *testing.T) {
 	}
 }
 
-func TestChangeItemSlot_OccupiedSlot_Success(t *testing.T) {
+func TestChangeItemSlot_Inventory_OccupiedSlot_Success(t *testing.T) {
 	persistence.CleanDB()
 
 	char := persistence.NewDummyCharacter("mage", false)
@@ -1981,7 +1982,7 @@ func TestChangeItemSlot_OccupiedSlot_Success(t *testing.T) {
 
 }
 
-func TestChangeItemSlot_EmptySlot_NC(t *testing.T) {
+func TestChangeItemSlot_Inventory_EmptySlot_NC(t *testing.T) {
 	persistence.CleanDB()
 
 	char := persistence.NewDummyCharacter("mage", false)
@@ -2058,7 +2059,7 @@ func TestChangeItemSlot_EmptySlot_NC(t *testing.T) {
 
 }
 
-func TestChangeItemSlot_OccupiedSlot_NC(t *testing.T) {
+func TestChangeItemSlot_Inventory_OccupiedSlot_NC(t *testing.T) {
 	persistence.CleanDB()
 
 	char := persistence.NewDummyCharacter("mage", false)
@@ -2146,7 +2147,7 @@ func TestChangeItemSlot_OccupiedSlot_NC(t *testing.T) {
 
 }
 
-func TestChangeItem_NonExistentSlot(t *testing.T) {
+func TestChangeItem_Inventory_NonExistentSlot(t *testing.T) {
 	persistence.CleanDB()
 
 	char := persistence.NewDummyCharacter("mage", false)
@@ -2215,7 +2216,7 @@ func TestChangeItem_NonExistentSlot(t *testing.T) {
 
 }
 
-func TestChangeItemSlot_NoItemInSlot(t *testing.T) {
+func TestChangeItemSlot_Inventory_NoItemInSlot(t *testing.T) {
 	persistence.CleanDB()
 
 	char := persistence.NewDummyCharacter("mage", false)
@@ -2283,8 +2284,171 @@ func TestChangeItemSlot_NoItemInSlot(t *testing.T) {
 	}
 }
 
-func TestChangeItem_InDropState(t *testing.T) {
+func TestChangeItemSlot_Inventory_InDropState(t *testing.T) {
 	t.Fail()
+}
+
+func TestChangeItemSlot_Inventory_To_Deposit_Success(t *testing.T) {
+	t.Fail()
+	// INFO : 2021/04/25 01:38:42.724707 handlers.go:272: 2021-04-25 01:38:42.715758 +0200 CEST 9120->40575 inbound NC_ACT_NPCMENUOPEN_REQ {"packetType":"small","length":4,"department":8,"command":"1C","opCode":8220,"data":"6c00","rawData":"041c206c00","friendlyName":""}
+	//INFO : 2021/04/25 01:38:45.942966 handlers.go:272: 2021-04-25 01:38:45.932944 +0200 CEST 40575->9120 outbound NC_ACT_NPCMENUOPEN_ACK {"packetType":"small","length":3,"department":8,"command":"1D","opCode":8221,"data":"01","rawData":"031d2001","friendlyName":""}
+	//  send as many of these packets as needed:
+	//  inbound NC_MENU_OPENSTORAGE_CMD {"packetType":"big","length":1460,"department":15,"command":"8","opCode":15368,
+}
+
+func TestOpen_Deposit_Success(t *testing.T) {
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage", false)
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < persistence.DepositInventoryMax; i++ {
+		item, _, err := makeItem("ShortStaff", makeItemOptions{
+			overrideInventory: true,
+			inventoryType: persistence.DepositInventory,
+		})
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = player.newItem(item)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	deposit := playerDeposit(player.inventories)
+
+	for i, page := range deposit {
+		if page.maxPages != 4 {
+			t.Errorf("unexpected number of pages %v", page.maxPages)
+		}
+
+		if page.currentPage != i {
+			t.Errorf("unexpected current page %v", page.currentPage)
+		}
+
+		if len(page.items) != 36 {
+			t.Errorf("unexpected item count %v", len(page.items))
+		}
+	}
+}
+
+func playerDeposit(inventories *playerInventories) []depositPage {
+	var (
+		pages []depositPage
+		keys []int
+		items []*item
+	)
+
+	inventories.RLock()
+
+	for k, _ := range inventories.deposit.items {
+		keys = append(keys, k)
+	}
+
+	sort.Ints(keys)
+
+	for _, k := range keys {
+		items = append(items, inventories.deposit.items[k])
+	}
+
+	total := len(items)
+	prev := 0
+	limit := persistence.DepositInventoryPageLimit
+	maxPages := persistence.DepositInventoryMax/limit
+	remaining := total
+	for i := 0; i < maxPages; i++ {
+		dp := depositPage{
+			maxPages:    maxPages,
+			currentPage: i,
+		}
+		if total > 0 {
+			if remaining > 0 {
+				if remaining > limit {
+					dp.items = append(dp.items, items[prev:prev+limit]...)
+					prev += limit
+					remaining -= limit
+				} else {
+					dp.items = append(dp.items, items[prev:]...)
+					remaining -= len(items[prev:])
+				}
+			}
+		}
+
+		pages = append(pages, dp)
+	}
+	inventories.RUnlock()
+	return pages
+}
+
+type depositPage struct {
+	maxPages int
+	currentPage int
+	items []*item
+}
+
+func TestChangeItemSlot_Inventory_To_MHInventory_Success(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_Inventory_To_RewardInventory_Should_Fail(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_Inventory_To_PremiumInventory_Should_Fail(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_Deposit_EmptySlot_Success(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_Deposit_OccupiedSlot_Success(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_Deposit_NonExistentSlot(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_Deposit_NoItemInSlot(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_Deposit_To_Inventory_Success(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_Deposit_To_PremiumInventory_Should_Fail(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_Deposit_To_RewardInventory_Should_Fail(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_MHInventory_To_Inventory_Should_Fail(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_RewardInventory_To_Inventory_Success(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_RewardInventory_To_PremiumInventory_Should_Fail(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_RewardInventory_Should_Fail(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_PremiumInventory_To_Inventory_Success(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_PremiumInventory_To_RewardInventory_Should_Fail(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_PremiumInventory_Should_Fail(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_MHInventory_To_RewardInventory_Should_Fail(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_MHInventory_To_PremiumInventory_Should_Fail(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_MHInventory_Should_Fail(t *testing.T) { t.Fail() }
+
+func TestChangeItemSlot_MHInventory_Equip(t *testing.T) {
+	t.Fail()
+	// INFO : 2021/04/25 01:07:35.262832 handlers.go:267: 2021-04-25 01:07:35.250157 +0200 CEST 39878->9120 outbound NC_MINIHOUSE_ACTIV_REQ {"packetType":"small","length":3,"department":35,"command":"1","opCode":35841,"data":"0b","rawData":"03018c0b","friendlyName":""}
+	//INFO : 2021/04/25 01:07:35.371279 handlers.go:267: 2021-04-25 01:07:35.365524 +0200 CEST 9120->39878 inbound NC_MINIHOUSE_ACTIV_ACK {"packetType":"small","length":4,"department":35,"command":"2","opCode":35842,"data":"0110","rawData":"04028c0110","friendlyName":""}
+	//INFO : 2021/04/25 01:07:35.526755 handlers.go:267: 2021-04-25 01:07:35.524136 +0200 CEST 9120->39878 inbound NC_ITEM_RELOC_ACK {"packetType":"small","length":4,"department":12,"command":"C","opCode":12300,"data":"4102","rawData":"040c304102","friendlyName":""}
+	//INFO : 2021/04/25 01:07:35.527276 handlers.go:267: 2021-04-25 01:07:35.524136 +0200 CEST 9120->39878 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":12,"department":12,"command":"1","opCode":12289,"data":"0b3000303d79ffecbb76","rawData":"0c01300b3000303d79ffecbb76","friendlyName":""}
+	//INFO : 2021/04/25 01:07:35.527285 handlers.go:267: 2021-04-25 01:07:35.524136 +0200 CEST 9120->39878 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":12,"department":12,"command":"1","opCode":12289,"data":"00300b301879ffecbb76","rawData":"0c013000300b301879ffecbb76","friendlyName":""}
 }
 
 func TestSellItem_Success(t *testing.T) {

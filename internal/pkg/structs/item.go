@@ -106,3 +106,13 @@ type NcItemSplitReq struct {
 	To   ItemInventory
 	Lot  uint32
 }
+
+// struct __unaligned __declspec(align(4)) PROTO_NC_MENU_OPENSTORAGE_CMD
+type NcMenuOpenStorageCmd struct {
+	Cen uint64
+	MaxPage byte
+	CurrentPage byte
+	OpenType byte
+	CountItems byte
+	Items []ProtoItemPacketInformation `struct:"sizefrom=CountItems"`
+}

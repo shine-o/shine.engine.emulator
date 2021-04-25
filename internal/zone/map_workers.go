@@ -88,16 +88,6 @@ func (zm *zoneMap) monsterActivity() {
 	}
 }
 
-func (zm *zoneMap) monsterQueries() {
-	log.Infof("[map_worker] monsterQueries worker for map %v", zm.data.Info.MapName)
-	for {
-		select {
-		case e := <-zm.recv[queryMonster]:
-			log.Info(e)
-		}
-	}
-}
-
 func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 	ev, ok := e.(*playerClicksOnNpcEvent)
 	if !ok {
@@ -666,37 +656,6 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	//var wg sync.WaitGroup
-	//
-	//wg.Add(3)
-	//go func() {
-	//	defer wg.Done()
-	//	newPlayer(p, zm)
-	//}()
-
-	//go func() {
-	//	defer wg.Done()
-	//	nearbyPlayers(p, zm)
-	//}()
-
-	//go func() {
-	//	defer wg.Done()
-	//	nearbyMonsterNpcs(p, zm)
-	//}()
-	//
-
-	//go func() {
-	//	defer wg.Done()
-	//	showAllNPC(p, zm)
-	//}()
-
-	//go func() {
-	//	defer wg.Done()
-	//	equippedItems(p)
-	//}()
-
-	//wg.Wait()
-
 	showAllNPC(p, zm)
 
 	go p.heartbeat()
@@ -1039,54 +998,6 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 		go networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
 	}
 
-}
-
-// notify every player in proximity about player that logged in
-func newPlayer(p1 *player, zm *zoneMap) {
-	for ap := range zm.entities.players.all() {
-		go func(p2 *player) {
-			if p1.getHandle() != p2.getHandle() {
-				if playerInRange(p2, p1) {
-					nc := ncBriefInfoLoginCharacterCmd(p1)
-					networking.Send(p2.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, &nc)
-				}
-			}
-		}(ap)
-	}
-}
-
-// send info to player about nearby players
-func nearbyPlayers(p1 *player, zm *zoneMap) {
-	var characters []structs.NcBriefInfoLoginCharacterCmd
-
-	for p2 := range zm.entities.players.all() {
-		if p1.getHandle() != p2.getHandle() {
-			if playerInRange(p2, p1) {
-				nc := ncBriefInfoLoginCharacterCmd(p2)
-				characters = append(characters, nc)
-			}
-		}
-	}
-
-	nc := &structs.NcBriefInfoCharacterCmd{
-		Number:     byte(len(characters)),
-		Characters: characters,
-	}
-
-	networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_CHARACTER_CMD, nc)
-}
-
-func nearbyMonsterNpcs(p *player, zm *zoneMap) {
-	for am := range zm.entities.npcs.all() {
-		go func(p *player, n *npc) {
-			if n.baseEntity.eType == isMonster {
-				if npcInRange(p, n) {
-					nc := ncBriefInfoRegenMobCmd(n)
-					networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
-				}
-			}
-		}(p, am)
-	}
 }
 
 func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *npc) {

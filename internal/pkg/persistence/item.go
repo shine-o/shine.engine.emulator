@@ -12,10 +12,18 @@ const (
 	BufferInventory    InventoryType = 100
 	EquippedInventory  InventoryType = 8
 	BagInventory       InventoryType = 9
+	DepositInventory   InventoryType = 6
 	MiniHouseInventory InventoryType = 12
+
+	BufferInventoryMin = 0
+	BufferInventoryMax = 1024
 
 	BagInventoryMin = 0
 	BagInventoryMax = 191
+
+	DepositInventoryMin = 0
+	DepositInventoryMax = 144
+	DepositInventoryPageLimit = 36
 
 	EquippedInventoryMin = 1
 	EquippedInventoryMax = 29
@@ -97,6 +105,8 @@ func getInventoryType(val int) InventoryType {
 		return EquippedInventory
 	case 9:
 		return BagInventory
+	case 6:
+		return DepositInventory
 	case 12:
 		return MiniHouseInventory
 	default:
@@ -455,7 +465,13 @@ func freeSlot(characterID uint64, inventoryType InventoryType) (int, error) {
 		min = BagInventoryMin
 		max = BagInventoryMax
 		break
+	case DepositInventory:
+		min = DepositInventoryMin
+		max = DepositInventoryMax
+		break
 	case BufferInventory:
+		min = BufferInventoryMin
+		max = BufferInventoryMax
 	case EquippedInventory:
 		min = EquippedInventoryMin
 		max = EquippedInventoryMax

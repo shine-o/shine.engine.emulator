@@ -14,10 +14,11 @@ import (
 type playerInventories struct {
 	equipped  itemBox
 	inventory itemBox
+	deposit itemBox
 	miniHouse itemBox
 	reward    itemBox
 	premium   itemBox
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 func (pi *playerInventories) get(inventoryType persistence.InventoryType, slot int) *item {
@@ -212,6 +213,11 @@ type itemSlot struct {
 	slot          int
 	inventoryType persistence.InventoryType
 	item          *item
+}
+
+type makeItemOptions struct {
+	overrideInventory bool
+	inventoryType persistence.InventoryType
 }
 
 func (i *item) generateStats() (int, []data.RandomOptionType) {
@@ -969,9 +975,6 @@ func chosenStatTypes(amount int, id *itemData) []data.RandomOptionType {
 	return types[:amount]
 }
 
-type makeItemOptions struct {
-}
-
 func makeItem(itemIndex string, options makeItemOptions) (*item, itemCreationDetails, error) {
 	var (
 		i   = &item{}
@@ -1001,8 +1004,15 @@ func makeItem(itemIndex string, options makeItemOptions) (*item, itemCreationDet
 	}
 
 	i.itemData = itemData
-	i.pItem = &persistence.Item{
-		InventoryType: int(persistence.BagInventory),
+
+	if options.overrideInventory {
+		i.pItem = &persistence.Item{
+			InventoryType: int(options.inventoryType),
+		}
+	} else {
+		i.pItem = &persistence.Item{
+			InventoryType: int(persistence.BagInventory),
+		}
 	}
 
 	// first check if there are any random stats using (RandomOption / RandomOptionCount)

@@ -10,6 +10,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/viper"
+	"strings"
 	"time"
 )
 
@@ -259,6 +260,10 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 		tPorts = ss.transport.Reverse().String()
 	} else {
 		tPorts = ss.transport.String()
+	}
+
+	if strings.Contains(fmt.Sprint(dp.packet.Base.OperationCodeName), "_BAT_") || strings.Contains(fmt.Sprint(dp.packet.Base.OperationCodeName), "_ABSTATE")   {
+		return
 	}
 
 	if viper.GetBool("protocol.log.verbose") {

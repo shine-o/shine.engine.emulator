@@ -50,8 +50,6 @@ func (zm *zoneMap) run() {
 		go zm.playerActivity()
 		go zm.monsterActivity()
 		go zm.npcInteractions()
-		go zm.playerQueries()
-		go zm.monsterQueries()
 	}
 }
 
