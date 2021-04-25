@@ -1745,7 +1745,6 @@ func TestItemUnEquip_InventoryFull(t *testing.T) {
 }
 
 func TestItemUnEquip_NonExistentSlot(t *testing.T) {
-	//t.Fail()
 	persistence.CleanDB()
 
 	char := persistence.NewDummyCharacter("mage", false)
@@ -1945,11 +1944,24 @@ func TestOpen_Reward_Inventory_Success(t *testing.T) {
 	t.Fail()
 }
 
+func TestOpen_Reward_Inventory_NC_Success(t *testing.T) {
+	// INFO : 2021/04/25 15:47:00.663951 handlers.go:272: 2021-04-25 15:47:00.652328 +0200 CEST 30776->9120 outbound NC_ITEM_REWARDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"2C","opCode":12332,"data":"0000","rawData":"042c300000","friendlyName":""}
+	// INFO : 2021/04/25 15:47:00.817892 handlers.go:272: 2021-04-25 15:47:00.814858 +0200 CEST 9120->30776 inbound NC_ITEM_REWARDINVENOPEN_ACK {"packetType":"small","length":194,"department":12,"command":"2D","opCode":12333,"data":"0e0500087f0e02050108750e02050208840e020503087a0e02050408890e02050508930e010c06082c8100000000000000000c07082e8100000000000000000c08082f810000000000000000450908d03a00000000000000ffff00000000ffff00000000ffff00000000ffff000000000000000000000000000000000000000000ffffffffffffffffff00000000000000000c0a08298100000000000000000c0b082a810000000000000000050c088e75030c0d082981000000000000000036","rawData":"c22d300e0500087f0e02050108750e02050208840e020503087a0e02050408890e02050508930e010c06082c8100000000000000000c07082e8100000000000000000c08082f810000000000000000450908d03a00000000000000ffff00000000ffff00000000ffff00000000ffff000000000000000000000000000000000000000000ffffffffffffffffff00000000000000000c0a08298100000000000000000c0b082a810000000000000000050c088e75030c0d082981000000000000000036","friendlyName":""}
+	t.Fail()
+}
+
 func TestOpen_Premium_Inventory_Success(t *testing.T) {
 	// INFO : 2021/04/25 15:44:50.442103 handlers.go:272: 2021-04-25 15:44:50.43734 +0200 CEST 30776->9120 outbound NC_ITEM_CHARGED_WITHDRAW_REQ {"packetType":"small","length":6,"department":12,"command":"22","opCode":12322,"data":"1c1d6902","rawData":"0622301c1d6902","friendlyName":""}
 	// INFO : 2021/04/25 15:44:50.719944 handlers.go:272: 2021-04-25 15:44:50.718652 +0200 CEST 9120->30776 inbound NC_ITEM_CHARGED_WITHDRAW_ACK {"packetType":"small","length":8,"department":12,"command":"23","opCode":12323,"data":"1c1d69024110","rawData":"0823301c1d69024110","friendlyName":""}
 	t.Fail()
 }
+
+func TestOpen_Premium_Inventory_NC_Success(t *testing.T) {
+	// INFO : 2021/04/25 15:44:50.442103 handlers.go:272: 2021-04-25 15:44:50.43734 +0200 CEST 30776->9120 outbound NC_ITEM_CHARGED_WITHDRAW_REQ {"packetType":"small","length":6,"department":12,"command":"22","opCode":12322,"data":"1c1d6902","rawData":"0622301c1d6902","friendlyName":""}
+	// INFO : 2021/04/25 15:44:50.719944 handlers.go:272: 2021-04-25 15:44:50.718652 +0200 CEST 9120->30776 inbound NC_ITEM_CHARGED_WITHDRAW_ACK {"packetType":"small","length":8,"department":12,"command":"23","opCode":12323,"data":"1c1d69024110","rawData":"0823301c1d69024110","friendlyName":""}
+	t.Fail()
+}
+
 
 func TestChangeItemSlot_Inventory_EmptySlot_Success(t *testing.T) {
 	persistence.CleanDB()
@@ -2806,26 +2818,159 @@ func TestChangeItemSlot_Deposit_To_RewardInventory_Should_Fail(t *testing.T) { t
 
 func TestChangeItemSlot_MHInventory_To_Inventory_Should_Fail(t *testing.T) { t.Fail() }
 
+func TestChangeItemSlot_RewardInventory_Should_Fail(t *testing.T) {
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage", false)
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, _, err := makeItem("ShortStaff", makeItemOptions{
+		overrideInventory: true,
+		inventoryType:     persistence.RewardInventory,
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcitemRelocateReq{
+		From: structs.ItemInventory{
+			Inventory: 2048,
+		},
+		To: structs.ItemInventory{
+			Inventory: 2049,
+		},
+	}
+
+	_, err = player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	cErr, ok := err.(errors.Err)
+	if !ok {
+		t.Fatalf("unexpected error type %v", reflect.TypeOf(cErr).String())
+	}
+
+	if cErr.Code != errors.ZoneItemSlotChangeConstraint {
+		t.Fatalf("unexpected error code %v", cErr.Code)
+	}
+}
+
 func TestChangeItemSlot_RewardInventory_To_Inventory_Success(t *testing.T) {
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage", false)
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, _, err := makeItem("ShortStaff", makeItemOptions{
+		overrideInventory: true,
+		inventoryType:     persistence.RewardInventory,
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcitemRelocateReq{
+		From: structs.ItemInventory{
+			Inventory: 2048,
+		},
+		To: structs.ItemInventory{
+			Inventory: 9217,
+		},
+	}
+
+	itemSlotChange, err := player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	// should be nil as I'm moving it to an empty slot
+	if itemSlotChange.to.item != nil {
+		t.Fatal(errors.Err{
+			Code:    errors.UnitTestError,
+			Message: "item should be nil",
+			Details: errors.ErrDetails{
+				"itemSlotChange": itemSlotChange,
+			},
+		})
+	}
+
+	if itemSlotChange.from.item.pItem.InventoryType != int(persistence.BagInventory) {
+		t.Fatalf("unexpected inventoryType %v", itemSlotChange.from.item.pItem.InventoryType)
+	}
+
+	if itemSlotChange.from.item.pItem.Slot != 1 {
+		t.Fatalf("unexpected slot %v", itemSlotChange.from.item.pItem.Slot)
+	}
+
+	i, ok := player.inventories.inventory.items[1]
+
+	if !ok {
+		t.Fatalf("expected an item in inventory, found none")
+	}
+
+	if i.pItem.ID != item.pItem.ID {
+		t.Fatalf("distinct items were found")
+	}
+}
+
+func TestChangeItemSlot_RewardInventory_To_Inventory_InventoryFull(t *testing.T) {
 	t.Fail()
-
-	//INFO : 2021/04/25 15:42:38.193946 handlers.go:272: 2021-04-25 15:42:38.182432 +0200 CEST 30776->9120 outbound NC_ITEM_RELOC_REQ {"packetType":"small","length":6,"department":12,"command":"B","opCode":12299,"data":"0e081124","rawData":"060b300e081124","friendlyName":""}
-	//INFO : 2021/04/25 15:42:38.302514 handlers.go:272: 2021-04-25 15:42:38.28841 +0200 CEST 9120->30776 inbound NC_ACT_SOMEONEMOVERUN_CMD {"packetType":"small","length":24,"department":8,"command":"1A","opCode":8218,"data":"52573320000055100000ef1f0000a0100000d9000000","rawData":"181a2052573320000055100000ef1f0000a0100000d9000000","friendlyName":""}
-	//INFO : 2021/04/25 15:42:38.442023 handlers.go:272: 2021-04-25 15:42:38.43943 +0200 CEST 9120->30776 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":16,"department":12,"command":"1","opCode":12289,"data":"0e0811242a810000000000000000","rawData":"1001300e0811242a810000000000000000","friendlyName":""}
-	//INFO : 2021/04/25 15:42:38.442023 handlers.go:272: 2021-04-25 15:42:38.43943 +0200 CEST 9120->30776 inbound NC_ITEM_RELOC_ACK {"packetType":"small","length":4,"department":12,"command":"C","opCode":12300,"data":"4102","rawData":"040c304102","friendlyName":""}
-	//INFO : 2021/04/25 15:42:38.442554 handlers.go:272: 2021-04-25 15:42:38.43943 +0200 CEST 9120->30776 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":8,"department":12,"command":"1","opCode":12289,"data":"11240e08ffff","rawData":"08013011240e08ffff","friendlyName":""}
-
 }
 
 func TestChangeItemSlot_RewardInventory_To_PremiumInventory_Should_Fail(t *testing.T) { t.Fail() }
-
-func TestChangeItemSlot_RewardInventory_Should_Fail(t *testing.T) { t.Fail() }
 
 func TestChangeItemSlot_PremiumInventory_To_Inventory_Success(t *testing.T) {
 	t.Fail()
 	//INFO : 2021/04/25 15:44:50.720470 handlers.go:272: 2021-04-25 15:44:50.718652 +0200 CEST 9120->30776 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":16,"department":12,"command":"1","opCode":12289,"data":"16241624e0ff0000000000000000","rawData":"10013016241624e0ff0000000000000000","friendlyName":""}
 	//INFO : 2021/04/25 15:44:50.735071 handlers.go:272: 2021-04-25 15:44:50.730778 +0200 CEST 30776->9120 outbound NC_ITEM_CHARGEDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"20","opCode":12320,"data":"0100","rawData":"0420300100","friendlyName":""}
 	//INFO : 2021/04/25 15:44:50.906144 handlers.go:272: 2021-04-25 15:44:50.898729 +0200 CEST 9120->30776 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"big","length":279,"department":12,"command":"21","opCode":12321,"data":"4110031100cd044302d4290000010000001304523ed3044302a85500000100000013045244d40443028c5300000100000013045246d6044302a85500000100000013045246d8044302822b00000100000013045248da044302a85500000100000013045248db044302822b00000100000013045248e0044302842b00000100000013045248e20443028c530000010000001304524ae5044302a8550000010000001304524af4044302822b00000100000013045250f9044302842b00000100000013045252fe044302a8550000010000001304525407054302a8550000010000001304525a4e054302ce2b00000100000013045a0c2c7e5d02317500000100000014085276ed2063023175000001000000146b3a3e","rawData
+}
+
+func TestChangeItemSlot_PremiumInventory_To_Inventory_InventoryFull(t *testing.T) {
+	t.Fail()
 }
 
 func TestChangeItemSlot_PremiumInventory_To_RewardInventory_Should_Fail(t *testing.T) { t.Fail() }

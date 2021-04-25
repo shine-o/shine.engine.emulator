@@ -62,6 +62,18 @@ func (pi *playerInventories) get(inventoryType persistence.InventoryType, slot i
 			}
 		}
 		return item, nil
+	case persistence.RewardInventory:
+		item, ok := pi.reward.items[slot]
+		if !ok {
+			return nil, errors.Err{
+				Code: errors.ZoneItemNoItemInSlot,
+				Details: errors.ErrDetails{
+					"inventoryType": inventoryType,
+					"slot":          slot,
+				},
+			}
+		}
+		return item, nil
 	}
 
 	return nil, errors.Err{
@@ -102,6 +114,31 @@ func (pi *playerInventories) delete(inventoryType persistence.InventoryType, slo
 			}
 		}
 		delete(pi.deposit.items, slot)
+	case persistence.RewardInventory:
+		_, ok := pi.reward.items[slot]
+		if !ok {
+			return errors.Err{
+				Code: errors.ZoneItemDeleteNoItem,
+				Details: errors.ErrDetails{
+					"inventoryType": inventoryType,
+					"slot":          slot,
+				},
+			}
+		}
+		delete(pi.reward.items, slot)
+		return nil
+	case persistence.EquippedInventory:
+		_, ok := pi.equipped.items[slot]
+		if !ok {
+			return errors.Err{
+				Code: errors.ZoneItemDeleteNoItem,
+				Details: errors.ErrDetails{
+					"inventoryType": inventoryType,
+					"slot":          slot,
+				},
+			}
+		}
+		delete(pi.equipped.items, slot)
 		return nil
 	}
 
@@ -157,6 +194,19 @@ func (pi *playerInventories) add(inventoryType persistence.InventoryType, slot i
 		}
 		pi.equipped.items[slot] = item
 		return nil
+	case persistence.RewardInventory:
+		_, ok := pi.reward.items[slot]
+		if ok {
+			return errors.Err{
+				Code: errors.ZoneItemSlotIsOccupied,
+				Details: errors.ErrDetails{
+					"inventoryType": inventoryType,
+					"slot":          slot,
+				},
+			}
+		}
+		pi.reward.items[slot] = item
+		return nil
 	}
 
 	return errors.Err{
@@ -166,6 +216,16 @@ func (pi *playerInventories) add(inventoryType persistence.InventoryType, slot i
 			"slot":          slot,
 		},
 	}
+}
+
+func sameInventoryConstraint(from, to persistence.InventoryType) bool {
+	switch from {
+	case persistence.RewardInventory:
+		if to == persistence.RewardInventory {
+			return true
+		}
+	}
+	return false
 }
 
 // move item from one inventory/slot to another inventory/slot
@@ -180,6 +240,16 @@ func (pi *playerInventories) moveItem(from, to uint16) (itemSlotChange, error) {
 		fromItem * item
 		toItem * item
 	)
+
+	if sameInventoryConstraint(fromInventoryType, toInventoryType) {
+		return change, errors.Err{
+			Code:    errors.ZoneItemSlotChangeConstraint,
+			Details: errors.ErrDetails{
+				"fromInventoryType": fromInventoryType,
+				"toInventoryType": toInventoryType,
+			},
+		}
+	}
 
 	fromItem, err := pi.get(fromInventoryType, fromInventorySlot)
 

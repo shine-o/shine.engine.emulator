@@ -37,6 +37,7 @@ const (
 	ZoneItemNoItemInSlot
 	ZoneItemSlotIsOccupied
 	ZoneItemEquipBadType
+	ZoneItemSlotChangeConstraint
 	ZoneMissingPlayer
 	ZoneUnexpectedEvent
 	ZoneMapCollisionDetected

@@ -26,6 +26,9 @@ const (
 	DepositInventoryMax       = 144
 	DepositInventoryPageLimit = 36
 
+	RewardInventoryMin = 0
+	RewardInventoryMax = 4096
+
 	EquippedInventoryMin = 1
 	EquippedInventoryMax = 29
 
@@ -110,6 +113,8 @@ func getInventoryType(val int) InventoryType {
 		return DepositInventory
 	case 12:
 		return MiniHouseInventory
+	case 2:
+		return RewardInventory
 	default:
 		return UnknownInventory
 	}
@@ -258,6 +263,9 @@ func limitExceeded(inventoryType InventoryType, slot int) bool {
 	case MiniHouseInventory:
 		max = MiniHouseInventoryMax
 		break
+	case RewardInventory:
+		max = RewardInventoryMax
+		break
 	}
 
 	if slot > max {
@@ -278,6 +286,8 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 		return otherItem, err
 	}
 
+	defer closeTx(tx)
+
 	_, err = freeSlot(i.CharacterID, inventoryType)
 
 	if err != nil {
@@ -294,7 +304,6 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 		}
 	}
 
-	defer closeTx(tx)
 
 	err = tx.Model(otherItem).
 		Where("character_id = ?", i.CharacterID).
@@ -479,7 +488,9 @@ func freeSlot(characterID uint64, inventoryType InventoryType) (int, error) {
 	case EquippedInventory:
 		min = EquippedInventoryMin
 		max = EquippedInventoryMax
-	case MiniHouseInventory:
+	case RewardInventory:
+		min = RewardInventoryMin
+		max = RewardInventoryMax
 	}
 
 	for i, s := range slots {

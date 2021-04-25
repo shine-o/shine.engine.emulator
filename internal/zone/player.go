@@ -439,10 +439,16 @@ func (p *player) itemData() error {
 		return err
 	}
 
+	riBox, err := loadInventory(persistence.RewardInventory, p)
+	if err != nil {
+		return err
+	}
+
 	ivs.equipped = eiBox
 	ivs.inventory = biBox
 	ivs.miniHouse = mhiBox
 	ivs.deposit = diBox
+	ivs.reward = riBox
 
 	p.Lock()
 	p.inventories = ivs
@@ -940,16 +946,7 @@ func (p *player) newItem(i *item) error {
 		return err
 	}
 
-	p.inventories.Lock()
-	switch persistence.InventoryType(i.pItem.InventoryType) {
-	case persistence.BagInventory:
-		p.inventories.inventory.items[i.pItem.Slot] = i
-	case persistence.DepositInventory:
-		p.inventories.deposit.items[i.pItem.Slot] = i
-	}
-	p.inventories.Unlock()
-
-	return nil
+	return p.inventories.add(persistence.InventoryType(i.pItem.InventoryType), i.pItem.Slot, i)
 }
 
 func playerInRange(v, t *player) bool {
