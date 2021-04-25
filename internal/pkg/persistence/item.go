@@ -304,7 +304,6 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 		}
 	}
 
-
 	err = tx.Model(otherItem).
 		Where("character_id = ?", i.CharacterID).
 		Where("inventory_type = ?", inventoryType).

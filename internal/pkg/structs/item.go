@@ -107,7 +107,7 @@ type NcItemSplitReq struct {
 	Lot  uint32
 }
 
-// struct __unaligned __declspec(align(4)) PROTO_NC_MENU_OPENSTORAGE_CMD
+// struct PROTO_NC_MENU_OPENSTORAGE_CMD
 type NcMenuOpenStorageCmd struct {
 	Cen         uint64
 	MaxPage     byte
@@ -115,4 +115,23 @@ type NcMenuOpenStorageCmd struct {
 	OpenType    byte
 	CountItems  byte
 	Items       []ProtoItemPacketInformation `struct:"sizefrom=CountItems"`
+}
+
+//struct PROTO_CHARGED_ITEM_INFO
+type ChargedItemInfo struct {
+	ItemOrderNo      uint32
+	ItemCode         uint32
+	ItemAmount       uint32
+	ItemRegisterDate ShineDateTime
+}
+
+//struct CChargedItem
+//{
+//  PROTO_CHARGED_ITEM_INFO m_ChargedItemBF[24];
+//  int m_NumOfChargedItem;
+//};
+//type ChargedItems [24]ChargedItemInfo
+type ChargedItems struct {
+	//Count int
+	Items [24]ChargedItemInfo
 }

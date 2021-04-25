@@ -1951,14 +1951,16 @@ func TestOpen_Reward_Inventory_NC_Success(t *testing.T) {
 }
 
 func TestOpen_Premium_Inventory_Success(t *testing.T) {
-	// INFO : 2021/04/25 15:44:50.442103 handlers.go:272: 2021-04-25 15:44:50.43734 +0200 CEST 30776->9120 outbound NC_ITEM_CHARGED_WITHDRAW_REQ {"packetType":"small","length":6,"department":12,"command":"22","opCode":12322,"data":"1c1d6902","rawData":"0622301c1d6902","friendlyName":""}
-	// INFO : 2021/04/25 15:44:50.719944 handlers.go:272: 2021-04-25 15:44:50.718652 +0200 CEST 9120->30776 inbound NC_ITEM_CHARGED_WITHDRAW_ACK {"packetType":"small","length":8,"department":12,"command":"23","opCode":12323,"data":"1c1d69024110","rawData":"0823301c1d69024110","friendlyName":""}
+	// INFO : 2021/04/25 17:39:35.246924 handlers.go:272: 2021-04-25 17:39:35.237462 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGEDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"20","opCode":12320,"data":"0000","rawData":"0420300000","friendlyName":""}
+	//INFO : 2021/04/25 17:39:35.480942 handlers.go:272: 2021-04-25 17:39:35.477496 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"big","length":391,"department":12,"command":"21","opCode":12321,
 	t.Fail()
 }
 
 func TestOpen_Premium_Inventory_NC_Success(t *testing.T) {
-	// INFO : 2021/04/25 15:44:50.442103 handlers.go:272: 2021-04-25 15:44:50.43734 +0200 CEST 30776->9120 outbound NC_ITEM_CHARGED_WITHDRAW_REQ {"packetType":"small","length":6,"department":12,"command":"22","opCode":12322,"data":"1c1d6902","rawData":"0622301c1d6902","friendlyName":""}
-	// INFO : 2021/04/25 15:44:50.719944 handlers.go:272: 2021-04-25 15:44:50.718652 +0200 CEST 9120->30776 inbound NC_ITEM_CHARGED_WITHDRAW_ACK {"packetType":"small","length":8,"department":12,"command":"23","opCode":12323,"data":"1c1d69024110","rawData":"0823301c1d69024110","friendlyName":""}
+
+	// INFO : 2021/04/25 17:39:35.246924 handlers.go:272: 2021-04-25 17:39:35.237462 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGEDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"20","opCode":12320,"data":"0000","rawData":"0420300000","friendlyName":""}
+	//INFO : 2021/04/25 17:39:35.480942 handlers.go:272: 2021-04-25 17:39:35.477496 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"big","length":391,"department":12,"command":"21","opCode":12321,
+
 	t.Fail()
 }
 
@@ -2957,16 +2959,164 @@ func TestChangeItemSlot_RewardInventory_To_Inventory_Success(t *testing.T) {
 }
 
 func TestChangeItemSlot_RewardInventory_To_Inventory_InventoryFull(t *testing.T) {
-	t.Fail()
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage", false)
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, _, err := makeItem("ShortStaff", makeItemOptions{
+		overrideInventory: true,
+		inventoryType:     persistence.RewardInventory,
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i := 0; i < persistence.BagInventoryMax; i++ {
+		item, _, err := makeItem("ShortStaff", makeItemOptions{})
+
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = player.newItem(item)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	nc := &structs.NcitemRelocateReq{
+		From: structs.ItemInventory{
+			Inventory: 2048,
+		},
+		To: structs.ItemInventory{
+			Inventory: 9217,
+		},
+	}
+
+	_, err = player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
+
+	cErr, ok := err.(errors.Err)
+	if !ok {
+		t.Fatal("unexpected error type", reflect.TypeOf(cErr).String())
+	}
+
+	if cErr.Code != errors.PersistenceInventoryFull {
+		t.Fatal("unexpected error code", cErr.Code)
+	}
+
 }
 
-func TestChangeItemSlot_RewardInventory_To_PremiumInventory_Should_Fail(t *testing.T) { t.Fail() }
+func TestChangeItemSlot_RewardInventory_To_PremiumInventory_Should_Fail(t *testing.T) {
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage", false)
+
+	player := &player{
+		baseEntity: baseEntity{},
+		persistence: &playerPersistence{
+			char: char,
+		},
+	}
+
+	err := player.load(char.Name)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// item is not persisted here, only in memory
+	item, _, err := makeItem("ShortStaff", makeItemOptions{
+		overrideInventory: true,
+		inventoryType:     persistence.RewardInventory,
+	})
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = player.newItem(item)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	nc := &structs.NcitemRelocateReq{
+		From: structs.ItemInventory{
+			Inventory: 2048,
+		},
+		To: structs.ItemInventory{
+			Inventory: 2049,
+		},
+	}
+
+	_, err = player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
+
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	cErr, ok := err.(errors.Err)
+	if !ok {
+		t.Fatalf("unexpected error type %v", reflect.TypeOf(cErr).String())
+	}
+
+	if cErr.Code != errors.ZoneItemSlotChangeConstraint {
+		t.Fatalf("unexpected error code %v", cErr.Code)
+	}
+}
 
 func TestChangeItemSlot_PremiumInventory_To_Inventory_Success(t *testing.T) {
 	t.Fail()
-	//INFO : 2021/04/25 15:44:50.720470 handlers.go:272: 2021-04-25 15:44:50.718652 +0200 CEST 9120->30776 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":16,"department":12,"command":"1","opCode":12289,"data":"16241624e0ff0000000000000000","rawData":"10013016241624e0ff0000000000000000","friendlyName":""}
-	//INFO : 2021/04/25 15:44:50.735071 handlers.go:272: 2021-04-25 15:44:50.730778 +0200 CEST 30776->9120 outbound NC_ITEM_CHARGEDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"20","opCode":12320,"data":"0100","rawData":"0420300100","friendlyName":""}
-	//INFO : 2021/04/25 15:44:50.906144 handlers.go:272: 2021-04-25 15:44:50.898729 +0200 CEST 9120->30776 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"big","length":279,"department":12,"command":"21","opCode":12321,"data":"4110031100cd044302d4290000010000001304523ed3044302a85500000100000013045244d40443028c5300000100000013045246d6044302a85500000100000013045246d8044302822b00000100000013045248da044302a85500000100000013045248db044302822b00000100000013045248e0044302842b00000100000013045248e20443028c530000010000001304524ae5044302a8550000010000001304524af4044302822b00000100000013045250f9044302842b00000100000013045252fe044302a8550000010000001304525407054302a8550000010000001304525a4e054302ce2b00000100000013045a0c2c7e5d02317500000100000014085276ed2063023175000001000000146b3a3e","rawData
+	//INFO : 2021/04/25 17:42:10.691919 handlers.go:272: 2021-04-25 17:42:10.682141 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGED_WITHDRAW_REQ {"packetType":"small","length":6,"department":12,"command":"22","opCode":12322,"data":"c449b701","rawData":"062230c449b701","friendlyName":""}
+	//INFO : 2021/04/25 17:42:10.877594 handlers.go:272: 2021-04-25 17:42:10.874376 +0200 CEST 9120->50634 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":9,"department":12,"command":"1","opCode":12289,"data":"152415249a7501","rawData":"090130152415249a7501","friendlyName":""}
+	//INFO : 2021/04/25 17:42:10.877604 handlers.go:272: 2021-04-25 17:42:10.874376 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGED_WITHDRAW_ACK {"packetType":"small","length":8,"department":12,"command":"23","opCode":12323,"data":"c449b7014110","rawData":"082330c449b7014110","friendlyName":""}
+
+
+}
+
+func TestChangeItemSlot_PremiumInventory_To_Inventory_NC_Success(t *testing.T) {
+	t.Fail()
+
+	// page 1
+	//INFO : 2021/04/25 17:39:35.246924 handlers.go:272: 2021-04-25 17:39:35.237462 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGEDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"20","opCode":12320,"data":"0000","rawData":"0420300000","friendlyName":""}
+	// page 2
+	//INFO : 2021/04/25 18:20:31.407229 handlers.go:272: 2021-04-25 18:20:31.392034 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGEDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"20","opCode":12320,"data":"0100","rawData":"0420300100","friendlyName":""}
+
+	// page 1
+	//INFO : 2021/04/25 18:18:08.338040 handlers.go:272: 2021-04-25 18:18:08.335947 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"big","length":391,"department":12,"command":"21","opCode":12321,"data":"4110031800d2861100c2280000000000000de23808336d5700d3280000010000000e8c315c98e89101b028000001000000108790049b0b2202c12700000100000011854176ab5f2202c22700000100000011854176cc072302c42700000100000011854900dc5b2302c527000001000000118549001fac24026d2800000100000011854902300025026e280000010000001185490455aa4202ab5500000100000013e4483456aa4202ab5500000100000013e4483457aa4202ab5500000100000013e448343bdc4202aa2800000100000013a45136a10443027b2700000100000013045230c2044302a12900000100000013045238c3044302a85500000100000013045238c4044302a85500000100000013045238c5044302842b00000100000013045238c7044302542800000100000013045238c8044302a1290000010000001304523ac9044302822b0000010000001304523aca044302842b0000010000001304523ccd044302d4290000010000001304523ed3044302a85500000100000013045244","rawData":"00870121304110031800d2861100c2280000000000000de23808336d5700d3280000010000000e8c315c98e89101b028000001000000108790049b0b2202c12700000100000011854176ab5f2202c22700000100000011854176cc072302c42700000100000011854900dc5b2302c527000001000000118549001fac24026d2800000100000011854902300025026e280000010000001185490455aa4202ab5500000100000013e4483456aa4202ab5500000100000013e4483457aa4202ab5500000100000013e448343bdc4202aa2800000100000013a45136a10443027b2700000100000013045230c2044302a12900000100000013045238c3044302a85500000100000013045238c4044302a85500000100000013045238c5044302842b00000100000013045238c7044302542800000100000013045238c8044302a1290000010000001304523ac9044302822b0000010000001304523aca044302842b0000010000001304523ccd044302d4290000010000001304523ed3044302a85500000100000013045244","friendlyName":""}
+	// page 2
+	//INFO : 2021/04/25 18:20:31.654372 handlers.go:272: 2021-04-25 18:20:31.652235 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"small","length":231,"department":12,"command":"21","opCode":12321,"data":"4110030e00d40443028c5300000100000013045246d6044302a85500000100000013045246d8044302822b00000100000013045248da044302a85500000100000013045248db044302822b00000100000013045248e0044302842b00000100000013045248e20443028c530000010000001304524ae5044302a8550000010000001304524af4044302822b00000100000013045250f9044302842b00000100000013045252fe044302a8550000010000001304525407054302a8550000010000001304525a4e054302ce2b00000100000013045a0c2c7e5d02317500000100000014085276","rawData":"e721304110030e00d40443028c5300000100000013045246d6044302a85500000100000013045246d8044302822b00000100000013045248da044302a85500000100000013045248db044302822b00000100000013045248e0044302842b00000100000013045248e20443028c530000010000001304524ae5044302a8550000010000001304524af4044302822b00000100000013045250f9044302842b00000100000013045252fe044302a8550000010000001304525407054302a8550000010000001304525a4e054302ce2b00000100000013045a0c2c7e5d02317500000100000014085276","friendlyName":""}
+
+
+	//INFO : 2021/04/25 17:42:10.691919 handlers.go:272: 2021-04-25 17:42:10.682141 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGED_WITHDRAW_REQ {"packetType":"small","length":6,"department":12,"command":"22","opCode":12322,"data":"c449b701","rawData":"062230c449b701","friendlyName":""}
+	//INFO : 2021/04/25 17:42:10.877594 handlers.go:272: 2021-04-25 17:42:10.874376 +0200 CEST 9120->50634 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":9,"department":12,"command":"1","opCode":12289,"data":"152415249a7501","rawData":"090130152415249a7501","friendlyName":""}
+	//INFO : 2021/04/25 17:42:10.877604 handlers.go:272: 2021-04-25 17:42:10.874376 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGED_WITHDRAW_ACK {"packetType":"small","length":8,"department":12,"command":"23","opCode":12323,"data":"c449b7014110","rawData":"082330c449b7014110","friendlyName":""}
+
+	//INFO : 2021/04/25 17:59:04.123989 handlers.go:272: 2021-04-25 17:59:04.122346 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGED_WITHDRAW_REQ {"packetType":"small","length":6,"department":12,"command":"22","opCode":12322,"data":"ed206302","rawData":"062230ed206302","friendlyName":""}
+	//INFO : 2021/04/25 17:59:04.279049 handlers.go:272: 2021-04-25 17:59:04.270294 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGED_WITHDRAW_ACK {"packetType":"small","length":8,"department":12,"command":"23","opCode":12323,"data":"ed2063024110","rawData":"082330ed2063024110","friendlyName":""}
+	//INFO : 2021/04/25 17:59:04.279049 handlers.go:272: 2021-04-25 17:59:04.270294 +0200 CEST 9120->50634 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":16,"department":12,"command":"1","opCode":12289,"data":"16241624e0ff0000000000000000","rawData":"10013016241624e0ff0000000000000000","friendlyName":""}
 }
 
 func TestChangeItemSlot_PremiumInventory_To_Inventory_InventoryFull(t *testing.T) {
