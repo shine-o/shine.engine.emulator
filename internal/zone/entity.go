@@ -54,6 +54,7 @@ type entityState struct {
 	fighting chan bool
 	chasing  chan bool
 	fleeing  chan bool
+	sync.RWMutex
 }
 
 type mover struct {

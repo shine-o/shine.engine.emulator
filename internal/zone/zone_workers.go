@@ -13,7 +13,7 @@ func (z *zone) security() {
 	log.Infof("[worker] security worker")
 	for {
 		select {
-		case e := <-z.recv[playerSHN]:
+		case e := <-z.events.recv[playerSHN]:
 			go playerSHNLogic(e)
 		}
 	}
@@ -23,19 +23,19 @@ func (z *zone) playerSession() {
 	log.Infof("[zone_worker] playerSession worker")
 	for {
 		select {
-		case e := <-z.recv[playerMapLogin]:
+		case e := <-z.events.recv[playerMapLogin]:
 			go playerMapLoginLogic(e)
-		case e := <-z.recv[playerData]:
+		case e := <-z.events.recv[playerData]:
 			go playerDataLogic(e)
-		case e := <-z.recv[heartbeatUpdate]:
+		case e := <-z.events.recv[heartbeatUpdate]:
 			go hearbeatUpdateLogic(e)
-		case e := <-z.recv[playerLogoutStart]:
+		case e := <-z.events.recv[playerLogoutStart]:
 			go playerLogoutStartLogic(z, e)
-		case e := <-z.recv[playerLogoutCancel]:
+		case e := <-z.events.recv[playerLogoutCancel]:
 			go playerLogoutCancelLogic(z, e)
-		case e := <-z.recv[playerLogoutConclude]:
+		case e := <-z.events.recv[playerLogoutConclude]:
 			go playerLogoutConcludeLogic(z, e)
-		case e := <-z.recv[changeMap]:
+		case e := <-z.events.recv[changeMap]:
 			go func() {
 				ev, ok := e.(*changeMapEvent)
 				if !ok {
@@ -48,11 +48,11 @@ func (z *zone) playerSession() {
 				handle := p.getHandle()
 
 				ev.prev.entities.players.remove(handle)
-				ev.prev.entities.players.handler.remove(handle)
+				handles.remove(handle)
 
 				ev.next.entities.players.add(p)
 
-				ev.prev.send[playerDisappeared] <- &playerDisappearedEvent{
+				ev.prev.events.send[playerDisappeared] <- &playerDisappearedEvent{
 					handle: handle,
 				}
 
@@ -87,7 +87,7 @@ func (z *zone) playerSession() {
 
 				networking.Send(p.conn.outboundData, networking.NC_MAP_LINKSAME_CMD, &nc)
 
-				ev.next.send[playerAppeared] <- &playerAppearedEvent{
+				ev.next.events.send[playerAppeared] <- &playerAppearedEvent{
 					handle: handle,
 				}
 			}()
@@ -99,7 +99,7 @@ func (z *zone) playerGameData() {
 	log.Infof("[zone_worker] playerGameData worker")
 	for {
 		select {
-		case e := <-z.recv[persistPlayerPosition]:
+		case e := <-z.events.recv[persistPlayerPosition]:
 			go persistPLayerPositionLogic(e)
 		}
 	}
@@ -190,7 +190,7 @@ func playerMapLoginLogic(e event) {
 		err:     make(chan error),
 	}
 
-	zm.send[playerHandle] <- &e3
+	zm.events.send[playerHandle] <- &e3
 
 	select {
 	case <-e3.done:
@@ -370,7 +370,7 @@ func playerLogout(z *zone, zm *zoneMap, p *player, sid string) {
 			}
 
 			select {
-			case zm.send[playerDisappeared] <- pde:
+			case zm.events.send[playerDisappeared] <- pde:
 				break
 			default:
 				log.Error("unexpected error occurred while sending playerDisappeared event")

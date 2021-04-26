@@ -45,5 +45,5 @@ func ncBriefInfoInformCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	zm.send[unknownHandle] <- &e
+	zm.events.send[unknownHandle] <- &e
 }

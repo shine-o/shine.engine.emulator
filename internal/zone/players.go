@@ -7,9 +7,8 @@ import (
 )
 
 type players struct {
-	*handler
 	active map[uint16]*player
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 func (p *players) all() <-chan *player {
@@ -60,8 +59,11 @@ func (p *players) add(ap *player) {
 
 	p.Lock()
 	p.active[h] = ap
-	p.handler.usedHandles[h] = true
 	p.Unlock()
+
+	handles.Lock()
+	handles.usedHandles[h] = true
+	handles.Unlock()
 
 	go func(p *player) {
 		time.Sleep(15 * time.Second)

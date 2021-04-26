@@ -5,25 +5,23 @@ import (
 )
 
 type npcs struct {
-	*handler
 	active map[uint16]*npc
-	*sync.RWMutex
+	sync.RWMutex
 }
 
 func (n *npcs) all() <-chan *npc {
-
 	n.RLock()
 	ch := make(chan *npc, len(n.active))
 	n.RUnlock()
 
-	go func(send chan<- *npc) {
+	go func(n * npcs, send chan<- *npc) {
 		n.RLock()
 		for _, ap := range n.active {
 			send <- ap
 		}
 		n.RUnlock()
 		close(send)
-	}(ch)
+	}(n, ch)
 
 	return ch
 }
@@ -45,8 +43,11 @@ func (n *npcs) add(ap *npc) {
 	h := ap.getHandle()
 	n.Lock()
 	n.active[h] = ap
-	n.handler.usedHandles[h] = true
 	n.Unlock()
+
+	handles.Lock()
+	handles.usedHandles[h] = true
+	handles.Unlock()
 }
 
 func npcInRange(p *player, n *npc) bool {

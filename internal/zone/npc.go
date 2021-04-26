@@ -6,12 +6,35 @@ import (
 	"sync"
 )
 
+type npcType int
+
+const (
+	npcUnknownRole npcType = iota
+	npcPortal
+	npcItemMerchant
+	npcSkillMerchant
+	npcWeaponMerchant
+	npcWeaponTitleMerchant
+	npcSoulStoneMerchant
+	npcDeposit
+	npcQuest
+	npcCasino
+	npcBijouAnvil
+	npcWeaponLicenceMerchant
+	npcGuildManager
+	npcGuildMerchant
+	npcSlotMachine
+	npcCoinExchangeMerchant
+	npcTownChief
+)
+
 type npc struct {
 	baseEntity
 	data  *npcStaticData
 	ticks *entityTicks
 	state *entityState
 	stats *npcStats
+	nType npcType
 	sync.RWMutex
 }
 

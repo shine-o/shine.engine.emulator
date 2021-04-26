@@ -42,7 +42,7 @@ func ncBatTargetingReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	zm.send[playerSelectsEntity] <- &e
+	zm.events.send[playerSelectsEntity] <- &e
 }
 
 // NC_BAT_UNTARGET_REQ
@@ -75,5 +75,5 @@ func ncBatUntargetReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	zm.send[playerUnselectsEntity] <- &e
+	zm.events.send[playerUnselectsEntity] <- &e
 }

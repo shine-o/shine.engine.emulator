@@ -10,6 +10,47 @@ import (
 	"testing"
 )
 
+func TestLoadZone(t *testing.T) {
+	z := zone{}
+
+	err := z.load()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if z.rm == nil {
+		t.Fatal("value should not be nil")
+	}
+
+	if z.events == nil {
+		t.Fatal("value should not be nil")
+	}
+
+	if z.dynamicEvents == nil {
+		t.Fatal("value should not be nil")
+	}
+
+	expectedZoneEvents := []eventIndex{
+		playerMapLogin, playerSHN, playerData, heartbeatUpdate, playerLogoutStart, playerLogoutCancel, playerLogoutConclude, persistPlayerPosition, changeMap,
+	}
+
+	if len(z.events.send) != len(expectedZoneEvents) || len(z.events.recv) != len(expectedZoneEvents) {
+		t.Fatalf("mismatched amount of events %v %v %v ", len(z.events.send), len(z.events.recv), len(expectedZoneEvents))
+	}
+
+	for _, e := range expectedZoneEvents {
+		_, ok := z.events.send[e]
+		if !ok {
+			t.Errorf("missing zone event %v", e)
+		}
+		_, ok = z.events.recv[e]
+		if !ok {
+			t.Errorf("missing zone event %v", e)
+		}
+	}
+}
+
 func TestPackets(t *testing.T) {
 	netPackets := netPackets()
 

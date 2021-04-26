@@ -9,7 +9,7 @@ func (zm *zoneMap) removeInactiveHandles() {
 		select {
 		case <-tick:
 			select {
-			case zm.send[playerHandleMaintenance] <- &emptyEvent{}:
+			case zm.events.send[playerHandleMaintenance] <- &emptyEvent{}:
 				break
 			default:
 				log.Infof("failed executing playerHandleMaintenance for %v", zm.data.Info.MapName)

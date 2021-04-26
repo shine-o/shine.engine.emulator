@@ -3,9 +3,6 @@ package zone
 import (
 	"context"
 	"errors"
-	"fmt"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	zm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	"github.com/spf13/viper"
@@ -13,10 +10,9 @@ import (
 )
 
 type zone struct {
-	rm *runningMaps
-	*events
-	*dynamicEvents
-	*handler
+	rm            *runningMaps
+	events        *events
+	dynamicEvents *dynamicEvents
 	sync.RWMutex
 }
 
@@ -26,15 +22,16 @@ type runningMaps struct {
 }
 
 var (
-	zoneEvents  sendEvents
-	maps        *runningMaps
+	zoneEvents    sendEvents
+	maps       	  *runningMaps
+	handles       *handler
 	monsterData *data.MonsterData
 	mapData     *data.MapData
 	npcData     *data.NpcData
 	itemsData   *data.ItemData
 )
 
-func (z *zone) load() {
+func (z *zone) load() error {
 
 	shinePath := viper.GetString("shine_folder")
 
@@ -61,12 +58,10 @@ func (z *zone) load() {
 		events: make(map[string]events),
 	}
 
-	h := &handler{
+	handles = &handler{
 		handleIndex: 0,
 		usedHandles: make(map[uint16]bool),
 	}
-
-	z.handler = h
 
 	normalMaps := viper.GetIntSlice("normal_maps")
 
@@ -82,9 +77,8 @@ func (z *zone) load() {
 		go func(id int) {
 			defer wg.Done()
 			z.addMap(id)
+			<-sem
 		}(id)
-
-		<-sem
 	}
 
 	wg.Wait()
@@ -92,88 +86,31 @@ func (z *zone) load() {
 	err := registerZone(registerMaps)
 
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	maps = z.rm
 
-	go z.run()
+	return nil
 }
 
-func (z *zone) addMap(mapId int) {
-	md, ok := mapData.Maps[mapId]
-
-	if !ok {
-		log.Fatalf("no map data for map with id %v", mapId)
-	}
-
-	walkableX, walkableY, err := walkingPositions(md.SHBD)
-
+func (z *zone) addMap(mapID int) {
+	m, err := loadMap(mapID)
 	if err != nil {
-		log.Fatal(err)
+		log.Error(err)
+		return
 	}
-
-	for m := range z.allMaps() {
-		if m.data.MapInfoIndex == md.Info.MapName.Name {
-			log.Errorf("duplicate shn map index id %v %v, skipping", mapId, m.data.MapInfoIndex)
-			return
-		}
-	}
-
-	m := &zoneMap{
-		data:      md,
-		walkableX: walkableX,
-		walkableY: walkableY,
-		entities: &entities{
-			players: &players{
-				handler: z.handler,
-				active:  make(map[uint16]*player),
-				RWMutex: &sync.RWMutex{},
-			},
-			npcs: &npcs{
-				handler: z.handler,
-				active:  make(map[uint16]*npc),
-				RWMutex: &sync.RWMutex{},
-			},
-		},
-		events: events{
-			send: make(sendEvents),
-			recv: make(recvEvents),
-		},
-		metrics: metrics{
-			players: promauto.NewGauge(prometheus.GaugeOpts{
-				Name: fmt.Sprintf("players_in_%v", md.Info.MapName.Name),
-				Help: "Total number of active players.",
-			}),
-			npcs: promauto.NewGauge(prometheus.GaugeOpts{
-				Name: fmt.Sprintf("npcs_in_%v", md.Info.MapName.Name),
-				Help: "Total number of active non player characters.",
-			}),
-		},
-	}
-
-	m.metrics.players.Set(0)
-	m.metrics.npcs.Set(0)
-
-	for _, index := range mapEvents {
-		c := make(chan event, 500)
-		m.recv[index] = c
-		m.send[index] = c
-	}
-
 	z.rm.Lock()
 	z.rm.list[m.data.ID] = m
 	z.rm.Unlock()
 
 	go m.run()
-
 }
 
 func (z *zone) run() {
 	// run query workers
 	num := viper.GetInt("workers.num_zone_workers")
 	for i := 0; i <= num; i++ {
-		//go z.mapQueries()
 		go z.security()
 		go z.playerSession()
 		go z.playerGameData()

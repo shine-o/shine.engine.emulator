@@ -2,9 +2,13 @@ package zone
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/RoaringBitmap/roaring"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/spf13/viper"
 	"math"
 	"sync"
@@ -15,13 +19,13 @@ type zoneMap struct {
 	walkableX *roaring.Bitmap
 	walkableY *roaring.Bitmap
 	entities  *entities
-	events
-	metrics
+	events  *events
+	metrics *metrics
 }
 
 type entities struct {
-	*players
-	*npcs
+	players *players
+	npcs *npcs
 }
 
 func (zm *zoneMap) run() {
@@ -59,39 +63,62 @@ func (zm *zoneMap) spawnNPCs() {
 	if ok {
 		var (
 			sem = make(chan int, 100)
-			wg  sync.WaitGroup
+			wg = &sync.WaitGroup{}
 		)
 		for _, npc := range npcs {
+			zm.spawnNPC(npc.MobIndex)
+
 			wg.Add(1)
 			sem <- 1
-			go func(sn *data.ShineNPC) {
+			go func(sn *data.ShineNPC, wg * sync.WaitGroup, sem chan int) {
 				defer wg.Done()
-				zm.spawnNPC(sn)
+				zm.spawnNPC(sn.MobIndex)
 				<-sem
-			}(npc)
+			}(npc, wg, sem)
 		}
 		wg.Wait()
 	}
 }
 
-func (zm *zoneMap) spawnNPC(sn *data.ShineNPC) {
-
-	mi, mis := mobDataPointers(sn.MobIndex)
-
-	if mi == nil {
-		log.Errorf("no entry in MobInfo for %v", sn.MobIndex)
-		return
-	}
-
-	if mis == nil {
-		log.Errorf("no entry in MobInfoServer for %v", sn.MobIndex)
-		return
-	}
-
-	h, err := zm.entities.npcs.new()
+func (zm *zoneMap) spawnNPC(inxName string) {
+	h, err := handles.new()
 	if err != nil {
 		log.Error(err)
+		handles.remove(h)
 		return
+	}
+
+	npc, err := loadNpc(inxName, zm.data.ID, h)
+
+	if err != nil {
+		log.Error(err)
+		handles.remove(h)
+		return
+	}
+
+	zm.entities.npcs.Lock()
+	zm.entities.npcs.active[h] = npc
+	zm.entities.npcs.Unlock()
+
+	zm.metrics.npcs.Inc()
+}
+
+func loadNpc(inxName string, mapID int, handle uint16) (*npc, error) {
+	var (
+		sn * data.ShineNPC
+		mi * data.MobInfo
+		mis * data.MobInfoServer
+	)
+
+	mi, mis, sn = getNpcData(inxName)
+
+	if mi == nil || mis == nil {
+		return nil, errors.Err{
+			Code:    errors.ZoneMissingNpcData,
+			Details: errors.ErrDetails{
+				"mobIndex": inxName,
+			},
+		}
 	}
 
 	var shineD int
@@ -103,7 +130,7 @@ func (zm *zoneMap) spawnNPC(sn *data.ShineNPC) {
 
 	n := &npc{
 		baseEntity: baseEntity{
-			handle: h,
+			handle: handle,
 			eType:  isNPC,
 			fallback: location{
 				x: sn.X,
@@ -111,14 +138,12 @@ func (zm *zoneMap) spawnNPC(sn *data.ShineNPC) {
 				d: shineD,
 			},
 			current: location{
-				mapID:     zm.data.ID,
-				mapName:   zm.data.MapInfoIndex,
+				mapID:     mapID,
+				mapName:   sn.MapIndex,
 				x:         sn.X,
 				y:         sn.Y,
 				d:         shineD,
-				movements: []movement{},
 			},
-			events: events{},
 		},
 		stats: &npcStats{
 			hp: mi.MaxHP,
@@ -129,6 +154,7 @@ func (zm *zoneMap) spawnNPC(sn *data.ShineNPC) {
 			mobInfoServer: mis,
 			npcData:       sn,
 		},
+		nType: getNpcType(sn.Role, sn.RoleArg),
 		state: &entityState{
 			idling:   make(chan bool),
 			fighting: make(chan bool),
@@ -138,11 +164,54 @@ func (zm *zoneMap) spawnNPC(sn *data.ShineNPC) {
 		ticks: &entityTicks{},
 	}
 
-	zm.entities.npcs.Lock()
-	zm.entities.npcs.active[h] = n
-	zm.entities.npcs.Unlock()
+	return n, nil
+}
 
-	zm.metrics.npcs.Inc()
+func getNpcType(role, arg string) npcType {
+	if role == "Gate" || role == "IDGate" ||role == "ModeIDGate" {
+		return npcPortal
+	} else if role == "StoreManager" {
+		return  npcDeposit
+	} else if role == "RandomGate" {
+		return  npcCasino
+	} else if role == "ClientMenu" {
+		return npcTownChief
+	} else {
+		switch role + arg {
+		case "MerchantSoulStone":
+			return npcSoulStoneMerchant
+		case "MerchantWeapon":
+			return npcWeaponMerchant
+		case "MerchantSkill":
+			return npcSkillMerchant
+		case "MerchantItem":
+			return npcItemMerchant
+		case "QuestNpcQuest":
+			return npcQuest
+		case "GuardQuest":
+			return npcQuest
+		case "NPCMenuRandomOption":
+			return npcBijouAnvil
+		case "MerchantWeaponTitle":
+			return npcWeaponLicenceMerchant
+		case "NPCMenuGuild":
+			return npcGuildManager
+		case "NPCMenuExchangeCoin":
+			return npcCoinExchangeMerchant
+		case "QuestNpcGBDice":
+			return npcSlotMachine
+		case "MerchantGuild":
+			return npcGuildMerchant
+		default:
+			log.Error(errors.Err{
+				Code:    errors.ZoneUnknownNpcRole,
+				Details: errors.ErrDetails{
+					"role+arg": role + arg,
+				},
+			})
+			return npcUnknownRole
+		}
+	}
 }
 
 // a mob is a collection of entities, in this case monsters
@@ -168,10 +237,11 @@ func (zm *zoneMap) spawnMobs() {
 }
 
 // maybe in the future create a wrapping struct for this, as more monster shine files will be loaded
-func mobDataPointers(mobIndex string) (*data.MobInfo, *data.MobInfoServer) {
+func getNpcData(mobIndex string) (*data.MobInfo, *data.MobInfoServer, *data.ShineNPC) {
 	var (
 		mi  *data.MobInfo
 		mis *data.MobInfoServer
+		sn *data.ShineNPC
 	)
 
 	for i, row := range monsterData.MobInfo.ShineRow {
@@ -186,7 +256,16 @@ func mobDataPointers(mobIndex string) (*data.MobInfo, *data.MobInfoServer) {
 		}
 	}
 
-	return mi, mis
+	for _, npcs := range npcData.MapNPCs {
+		for _, npc := range npcs {
+			if npc.MobIndex == mobIndex {
+				sn = npc
+			}
+		}
+	}
+
+
+	return mi, mis, sn
 }
 
 func spawnMob(zm *zoneMap, re data.RegenEntry) {
@@ -281,7 +360,7 @@ func spawnMonster(zm *zoneMap, re data.RegenEntry, mi *data.MobInfo, mis *data.M
 	}
 
 	if spawn {
-		h, err := zm.entities.npcs.new()
+		h, err := handles.new()
 		if err != nil {
 			log.Error(err)
 			return
@@ -421,4 +500,63 @@ func walkingPositions(s *data.SHBD) (*roaring.Bitmap, *roaring.Bitmap, error) {
 		}
 	}
 	return walkableX, walkableY, nil
+}
+
+func loadMap(mapID int) (*zoneMap, error) {
+	md, ok := mapData.Maps[mapID]
+
+	if !ok {
+		return nil, errors.Err{
+			Code:    errors.ZoneMissingMapData,
+			Message: "",
+			Details: errors.ErrDetails{
+				"mapID": mapID,
+			},
+		}
+	}
+
+	walkableX, walkableY, err := walkingPositions(md.SHBD)
+
+	if err != nil {
+		return nil, err
+	}
+
+	zm := &zoneMap{
+		data:      md,
+		walkableX: walkableX,
+		walkableY: walkableY,
+		entities: &entities{
+			players: &players{
+				active:  make(map[uint16]*player),
+			},
+			npcs: &npcs{
+				active:  make(map[uint16]*npc),
+			},
+		},
+		events: &events{
+			send: make(sendEvents),
+			recv: make(recvEvents),
+		},
+		metrics: &metrics{
+			players: promauto.NewGauge(prometheus.GaugeOpts{
+				Name: fmt.Sprintf("players_in_%v", md.Info.MapName.Name),
+				Help: "Total number of active players.",
+			}),
+			npcs: promauto.NewGauge(prometheus.GaugeOpts{
+				Name: fmt.Sprintf("npcs_in_%v", md.Info.MapName.Name),
+				Help: "Total number of active non player characters.",
+			}),
+		},
+	}
+
+	zm.metrics.players.Set(0)
+	zm.metrics.npcs.Set(0)
+
+	for _, index := range mapEvents {
+		c := make(chan event, 500)
+		zm.events.recv[index] = c
+		zm.events.send[index] = c
+	}
+
+	return zm, nil
 }

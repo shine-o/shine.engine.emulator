@@ -41,6 +41,9 @@ const (
 	ZoneMissingPlayer
 	ZoneUnexpectedEvent
 	ZoneMapCollisionDetected
+	ZoneUnknownNpcRole
+	ZoneMissingMapData
+	ZoneMissingNpcData
 	UnitTestError
 )
 

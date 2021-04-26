@@ -42,6 +42,7 @@ func Start(cmd *cobra.Command, args []string) {
 	z := zone{}
 
 	z.load()
+	go z.run()
 
 	persistence.InitDB(database.ConnectionParams{
 		User:     viper.GetString("world_database.db_user"),
@@ -78,7 +79,6 @@ func Start(cmd *cobra.Command, args []string) {
 		Name:     "zone",
 		Settings: s,
 		ShinePacketRegistry: networking.ShinePacketRegistry{
-			// inbound
 			networking.NC_MISC_SEED_ACK: networking.ShinePacket{
 				Handler: ncMiscSeedAck,
 			},

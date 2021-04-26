@@ -41,7 +41,7 @@ func ncActMoveWalkCmd(ctx context.Context, np *networking.Parameters) {
 		})
 		return
 	}
-	zm.send[playerWalks] <- &e
+	zm.events.send[playerWalks] <- &e
 }
 
 // NC_ACT_MOVERUN_CMD
@@ -79,7 +79,7 @@ func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	zm.send[playerRuns] <- &e
+	zm.events.send[playerRuns] <- &e
 }
 
 // NC_ACT_JUMP_CMD
@@ -110,7 +110,7 @@ func ncActJumpCmd(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	zm.send[playerJumped] <- &e
+	zm.events.send[playerJumped] <- &e
 }
 
 // NC_ACT_STOP_REQ
@@ -148,7 +148,7 @@ func ncActStopReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	zm.send[playerStopped] <- &e
+	zm.events.send[playerStopped] <- &e
 }
 
 // NC_ACT_NPCCLICK_CMD
@@ -188,6 +188,11 @@ func ncActNpcClickCmd(ctx context.Context, np *networking.Parameters) {
 	}
 
 	zm.events.send[playerClicksOnNpc] <- &e
+
+}
+
+func ncActNpcMenuOpenAck(ctx context.Context, np *networking.Parameters) {
+	//INFO : 2021/04/26 10:00:13.035168 handlers.go:272: 2021-04-26 10:00:13.021596 +0200 CEST 6233->9120 outbound NC_ACT_NPCMENUOPEN_ACK {"packetType":"small","length":3,"department":8,"command":"1D","opCode":8221,"data":"01","rawData":"031d2001","friendlyName":""}
 
 }
 

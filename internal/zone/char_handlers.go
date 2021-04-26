@@ -57,7 +57,7 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 		handle: session.handle,
 	}
 
-	zm.send[playerAppeared] <- &e
+	zm.events.send[playerAppeared] <- &e
 
 }
 

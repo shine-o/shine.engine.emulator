@@ -20,9 +20,9 @@ func (zm *zoneMap) mapHandles() {
 	log.Infof("[map_worker] mapHandles worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
-		case <-zm.recv[playerHandleMaintenance]:
+		case <-zm.events.recv[playerHandleMaintenance]:
 			go playerHandleMaintenanceLogic(zm)
-		case e := <-zm.recv[playerHandle]:
+		case e := <-zm.events.recv[playerHandle]:
 			go playerHandleLogic(e, zm)
 		}
 	}
@@ -32,29 +32,29 @@ func (zm *zoneMap) playerActivity() {
 	log.Infof("[map_worker] playerActivity worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
-		case e := <-zm.recv[playerAppeared]:
+		case e := <-zm.events.recv[playerAppeared]:
 			go playerAppearedLogic(e, zm)
-		case e := <-zm.recv[playerDisappeared]:
+		case e := <-zm.events.recv[playerDisappeared]:
 			go playerDisappearedLogic(e, zm)
-		case e := <-zm.recv[playerWalks]:
+		case e := <-zm.events.recv[playerWalks]:
 			go playerWalksLogic(e, zm)
-		case e := <-zm.recv[playerRuns]:
+		case e := <-zm.events.recv[playerRuns]:
 			go playerRunsLogic(e, zm)
-		case e := <-zm.recv[playerStopped]:
+		case e := <-zm.events.recv[playerStopped]:
 			go playerStoppedLogic(e, zm)
-		case e := <-zm.recv[playerJumped]:
+		case e := <-zm.events.recv[playerJumped]:
 			go playerJumpedLogic(e, zm)
-		case e := <-zm.recv[unknownHandle]:
+		case e := <-zm.events.recv[unknownHandle]:
 			go unknownHandleLogic(e, zm)
-		case e := <-zm.recv[playerSelectsEntity]:
+		case e := <-zm.events.recv[playerSelectsEntity]:
 			go playerSelectsEntityLogic(zm, e)
-		case e := <-zm.recv[playerUnselectsEntity]:
+		case e := <-zm.events.recv[playerUnselectsEntity]:
 			go playerUnselectsEntityLogic(zm, e)
-		case e := <-zm.recv[itemIsMoved]:
+		case e := <-zm.events.recv[itemIsMoved]:
 			go itemIsMovedLogic(e, zm)
-		case e := <-zm.recv[itemEquip]:
+		case e := <-zm.events.recv[itemEquip]:
 			go itemEquipLogic(e, zm)
-		case e := <-zm.recv[itemUnEquip]:
+		case e := <-zm.events.recv[itemUnEquip]:
 			go itemUnEquipLogic(e, zm)
 		}
 	}
@@ -64,9 +64,9 @@ func (zm *zoneMap) npcInteractions() {
 	log.Infof("[map_worker] npcInteractions worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
-		case e := <-zm.recv[playerClicksOnNpc]:
+		case e := <-zm.events.recv[playerClicksOnNpc]:
 			go playerClicksOnNpcLogic(zm, e)
-		case e := <-zm.recv[playerPromptReply]:
+		case e := <-zm.events.recv[playerPromptReply]:
 			go playerPromptReplyLogic(zm, e)
 		}
 	}
@@ -76,13 +76,13 @@ func (zm *zoneMap) monsterActivity() {
 	log.Infof("[map_worker] monsterActivity worker for map %v", zm.data.Info.MapName)
 	for {
 		select {
-		case e := <-zm.recv[monsterAppeared]:
+		case e := <-zm.events.recv[monsterAppeared]:
 			log.Info(e)
-		case e := <-zm.recv[monsterDisappeared]:
+		case e := <-zm.events.recv[monsterDisappeared]:
 			log.Info(e)
-		case e := <-zm.recv[monsterWalks]:
+		case e := <-zm.events.recv[monsterWalks]:
 			go npcWalksLogic(zm, e)
-		case e := <-zm.recv[monsterRuns]:
+		case e := <-zm.events.recv[monsterRuns]:
 			go npcRunsLogic(zm, e)
 		}
 	}
@@ -100,14 +100,25 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 		log.Error(err)
 		return
 	}
+
 	// find npc with handle in ev.nc.Handle
 	// send id of mob
-	var nc structs.NcActNpcMenuOpenReq
+	var (
+		nc1 *structs.NcServerMenuReq
+		nc2 *structs.NcActNpcMenuOpenReq
+	)
+
 	for n := range zm.entities.npcs.all() {
 		if n.getHandle() == ev.nc.NpcHandle {
-			nc.MobID = n.data.mobInfo.ID
-			if isPortal(n) {
+			nc2 = &structs.NcActNpcMenuOpenReq{
+				MobID: n.data.mobInfo.ID,
+			}
 
+			p.targeting.Lock()
+			p.targeting.selectingN = n
+			p.targeting.Unlock()
+
+			if n.nType == npcPortal {
 				var md *data.Map
 
 				for i, m := range mapData.Maps {
@@ -121,14 +132,14 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 				if md != nil {
 					mapName = md.Info.Name
 				} else {
-					mapName = "UNAVAILABLE"
+					mapName = "MAP IS OFFLINE"
 				}
 
 				mapName = strings.Replace(mapName, "#", " ", -1)
 
 				title := fmt.Sprintf("Do you want to move to %v", mapName)
 
-				nc := structs.NcServerMenuReq{
+				nc1 = &structs.NcServerMenuReq{
 					Title:     title,
 					Priority:  0,
 					NpcHandle: n.getHandle(),
@@ -150,7 +161,7 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 					},
 				}
 
-				go networking.Send(p.conn.outboundData, networking.NC_MENU_SERVERMENU_REQ, &nc)
+				networking.Send(p.conn.outboundData, networking.NC_MENU_SERVERMENU_REQ, nc1)
 				if md == nil {
 					return
 				}
@@ -165,10 +176,11 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 				p.Unlock()
 				return
 			}
+
+			networking.Send(p.conn.outboundData, networking.NC_ACT_NPCMENUOPEN_REQ, nc2)
 			break
 		}
 	}
-	networking.Send(p.conn.outboundData, networking.NC_ACT_NPCMENUOPEN_REQ, &nc)
 }
 
 func playerPromptReplyLogic(zm *zoneMap, e event) {
@@ -609,7 +621,8 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 			}
 
 			zm.entities.players.remove(h)
-			zm.entities.players.handler.remove(h)
+
+			handles.remove(h)
 
 			p.conn.close <- true
 
@@ -624,7 +637,7 @@ func playerHandleLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	handle, err := zm.entities.players.handler.new()
+	handle, err := handles.new()
 
 	if err != nil {
 		ev.err <- err
@@ -1032,8 +1045,6 @@ func showAllNPC(p *player, zm *zoneMap) {
 	for n := range zm.entities.npcs.all() {
 		if n.baseEntity.eType == isNPC {
 			info := ncBriefInfoRegenMobCmd(n)
-			// if portal, FlagState = 1
-			// FlagData, Destination Map Index
 			if isPortal(n) {
 				info.FlagState = 1
 				info.FlagData.Data = n.data.npcData.ServerMapIndex

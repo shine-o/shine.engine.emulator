@@ -21,7 +21,7 @@ func (h *handler) remove(hid uint16) {
 	h.Unlock()
 }
 
-func (h *handler) add(ap *npc) {
+func (h *handler) add(ap *baseEntity) {
 	handle := ap.getHandle()
 	h.Lock()
 	h.usedHandles[handle] = true

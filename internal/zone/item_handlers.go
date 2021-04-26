@@ -42,7 +42,7 @@ func ncItemRelocReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	zm.send[itemIsMoved] <- &e
+	zm.events.send[itemIsMoved] <- &e
 }
 
 // NC_ITEM_EQUIP_REQ
@@ -81,7 +81,7 @@ func ncItemEquipReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	zm.send[itemEquip] <- &e
+	zm.events.send[itemEquip] <- &e
 }
 
 // NC_ITEM_UNEQUIP_REQ
@@ -120,5 +120,5 @@ func ncItemUnEquipReq(ctx context.Context, np *networking.Parameters) {
 		return
 	}
 
-	zm.send[itemUnEquip] <- &e
+	zm.events.send[itemUnEquip] <- &e
 }
