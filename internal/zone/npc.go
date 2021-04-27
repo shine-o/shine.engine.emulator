@@ -2,6 +2,7 @@ package zone
 
 import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"sync"
 )
@@ -9,7 +10,7 @@ import (
 type npcType int
 
 const (
-	npcUnknownRole npcType = iota
+	npcNoRole npcType = iota
 	npcPortal
 	npcItemMerchant
 	npcSkillMerchant
@@ -47,6 +48,156 @@ type npcStaticData struct {
 	mobInfoServer *data.MobInfoServer
 	regenData     *data.RegenEntry
 	npcData       *data.ShineNPC
+}
+
+func (n *npc) spawnLocation(zm *zoneMap) {
+	n.Lock()
+	var (
+		shineD int
+		sn     = n.data.npcData
+	)
+
+	if sn.D < 0 {
+		shineD = (360 + sn.D) / 2
+	} else {
+		shineD = sn.D / 2
+	}
+
+	n.baseEntity.current.mapName = zm.data.MapInfoIndex
+	n.baseEntity.current.mapID = zm.data.ID
+	n.baseEntity.current.x = sn.X
+	n.baseEntity.current.y = sn.Y
+	n.baseEntity.current.d = shineD
+
+	n.Unlock()
+}
+
+func loadBaseNpc(inxName string, eType entityType) (*npc, error) {
+	var (
+		sn  *data.ShineNPC
+		mi  *data.MobInfo
+		mis *data.MobInfoServer
+	)
+
+	mi, mis, sn = getNpcData(inxName)
+
+	if mi == nil || mis == nil {
+		return nil, errors.Err{
+			Code: errors.ZoneMissingNpcData,
+			Details: errors.ErrDetails{
+				"mobIndex": inxName,
+			},
+		}
+	}
+
+	var nType npcType
+
+	if eType == isNPC {
+		nType = getNpcType(sn.Role, sn.RoleArg)
+	}
+
+	n := &npc{
+		nType: nType,
+		baseEntity: baseEntity{
+			eType: eType,
+		},
+		stats: &npcStats{
+			hp: mi.MaxHP,
+			sp: uint32(mis.MaxSP),
+		},
+		data: &npcStaticData{
+			mobInfo:       mi,
+			mobInfoServer: mis,
+			npcData:       sn,
+		},
+		state: &entityState{
+			idling:   make(chan bool),
+			fighting: make(chan bool),
+			chasing:  make(chan bool),
+			fleeing:  make(chan bool),
+		},
+		ticks: &entityTicks{},
+	}
+
+	return n, nil
+}
+
+func getNpcType(role, arg string) npcType {
+	if role == "Gate" || role == "IDGate" || role == "ModeIDGate" {
+		return npcPortal
+	} else if role == "StoreManager" {
+		return npcDeposit
+	} else if role == "RandomGate" {
+		return npcCasino
+	} else if role == "ClientMenu" {
+		return npcTownChief
+	} else {
+		switch role + arg {
+		case "MerchantSoulStone":
+			return npcSoulStoneMerchant
+		case "MerchantWeapon":
+			return npcWeaponMerchant
+		case "MerchantSkill":
+			return npcSkillMerchant
+		case "MerchantItem":
+			return npcItemMerchant
+		case "QuestNpcQuest":
+			return npcQuest
+		case "GuardQuest":
+			return npcQuest
+		case "NPCMenuRandomOption":
+			return npcBijouAnvil
+		case "MerchantWeaponTitle":
+			return npcWeaponLicenceMerchant
+		case "NPCMenuGuild":
+			return npcGuildManager
+		case "NPCMenuExchangeCoin":
+			return npcCoinExchangeMerchant
+		case "QuestNpcGBDice":
+			return npcSlotMachine
+		case "MerchantGuild":
+			return npcGuildMerchant
+		default:
+			log.Error(errors.Err{
+				Code: errors.ZoneUnknownNpcRole,
+				Details: errors.ErrDetails{
+					"role+arg": role + arg,
+				},
+			})
+			return npcNoRole
+		}
+	}
+}
+
+// TODO: create a wrapping struct for this, as more monster shine files will be loaded
+func getNpcData(mobIndex string) (*data.MobInfo, *data.MobInfoServer, *data.ShineNPC) {
+	var (
+		mi  *data.MobInfo
+		mis *data.MobInfoServer
+		sn  *data.ShineNPC
+	)
+
+	for i, row := range monsterData.MobInfo.ShineRow {
+		if row.InxName == mobIndex {
+			mi = &monsterData.MobInfo.ShineRow[i]
+		}
+	}
+
+	for i, row := range monsterData.MobInfoServer.ShineRow {
+		if row.InxName == mobIndex {
+			mis = &monsterData.MobInfoServer.ShineRow[i]
+		}
+	}
+
+	for _, npcs := range npcData.MapNPCs {
+		for _, npc := range npcs {
+			if npc.MobIndex == mobIndex {
+				sn = npc
+			}
+		}
+	}
+
+	return mi, mis, sn
 }
 
 func ncBatTargetInfoCmd(n *npc) *structs.NcBatTargetInfoCmd {

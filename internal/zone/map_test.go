@@ -32,10 +32,6 @@ func TestLoadMap(t *testing.T) {
 		t.Fatal("value should not be nil")
 	}
 
-	if zm.metrics == nil {
-		t.Fatal("value should not be nil")
-	}
-
 	expectedMapEvents := []eventIndex{
 		playerHandle,
 		playerHandleMaintenance,
@@ -59,8 +55,36 @@ func TestLoadMap(t *testing.T) {
 			t.Errorf("missing zone event %v", e)
 		}
 	}
+}
+
+func Test_Map_Spawn_Npc(t *testing.T) {
+	z := zone{}
+
+	err := z.load()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	go z.run()
+
+	zm, err := loadMap(1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	zm.spawnNPCs()
 
 	if len(zm.entities.npcs.active) == 0 {
 		t.Fatal("there should be at least one npc active")
 	}
+
+	if len(zm.entities.npcs.active) != 30 {
+		t.Fatalf("incorrect npc amount %v", len(zm.entities.npcs.active))
+	}
+}
+
+func Test_Map_Spawn_Monster_Npc(t *testing.T) {
+
 }

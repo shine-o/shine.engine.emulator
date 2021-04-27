@@ -14,6 +14,7 @@ type zone struct {
 	events        *events
 	dynamicEvents *dynamicEvents
 	sync.RWMutex
+	handler *handler
 }
 
 type runningMaps struct {
@@ -22,9 +23,8 @@ type runningMaps struct {
 }
 
 var (
-	zoneEvents    sendEvents
-	maps       	  *runningMaps
-	handles       *handler
+	zoneEvents  sendEvents
+	maps        *runningMaps
 	monsterData *data.MonsterData
 	mapData     *data.MapData
 	npcData     *data.NpcData
@@ -58,10 +58,14 @@ func (z *zone) load() error {
 		events: make(map[string]events),
 	}
 
-	handles = &handler{
-		handleIndex: 0,
-		usedHandles: make(map[uint16]bool),
+	z.handler = &handler{
+		index: 0,
+		inUse: make(map[uint16]bool),
 	}
+
+	newHandler = make(chan *handlerPetition, 1500)
+	removeHandler = make(chan *handlerPetition, 1500)
+	queryHandler = make(chan *handlerPetition, 1500)
 
 	normalMaps := viper.GetIntSlice("normal_maps")
 
@@ -108,7 +112,9 @@ func (z *zone) addMap(mapID int) {
 }
 
 func (z *zone) run() {
-	// run query workers
+
+	go z.handler.handleWorker()
+
 	num := viper.GetInt("workers.num_zone_workers")
 	for i := 0; i <= num; i++ {
 		go z.security()

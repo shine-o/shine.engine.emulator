@@ -44,6 +44,9 @@ const (
 	ZoneUnknownNpcRole
 	ZoneMissingMapData
 	ZoneMissingNpcData
+	ZoneHandlerMaxReached
+	ZoneHandlerCapacityWarning
+	ZoneHandlerMaxAttemptsReached
 	UnitTestError
 )
 

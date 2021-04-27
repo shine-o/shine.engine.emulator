@@ -143,15 +143,15 @@ func (pi *playerInventories) delete(inventoryType persistence.InventoryType, slo
 	}
 
 	return errors.Err{
-	Code: errors.ZoneItemUnknownInventoryType,
+		Code: errors.ZoneItemUnknownInventoryType,
 		Details: errors.ErrDetails{
-		"inventoryType": inventoryType,
-		"slot":          slot,
+			"inventoryType": inventoryType,
+			"slot":          slot,
 		},
 	}
 }
 
-func (pi *playerInventories) add(inventoryType persistence.InventoryType, slot int, item * item) error {
+func (pi *playerInventories) add(inventoryType persistence.InventoryType, slot int, item *item) error {
 	pi.RLock()
 	defer pi.RUnlock()
 	switch inventoryType {
@@ -232,21 +232,21 @@ func sameInventoryConstraint(from, to persistence.InventoryType) bool {
 // the input from/to are values sent by the client
 func (pi *playerInventories) moveItem(from, to uint16) (itemSlotChange, error) {
 	var (
-		change              itemSlotChange
+		change            itemSlotChange
 		fromInventoryType = persistence.InventoryType(from >> 10)
 		toInventoryType   = persistence.InventoryType(to >> 10)
 		fromInventorySlot = int(from & 1023)
 		toInventorySlot   = int(to & 1023)
-		fromItem * item
-		toItem * item
+		fromItem          *item
+		toItem            *item
 	)
 
 	if sameInventoryConstraint(fromInventoryType, toInventoryType) {
 		return change, errors.Err{
-			Code:    errors.ZoneItemSlotChangeConstraint,
+			Code: errors.ZoneItemSlotChangeConstraint,
 			Details: errors.ErrDetails{
 				"fromInventoryType": fromInventoryType,
-				"toInventoryType": toInventoryType,
+				"toInventoryType":   toInventoryType,
 			},
 		}
 	}
@@ -299,12 +299,12 @@ func (pi *playerInventories) moveItem(from, to uint16) (itemSlotChange, error) {
 	change = itemSlotChange{
 		gameFrom: from,
 		gameTo:   to,
-		from:     itemSlot{
+		from: itemSlot{
 			slot:          fromInventorySlot,
 			inventoryType: fromInventoryType,
 			item:          fromItem,
 		},
-		to:       itemSlot{
+		to: itemSlot{
 			slot:          toInventorySlot,
 			inventoryType: toInventoryType,
 			item:          toItem,

@@ -48,7 +48,7 @@ func (z *zone) playerSession() {
 				handle := p.getHandle()
 
 				ev.prev.entities.players.remove(handle)
-				handles.remove(handle)
+				removeHandle(handle)
 
 				ev.next.entities.players.add(p)
 

@@ -14,7 +14,7 @@ type MonsterData struct {
 }
 
 type MonsterRegenTable struct {
-	Groups map[string]RegenEntry
+	Groups map[string]*RegenEntry
 }
 
 type RegenEntry struct {
@@ -108,7 +108,7 @@ func loadRegenData(shineFolder string) (map[string]MonsterRegenTable, error) {
 		}
 
 		mrt := MonsterRegenTable{
-			Groups: make(map[string]RegenEntry),
+			Groups: make(map[string]*RegenEntry),
 		}
 
 		var mobRegenStart int
@@ -169,7 +169,7 @@ func loadRegenData(shineFolder string) (map[string]MonsterRegenTable, error) {
 					continue
 				}
 
-				mrt.Groups[groupIndex] = RegenEntry{
+				mrt.Groups[groupIndex] = &RegenEntry{
 					IsFamily:    isFamily,
 					X:           x,
 					Y:           y,

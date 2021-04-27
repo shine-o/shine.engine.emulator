@@ -41,7 +41,11 @@ func Start(cmd *cobra.Command, args []string) {
 
 	z := zone{}
 
-	z.load()
+	err := z.load()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	go z.run()
 
 	persistence.InitDB(database.ConnectionParams{

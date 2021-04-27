@@ -69,7 +69,6 @@ func loadTestData(filesPath string) {
 		mapData = md
 	}(filesPath)
 
-
 	go func(path string) {
 		defer wg.Done()
 		nd, err := data.LoadNPCData(path)

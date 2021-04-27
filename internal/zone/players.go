@@ -61,10 +61,6 @@ func (p *players) add(ap *player) {
 	p.active[h] = ap
 	p.Unlock()
 
-	handles.Lock()
-	handles.usedHandles[h] = true
-	handles.Unlock()
-
 	go func(p *player) {
 		time.Sleep(15 * time.Second)
 		p.state.Lock()

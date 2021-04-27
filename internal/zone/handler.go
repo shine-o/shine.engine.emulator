@@ -1,57 +1,81 @@
 package zone
 
-import (
-	"fmt"
-	"sync"
-)
-
-const (
-	maxAttempts = 1500
-)
-
 type handler struct {
-	handleIndex uint16
-	usedHandles map[uint16]bool
-	sync.RWMutex
+	index uint16
+	inUse map[uint16]bool
 }
 
-func (h *handler) remove(hid uint16) {
-	h.Lock()
-	delete(h.usedHandles, hid)
-	h.Unlock()
+type handlerPetition struct {
+	newHandle                 chan uint16
+	queryHandle, deleteHandle uint16
+	used                      chan bool
+	err                       chan error
 }
 
-func (h *handler) add(ap *baseEntity) {
-	handle := ap.getHandle()
-	h.Lock()
-	h.usedHandles[handle] = true
-	h.Unlock()
-}
+var newHandler chan *handlerPetition
+var removeHandler chan *handlerPetition
+var queryHandler chan *handlerPetition
 
-func (h *handler) new() (uint16, error) {
-	h.RLock()
-	index := h.handleIndex
-	h.RUnlock()
-	attempts := maxAttempts
-	for attempts != 0 {
-
-		index++
-		h.RLock()
-		_, used := h.usedHandles[index]
-		h.RUnlock()
-
-		attempts--
-
-		if used {
-			continue
+func (h *handler) handleWorker() {
+	for {
+		select {
+		case hp := <-queryHandler:
+			_, used := h.inUse[hp.queryHandle]
+			if used {
+				hp.used <- true
+			}
+			hp.used <- false
+		case hp := <-newHandler:
+			attempts := 1000
+			for attempts != 0 {
+				attempts--
+				h.index++
+				_, used := h.inUse[h.index]
+				if used {
+					continue
+				}
+				h.inUse[h.index] = true
+				hp.newHandle <- h.index
+				break
+			}
+			// return err
+		case hp := <-removeHandler:
+			delete(h.inUse, hp.deleteHandle)
 		}
+	}
+}
 
-		h.Lock()
-		h.handleIndex = index
-		h.Unlock()
-
-		return index, nil
+func newHandle() (uint16, error) {
+	hp := &handlerPetition{
+		newHandle: make(chan uint16),
+		err:       make(chan error),
 	}
 
-	return 0, fmt.Errorf("\nmaximum number of attempts reached, no handle is available")
+	newHandler <- hp
+
+	select {
+	case h := <-hp.newHandle:
+		return h, nil
+	case err := <-hp.err:
+		return 0, err
+	}
+}
+
+func removeHandle(h uint16) {
+	hp := &handlerPetition{
+		deleteHandle: h,
+	}
+
+	removeHandler <- hp
+}
+
+func handleExists(h uint16) bool {
+	hp := &handlerPetition{
+		queryHandle: h,
+		used:        make(chan bool),
+	}
+
+	queryHandler <- hp
+
+	return <-hp.used
 }

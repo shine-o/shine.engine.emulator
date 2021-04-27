@@ -51,7 +51,7 @@ func (p *player) persistPosition() {
 	}
 }
 
-// add or remove entities that are inside or outside the range of the player
+// new or remove entities that are inside or outside the range of the player
 func (p *player) proximityPlayerMaintenance(zm *zoneMap) {
 	log.Infof("[player_ticks] proximityPlayerMaintenance for handle %v", p.getHandle())
 	tick := time.NewTicker(200 * time.Millisecond)
@@ -104,7 +104,7 @@ func (p *player) proximityMonsterNpcMaintenance(zm *zoneMap) {
 		select {
 		case <-tick.C:
 			// for each monster
-			// if nearby, add to known nearby
+			// if nearby, new to known nearby
 			for nn := range zm.entities.npcs.all() {
 				if nn.baseEntity.eType == isMonster {
 					go func(p *player, n *npc) {

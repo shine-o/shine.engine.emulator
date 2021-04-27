@@ -622,7 +622,7 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 
 			zm.entities.players.remove(h)
 
-			handles.remove(h)
+			removeHandle(h)
 
 			p.conn.close <- true
 
@@ -637,7 +637,7 @@ func playerHandleLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	handle, err := handles.new()
+	handle, err := newHandle()
 
 	if err != nil {
 		ev.err <- err
@@ -843,7 +843,7 @@ func playerRunsLogic(e event, zm *zoneMap) {
 	// 		verify speed ( default 30 for unmounted/unbuffed player)
 	//			if fails return to position 1 in queue
 	//		broadcast to players within range
-	// 		add to movements array
+	// 		new to movements array
 	var (
 		ev  *playerRunsEvent
 		ev1 *eduPositionEvent
@@ -1041,8 +1041,9 @@ func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *npc) {
 
 func showAllNPC(p *player, zm *zoneMap) {
 	var npcs structs.NcBriefInfoMobCmd
-
+	var np []*npc
 	for n := range zm.entities.npcs.all() {
+		np = append(np, n)
 		if n.baseEntity.eType == isNPC {
 			info := ncBriefInfoRegenMobCmd(n)
 			if isPortal(n) {

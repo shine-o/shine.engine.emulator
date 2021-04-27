@@ -14,7 +14,7 @@ func (n *npcs) all() <-chan *npc {
 	ch := make(chan *npc, len(n.active))
 	n.RUnlock()
 
-	go func(n * npcs, send chan<- *npc) {
+	go func(n *npcs, send chan<- *npc) {
 		n.RLock()
 		for _, ap := range n.active {
 			send <- ap
@@ -44,10 +44,6 @@ func (n *npcs) add(ap *npc) {
 	n.Lock()
 	n.active[h] = ap
 	n.Unlock()
-
-	handles.Lock()
-	handles.usedHandles[h] = true
-	handles.Unlock()
 }
 
 func npcInRange(p *player, n *npc) bool {
