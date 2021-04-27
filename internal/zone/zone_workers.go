@@ -47,26 +47,19 @@ func (z *zone) playerSession() {
 				p := ev.p
 				handle := p.getHandle()
 
-				ev.prev.entities.players.remove(handle)
-				removeHandle(handle)
+				newLocation := p.next
 
-				ev.next.entities.players.add(p)
-
-				ev.prev.events.send[playerDisappeared] <- &playerDisappearedEvent{
-					handle: handle,
-				}
-
+				p.ticks.Lock()
 				for _, v := range p.ticks.list {
 					v.Stop()
 				}
+				p.ticks.Unlock()
 
-				newLocation := p.next
+				p.ticks = &entityTicks{}
 
 				p.Lock()
 				p.baseEntity.fallback = newLocation
 				p.baseEntity.current = newLocation
-
-				p.ticks = &entityTicks{}
 				p.Unlock()
 
 				p.proximity.Lock()
@@ -75,7 +68,6 @@ func (z *zone) playerSession() {
 				p.proximity.Unlock()
 
 				nc := structs.NcMapLinkSameCmd{
-					//MapID:    ev.next.data.Info.ID,
 					MapID: ev.next.data.Info.ID,
 					Location: structs.ShineXYType{
 						X: uint32(newLocation.x),
@@ -85,11 +77,20 @@ func (z *zone) playerSession() {
 
 				ev.s.mapID = ev.next.data.ID
 
-				networking.Send(p.conn.outboundData, networking.NC_MAP_LINKSAME_CMD, &nc)
+				ev.prev.entities.players.remove(handle)
+
+				ev.next.entities.players.add(p)
+
+				ev.prev.events.send[playerDisappeared] <- &playerDisappearedEvent{
+					handle: handle,
+				}
 
 				ev.next.events.send[playerAppeared] <- &playerAppearedEvent{
 					handle: handle,
 				}
+
+				networking.Send(p.conn.outboundData, networking.NC_MAP_LINKSAME_CMD, &nc)
+
 			}()
 		}
 	}

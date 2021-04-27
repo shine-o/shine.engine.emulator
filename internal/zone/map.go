@@ -65,11 +65,11 @@ func (zm *zoneMap) spawnNPCs() {
 		for _, npc := range npcs {
 			wg.Add(1)
 			sem <- 1
-			go func(inxName string) {
-				zm.spawnNPC(inxName, npcs)
+			go func(inxName string, sn * data.ShineNPC) {
+				zm.spawnNPC(inxName, sn)
 				wg.Done()
 				<-sem
-			}(npc.MobIndex)
+			}(npc.MobIndex, npc)
 		}
 
 		wg.Wait()
@@ -84,7 +84,7 @@ func (zm *zoneMap) spawnNPCs() {
 	})
 }
 
-func (zm *zoneMap) spawnNPC(inxName string, shineNPCS []*data.ShineNPC) {
+func (zm *zoneMap) spawnNPC(inxName string, sn*data.ShineNPC) {
 	h, err := newHandle()
 
 	if err != nil {
@@ -96,26 +96,6 @@ func (zm *zoneMap) spawnNPC(inxName string, shineNPCS []*data.ShineNPC) {
 
 	if err != nil {
 		log.Error(err)
-		return
-	}
-
-	var sn * data.ShineNPC
-	for _, npc := range shineNPCS {
-		if npc.MobIndex == inxName {
-			sn = npc
-			break
-		}
-	}
-
-	if sn == nil {
-		log.Error(errors.Err{
-			Code:    errors.ZoneMissingNpcData,
-			Message: "missing shineNPC data",
-			Details: errors.ErrDetails{
-				"mobInx": inxName,
-				"mapInx": zm.data.MapInfoIndex,
-			},
-		})
 		return
 	}
 
