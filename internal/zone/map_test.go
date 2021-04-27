@@ -83,8 +83,39 @@ func Test_Map_Spawn_Npc(t *testing.T) {
 	if len(zm.entities.npcs.active) != 30 {
 		t.Fatalf("incorrect npc amount %v", len(zm.entities.npcs.active))
 	}
+
+	for _, npc := range zm.entities.npcs.active {
+		if npc.nType == npcNoRole {
+			t.Errorf("unexpected npcType %v %v", npc.nType, npc.data.mobInfo.InxName)
+		}
+	}
 }
 
 func Test_Map_Spawn_Monster_Npc(t *testing.T) {
+	z := zone{}
 
+	err := z.load()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	go z.run()
+
+	zm, err := loadMap(1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	zm.spawnMobs()
+
+	if len(zm.entities.npcs.active) == 0 {
+		t.Fatal("there should be at least one npc active")
+	}
+
+	if len(zm.entities.npcs.active) != 48 {
+		t.Fatalf("incorrect npc amount %v", len(zm.entities.npcs.active))
+	}
+	// 48
 }

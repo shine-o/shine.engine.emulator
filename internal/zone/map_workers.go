@@ -207,7 +207,7 @@ func playerPromptReplyLogic(zm *zoneMap, e event) {
 	}
 
 	// for now, its only about portals
-	if isPortal(p.targeting.selectingN) && portalMatchesLocation(p.targeting.selectingN.data.npcData.ShinePortal, p.baseEntity.next) {
+	if p.targeting.selectingN.nType == npcPortal && portalMatchesLocation(p.targeting.selectingN.data.npcData.ShinePortal, p.baseEntity.next) {
 		// move player to map
 		nzm, ok := maps.list[p.next.mapID]
 		if !ok {
@@ -1041,15 +1041,15 @@ func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *npc) {
 
 func showAllNPC(p *player, zm *zoneMap) {
 	var npcs structs.NcBriefInfoMobCmd
-	var np []*npc
 	for n := range zm.entities.npcs.all() {
-		np = append(np, n)
 		if n.baseEntity.eType == isNPC {
 			info := ncBriefInfoRegenMobCmd(n)
-			if isPortal(n) {
+
+			if n.nType == npcPortal {
 				info.FlagState = 1
-				info.FlagData.Data = n.data.npcData.ServerMapIndex
+				info.FlagData.Data = n.data.npcData.ClientMapIndex
 			}
+
 			npcs.Mobs = append(npcs.Mobs, info)
 		}
 	}
@@ -1057,25 +1057,6 @@ func showAllNPC(p *player, zm *zoneMap) {
 	npcs.MobNum = byte(len(npcs.Mobs))
 
 	networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_MOB_CMD, &npcs)
-}
-
-func isPortal(n *npc) bool {
-
-	if n.baseEntity.eType == isMonster || n.data.npcData == nil || n.data.npcData.ShinePortal == nil {
-		return false
-	}
-
-	var loaded bool
-	for _, m := range mapData.Maps {
-		if m.MapInfoIndex == n.data.npcData.ShinePortal.ServerMapIndex {
-			loaded = true
-			break
-		}
-	}
-	if loaded {
-		return true
-	}
-	return false
 }
 
 func portalMatchesLocation(portal *data.ShinePortal, next location) bool {

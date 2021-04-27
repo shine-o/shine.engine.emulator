@@ -66,17 +66,25 @@ func (zm *zoneMap) spawnNPCs() {
 			wg.Add(1)
 			sem <- 1
 			go func(inxName string) {
-				zm.spawnNPC(inxName)
+				zm.spawnNPC(inxName, npcs)
 				wg.Done()
 				<-sem
 			}(npc.MobIndex)
 		}
 
 		wg.Wait()
+		return
 	}
+	log.Error(errors.Err{
+		Code:    errors.ZoneMissingNpcData,
+		Message: "",
+		Details: errors.ErrDetails{
+			"mapInx": zm.data.MapInfoIndex,
+		},
+	})
 }
 
-func (zm *zoneMap) spawnNPC(inxName string) {
+func (zm *zoneMap) spawnNPC(inxName string, shineNPCS []*data.ShineNPC) {
 	h, err := newHandle()
 
 	if err != nil {
@@ -91,8 +99,29 @@ func (zm *zoneMap) spawnNPC(inxName string) {
 		return
 	}
 
-	npc.baseEntity.handle = h
+	var sn * data.ShineNPC
+	for _, npc := range shineNPCS {
+		if npc.MobIndex == inxName {
+			sn = npc
+			break
+		}
+	}
 
+	if sn == nil {
+		log.Error(errors.Err{
+			Code:    errors.ZoneMissingNpcData,
+			Message: "missing shineNPC data",
+			Details: errors.ErrDetails{
+				"mobInx": inxName,
+				"mapInx": zm.data.MapInfoIndex,
+			},
+		})
+		return
+	}
+
+	npc.nType = getNpcType(sn.Role, sn.RoleArg)
+	npc.data.npcData = sn
+	npc.baseEntity.handle = h
 	npc.spawnLocation(zm)
 
 	zm.entities.npcs.Lock()
@@ -123,9 +152,11 @@ func (zm *zoneMap) spawnMobs() {
 }
 
 func (zm *zoneMap) spawnMob(re *data.RegenEntry) {
-	var wg sync.WaitGroup
 
-	var sem = make(chan int, 100)
+	var (
+		wg sync.WaitGroup
+		sem = make(chan int, 100)
+	)
 
 	for _, mob := range re.Mobs {
 		monsterNpc, err := loadBaseNpc(mob.Index, isMonster)
@@ -138,7 +169,7 @@ func (zm *zoneMap) spawnMob(re *data.RegenEntry) {
 			wg.Add(1)
 			sem <- 1
 			go func() {
-				wg.Done()
+				defer wg.Done()
 				zm.spawnMonster(monsterNpc, re)
 				<-sem
 			}()

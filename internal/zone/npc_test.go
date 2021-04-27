@@ -37,10 +37,6 @@ func Test_Load_All_Map_Npc(t *testing.T) {
 				t.Errorf("value should not be nil %v", npc.MobIndex)
 			}
 
-			if n.nType == npcNoRole {
-				t.Errorf("unexpected entity type %v %v", n.nType, npc.MobIndex)
-			}
-
 			if n.eType != isNPC {
 				t.Errorf("unexpected entity type %v %v", n.eType, npc.MobIndex)
 			}
@@ -77,10 +73,6 @@ func Test_Load_All_MapRegen_Monster_Npc(t *testing.T) {
 
 				if mn.stats == nil {
 					t.Errorf("value should not be nil %v", mob.Index)
-				}
-
-				if mn.nType != npcNoRole {
-					t.Errorf("unexpected npcType %v", mob.Index)
 				}
 
 				if mn.eType != isMonster {

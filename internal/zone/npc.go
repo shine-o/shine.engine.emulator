@@ -74,12 +74,11 @@ func (n *npc) spawnLocation(zm *zoneMap) {
 
 func loadBaseNpc(inxName string, eType entityType) (*npc, error) {
 	var (
-		sn  *data.ShineNPC
 		mi  *data.MobInfo
 		mis *data.MobInfoServer
 	)
 
-	mi, mis, sn = getNpcData(inxName)
+	mi, mis = getNpcData(inxName)
 
 	if mi == nil || mis == nil {
 		return nil, errors.Err{
@@ -91,10 +90,6 @@ func loadBaseNpc(inxName string, eType entityType) (*npc, error) {
 	}
 
 	var nType npcType
-
-	if eType == isNPC {
-		nType = getNpcType(sn.Role, sn.RoleArg)
-	}
 
 	n := &npc{
 		nType: nType,
@@ -108,7 +103,6 @@ func loadBaseNpc(inxName string, eType entityType) (*npc, error) {
 		data: &npcStaticData{
 			mobInfo:       mi,
 			mobInfoServer: mis,
-			npcData:       sn,
 		},
 		state: &entityState{
 			idling:   make(chan bool),
@@ -170,11 +164,11 @@ func getNpcType(role, arg string) npcType {
 }
 
 // TODO: create a wrapping struct for this, as more monster shine files will be loaded
-func getNpcData(mobIndex string) (*data.MobInfo, *data.MobInfoServer, *data.ShineNPC) {
+func getNpcData(mobIndex string) (*data.MobInfo, *data.MobInfoServer) {
 	var (
 		mi  *data.MobInfo
 		mis *data.MobInfoServer
-		sn  *data.ShineNPC
+		//sn  *data.ShineNPC
 	)
 
 	for i, row := range monsterData.MobInfo.ShineRow {
@@ -189,15 +183,7 @@ func getNpcData(mobIndex string) (*data.MobInfo, *data.MobInfoServer, *data.Shin
 		}
 	}
 
-	for _, npcs := range npcData.MapNPCs {
-		for _, npc := range npcs {
-			if npc.MobIndex == mobIndex {
-				sn = npc
-			}
-		}
-	}
-
-	return mi, mis, sn
+	return mi, mis
 }
 
 func ncBatTargetInfoCmd(n *npc) *structs.NcBatTargetInfoCmd {
@@ -220,6 +206,7 @@ func ncBriefInfoRegenMobCmd(n *npc) structs.NcBriefInfoRegenMobCmd {
 		Handle: n.getHandle(),
 		Mode:   byte(n.data.mobInfoServer.EnemyDetect),
 		MobID:  n.data.mobInfo.ID,
+		//AnimationLevel: 2,
 	}
 	n.baseEntity.RLock()
 	nc.Coord = structs.ShineCoordType{
