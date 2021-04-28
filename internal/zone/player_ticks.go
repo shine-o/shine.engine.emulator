@@ -51,9 +51,9 @@ func (p *player) persistPosition() {
 	}
 }
 
-// new or remove entities that are inside or outside the range of the player
-func (p *player) proximityPlayerMaintenance(zm *zoneMap) {
-	log.Infof("[player_ticks] proximityPlayerMaintenance for handle %v", p.getHandle())
+// add or remove entities that are inside or outside the range of the player
+func (p *player) playerProximity(zm *zoneMap) {
+	log.Infof("[player_ticks] playerProximity for handle %v", p.getHandle())
 	tick := time.NewTicker(200 * time.Millisecond)
 	p.ticks.Lock()
 	p.ticks.list = append(p.ticks.list, tick)

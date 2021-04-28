@@ -669,11 +669,12 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	showAllNPC(p, zm)
+	npcs := ncBriefInfoMobCmd(zm)
+	networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_MOB_CMD, &npcs)
 
 	go p.heartbeat()
 	go p.persistPosition()
-	go p.proximityPlayerMaintenance(zm)
+	go p.playerProximity(zm)
 	go p.proximityMonsterNpcMaintenance(zm)
 
 	//go adjacentMonstersInform(p, zm)
@@ -1039,26 +1040,6 @@ func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *npc) {
 	return p, n
 }
 
-func showAllNPC(p *player, zm *zoneMap) {
-	var npcs structs.NcBriefInfoMobCmd
-	for n := range zm.entities.npcs.all() {
-		if n.baseEntity.eType == isNPC {
-			info := ncBriefInfoRegenMobCmd(n)
-
-			if n.nType == npcPortal {
-				info.FlagState = 1
-				info.FlagData.Data = n.data.npcData.ClientMapIndex
-			}
-
-			npcs.Mobs = append(npcs.Mobs, info)
-		}
-	}
-
-	npcs.MobNum = byte(len(npcs.Mobs))
-
-	networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_MOB_CMD, &npcs)
-}
-
 func portalMatchesLocation(portal *data.ShinePortal, next location) bool {
 	var (
 		md *data.Map
@@ -1093,4 +1074,23 @@ func mapEpicenterBroadcast(zm *zoneMap, epicenter *player, code networking.Opera
 			}
 		}(epicenter, p, nc)
 	}
+}
+
+func ncBriefInfoMobCmd(zm *zoneMap) structs.NcBriefInfoMobCmd {
+	var npcs structs.NcBriefInfoMobCmd
+	for n := range zm.entities.npcs.all() {
+		if n.baseEntity.eType == isNPC {
+			info := ncBriefInfoRegenMobCmd(n)
+
+			if n.nType == npcPortal {
+				info.FlagState = 1
+				info.FlagData.Data = n.data.npcData.ClientMapIndex
+			}
+
+			npcs.Mobs = append(npcs.Mobs, info)
+		}
+	}
+
+	npcs.MobNum = byte(len(npcs.Mobs))
+	return npcs
 }

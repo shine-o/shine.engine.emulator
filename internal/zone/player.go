@@ -957,6 +957,10 @@ func playerInRange(v, t *player) bool {
 	v.baseEntity.RUnlock()
 	t.baseEntity.RUnlock()
 
+	if vc.mapID != tc.mapID {
+		return false
+	}
+
 	if entityInRange(tc, vc) {
 		return true
 	}

@@ -304,10 +304,10 @@ func bitmapCoordinates(x, y int) (int, int) {
 }
 
 // translates SHBD coordinates to in game coordinates
-func bitmapCoordToIg(rX, rY int) (int, int) {
-	igX := (rX * 50) / 8
-	igY := (rY * 50) / 8
-	return igX, igY
+func gameCoordinates(bX, bY int) (int, int) {
+	gx := (bX * 50) / 8
+	gy := (bY * 50) / 8
+	return gx, gy
 }
 
 func canWalk(x, y *roaring.Bitmap, rX, rY int) bool {

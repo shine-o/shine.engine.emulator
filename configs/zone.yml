@@ -26,7 +26,8 @@ crypt:
 protocol:
   commands: "configs/network-commands.yml"
 
-shine_folder: 'C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files'
+#shine_folder: 'C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files'
+shine_folder: 'files'
 
 # world/NormalMaps.txt
 # if using --race, only use one map
