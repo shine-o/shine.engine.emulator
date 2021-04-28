@@ -13,6 +13,9 @@ type entity interface {
 
 type basicActions interface {
 	move(m *zoneMap, x, y int) error
+	// teleport
+	// use emotion
+	// jump
 }
 
 type location struct {

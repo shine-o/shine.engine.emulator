@@ -87,6 +87,7 @@ func (z *zone) load() error {
 
 	wg.Wait()
 
+	// move outside!
 	err := registerZone(registerMaps)
 
 	if err != nil {

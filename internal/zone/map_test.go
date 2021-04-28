@@ -141,3 +141,7 @@ func Test_Map_Spawn_Monster_Npc(t *testing.T) {
 	}
 	// 48
 }
+
+func Test_Map_Path_A_B(t *testing.T)  {
+	
+}

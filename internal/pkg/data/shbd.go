@@ -75,7 +75,7 @@ func SHBDToImage(s *SHBD) (*image.RGBA, error) {
 }
 
 func ImageToSHBD(img *image.RGBA) SHBD {
-	//img = imaging.FlipV(img)
+	//img = (*image.RGBA)(imaging.FlipV(img))
 
 	bounds := img.Bounds()
 

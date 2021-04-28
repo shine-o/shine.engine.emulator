@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"sync"
 	"testing"
 )
@@ -37,9 +38,14 @@ func TestMain(m *testing.M) {
 
 	persistence.CleanDB()
 
-	//loadGameData("../../../files")
 	initConfig()
-	loadTestData("../../files")
+
+	filesPath, err := filepath.Abs("../../files")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	loadTestData(filesPath)
 
 	os.Exit(m.Run())
 }

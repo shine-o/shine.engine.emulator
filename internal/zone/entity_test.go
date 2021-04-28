@@ -1,30 +1,26 @@
 package zone
 
 import (
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"testing"
 )
 
-// basic entity
-func Test_Move_Entity_Ok(t *testing.T) {
-	z := zone{}
-	err := z.load()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	go z.run()
-
+func Test_Move_Entity_A_B(t *testing.T) {
 	zm, err := loadMap(1)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	persistence.CleanDB()
+
+	char := persistence.NewDummyCharacter("mage", false)
+
 	p := &player{
-		baseEntity: baseEntity{
-			handle:   1,
-		},
+		baseEntity: baseEntity{},
 	}
+
+	err = p.load(char.Name)
 
 	zm.entities.players.add(p)
 
@@ -43,6 +39,15 @@ func Test_Move_Entity_Ok(t *testing.T) {
 
 }
 
+func Test_Move_Entity_Collision(t *testing.T) {
+
+}
+
+func Test_Move_Entity_A_B_SpeedHack(t *testing.T) {
+	// send a lot of packets in a limited amount of time
+	//
+}
+
 func Test_Bitmap_Coordinates_Conversion(t *testing.T) {
 	ogx := 4089
 	ogy := 3214
@@ -56,10 +61,6 @@ func Test_Bitmap_Coordinates_Conversion(t *testing.T) {
 	if gx != 4087 ||  gy != 3212  {
 		t.Errorf("mismatched coordinates bx=%v by=%v ogx=%v ogy=%v gx=%v gy=%v",bx, by, ogx, ogy, gx, gy)
 	}
-}
-
-func Test_Move_Entity_Collision(t *testing.T) {
-
 }
 
 func Test_Add_Entity_Within_Range(t *testing.T) {
