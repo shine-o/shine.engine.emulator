@@ -3,14 +3,15 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"image/color"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
+	"image/color"
 	"math"
+	"sort"
 	"testing"
 )
 
-func Test_Path_A_B(t *testing.T) {
+func Test_Path_A_B2(t *testing.T) {
 	m := "Rou"
 	var s *data.SHBD
 	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
@@ -26,22 +27,25 @@ func Test_Path_A_B(t *testing.T) {
 	}
 
 	a := &vertex{
-		x: 1036,
-		y: 766,
+		x: 734,
+		y: 612,
 	}
 
 	b := &vertex{
-		x: 1045,
-		y: 766,
+		x: 1500,
+		y: 1440,
 	}
 
-	vertices := initVertices(s)
+	v := initVertices(s)
 
-	pathVertices := astar(vertices, a, b)
-	//pathVertices := astar2(vertices, a, b)
+	if err != nil {
+		logger.Fatal(err)
+	}
 
-	for _, v := range pathVertices {
-		img.Set(v.x, v.y, color.RGBA{
+	pathVertices := astar(v, a, b)
+
+	for _, pv := range pathVertices {
+		img.Set(pv.x, pv.y, color.RGBA{
 			R: 207,
 			G: 0,
 			B: 15,
@@ -80,17 +84,12 @@ func Benchmark_aStar_Algorithm(b *testing.B) {
 		logger.Error(err)
 	}
 
-	vertices := initVertices(s)
+	v := initVertices(s)
 
 	pa := &vertex{
 		x: 106,
 		y: 510,
 	}
-
-	//pb := &vertex{
-	//	x: 1597,
-	//	y: 1321,
-	//}
 
 	pb := &vertex{
 		x: 1662,
@@ -99,106 +98,101 @@ func Benchmark_aStar_Algorithm(b *testing.B) {
 
 
 	for i := 0; i < b.N; i++ {
-		astar(vertices, pa, pb)
+		astar(v, pa, pb)
 	}
 }
 
 func distance(a, b * vertex) int {
 	d := math.Sqrt(math.Pow(float64(a.x - b.x), 2) + math.Pow(float64(a.y - b.y), 2))
-	//d := math.Abs(float64(a.x - b.x)) + math.Abs(float64(a.y - b.y))
 	return int(d)
 }
 
 // x, y,
-type vertices map[int]map[int]*vertex
+type walkableVectors map[int]map[int]*vertex
 
 type vertex struct {
-	prev *vertex
-	x, y int
+	parent  *vertex
+	x, y    int
 	h, g, f int
+	opened  bool
+	closed  bool
 }
 
-//*** A* pseudocode***
-//
-//Initialise open and closed lists
-//Make the start vertex current
-//Calculate heuristic distance of start vertex to destination (h)
-//Calculate f value for start vertex (f = g + h, where g = 0)
-//WHILE current vertex is not the destination
-//    FOR each vertex adjacent to current
-//        IF vertex not in closed list and not in open list THEN
-//            Add vertex to open list
-//        END IF
-//        Calculate distance from start (g)
-//        Calculate heuristic distance to destination (h)
-//        Calculate f value (f = g + h)
-//        IF new f value < existing f value or there is no existing f value THEN
-//            Update f value
-//            Set parent to be the current vertex
-//        END IF
-//    NEXT adjacent vertex
-//    Add current vertex to closed list
-//    Remove vertex with lowest f value from open list and make it current
-//END WHILE
-// https://www.youtube.com/watch?v=eSOJ3ARN5FM
-func astar(vertices vertices, a * vertex, b * vertex) []*vertex {
+type vertexSegment []*vertex
+
+func (e vertexSegment) Len() int {
+	return len(e)
+}
+
+func (e vertexSegment) Less(i, j int) bool {
+	return e[i].h < e[j].h
+}
+
+func (e vertexSegment) Swap(i, j int) {
+	e[i], e[j] = e[j],e[i]
+}
+
+func astar(wv walkableVectors, a * vertex, b * vertex) vertexSegment {
 	var (
-		//open, closed, shortestPath []*vertex
-		open, closed []*vertex
-		current * vertex
-		f int
+		open, shortestPath vertexSegment
+		//node, neighbor             * vertex
+		node				          * vertex
+		//neighbors                  vertexSegment
+		ng                   float64
 	)
 
-	a.h = distance(a, b)
-	a.f = 0 + a.h
+	a.g = 0
+	a.f = 0
 
-	current = a
-	for !equal(current, b) {
+	open = append(open, a)
 
-		adjacentVertices := adjacentVertices(vertices, current)
+	a.opened = true
 
-		if len(adjacentVertices) == 0 {
-			logger.Fatal("no adjacent nodes, impossible to proceed")
-		}
+	for len(open) != 0 {
 
-		for _, av := range adjacentVertices {
-			if !in(closed, av) && !in(open, av) {
-				open = append(open, av)
-			}
+		open, node = lowestF(open)
+		node.closed = true
 
-			av.g = distance(av, a)
-			av.h = distance(av, b)
-			av.f = av.g + av.h
-
-			if av.f <= f || f == 0 {
-				f = av.f
-				av.prev = current
-			}
-		}
-
-		closed = append(closed, current)
-
-		open, current = lowestF(open)
-
-		if current == nil {
-			logger.Error("nil vertex")
+		if equal(node, b) {
 			break
 		}
+
+		for _, neighbor := range adjacentVertices(wv, node) { // 744 609
+
+			if neighbor.closed {
+				continue
+			}
+
+			ng = float64(node.g)
+			if neighbor.x - node.x == 0 || neighbor.y - node.y == 0 {
+				ng += 1
+			} else {
+				ng += math.Sqrt2
+			}
+
+			if !neighbor.opened || ng < float64(neighbor.g) {
+				neighbor.g = int(ng)
+				neighbor.h = 2 * distance(neighbor, b)
+				neighbor.f = neighbor.g + neighbor.h
+				neighbor.parent = node
+
+				if !neighbor.opened {
+					open = append(open, neighbor)
+					neighbor.opened = true
+				}
+			}
+		}
 	}
-	//
-	//if current == nil {
-	//	logger.Error("nil vertex")
-	//	return shortestPath
-	//}
 
+	next := node
+	for next != nil {
+		shortestPath = append(shortestPath, next)
+		next = next.parent
+	}
 
-	//next := current
-	//for next != nil {
-	//	shortestPath = append(shortestPath, next.prev)
-	//	next = next.prev
-	//}
+	sort.Sort(sort.Reverse(shortestPath))
 
-	return closed
+	return shortestPath
 }
 
 func equal(v1, v2 *vertex) bool  {
@@ -208,29 +202,18 @@ func equal(v1, v2 *vertex) bool  {
 	return false
 }
 
-func lowestF(open []*vertex) ([]*vertex, *vertex) {
+func lowestF(open vertexSegment) ([]*vertex, *vertex) {
 	var (
 		uo = make([]*vertex, 0)
-		vertex *vertex
-		index int
+		v *vertex
 	)
 
-	for i, v := range open {
+	sort.Sort(open)
+	v = open[0]
 
-		if i+1 >= len(open) {
-			break
-		}
+	uo = append(uo, open[1:]...)
 
-		if v.f < open[i+1].f && v.h < open[i+1].h {
-			vertex = v
-			index = i
-		}
-	}
-
-	uo = append(uo, open[:index]...)
-	uo = append(uo, open[index+1:]...)
-
-	return uo, vertex
+	return uo, v
 }
 
 func in(list []*vertex, sv *vertex) bool {
@@ -242,46 +225,41 @@ func in(list []*vertex, sv *vertex) bool {
 	return false
 }
 
-func adjacentVertices(v vertices, current * vertex) []*vertex {
-	var result []*vertex
+func canWalk(wv walkableVectors, x, y int) bool {
+	_, ok := wv[x][y]
+	return ok
+}
 
-	if current != nil {
-		upv, ok := v[current.x][current.y+1]
-		if ok {
-			result = append(result, upv)
-		}
+func adjacentVertices(wv walkableVectors, node * vertex) vertexSegment {
+	var result vertexSegment
 
-		dpv, ok := v[current.x][current.y-1]
-		if ok {
-			result = append(result, dpv)
-		}
+	if canWalk(wv, node.x, node.y-1) {
+		result = append(result, wv[node.x][node.y-1])
+	}
 
-		rpv, ok := v[current.x+1][current.y]
+	if canWalk(wv, node.x, node.y+1) {
+		result = append(result, wv[node.x][node.y+1])
+	}
 
-		if ok {
-			result = append(result, rpv)
-		}
+	if canWalk(wv, node.x+1, node.y) {
+		result = append(result, wv[node.x+1][node.y])
+	}
 
-		lpv, ok := v[current.x-1][current.y]
-
-		if ok {
-			result = append(result, lpv)
-		}
-	} else {
-		logger.Fatal("nil vertex")
+	if canWalk(wv, node.x-1, node.y) {
+		result = append(result, wv[node.x-1][node.y])
 	}
 
 	return result
 }
 
-func initVertices(s *data.SHBD) vertices {
+func initVertices(s *data.SHBD) walkableVectors {
 
-	var vertices = make(vertices)
+	var vertices = make(walkableVectors)
 
 	r := bytes.NewReader(s.Data)
 
-		for y := 0; y < s.Y; y++ {
-			for x := 0; x < s.X; x++ {
+	for y := 0; y < s.Y; y++ {
+		for x := 0; x < s.X; x++ {
 			b, err := r.ReadByte()
 			if err != nil {
 				return vertices
