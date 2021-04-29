@@ -29,3 +29,4 @@ files
 
 /*.bmp
 /*.shbd
+/tools/shbd-pathfinding/painted path.bmp

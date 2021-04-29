@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"image/color"
 	"github.com/google/logger"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"math"
@@ -18,39 +19,45 @@ func Test_Path_A_B(t *testing.T) {
 		logger.Error(err)
 	}
 
+	img, err := data.SHBDToImage(s)
+
+	if err != nil {
+		logger.Error(err)
+	}
+
 	a := &vertex{
-		x: 1596,
-		y: 1320,
+		x: 1036,
+		y: 766,
 	}
 
 	b := &vertex{
-		x: 1628,
-		y: 591,
+		x: 1045,
+		y: 766,
 	}
 
 	vertices := initVertices(s)
 
-	res := astar(vertices, a, b)
+	pathVertices := astar(vertices, a, b)
+	//pathVertices := astar2(vertices, a, b)
 
-	//SHBDToImage(s)
+	for _, v := range pathVertices {
+		img.Set(v.x, v.y, color.RGBA{
+			R: 207,
+			G: 0,
+			B: 15,
+			A: 1,
+		})
+	}
 
-	//vertices := Vertices(s)
-	//
-	logger.Info(res)
-	//
-	//for i, v1 := range vertices {
-	//	if (i+1) > len(vertices) {
-	//		break
-	//	}
-	//
-	//	v2 := vertices[i+1]
-	//	fmt.Println(distance(v1.x, v2.x, v1.y, v2.y))
-	//	fmt.Println(distance(v1.x, v1.x, v1.y, v1.y))
-	//}
+	err = data.SaveBmpFile(img, "./", "painted path")
 
+	if err != nil {
+		logger.Error(err)
+	}
+	// print an image with the vertex data
 }
 
-func BenchmarkName(b *testing.B) {
+func Benchmark_InitVertices(b *testing.B) {
 	m := "Rou"
 	var s *data.SHBD
 	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
@@ -62,22 +69,51 @@ func BenchmarkName(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		initVertices(s)
 	}
+}
 
+func Benchmark_aStar_Algorithm(b *testing.B) {
+	m := "Rou"
+	var s *data.SHBD
+	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	vertices := initVertices(s)
+
+	pa := &vertex{
+		x: 106,
+		y: 510,
+	}
+
+	//pb := &vertex{
+	//	x: 1597,
+	//	y: 1321,
+	//}
+
+	pb := &vertex{
+		x: 1662,
+		y: 1111,
+	}
+
+
+	for i := 0; i < b.N; i++ {
+		astar(vertices, pa, pb)
+	}
 }
 
 func distance(a, b * vertex) int {
-	d := math.Sqrt(math.Pow(float64(a.x-b.x), 2) + math.Pow(float64(a.y-b.y), 2))
+	d := math.Sqrt(math.Pow(float64(a.x - b.x), 2) + math.Pow(float64(a.y - b.y), 2))
+	//d := math.Abs(float64(a.x - b.x)) + math.Abs(float64(a.y - b.y))
 	return int(d)
-}
-
-
-type heuristics struct {
 }
 
 // x, y,
 type vertices map[int]map[int]*vertex
 
 type vertex struct {
+	prev *vertex
 	x, y int
 	h, g, f int
 }
@@ -104,23 +140,23 @@ type vertex struct {
 //    Add current vertex to closed list
 //    Remove vertex with lowest f value from open list and make it current
 //END WHILE
+// https://www.youtube.com/watch?v=eSOJ3ARN5FM
 func astar(vertices vertices, a * vertex, b * vertex) []*vertex {
 	var (
+		//open, closed, shortestPath []*vertex
 		open, closed []*vertex
-		h, g, f int
 		current * vertex
+		f int
 	)
-	h = distance(a, b)
-	f = 0 + h
-	a.f = f
-	current = a
-	for *current != *b {
 
-		if current == nil {
-			logger.Error("nil vertex")
-		}
+	a.h = distance(a, b)
+	a.f = 0 + a.h
+
+	current = a
+	for !equal(current, b) {
 
 		adjacentVertices := adjacentVertices(vertices, current)
+
 		if len(adjacentVertices) == 0 {
 			logger.Fatal("no adjacent nodes, impossible to proceed")
 		}
@@ -128,15 +164,15 @@ func astar(vertices vertices, a * vertex, b * vertex) []*vertex {
 		for _, av := range adjacentVertices {
 			if !in(closed, av) && !in(open, av) {
 				open = append(open, av)
-				g = distance(av, a)
-				h = distance(av, b)
-				nf := g + h
-				av.f = nf
+			}
 
-				if nf <= f {
-					f = nf
-					a = av
-				}
+			av.g = distance(av, a)
+			av.h = distance(av, b)
+			av.f = av.g + av.h
+
+			if av.f <= f || f == 0 {
+				f = av.f
+				av.prev = current
 			}
 		}
 
@@ -144,12 +180,32 @@ func astar(vertices vertices, a * vertex, b * vertex) []*vertex {
 
 		open, current = lowestF(open)
 
-		if current.f == 1 {
-			current.f  = 0
+		if current == nil {
+			logger.Error("nil vertex")
+			break
 		}
 	}
+	//
+	//if current == nil {
+	//	logger.Error("nil vertex")
+	//	return shortestPath
+	//}
+
+
+	//next := current
+	//for next != nil {
+	//	shortestPath = append(shortestPath, next.prev)
+	//	next = next.prev
+	//}
 
 	return closed
+}
+
+func equal(v1, v2 *vertex) bool  {
+	if v1.x == v2.x && v1.y == v2.y	{
+		return true
+	}
+	return false
 }
 
 func lowestF(open []*vertex) ([]*vertex, *vertex) {
@@ -165,13 +221,12 @@ func lowestF(open []*vertex) ([]*vertex, *vertex) {
 			break
 		}
 
-		if v.f <= open[i+1].f {
+		if v.f < open[i+1].f && v.h < open[i+1].h {
 			vertex = v
 			index = i
 		}
 	}
 
-	//ret = append(ret, s[:index]...)
 	uo = append(uo, open[:index]...)
 	uo = append(uo, open[index+1:]...)
 
@@ -180,7 +235,7 @@ func lowestF(open []*vertex) ([]*vertex, *vertex) {
 
 func in(list []*vertex, sv *vertex) bool {
 	for _ , v := range list {
-		if v == sv {
+		if equal(v, sv) {
 			return true
 		}
 	}
@@ -190,36 +245,35 @@ func in(list []*vertex, sv *vertex) bool {
 func adjacentVertices(v vertices, current * vertex) []*vertex {
 	var result []*vertex
 
-	if current == nil {
+	if current != nil {
+		upv, ok := v[current.x][current.y+1]
+		if ok {
+			result = append(result, upv)
+		}
+
+		dpv, ok := v[current.x][current.y-1]
+		if ok {
+			result = append(result, dpv)
+		}
+
+		rpv, ok := v[current.x+1][current.y]
+
+		if ok {
+			result = append(result, rpv)
+		}
+
+		lpv, ok := v[current.x-1][current.y]
+
+		if ok {
+			result = append(result, lpv)
+		}
+	} else {
 		logger.Fatal("nil vertex")
-	}
-
-	upv, ok := v[current.x][current.y+1]
-	if ok {
-		result = append(result, upv)
-	}
-
-	dpv, ok := v[current.x][current.y-1]
-	if ok {
-		result = append(result, dpv)
-	}
-
-	rpv, ok := v[current.x+1][current.y]
-
-	if ok {
-		result = append(result, rpv)
-	}
-
-	lpv, ok := v[current.x-1][current.y]
-
-	if ok {
-		result = append(result, lpv)
 	}
 
 	return result
 }
 
-// A*
 func initVertices(s *data.SHBD) vertices {
 
 	var vertices = make(vertices)
