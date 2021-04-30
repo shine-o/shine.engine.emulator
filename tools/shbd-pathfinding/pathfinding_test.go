@@ -975,3 +975,134 @@ func solveForTime(s, d int) int {
 func solveForSpeed(d, t int) int {
 	return d / t
 }
+
+
+type ngrid map[int][]int
+
+func inodes(s *data.SHBD) ngrid {
+	var (
+		ng = make(ngrid)
+		r  = bytes.NewReader(s.Data)
+	)
+
+	for y := 0; y < s.Y; y++ {
+		for x := 0; x < s.X; x++ {
+			b, err := r.ReadByte()
+			if err != nil {
+				return ng
+			}
+
+			for i := 0; i < 8; i++ {
+				if b&byte(math.Pow(2, float64(i))) == 0 {
+					rX := x*8 + i
+					rY := y
+					ng[rX] = append(ng[rX], rY)
+				}
+			}
+		}
+	}
+	return ng
+}
+
+func Benchmark_node_prototype_1(b *testing.B) {
+	m := "Rou"
+	var s *data.SHBD
+	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	var grid1 ngrid
+
+	b.Run("grid1_init", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			grid1 = inodes(s)
+		}
+	})
+
+	b.Run("grid1_search", func(b *testing.B) {
+		grid1.search(835, 700)
+		grid1.search(1070, 1540)
+	})
+
+	var grid2 ngrid2
+
+	b.Run("grid2_init", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			grid2 = inodes2(s)
+		}
+	})
+
+	b.Run("grid2_search", func(b *testing.B) {
+		grid2.search(835, 700)
+		grid2.search(1070, 1540)
+	})
+}
+
+func Benchmark_node_prototype_2(b *testing.B) {
+	m := "Rou"
+	var s *data.SHBD
+	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	var grid1 ngrid
+	grid1 = inodes(s)
+
+	b.Run("grid1_search", func(b *testing.B) {
+		grid1.search(835, 700)
+		grid1.search(1070, 1540)
+	})
+
+}
+
+func (n ngrid) search(x,y int) bool {
+	_, xok := n[x]
+	if xok {
+		for _, i := range n[x] {
+			if i == y {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+type ngrid2 map[int]map[int]bool
+
+func inodes2(s *data.SHBD) ngrid2 {
+	var (
+		ng = make(ngrid2)
+		r  = bytes.NewReader(s.Data)
+	)
+
+	for y := 0; y < s.Y; y++ {
+		for x := 0; x < s.X; x++ {
+			b, err := r.ReadByte()
+			if err != nil {
+				return ng
+			}
+
+			for i := 0; i < 8; i++ {
+				if b&byte(math.Pow(2, float64(i))) == 0 {
+					rX := x*8 + i
+					rY := y
+					_, ok := ng[rX]
+					if !ok {
+						ng[rX] = make(map[int]bool)
+					}
+					ng[rX][rY] = true
+				}
+			}
+		}
+	}
+	return ng
+}
+
+func (n ngrid2) search(x,y int) bool {
+	_, ok := n[x][y]
+	return ok
+}
