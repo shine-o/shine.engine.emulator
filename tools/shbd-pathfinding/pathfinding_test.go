@@ -90,24 +90,24 @@ func Test_Path_A_B_jps(t *testing.T) {
 	//}
 
 	a := &node{
-		x: 835,
-		y: 700,
+		x: 1441,
+		y: 172,
 	}
 
 	b := &node{
-		x: 1070,
-		y: 1540,
+		x: 500,
+		y: 1570,
 	}
 
 	v := initNodes(s)
+	//
+	//pn := initPathNodes(s, v)
+	//
+	//if err != nil {
+	//	logger.Fatal(err)
+	//}
 
-	pn := initPathNodes(s, v)
-
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	pathVertices := jps(pn, a, b)
+	pathVertices := jps(v, a, b)
 
 	for _, pv := range pathVertices {
 		img.Set(pv.x, pv.y, color.RGBA{
@@ -432,7 +432,7 @@ func initPathNodes(s *data.SHBD, wv grid) grid {
 
 const (
 	neighborNodes = 8
-	nodesMargin   = 7
+	nodesMargin   = 4
 )
 
 // sqrt(dx * dx + dy * dy)
@@ -479,6 +479,7 @@ func (e nodes) Swap(i, j int) {
 }
 
 // jump point search
+// good for open spaces
 func jps(grid grid, a *node, b *node) nodes {
 	var (
 		open, foundPath nodes
@@ -514,7 +515,7 @@ func jps(grid grid, a *node, b *node) nodes {
 // this one fails to add nodes to openList
 func identifySuccessors(grid grid, openList *nodes, node, b *node) {
 	var (
-		neighbors = findNeighbors(grid, node)
+		neighbors = adjacentNodes(grid, node, 1)
 		nx, ny    int
 		x         = node.x
 		y         = node.y
@@ -536,6 +537,7 @@ func identifySuccessors(grid grid, openList *nodes, node, b *node) {
 			}
 
 			d := octileDistance(jumpNode, node)
+			//d := euclideanDistance(jumpNode, node)
 
 			ng = node.g + d
 
@@ -601,19 +603,14 @@ func findNeighbors(grid grid, node *node) nodes {
 					}
 				}
 
-				if isTopWalkable {
-					neighbors = append(neighbors, grid[x][y+1])
-				}
-
-				if isBottomWalkable {
-					neighbors = append(neighbors, grid[x][y-1])
-				}
 			} else if dy != 0 {
 				isNextWalkable = canWalk(grid, x, y+dy)
+
 				var (
 					isRightWalkable = canWalk(grid, x+1, y)
 					isLeftWalkable = canWalk(grid, x-1, y)
 				)
+
 				if isNextWalkable {
 					neighbors = append(neighbors, grid[x][y+dy])
 					if isRightWalkable {
@@ -622,14 +619,6 @@ func findNeighbors(grid grid, node *node) nodes {
 					if isLeftWalkable {
 						neighbors = append(neighbors, grid[x-1][y+dy])
 					}
-				}
-
-				if isRightWalkable {
-					neighbors = append(neighbors, grid[x+1][y])
-				}
-
-				if isLeftWalkable {
-					neighbors = append(neighbors, grid[x-1][y])
 				}
 			}
 		}
@@ -656,8 +645,6 @@ func jump(grid grid, x, y, px, py int, b *node) *node {
 		return node
 	}
 
-	// check for forced neighbors
-	// along the diagonal
 	if dx != 0 && dy != 0 {
 		if (canWalk(grid, x-dx, y+dy) && !canWalk(grid, x-dx, y)) ||
 			canWalk(grid, x+dx, y-dy) && !canWalk(grid, x, y-dy) {
@@ -670,19 +657,24 @@ func jump(grid grid, x, y, px, py int, b *node) *node {
 		}
 	} else {    // horizontally/vertically
 		if dx != 0 { // moving along x
-			if (canWalk(grid, x+dx, y+1) && !canWalk(grid, x, y+1)) ||
-				canWalk(grid, x+dx, y-1) && !canWalk(grid, x, y-1) {
+			if (canWalk(grid, x, y-1) && !canWalk(grid, x-dx, y-1)) ||
+				canWalk(grid, x, y+1) && !canWalk(grid, x-dx, y+1) {
 				return grid[x][y]
 			}
-		} else {
-			if (canWalk(grid, x+1, y+dy) && !canWalk(grid, x+1, y)) ||
-				canWalk(grid, x-1, y+dy) && !canWalk(grid, x-1, y) {
+		} else if dy != 0 {
+			if (canWalk(grid, x-1, y) && !canWalk(grid, x-1, y-dy)) ||
+				canWalk(grid, x+1, y) && !canWalk(grid, x+1, y-dy) {
 				return grid[x][y]
 			}
 		}
 	}
 
-	return jump(grid, x+dx, y+dy, x, y, b)
+	// moving diagonally, must make sure one of the vertical/horizontal
+	// neighbors is open to allow the path
+	if canWalk(grid, x+dx, y) && canWalk(grid, x, y+dy) {
+		return jump(grid, x+dx, y+dy, x, y, b)
+	}
+	return nil
 }
 
 // A*
