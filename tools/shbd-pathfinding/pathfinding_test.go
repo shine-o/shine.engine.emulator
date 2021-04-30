@@ -297,7 +297,8 @@ func Benchmark_Copy_Grid(b *testing.B) {
 	})
 }
 
-
+// really inefficient
+// I should check how to avoid making use of the grid pointers
 func copyGrid(g grid) grid {
 	var ng = make(grid)
 	for k1, v1 := range g {
