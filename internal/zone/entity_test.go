@@ -44,7 +44,7 @@ func Test_Move_Entity_Collision(t *testing.T) {
 }
 
 func Test_Move_Entity_A_B_SpeedHack(t *testing.T) {
-	// send a lot of packets in a limited amount of time
+	// generate raw path from A to B
 	//
 }
 
@@ -63,9 +63,7 @@ func Test_Bitmap_Coordinates_Conversion(t *testing.T) {
 	}
 }
 
-func Test_Add_Entity_Within_Range(t *testing.T) {
-
-}
+func Test_Add_Entity_Within_Range(t *testing.T) {}
 
 func Test_Remove_Entity_Outside_Range(t *testing.T) {
 
