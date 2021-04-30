@@ -100,6 +100,7 @@ func Test_Path_A_B_jps(t *testing.T) {
 	}
 
 	v := initNodes(s)
+
 	//
 	//pn := initPathNodes(s, v)
 	//
@@ -123,7 +124,6 @@ func Test_Path_A_B_jps(t *testing.T) {
 	if err != nil {
 		logger.Error(err)
 	}
-	// print an image with the node data
 }
 
 // +10
@@ -267,6 +267,52 @@ func Benchmark_ReduceVertices(b *testing.B) {
 	})
 }
 
+func Benchmark_Copy_Grid(b *testing.B) {
+	m := "Rou"
+	var s *data.SHBD
+	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	v := initNodes(s)
+
+	pn := initPathNodes(s, v)
+
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	b.Run("copyGrid_raw", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			copyGrid(v)
+		}
+	})
+
+	b.Run("copyGrid_nodes_path", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			copyGrid(pn)
+		}
+	})
+}
+
+
+func copyGrid(g grid) grid {
+	var ng = make(grid)
+	for k1, v1 := range g {
+		for k2, v2 := range v1 {
+			n := *v2
+			_, ok := ng[k1]
+			if !ok {
+				ng[k1] = make(map[int]*node)
+			}
+			ng[k1][k2] = &n
+		}
+	}
+	return ng
+}
+
 func Benchmark_InitVertices(b *testing.B) {
 	m := "Rou"
 	var s *data.SHBD
@@ -323,10 +369,40 @@ func Benchmark_astar_algorithm(b *testing.B) {
 	})
 }
 
-func Benchmark_jps_algorithm(b *testing.B) {
-	// base astar algo
-	// find successors
-	// foreach neighbour, jump
+func Benchmark_algorithms(b *testing.B) {
+	m := "Rou"
+	var s *data.SHBD
+	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	v := initNodes(s)
+
+	pa := &node{
+		x: 835,
+		y: 700,
+	}
+
+	pb := &node{
+		x: 1070,
+		y: 1540,
+	}
+
+	v1 := copyGrid(v)
+	b.Run("astar_raw", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			astar(v1, pa, pb)
+		}
+	})
+
+	v2 := copyGrid(v)
+	b.Run("jps_raw", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			jps(v2, pa, pb)
+		}
+	})
 }
 
 func SHBDToImage(s *data.SHBD, wv grid) (*image.RGBA, error) {
@@ -515,7 +591,8 @@ func jps(grid grid, a *node, b *node) nodes {
 // this one fails to add nodes to openList
 func identifySuccessors(grid grid, openList *nodes, node, b *node) {
 	var (
-		neighbors = adjacentNodes(grid, node, 1)
+		//neighbors = adjacentNodes(grid, node, 1)
+		neighbors = findNeighbors(grid, node)
 		nx, ny    int
 		x         = node.x
 		y         = node.y
@@ -603,6 +680,13 @@ func findNeighbors(grid grid, node *node) nodes {
 					}
 				}
 
+				if isTopWalkable {
+					neighbors = append(neighbors, grid[x][y+1])
+				}
+
+				if isBottomWalkable {
+					neighbors = append(neighbors, grid[x][y-1])
+				}
 			} else if dy != 0 {
 				isNextWalkable = canWalk(grid, x, y+dy)
 
@@ -619,6 +703,14 @@ func findNeighbors(grid grid, node *node) nodes {
 					if isLeftWalkable {
 						neighbors = append(neighbors, grid[x-1][y+dy])
 					}
+				}
+
+				if isRightWalkable {
+					neighbors = append(neighbors, grid[x+1][y])
+				}
+
+				if isLeftWalkable {
+					neighbors = append(neighbors, grid[x-1][y])
 				}
 			}
 		}
@@ -646,15 +738,11 @@ func jump(grid grid, x, y, px, py int, b *node) *node {
 	}
 
 	if dx != 0 && dy != 0 {
-		if (canWalk(grid, x-dx, y+dy) && !canWalk(grid, x-dx, y)) ||
-			canWalk(grid, x+dx, y-dy) && !canWalk(grid, x, y-dy) {
+
+		if jump(grid, x+dx, y, x, y, b) != nil || jump(grid, x, y+dy, x, y, b) != nil {
 			return grid[x][y]
 		}
-		// when moving diagonally, must check for vertical/horizontal jump points
-		if  jump(grid, x+dx, y, x, y, b) != nil ||
-			jump(grid, x, y+dy, x, y, b) != nil {
-			return grid[x][y]
-		}
+
 	} else {    // horizontally/vertically
 		if dx != 0 { // moving along x
 			if (canWalk(grid, x, y-1) && !canWalk(grid, x-dx, y-1)) ||
