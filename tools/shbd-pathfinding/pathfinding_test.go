@@ -79,14 +79,24 @@ func Test_Path_A_B_jps(t *testing.T) {
 		logger.Error(err)
 	}
 
+	//a := &node{
+	//	x: 1111,
+	//	y: 1577,
+	//}
+	//
+	//b := &node{
+	//	x: 1111,
+	//	y: 1582,
+	//}
+
 	a := &node{
-		x: 1111,
-		y: 1577,
+		x: 835,
+		y: 700,
 	}
 
 	b := &node{
-		x: 1111,
-		y: 1582,
+		x: 1070,
+		y: 1540,
 	}
 
 	v := initNodes(s)
@@ -432,16 +442,16 @@ func euclideanDistance(a, b *node) int {
 }
 
 // sqrt(dx * dx + dy * dy)
-func octileDistance(a, b *node) int {
+func octileDistance(a, b * node) int {
 	var F = math.Sqrt2 - 1
 	dx := math.Abs(float64(a.x - b.x))
 	dy := math.Abs(float64(a.y - b.y))
 
 	if dx < dy {
-		return int(F*dx + dy)
+		return int(F * dx + dy)
 	}
 
-	return int(F*dy + dx)
+	return int(F * dy + dx)
 }
 
 type grid map[int]map[int]*node
@@ -487,7 +497,7 @@ func jps(grid grid, a *node, b *node) nodes {
 		if equal(node, b) {
 			break
 		}
-		identifySuccessors(grid, open, node, b)
+		identifySuccessors(grid, &open, node, b)
 	}
 
 	next := node
@@ -501,15 +511,21 @@ func jps(grid grid, a *node, b *node) nodes {
 	return foundPath
 }
 
-func identifySuccessors(grid grid, openList nodes, node, b *node) {
+// this one fails to add nodes to openList
+func identifySuccessors(grid grid, openList *nodes, node, b *node) {
 	var (
 		neighbors = findNeighbors(grid, node)
 		nx, ny    int
 		x         = node.x
 		y         = node.y
+		ng              int
+
 	)
 
 	for _, neighbor := range neighbors {
+		if neighbor == nil {
+			continue
+		}
 		nx = neighbor.x
 		ny = neighbor.y
 		jumpNode := jump(grid, nx, ny, x, y, b)
@@ -520,7 +536,8 @@ func identifySuccessors(grid grid, openList nodes, node, b *node) {
 			}
 
 			d := octileDistance(jumpNode, node)
-			ng := node.g + d
+
+			ng = node.g + d
 
 			if !jumpNode.opened || ng < jumpNode.g {
 				jumpNode.g = ng
@@ -528,7 +545,7 @@ func identifySuccessors(grid grid, openList nodes, node, b *node) {
 				jumpNode.f = jumpNode.g + jumpNode.h
 				jumpNode.parent = node
 				if !jumpNode.opened {
-					openList = append(openList, jumpNode)
+					*openList = append(*openList, jumpNode)
 					jumpNode.opened = true
 				}
 			}
@@ -553,7 +570,6 @@ func findNeighbors(grid grid, node *node) nodes {
 		dx = int(float64(x-px) / math.Max(math.Abs(float64(x-px)), 1))
 		dy = int(float64(y-py) / math.Max(math.Abs(float64(y-py)), 1))
 
-		// search diagonally
 		if dx != 0 && dy != 0 {
 			if canWalk(grid, x, y+dy) {
 				neighbors = append(neighbors, grid[x][y+dy])
@@ -563,37 +579,57 @@ func findNeighbors(grid grid, node *node) nodes {
 				neighbors = append(neighbors, grid[x+dx][y])
 			}
 
-			if canWalk(grid, x+dx, y+dy) {
+			if canWalk(grid, x, y+dy) && canWalk(grid, x+dx, y) {
 				neighbors = append(neighbors, grid[x+dx][y+dy])
 			}
-
-			if !canWalk(grid, x-dx, y) {
-				neighbors = append(neighbors, grid[x-dx][y+dy])
-			}
-
-			if !canWalk(grid, x, y-dx) {
-				neighbors = append(neighbors, grid[x+dx][y-dy])
-			}
 		} else { // search horizontally/vertically
-			if dx == 0 {
-				if canWalk(grid, x, y+dy) {
-					neighbors = append(neighbors, grid[x][y+dy])
-				}
-				if !canWalk(grid, x+1, y) {
-					neighbors = append(neighbors, grid[x+1][y+dy])
-				}
-				if !canWalk(grid, x-1, y) {
-					neighbors = append(neighbors, grid[x-1][y+dy])
-				}
-			} else {
-				if canWalk(grid, x+dx, y) {
+			var isNextWalkable bool
+			if dx != 0 {
+				isNextWalkable = canWalk(grid, x+dx, y)
+				var (
+					isTopWalkable = canWalk(grid, x, y+1)
+					isBottomWalkable = canWalk(grid,x, y-1)
+				)
+
+				if isNextWalkable {
 					neighbors = append(neighbors, grid[x+dx][y])
+					if isTopWalkable {
+						neighbors = append(neighbors, grid[x+dx][y+1])
+					}
+					if isBottomWalkable {
+						neighbors = append(neighbors, grid[x+dx][y-1])
+					}
 				}
-				if !canWalk(grid, x, y+1) {
-					neighbors = append(neighbors, grid[x+dx][y+1])
+
+				if isTopWalkable {
+					neighbors = append(neighbors, grid[x][y+1])
 				}
-				if !canWalk(grid, x, y-1) {
-					neighbors = append(neighbors, grid[x+dx][y-1])
+
+				if isBottomWalkable {
+					neighbors = append(neighbors, grid[x][y-1])
+				}
+			} else if dy != 0 {
+				isNextWalkable = canWalk(grid, x, y+dy)
+				var (
+					isRightWalkable = canWalk(grid, x+1, y)
+					isLeftWalkable = canWalk(grid, x-1, y)
+				)
+				if isNextWalkable {
+					neighbors = append(neighbors, grid[x][y+dy])
+					if isRightWalkable {
+						neighbors = append(neighbors, grid[x+1][y+dy])
+					}
+					if isLeftWalkable {
+						neighbors = append(neighbors, grid[x-1][y+dy])
+					}
+				}
+
+				if isRightWalkable {
+					neighbors = append(neighbors, grid[x+1][y])
+				}
+
+				if isLeftWalkable {
+					neighbors = append(neighbors, grid[x-1][y])
 				}
 			}
 		}
@@ -688,6 +724,8 @@ func astar(wv grid, a *node, b *node) nodes {
 			if !neighbor.opened || ng < float64(neighbor.g) {
 				neighbor.g = int(ng)
 				neighbor.h = 2 * euclideanDistance(neighbor, b)
+				//neighbor.h = octileDistance(neighbor, b)
+
 				neighbor.f = neighbor.g + neighbor.h
 				neighbor.parent = node
 
