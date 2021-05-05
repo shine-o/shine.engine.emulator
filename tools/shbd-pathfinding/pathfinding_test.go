@@ -18,6 +18,10 @@ var (
 	mn string
 	s  *data.SHBD
 	v  grid
+	vNodesNoWallsMargin = 4
+	vNodesWithWallsMargin = 8
+	vNodesWithWalls  grid
+	vNodesNoWalls    grid
 )
 
 func TestMain(m *testing.M) {
@@ -25,6 +29,8 @@ func TestMain(m *testing.M) {
 	//s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
 	s, _ = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", mn))
 	v = initNodes(s)
+	vNodesNoWalls = gridWithReducedNodes(s, vNodesNoWallsMargin)
+	vNodesWithWalls = gridWithWallsMargin(s, v, vNodesWithWallsMargin)
 	os.Exit(m.Run())
 }
 
@@ -240,7 +246,6 @@ func Test_Map_Intermitent_By_Speed_Path_A_B_AStar(t *testing.T) {
 }
 
 func Benchmark_algorithms(b *testing.B) {
-	//
 	b.Run("astar_raw", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			v1 := copyGrid(v)
@@ -248,17 +253,17 @@ func Benchmark_algorithms(b *testing.B) {
 		}
 	})
 
-	b.Run("astar_nodes_path_margin", func(b *testing.B) {
+	b.Run("astar_reduced_nodes", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			v2 := gridWithReducedNodes(s, 4)
-			astar(v2, 835, 700, 1070, 1540, 4)
+			v := copyGrid(vNodesNoWalls)
+			astar(v, 835, 700, 1070, 1540, vNodesNoWallsMargin)
 		}
 	})
 
-	b.Run("astar_nodes_path_with_wall_margin", func(b *testing.B) {
+	b.Run("astar_reduced_nodes_with_wall_margin", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			v2 := gridWithWallsMargin(s, v, 8)
-			astar(v2, 835, 700, 1070, 1540, 8)
+			v := copyGrid(vNodesWithWalls)
+			astar(v, 835, 700, 1070, 1540, vNodesWithWallsMargin)
 		}
 	})
 
@@ -669,7 +674,7 @@ func (e nodes) Swap(i, j int) {
 func (g grid) getNearest(x, y int) *node {
 	// given this point, move forward in all directions until a node is found
 	// sounds good, doesn't work
-	return nearestNodes(g, x, y , 1,256)
+	//return nearestNodes(g, x, y , 1,256)
 
 	// I should try to build a square around the point
 	// then iterate each node in the square, if ts a walkable position
@@ -681,18 +686,69 @@ func (g grid) getNearest(x, y int) *node {
 	// send a go routine to iterate over the rectangle
 	// if neighbour is found, send to channel and exit function
 	// close channel so all other routines are canceled
+	var (
+		// boundary x,y
+		bx, by int
+		perimeter = 150
+	)
 
 	// upper left side
 	// x-50, y-50
 	// for y++
 	//		for x++
 	//		if x,y is a node
-	//		send to channel
+	bx = x-perimeter
+	by = y-perimeter
+	for cy := y; cy != by; cy-- {
+		for cx := x; cx != bx; cx-- {
+			n := g.get(cx, cy)
+			if n != nil{
+				return n
+			}
+		}
+	}
+	// upper right side
+	// x+50, y-50
+	// for y++
+	//		for x++
+	//		if x,y is a node
+	bx = x+perimeter
+	by = y-perimeter
+	for cy := y; cy != by; cy-- {
+		for cx := x; cx != bx; cx++ {
+			n := g.get(cx, cy)
+			if n != nil{
+				return n
+			}
+		}
+	}
 
 	// bottom left side
 	// x-50, y+50
+	bx = x+perimeter
+	by = y-perimeter
+	for cy := y; cy != by; cy++ {
+		for cx := x; cx != bx; cx-- {
+			n := g.get(cx, cy)
+			if n != nil{
+				return n
+			}
+		}
+	}
 
-
+	// bottom left side
+	// x+50, y+50
+	bx = x+perimeter
+	by = y-perimeter
+	for cy := y; cy != by; cy++ {
+		for cx := x; cx != bx; cx++ {
+			n := g.get(cx, cy)
+			if n != nil{
+				return n
+			}
+		}
+	}
+	return nil
 }
 
 func nearestNodes(wv grid, x, y , margin int, tries int) *node {
