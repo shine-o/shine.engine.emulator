@@ -52,7 +52,7 @@ func Test_Path_A_B_astar(t *testing.T) {
 		logger.Fatal(err)
 	}
 
-	pathVertices := astar(pn, 835, 700, 1070, 1540)
+	pathVertices := astar(pn, 835, 700, 1070, 1540, 1)
 
 	for _, pv := range pathVertices {
 		img.Set(pv.x, pv.y, color.RGBA{
@@ -141,7 +141,7 @@ func Test_Paint_Path_Nodes_Multiple(*testing.T) {
 				logger.Fatal(err)
 			}
 
-			pathVertices := astar(cgrid, 835, 700, 1070, 1540)
+			pathVertices := astar(cgrid, 835, 700, 1070, 1540, 1)
 
 			for _, pv := range pathVertices {
 				img.Set(pv.x, pv.y, color.RGBA{
@@ -207,7 +207,7 @@ func Test_Map_Intermitent_By_Speed_Path_A_B_AStar(t *testing.T) {
 		logger.Fatal(err)
 	}
 
-	pathVertices := astar(pn, 835, 700, 1070, 1540)
+	pathVertices := astar(pn, 835, 700, 1070, 1540, 1)
 
 	pathVertices = reduce(pathVertices, 15)
 
@@ -232,24 +232,23 @@ func Benchmark_algorithms(b *testing.B) {
 	b.Run("astar_raw", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			v1 := copyGrid(v)
-			astar(v1, 835, 700, 1070, 1540)
+			astar(v1, 835, 700, 1070, 1540, 1)
 		}
 	})
 
 	b.Run("astar_reduced_nodes", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			v := copyGrid(vNodesNoWalls)
-			astar(v, 835, 700, 1070, 1540)
+			astar(v, 835, 700, 1070, 1540, vNodesNoWallsMargin)
 		}
 	})
 
 	b.Run("astar_reduced_nodes_with_wall_margin", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			v := copyGrid(vNodesWithWalls)
-			astar(v, 835, 700, 1070, 1540)
+			astar(v, 835, 700, 1070, 1540, vNodesWithWallsMargin)
 		}
 	})
-
 }
 
 func Benchmark_InitVertices(b *testing.B) {
@@ -290,7 +289,7 @@ func Benchmark_ReduceVertices(b *testing.B) {
 		logger.Fatal(err)
 	}
 
-	pathVertices := astar(pn, 835, 700, 1070, 1540)
+	pathVertices := astar(pn, 835, 700, 1070, 1540, 1)
 	b.Run("reduce", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_ = reduce(pathVertices, 15)
@@ -785,64 +784,6 @@ func (g grid) getNearest(x, y int) *node {
 	return nil
 }
 
-func nearestNodes(wv grid, x, y , margin int, tries int) *node {
-	if tries == 0 {
-		return nil
-	}
-
-	// ↑
-	n := wv.get(x, y-margin)
-	if n != nil {
-		return n
-	}
-
-	// ↓
-	n = wv.get(x, y+margin)
-	if n != nil {
-		return n
-	}
-
-	// →
-	n = wv.get(x+margin, y)
-	if n != nil {
-		return n
-	}
-
-	// ↓
-	n = wv.get(x-margin, y)
-	if n != nil {
-		return n
-	}
-
-	// ↖
-	n = wv.get(x-margin, y-margin)
-	if n != nil {
-		return n
-	}
-
-	// ↗
-	n = wv.get(x+margin, y-margin)
-	if n != nil {
-		return n
-	}
-
-	// ↘
-	n = wv.get(x+margin, y+margin)
-	if n != nil {
-		return n
-	}
-
-	// ↙
-	n = wv.get(x-margin, y+margin)
-	if n != nil {
-		return n
-	}
-	tries--
-	margin++
-	return nearestNodes(wv, x, y, margin, tries)
-}
-
-
 func (g grid) get(x, y int) *node {
 	n, ok := g[x][y]
 	if ok {
@@ -852,7 +793,7 @@ func (g grid) get(x, y int) *node {
 }
 
 // A*
-func astar(wv grid, fx, fy, tx, ty int) nodes {
+func astar(wv grid, fx, fy, tx, ty, margin int) nodes {
 	var (
 		open, foundPath nodes
 		node            *node
@@ -890,8 +831,7 @@ func astar(wv grid, fx, fy, tx, ty int) nodes {
 			break
 		}
 
-		//for _, neighbor := range adjacentNodes(wv, node.x, node.y, margin) { // 744 609
-		for _, neighbor := range node.neighbours { // 744 609
+		for _, neighbor := range adjacentNodes(wv, node.x, node.y, margin) {
 			if neighbor.closed {
 				continue
 			}
@@ -1074,15 +1014,6 @@ func copyGrid(g grid) grid {
 				ng[k1] = make(map[int]*node)
 			}
 			ng[k1][k2] = &n
-		}
-	}
-	for _, v1 := range ng {
-		for _, v2 := range v1 {
-			var nneighbours nodes
-			for _, ne := range v2.neighbours {
-				nneighbours = append(nneighbours, ng[ne.x][ne.y])
-			}
-			v2.neighbours = nneighbours
 		}
 	}
 	return ng
