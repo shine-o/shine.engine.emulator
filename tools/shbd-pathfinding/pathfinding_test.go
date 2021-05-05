@@ -28,7 +28,7 @@ func TestMain(m *testing.M) {
 	mn = "Rou"
 	//s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
 	s, _ = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", mn))
-	v = initNodes(s)
+	v = rawGrid(s)
 	vNodesNoWalls = gridWithReducedNodes(s, vNodesNoWallsMargin)
 	vNodesWithWalls = gridWithWallsMargin(s, v, vNodesWithWallsMargin)
 	os.Exit(m.Run())
@@ -52,7 +52,7 @@ func Test_Path_A_B_astar(t *testing.T) {
 		logger.Fatal(err)
 	}
 
-	pathVertices := astar(pn, 835, 700, 1070, 1540, 4)
+	pathVertices := astar(pn, 835, 700, 1070, 1540)
 
 	for _, pv := range pathVertices {
 		img.Set(pv.x, pv.y, color.RGBA{
@@ -82,7 +82,7 @@ func Test_Paint_Path_Nodes(*testing.T) {
 		logger.Error(err)
 	}
 
-	v := initNodes(s)
+	v := rawGrid(s)
 
 	if err != nil {
 		logger.Fatal(err)
@@ -123,27 +123,11 @@ func Test_Paint_Path_Nodes(*testing.T) {
 }
 
 func Test_Paint_Path_Nodes_Multiple(*testing.T) {
-	var (
-		m = "Rou"
-		//s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
-		s, err = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", m))
-	)
-
-	if err != nil {
-		logger.Error(err)
-	}
-
-	v := initNodes(s)
-
-	if err != nil {
-		logger.Fatal(err)
-	}
-
 	var wg sync.WaitGroup
 
 	for i := 0; i < 5; i++ {
 		wg.Add(1)
-		go func(name string, grid grid) {
+		go func(name string) {
 			defer wg.Done()
 			img, err := data.SHBDToImage(s)
 
@@ -151,14 +135,13 @@ func Test_Paint_Path_Nodes_Multiple(*testing.T) {
 				logger.Error(err)
 			}
 
-			cgrid := copyGrid(grid)
-			cgrid = gridWithReducedNodes(s, 4)
+			cgrid := copyGrid(vNodesNoWalls)
 
 			if err != nil {
 				logger.Fatal(err)
 			}
 
-			pathVertices := astar(cgrid, 835, 700, 1070, 1540, 4)
+			pathVertices := astar(cgrid, 835, 700, 1070, 1540)
 
 			for _, pv := range pathVertices {
 				img.Set(pv.x, pv.y, color.RGBA{
@@ -175,7 +158,7 @@ func Test_Paint_Path_Nodes_Multiple(*testing.T) {
 				logger.Fatal(err)
 			}
 
-		}(fmt.Sprintf("paintedpath%v", i), v)
+		}(fmt.Sprintf("paintedpath%v", i))
 	}
 	wg.Wait()
 
@@ -224,7 +207,7 @@ func Test_Map_Intermitent_By_Speed_Path_A_B_AStar(t *testing.T) {
 		logger.Fatal(err)
 	}
 
-	pathVertices := astar(pn, 835, 700, 1070, 1540, 4)
+	pathVertices := astar(pn, 835, 700, 1070, 1540)
 
 	pathVertices = reduce(pathVertices, 15)
 
@@ -249,21 +232,21 @@ func Benchmark_algorithms(b *testing.B) {
 	b.Run("astar_raw", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			v1 := copyGrid(v)
-			astar(v1, 835, 700, 1070, 1540, 1)
+			astar(v1, 835, 700, 1070, 1540)
 		}
 	})
 
 	b.Run("astar_reduced_nodes", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			v := copyGrid(vNodesNoWalls)
-			astar(v, 835, 700, 1070, 1540, vNodesNoWallsMargin)
+			astar(v, 835, 700, 1070, 1540)
 		}
 	})
 
 	b.Run("astar_reduced_nodes_with_wall_margin", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			v := copyGrid(vNodesWithWalls)
-			astar(v, 835, 700, 1070, 1540, vNodesWithWallsMargin)
+			astar(v, 835, 700, 1070, 1540)
 		}
 	})
 
@@ -279,9 +262,9 @@ func Benchmark_InitVertices(b *testing.B) {
 		logger.Error(err)
 	}
 
-	b.Run("initNodes", func(b *testing.B) {
+	b.Run("rawGrid", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			v = initNodes(s)
+			v = rawGrid(s)
 		}
 	})
 
@@ -307,7 +290,7 @@ func Benchmark_ReduceVertices(b *testing.B) {
 		logger.Fatal(err)
 	}
 
-	pathVertices := astar(pn, 835, 700, 1070, 1540, 4)
+	pathVertices := astar(pn, 835, 700, 1070, 1540)
 	b.Run("reduce", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_ = reduce(pathVertices, 15)
@@ -326,7 +309,7 @@ func Benchmark_Copy_Grid(b *testing.B) {
 		logger.Error(err)
 	}
 
-	v := initNodes(s)
+	v := rawGrid(s)
 
 	pn := gridWithReducedNodes(s, 4)
 
@@ -536,6 +519,46 @@ func PaintIntermittentNodes(s *data.SHBD, wv grid) (*image.RGBA, error) {
 	return img, nil
 }
 
+func rawGrid(s *data.SHBD) grid {
+	var (
+		wv    = make(grid)
+		r     = bytes.NewReader(s.Data)
+		count = 0
+	)
+	for y := 0; y < s.Y; y++ {
+		for x := 0; x < s.X; x++ {
+			b, err := r.ReadByte()
+			if err != nil {
+				return wv
+			}
+
+			for i := 0; i < 8; i++ {
+				if b&byte(math.Pow(2, float64(i))) == 0 {
+					rX := x*8 + i
+					rY := y
+					_, ok := wv[rX]
+					if !ok {
+						wv[rX] = make(map[int]*node)
+					}
+					n := &node{
+						x: rX,
+						y: rY,
+					}
+					wv[rX][rY] = n
+					count++
+				}
+			}
+		}
+	}
+	fmt.Printf("count nodes %v \n", count)
+	for _, v1 := range wv {
+		for _, v2 := range v1 {
+			v2.neighbours = adjacentNodes(wv, v2.x, v2.y, 1)
+		}
+	}
+	return wv
+}
+
 func gridWithReducedNodes(s *data.SHBD, margin int) grid {
 	var (
 		pn    = make(grid)
@@ -572,6 +595,11 @@ func gridWithReducedNodes(s *data.SHBD, margin int) grid {
 		}
 	}
 	fmt.Printf("count nodes %v \n", count)
+	for _, v1 := range pn {
+		for _, v2 := range v1 {
+			v2.neighbours = adjacentNodes(pn, v2.x, v2.y, margin)
+		}
+	}
 	return pn
 }
 
@@ -617,6 +645,11 @@ func gridWithWallsMargin(s *data.SHBD, wv grid, margin int) grid {
 		}
 	}
 	fmt.Printf("count nodes %v \n", ncount)
+	for _, v1 := range pn {
+		for _, v2 := range v1 {
+			v2.neighbours = adjacentNodes(pn, v2.x, v2.y, margin)
+		}
+	}
 	return pn
 }
 
@@ -649,11 +682,12 @@ func octileDistance(a, b *node) int {
 type grid map[int]map[int]*node
 
 type node struct {
-	parent  *node
-	x, y    int
-	h, g, f int
-	opened  bool
-	closed  bool
+	parent     *node
+	x, y       int
+	h, g, f    int
+	opened     bool
+	closed     bool
+	neighbours nodes
 }
 
 type nodes []*node
@@ -818,7 +852,7 @@ func (g grid) get(x, y int) *node {
 }
 
 // A*
-func astar(wv grid, fx, fy, tx, ty int, margin int) nodes {
+func astar(wv grid, fx, fy, tx, ty int) nodes {
 	var (
 		open, foundPath nodes
 		node            *node
@@ -856,7 +890,8 @@ func astar(wv grid, fx, fy, tx, ty int, margin int) nodes {
 			break
 		}
 
-		for _, neighbor := range adjacentNodes(wv, node.x, node.y, margin) { // 744 609
+		//for _, neighbor := range adjacentNodes(wv, node.x, node.y, margin) { // 744 609
+		for _, neighbor := range node.neighbours { // 744 609
 			if neighbor.closed {
 				continue
 			}
@@ -1009,42 +1044,6 @@ func adjacentNodes(wv grid, x, y , margin int) nodes {
 	return result
 }
 
-func initNodes(s *data.SHBD) grid {
-	var (
-		wv    = make(grid)
-		r     = bytes.NewReader(s.Data)
-		count = 0
-	)
-
-	for y := 0; y < s.Y; y++ {
-		for x := 0; x < s.X; x++ {
-			b, err := r.ReadByte()
-			if err != nil {
-				return wv
-			}
-
-			for i := 0; i < 8; i++ {
-				if b&byte(math.Pow(2, float64(i))) == 0 {
-					rX := x*8 + i
-					rY := y
-					_, ok := wv[rX]
-					if !ok {
-						wv[rX] = make(map[int]*node)
-					}
-					n := &node{
-						x: rX,
-						y: rY,
-					}
-					wv[rX][rY] = n
-					count++
-				}
-			}
-		}
-	}
-	fmt.Printf("count nodes %v \n", count)
-	return wv
-}
-
 func in(list nodes, sv *node) bool {
 	for _, v := range list {
 		if equal(v, sv) {
@@ -1069,11 +1068,21 @@ func copyGrid(g grid) grid {
 	for k1, v1 := range g {
 		for k2, v2 := range v1 {
 			n := *v2
+
 			_, ok := ng[k1]
 			if !ok {
 				ng[k1] = make(map[int]*node)
 			}
 			ng[k1][k2] = &n
+		}
+	}
+	for _, v1 := range ng {
+		for _, v2 := range v1 {
+			var nneighbours nodes
+			for _, ne := range v2.neighbours {
+				nneighbours = append(nneighbours, ng[ne.x][ne.y])
+			}
+			v2.neighbours = nneighbours
 		}
 	}
 	return ng
