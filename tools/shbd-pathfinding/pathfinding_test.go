@@ -8,44 +8,45 @@ import (
 	"image"
 	"image/color"
 	"math"
+	"os"
 	"sort"
+	"sync"
 	"testing"
 )
 
+var (
+	mn string
+	s  *data.SHBD
+	v  grid
+)
+
+func TestMain(m *testing.M) {
+	mn = "Rou"
+	//s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+	s, _ = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", mn))
+	v = initNodes(s)
+	os.Exit(m.Run())
+}
+
 func Test_Path_A_B_astar(t *testing.T) {
-	m := "Rou"
-	var s *data.SHBD
-	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
-
-	if err != nil {
-		logger.Error(err)
-	}
-
+	var (
+		m = "Rou"
+		//s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+		s, _ = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", m))
+	)
 	img, err := data.SHBDToImage(s)
 
 	if err != nil {
 		logger.Error(err)
 	}
 
-	a := &node{
-		x: 835,
-		y: 700,
-	}
-
-	b := &node{
-		x: 1070,
-		y: 1540,
-	}
-
-	v := initNodes(s)
-
-	pn := initPathNodes(s, v)
+	pn := gridWithReducedNodes(s, 4)
 
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	pathVertices := astar(pn, a, b)
+	pathVertices := astar(pn, 835, 700, 1070, 1540, 4)
 
 	for _, pv := range pathVertices {
 		img.Set(pv.x, pv.y, color.RGBA{
@@ -64,73 +65,12 @@ func Test_Path_A_B_astar(t *testing.T) {
 	// print an image with the node data
 }
 
-func Test_Path_A_B_jps(t *testing.T) {
-	m := "Rou"
-	var s *data.SHBD
-	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
-
-	if err != nil {
-		logger.Error(err)
-	}
-
-	img, err := data.SHBDToImage(s)
-
-	if err != nil {
-		logger.Error(err)
-	}
-
-	//a := &node{
-	//	x: 1111,
-	//	y: 1577,
-	//}
-	//
-	//b := &node{
-	//	x: 1111,
-	//	y: 1582,
-	//}
-
-	a := &node{
-		x: 1441,
-		y: 172,
-	}
-
-	b := &node{
-		x: 500,
-		y: 1570,
-	}
-
-	v := initNodes(s)
-
-	//
-	//pn := initPathNodes(s, v)
-	//
-	//if err != nil {
-	//	logger.Fatal(err)
-	//}
-
-	pathVertices := jps(v, a, b)
-
-	for _, pv := range pathVertices {
-		img.Set(pv.x, pv.y, color.RGBA{
-			R: 207,
-			G: 0,
-			B: 15,
-			A: 1,
-		})
-	}
-
-	err = data.SaveBmpFile(img, "./", "painted path")
-
-	if err != nil {
-		logger.Error(err)
-	}
-}
-
-// +10
 func Test_Paint_Path_Nodes(*testing.T) {
-	m := "Rou"
-	var s *data.SHBD
-	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+	var (
+		m = "Rou"
+		//s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+		s, err = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", m))
+	)
 
 	if err != nil {
 		logger.Error(err)
@@ -142,17 +82,97 @@ func Test_Paint_Path_Nodes(*testing.T) {
 		logger.Fatal(err)
 	}
 
-	img, err := SHBDToImage(s, v)
+	img, err := PaintNodesAndWallMargins(s, v)
 
 	if err != nil {
 		logger.Error(err)
 	}
 
-	err = data.SaveBmpFile(img, "./", "painted path")
+	err = data.SaveBmpFile(img, "./", "painted_path_and_wall_margins")
 
 	if err != nil {
 		logger.Error(err)
 	}
+
+	//
+	img, err = PaintNodesWithoutWallMargins(s, v)
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	err = data.SaveBmpFile(img, "./", "painted_path_without_wall_margins")
+
+	img, err = PaintIntermittentNodes(s, v)
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	err = data.SaveBmpFile(img, "./", "painted_intermittent_nodes")
+
+	// print an image with the node data
+
+	// paint nodes that will be used for paths.
+}
+
+func Test_Paint_Path_Nodes_Multiple(*testing.T) {
+	var (
+		m = "Rou"
+		//s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+		s, err = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", m))
+	)
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	v := initNodes(s)
+
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	var wg sync.WaitGroup
+
+	for i := 0; i < 5; i++ {
+		wg.Add(1)
+		go func(name string, grid grid) {
+			defer wg.Done()
+			img, err := data.SHBDToImage(s)
+
+			if err != nil {
+				logger.Error(err)
+			}
+
+			cgrid := copyGrid(grid)
+			cgrid = gridWithReducedNodes(s, 4)
+
+			if err != nil {
+				logger.Fatal(err)
+			}
+
+			pathVertices := astar(cgrid, 835, 700, 1070, 1540, 4)
+
+			for _, pv := range pathVertices {
+				img.Set(pv.x, pv.y, color.RGBA{
+					R: 207,
+					G: 0,
+					B: 15,
+					A: 1,
+				})
+			}
+
+			err = data.SaveBmpFile(img, "./", name)
+
+			if err != nil {
+				logger.Fatal(err)
+			}
+
+		}(fmt.Sprintf("paintedpath%v", i), v)
+	}
+	wg.Wait()
+
 	// print an image with the node data
 
 	// paint nodes that will be used for paths.
@@ -192,25 +212,13 @@ func Test_Map_Intermitent_By_Speed_Path_A_B_AStar(t *testing.T) {
 		logger.Error(err)
 	}
 
-	a := &node{
-		x: 515,
-		y: 1177,
-	}
-
-	b := &node{
-		x: 1250,
-		y: 1500,
-	}
-
-	v := initNodes(s)
-
-	pn := initPathNodes(s, v)
+	pn := gridWithReducedNodes(s, 4)
 
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	pathVertices := astar(pn, a, b)
+	pathVertices := astar(pn, 835, 700, 1070, 1540, 4)
 
 	pathVertices = reduce(pathVertices, 15)
 
@@ -231,8 +239,55 @@ func Test_Map_Intermitent_By_Speed_Path_A_B_AStar(t *testing.T) {
 
 }
 
-func Benchmark_ReduceVertices(b *testing.B) {
+func Benchmark_algorithms(b *testing.B) {
+	//
+	b.Run("astar_raw", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			v1 := copyGrid(v)
+			astar(v1, 835, 700, 1070, 1540, 1)
+		}
+	})
 
+	b.Run("astar_nodes_path_margin", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			v2 := gridWithReducedNodes(s, 4)
+			astar(v2, 835, 700, 1070, 1540, 4)
+		}
+	})
+
+	b.Run("astar_nodes_path_with_wall_margin", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			v2 := gridWithWallsMargin(s, v, 8)
+			astar(v2, 835, 700, 1070, 1540, 8)
+		}
+	})
+
+}
+
+func Benchmark_InitVertices(b *testing.B) {
+	var (
+		m = "Rou"
+		//s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+		s, err = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", m))
+	)
+	if err != nil {
+		logger.Error(err)
+	}
+
+	b.Run("initNodes", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			v = initNodes(s)
+		}
+	})
+
+	b.Run("pathNodes", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			gridWithReducedNodes(s, 4)
+		}
+	})
+}
+
+func Benchmark_ReduceVertices(b *testing.B) {
 	m := "Rou"
 	var s *data.SHBD
 	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
@@ -241,25 +296,13 @@ func Benchmark_ReduceVertices(b *testing.B) {
 		logger.Error(err)
 	}
 
-	pa := &node{
-		x: 515,
-		y: 1177,
-	}
-
-	pb := &node{
-		x: 1250,
-		y: 1500,
-	}
-
-	v := initNodes(s)
-
-	pn := initPathNodes(s, v)
+	pn := gridWithReducedNodes(s, 4)
 
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	pathVertices := astar(pn, pa, pb)
+	pathVertices := astar(pn, 835, 700, 1070, 1540, 4)
 	b.Run("reduce", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_ = reduce(pathVertices, 15)
@@ -268,9 +311,11 @@ func Benchmark_ReduceVertices(b *testing.B) {
 }
 
 func Benchmark_Copy_Grid(b *testing.B) {
-	m := "Rou"
-	var s *data.SHBD
-	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+	var (
+		m = "Rou"
+		//s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+		s, err = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", m))
+	)
 
 	if err != nil {
 		logger.Error(err)
@@ -278,7 +323,7 @@ func Benchmark_Copy_Grid(b *testing.B) {
 
 	v := initNodes(s)
 
-	pn := initPathNodes(s, v)
+	pn := gridWithReducedNodes(s, 4)
 
 	if err != nil {
 		logger.Fatal(err)
@@ -297,128 +342,26 @@ func Benchmark_Copy_Grid(b *testing.B) {
 	})
 }
 
-// really inefficient
-// I should check how to avoid making use of the grid pointers
-func copyGrid(g grid) grid {
-	var ng = make(grid)
-	for k1, v1 := range g {
-		for k2, v2 := range v1 {
-			n := *v2
-			_, ok := ng[k1]
-			if !ok {
-				ng[k1] = make(map[int]*node)
-			}
-			ng[k1][k2] = &n
-		}
-	}
-	return ng
+func Benchmark_Close_Distance_Algorithms(b *testing.B) {
+
 }
 
-func Benchmark_InitVertices(b *testing.B) {
-	m := "Rou"
-	var s *data.SHBD
-	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+func PaintNodesAndWallMargins(s *data.SHBD, wv grid) (*image.RGBA, error) {
+	var (
+		r = bytes.NewReader(s.Data)
 
-	if err != nil {
-		logger.Error(err)
-	}
-
-	var v grid
-	b.Run("initNodes", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			v = initNodes(s)
-		}
-	})
-
-	b.Run("pathNodes", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			initPathNodes(s, v)
-		}
-	})
-}
-
-func Benchmark_astar_algorithm(b *testing.B) {
-	m := "Rou"
-	var s *data.SHBD
-	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
-
-	if err != nil {
-		logger.Error(err)
-	}
-
-	v := initNodes(s)
-	pn := initPathNodes(s, v)
-
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	pa := &node{
-		x: 835,
-		y: 700,
-	}
-
-	pb := &node{
-		x: 1070,
-		y: 1540,
-	}
-
-	b.Run("astar", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			astar(pn, pa, pb)
-		}
-	})
-}
-
-func Benchmark_algorithms(b *testing.B) {
-	m := "Rou"
-	var s *data.SHBD
-	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
-
-	if err != nil {
-		logger.Error(err)
-	}
-
-	v := initNodes(s)
-
-	pa := &node{
-		x: 835,
-		y: 700,
-	}
-
-	pb := &node{
-		x: 1070,
-		y: 1540,
-	}
-
-	v1 := copyGrid(v)
-	b.Run("astar_raw", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			astar(v1, pa, pb)
-		}
-	})
-
-	v2 := copyGrid(v)
-	b.Run("jps_raw", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			jps(v2, pa, pb)
-		}
-	})
-}
-
-func SHBDToImage(s *data.SHBD, wv grid) (*image.RGBA, error) {
-	r := bytes.NewReader(s.Data)
-
-	img := image.NewRGBA(image.Rectangle{
-		Min: image.Point{
-			X: 0,
-			Y: 0,
-		},
-		Max: image.Point{
-			X: s.X * 8,
-			Y: s.Y,
-		},
-	})
+		img = image.NewRGBA(image.Rectangle{
+			Min: image.Point{
+				X: 0,
+				Y: 0,
+			},
+			Max: image.Point{
+				X: s.X * 8,
+				Y: s.Y,
+			},
+		})
+		count = 0
+	)
 
 	for y := 0; y < s.Y; y++ {
 		for x := 0; x < s.X; x++ {
@@ -436,20 +379,22 @@ func SHBDToImage(s *data.SHBD, wv grid) (*image.RGBA, error) {
 
 				rX = x*8 + i
 				rY = y
-
 				if b&byte(math.Pow(2, float64(i))) == 0 {
-					count := len(adjacentNodes(wv, &node{
-						x: rX,
-						y: rY,
-					}, nodesMargin))
+					countn := len(adjacentNodes(wv, rX, rY, 8))
 
-					if count == neighborNodes {
-						c = color.RGBA{
-							R: 255,
-							G: 0,
-							B: 0,
-							A: 1,
+					if countn == neighborNodes {
+						if rX%8 == 0 && rY%8 == 0 {
+							c = color.RGBA{
+								R: 255,
+								G: 0,
+								B: 0,
+								A: 1,
+							}
+							count++
+						} else {
+							c = color.White
 						}
+
 					} else {
 						c = color.White
 					}
@@ -461,14 +406,136 @@ func SHBDToImage(s *data.SHBD, wv grid) (*image.RGBA, error) {
 			}
 		}
 	}
+	fmt.Printf("count nodes %v\n", count)
 	return img, nil
 }
 
-func initPathNodes(s *data.SHBD, wv grid) grid {
-
+func PaintNodesWithoutWallMargins(s *data.SHBD, wv grid) (*image.RGBA, error) {
 	var (
-		pn = make(grid)
-		r  = bytes.NewReader(s.Data)
+		r = bytes.NewReader(s.Data)
+
+		img = image.NewRGBA(image.Rectangle{
+			Min: image.Point{
+				X: 0,
+				Y: 0,
+			},
+			Max: image.Point{
+				X: s.X * 8,
+				Y: s.Y,
+			},
+		})
+		count = 0
+	)
+
+	for y := 0; y < s.Y; y++ {
+		for x := 0; x < s.X; x++ {
+			b, err := r.ReadByte()
+			if err != nil {
+				return img, err
+			}
+
+			// every ten pixels
+			for i := 0; i < 8; i++ {
+				var (
+					rX, rY    int
+					c         color.Color
+				)
+
+				rX = x*8 + i
+				rY = y
+
+				if b&byte(math.Pow(2, float64(i))) == 0 {
+					if rX%8 == 0 && rY%8 == 0 {
+						c = color.RGBA{
+							R: 255,
+							G: 0,
+							B: 0,
+							A: 1,
+						}
+						count++
+					} else {
+						c = color.White
+					}
+
+				} else {
+					c = color.Black
+				}
+
+				img.Set(rX, rY, c)
+			}
+		}
+	}
+	fmt.Printf("count nodes %v\n", count)
+	return img, nil
+}
+
+func PaintIntermittentNodes(s *data.SHBD, wv grid) (*image.RGBA, error) {
+	var (
+		r = bytes.NewReader(s.Data)
+
+		img = image.NewRGBA(image.Rectangle{
+			Min: image.Point{
+				X: 0,
+				Y: 0,
+			},
+			Max: image.Point{
+				X: s.X * 8,
+				Y: s.Y,
+			},
+		})
+		count     = 0
+		lastPixel = 0
+	)
+
+	for y := 0; y < s.Y; y++ {
+		for x := 0; x < s.X; x++ {
+			b, err := r.ReadByte()
+			if err != nil {
+				return img, err
+			}
+
+			// every ten pixels
+			for i := 0; i < 8; i++ {
+				var (
+					rX, rY int
+					c      color.Color
+				)
+
+				rX = x*8 + i
+				rY = y
+				lastPixel++
+
+				if b&byte(math.Pow(2, float64(i))) == 0 {
+					if lastPixel > 8 {
+						c = color.RGBA{
+							R: 255,
+							G: 0,
+							B: 0,
+							A: 1,
+						}
+						count++
+						lastPixel = 0
+					} else {
+						c = color.White
+					}
+
+				} else {
+					c = color.Black
+				}
+
+				img.Set(rX, rY, c)
+			}
+		}
+	}
+	fmt.Printf("count nodes %v\n", count)
+	return img, nil
+}
+
+func gridWithReducedNodes(s *data.SHBD, margin int) grid {
+	var (
+		pn    = make(grid)
+		r     = bytes.NewReader(s.Data)
+		count = 0
 	)
 
 	for y := 0; y < s.Y; y++ {
@@ -479,17 +546,11 @@ func initPathNodes(s *data.SHBD, wv grid) grid {
 			}
 
 			for i := 0; i < 8; i++ {
-
 				if b&byte(math.Pow(2, float64(i))) == 0 {
 					rX := x*8 + i
 					rY := y
-					// add only half the nodes needed
-					count := len(adjacentNodes(wv, &node{
-						x: rX,
-						y: rY,
-					}, nodesMargin))
-
-					if count == neighborNodes { // do not add nodes if they are too close to inaccessible nodes
+					// margin between nodes
+					if rX%margin == 0 && rY%margin == 0 {
 						_, ok := pn[rX]
 						if !ok {
 							pn[rX] = make(map[int]*node)
@@ -499,11 +560,58 @@ func initPathNodes(s *data.SHBD, wv grid) grid {
 							x: rX,
 							y: rY,
 						}
+						count++
 					}
 				}
 			}
 		}
 	}
+	fmt.Printf("count nodes %v \n", count)
+	return pn
+}
+
+// preset nodes + extra walls so that NPCs don't get too close to collision areas
+func gridWithWallsMargin(s *data.SHBD, wv grid, margin int) grid {
+	var (
+		pn    = make(grid)
+		r     = bytes.NewReader(s.Data)
+		ncount = 0
+	)
+
+	for y := 0; y < s.Y; y++ {
+		for x := 0; x < s.X; x++ {
+			b, err := r.ReadByte()
+			if err != nil {
+				return pn
+			}
+
+			for i := 0; i < 8; i++ {
+				if b&byte(math.Pow(2, float64(i))) == 0 {
+					rX := x*8 + i
+					rY := y
+					// add only half the nodes needed
+						count := len(adjacentNodes(wv, rX, rY, margin))
+
+						if count == neighborNodes { // do not add nodes if they are too close to inaccessible nodes
+							if rX%margin == 0 && rY%margin == 0 {
+
+								_, ok := pn[rX]
+								if !ok {
+									pn[rX] = make(map[int]*node)
+								}
+
+								pn[rX][rY] = &node{
+									x: rX,
+									y: rY,
+								}
+								ncount++
+							}
+						}
+				}
+			}
+		}
+	}
+	fmt.Printf("count nodes %v \n", ncount)
 	return pn
 }
 
@@ -513,22 +621,24 @@ const (
 )
 
 // sqrt(dx * dx + dy * dy)
-func euclideanDistance(a, b *node) int {
-	d := math.Sqrt(math.Pow(math.Abs(float64(a.x-b.x)), 2) + math.Pow(math.Abs(float64(a.y-b.y)), 2))
+func euclideanDistance(fx, fy, tx, ty int) int {
+	dx := tx - fx
+	dy := ty - fy
+	d := math.Sqrt(float64(dx*dx + dy*dy))
 	return int(d)
 }
 
 // sqrt(dx * dx + dy * dy)
-func octileDistance(a, b * node) int {
+func octileDistance(a, b *node) int {
 	var F = math.Sqrt2 - 1
 	dx := math.Abs(float64(a.x - b.x))
 	dy := math.Abs(float64(a.y - b.y))
 
 	if dx < dy {
-		return int(F * dx + dy)
+		return int(F*dx + dy)
 	}
 
-	return int(F * dy + dx)
+	return int(F*dy + dx)
 }
 
 type grid map[int]map[int]*node
@@ -548,231 +658,132 @@ func (e nodes) Len() int {
 }
 
 func (e nodes) Less(i, j int) bool {
-	return e[i].h < e[j].h
+	return e[i].f < e[j].f
 }
 
 func (e nodes) Swap(i, j int) {
 	e[i], e[j] = e[j], e[i]
 }
 
-// jump point search
-// good for open spaces
-func jps(grid grid, a *node, b *node) nodes {
-	var (
-		open, foundPath nodes
-		node            *node
-	)
+// use K nearest neighbor algorithm
+func (g grid) getNearest(x, y int) *node {
+	// given this point, move forward in all directions until a node is found
+	// sounds good, doesn't work
+	return nearestNodes(g, x, y , 1,256)
 
-	a.g = 0
-	a.f = 0
+	// I should try to build a square around the point
+	// then iterate each node in the square, if ts a walkable position
+	// add to the list ( or return if its needed to reduce resources, add this as a function param lazyMode)
+	// iterate each item in the list, calculate euclidean distance of node, return the one with the shortest distance
 
-	open = append(open, a)
-	a.opened = true
 
-	for len(open) != 0 {
-		open, node = lowestF(open)
-		node.closed = true
-		if equal(node, b) {
-			break
-		}
-		identifySuccessors(grid, &open, node, b)
-	}
+	// for each rectangle given the epicenter x,y
+	// send a go routine to iterate over the rectangle
+	// if neighbour is found, send to channel and exit function
+	// close channel so all other routines are canceled
 
-	next := node
-	for next != nil {
-		foundPath = append(foundPath, next)
-		next = next.parent
-	}
+	// upper left side
+	// x-50, y-50
+	// for y++
+	//		for x++
+	//		if x,y is a node
+	//		send to channel
 
-	sort.Sort(sort.Reverse(foundPath))
+	// bottom left side
+	// x-50, y+50
 
-	return foundPath
+
 }
 
-// this one fails to add nodes to openList
-func identifySuccessors(grid grid, openList *nodes, node, b *node) {
-	var (
-		//neighbors = adjacentNodes(grid, node, 1)
-		neighbors = findNeighbors(grid, node)
-		nx, ny    int
-		x         = node.x
-		y         = node.y
-		ng              int
-
-	)
-
-	for _, neighbor := range neighbors {
-		if neighbor == nil {
-			continue
-		}
-		nx = neighbor.x
-		ny = neighbor.y
-		jumpNode := jump(grid, nx, ny, x, y, b)
-		if jumpNode != nil {
-
-			if jumpNode.closed {
-				continue
-			}
-
-			d := octileDistance(jumpNode, node)
-			//d := euclideanDistance(jumpNode, node)
-
-			ng = node.g + d
-
-			if !jumpNode.opened || ng < jumpNode.g {
-				jumpNode.g = ng
-				jumpNode.h = euclideanDistance(jumpNode, b)
-				jumpNode.f = jumpNode.g + jumpNode.h
-				jumpNode.parent = node
-				if !jumpNode.opened {
-					*openList = append(*openList, jumpNode)
-					jumpNode.opened = true
-				}
-			}
-		}
-	}
-}
-
-func findNeighbors(grid grid, node *node) nodes {
-	var (
-		parent         = node.parent
-		x              = node.x
-		y              = node.y
-		px, py, dx, dy int
-		neighbors      nodes
-	)
-
-	// directed pruning: can ignore most neighbors, unless forced.
-	if parent != nil {
-		px = parent.x
-		py = parent.y
-		// get the normalized direction of travel
-		dx = int(float64(x-px) / math.Max(math.Abs(float64(x-px)), 1))
-		dy = int(float64(y-py) / math.Max(math.Abs(float64(y-py)), 1))
-
-		if dx != 0 && dy != 0 {
-			if canWalk(grid, x, y+dy) {
-				neighbors = append(neighbors, grid[x][y+dy])
-			}
-
-			if canWalk(grid, x+dx, y) {
-				neighbors = append(neighbors, grid[x+dx][y])
-			}
-
-			if canWalk(grid, x, y+dy) && canWalk(grid, x+dx, y) {
-				neighbors = append(neighbors, grid[x+dx][y+dy])
-			}
-		} else { // search horizontally/vertically
-			var isNextWalkable bool
-			if dx != 0 {
-				isNextWalkable = canWalk(grid, x+dx, y)
-				var (
-					isTopWalkable = canWalk(grid, x, y+1)
-					isBottomWalkable = canWalk(grid,x, y-1)
-				)
-
-				if isNextWalkable {
-					neighbors = append(neighbors, grid[x+dx][y])
-					if isTopWalkable {
-						neighbors = append(neighbors, grid[x+dx][y+1])
-					}
-					if isBottomWalkable {
-						neighbors = append(neighbors, grid[x+dx][y-1])
-					}
-				}
-
-				if isTopWalkable {
-					neighbors = append(neighbors, grid[x][y+1])
-				}
-
-				if isBottomWalkable {
-					neighbors = append(neighbors, grid[x][y-1])
-				}
-			} else if dy != 0 {
-				isNextWalkable = canWalk(grid, x, y+dy)
-
-				var (
-					isRightWalkable = canWalk(grid, x+1, y)
-					isLeftWalkable = canWalk(grid, x-1, y)
-				)
-
-				if isNextWalkable {
-					neighbors = append(neighbors, grid[x][y+dy])
-					if isRightWalkable {
-						neighbors = append(neighbors, grid[x+1][y+dy])
-					}
-					if isLeftWalkable {
-						neighbors = append(neighbors, grid[x-1][y+dy])
-					}
-				}
-
-				if isRightWalkable {
-					neighbors = append(neighbors, grid[x+1][y])
-				}
-
-				if isLeftWalkable {
-					neighbors = append(neighbors, grid[x-1][y])
-				}
-			}
-		}
-	} else { // return all neighbors
-		for _, neighborNode := range adjacentNodes(grid, node, 1) {
-			neighbors = append(neighbors, neighborNode)
-		}
-	}
-	return neighbors
-}
-
-func jump(grid grid, x, y, px, py int, b *node) *node {
-	var (
-		dx = x - px
-		dy = y - py
-	)
-
-	if !canWalk(grid, x, y) {
+func nearestNodes(wv grid, x, y , margin int, tries int) *node {
+	if tries == 0 {
 		return nil
 	}
 
-	node, ok := grid[x][y]
-	if ok && equal(node, b) {
-		return node
+	// ↑
+	n := wv.get(x, y-margin)
+	if n != nil {
+		return n
 	}
 
-	if dx != 0 && dy != 0 {
-
-		if jump(grid, x+dx, y, x, y, b) != nil || jump(grid, x, y+dy, x, y, b) != nil {
-			return grid[x][y]
-		}
-
-	} else {    // horizontally/vertically
-		if dx != 0 { // moving along x
-			if (canWalk(grid, x, y-1) && !canWalk(grid, x-dx, y-1)) ||
-				canWalk(grid, x, y+1) && !canWalk(grid, x-dx, y+1) {
-				return grid[x][y]
-			}
-		} else if dy != 0 {
-			if (canWalk(grid, x-1, y) && !canWalk(grid, x-1, y-dy)) ||
-				canWalk(grid, x+1, y) && !canWalk(grid, x+1, y-dy) {
-				return grid[x][y]
-			}
-		}
+	// ↓
+	n = wv.get(x, y+margin)
+	if n != nil {
+		return n
 	}
 
-	// moving diagonally, must make sure one of the vertical/horizontal
-	// neighbors is open to allow the path
-	if canWalk(grid, x+dx, y) && canWalk(grid, x, y+dy) {
-		return jump(grid, x+dx, y+dy, x, y, b)
+	// →
+	n = wv.get(x+margin, y)
+	if n != nil {
+		return n
+	}
+
+	// ↓
+	n = wv.get(x-margin, y)
+	if n != nil {
+		return n
+	}
+
+	// ↖
+	n = wv.get(x-margin, y-margin)
+	if n != nil {
+		return n
+	}
+
+	// ↗
+	n = wv.get(x+margin, y-margin)
+	if n != nil {
+		return n
+	}
+
+	// ↘
+	n = wv.get(x+margin, y+margin)
+	if n != nil {
+		return n
+	}
+
+	// ↙
+	n = wv.get(x-margin, y+margin)
+	if n != nil {
+		return n
+	}
+	tries--
+	margin++
+	return nearestNodes(wv, x, y, margin, tries)
+}
+
+
+func (g grid) get(x, y int) *node {
+	n, ok := g[x][y]
+	if ok {
+		return n
 	}
 	return nil
 }
 
 // A*
-func astar(wv grid, a *node, b *node) nodes {
+func astar(wv grid, fx, fy, tx, ty int, margin int) nodes {
 	var (
 		open, foundPath nodes
 		node            *node
 		ng              float64
+		a               = wv.get(fx, fy)
+		b               = wv.get(tx, ty)
+		//start = time.Now().UnixNano()
 	)
+
+	if a == nil {
+		a = wv.getNearest(fx, fy)
+	}
+
+	if b == nil {
+		b = wv.getNearest(tx, ty)
+	}
+
+	if a == nil || b == nil {
+		logger.Fatalf("a or b is nil %v %v", a, b)
+		return nil
+	}
 
 	a.g = 0
 	a.f = 0
@@ -789,8 +800,7 @@ func astar(wv grid, a *node, b *node) nodes {
 			break
 		}
 
-		for _, neighbor := range adjacentNodes(wv, node, 1) { // 744 609
-
+		for _, neighbor := range adjacentNodes(wv, node.x, node.y, margin) { // 744 609
 			if neighbor.closed {
 				continue
 			}
@@ -804,8 +814,9 @@ func astar(wv grid, a *node, b *node) nodes {
 
 			if !neighbor.opened || ng < float64(neighbor.g) {
 				neighbor.g = int(ng)
-				neighbor.h = 2 * euclideanDistance(neighbor, b)
 				//neighbor.h = octileDistance(neighbor, b)
+				//neighbor.h = manhatanDistance(neighbor.x, neighbor.y, b.x, b.y)
+				neighbor.h = euclideanDistance(neighbor.x, neighbor.y, b.x, b.y)
 
 				neighbor.f = neighbor.g + neighbor.h
 				neighbor.parent = node
@@ -818,6 +829,8 @@ func astar(wv grid, a *node, b *node) nodes {
 		}
 	}
 
+	//fmt.Println(time.Now().UnixNano()-start)
+
 	next := node
 	for next != nil {
 		foundPath = append(foundPath, next)
@@ -827,6 +840,12 @@ func astar(wv grid, a *node, b *node) nodes {
 	sort.Sort(sort.Reverse(foundPath))
 
 	return foundPath
+}
+
+func manhatanDistance(fx, fy, tx, ty int) int {
+	dx := math.Abs(float64(tx - fx))
+	dy := math.Abs(float64(ty - fy))
+	return int(dx + dy)
 }
 
 // given speed, create a new node slice with speed as euclideanDistance value between nodes
@@ -843,7 +862,7 @@ func reduce(e nodes, speed int) nodes {
 
 	current = e[0]
 	for i := 0; i < len(e); i++ {
-		d := euclideanDistance(current, e[i])
+		d := euclideanDistance(current.x, current.y, e[i].x, e[i].y)
 		if d >= speed {
 			rp = append(rp, current)
 			current = e[i]
@@ -878,49 +897,57 @@ func canWalk(wv grid, x, y int) bool {
 	return ok
 }
 
-func adjacentNodes(wv grid, node *node, margin int) nodes {
+func adjacentNodes(wv grid, x, y , margin int) nodes {
 	var (
 		result nodes
 	)
 
 	// ↑
-	if canWalk(wv, node.x, node.y-margin) {
-		result = append(result, wv[node.x][node.y-margin])
+	n := wv.get(x, y-margin)
+	if n != nil {
+		result = append(result, n)
 	}
 
 	// ↓
-	if canWalk(wv, node.x, node.y+margin) {
-		result = append(result, wv[node.x][node.y+margin])
+	n = wv.get(x, y+margin)
+	if n != nil {
+		result = append(result, n)
 	}
 
 	// →
-	if canWalk(wv, node.x+margin, node.y) {
-		result = append(result, wv[node.x+1][node.y])
+	n = wv.get(x+margin, y)
+	if n != nil {
+		result = append(result, n)
 	}
 
 	// ↓
-	if canWalk(wv, node.x-margin, node.y) {
-		result = append(result, wv[node.x-1][node.y])
+	n = wv.get(x-margin, y)
+	if n != nil {
+		result = append(result, n)
 	}
 
 	// ↖
-	if canWalk(wv, node.x-margin, node.y-margin) {
-		result = append(result, wv[node.x-1][node.y-1])
+	n = wv.get(x-margin, y-margin)
+	if n != nil {
+		result = append(result, n)
 	}
 
 	// ↗
-	if canWalk(wv, node.x+margin, node.y-margin) {
-		result = append(result, wv[node.x+1][node.y-1])
+	n = wv.get(x+margin, y-margin)
+	if n != nil {
+		result = append(result, n)
 	}
 
 	// ↘
-	if canWalk(wv, node.x+margin, node.y+margin) {
-		result = append(result, wv[node.x+margin][node.y+margin])
+	n = wv.get(x+margin, y+margin)
+	if n != nil {
+		result = append(result, n)
 	}
 
 	// ↙
-	if canWalk(wv, node.x-margin, node.y+margin) {
-		result = append(result, wv[node.x-margin][node.y+margin])
+	n = wv.get(x-margin, y+margin)
+	if n != nil {
+		result = append(result, n)
 	}
 
 	return result
@@ -928,8 +955,9 @@ func adjacentNodes(wv grid, node *node, margin int) nodes {
 
 func initNodes(s *data.SHBD) grid {
 	var (
-		wv = make(grid)
-		r  = bytes.NewReader(s.Data)
+		wv    = make(grid)
+		r     = bytes.NewReader(s.Data)
+		count = 0
 	)
 
 	for y := 0; y < s.Y; y++ {
@@ -947,19 +975,21 @@ func initNodes(s *data.SHBD) grid {
 					if !ok {
 						wv[rX] = make(map[int]*node)
 					}
-
-					wv[rX][rY] = &node{
+					n := &node{
 						x: rX,
 						y: rY,
 					}
+					wv[rX][rY] = n
+					count++
 				}
 			}
 		}
 	}
+	fmt.Printf("count nodes %v \n", count)
 	return wv
 }
 
-func in(list []*node, sv *node) bool {
+func in(list nodes, sv *node) bool {
 	for _, v := range list {
 		if equal(v, sv) {
 			return true
@@ -976,133 +1006,19 @@ func solveForSpeed(d, t int) int {
 	return d / t
 }
 
-
-type ngrid map[int][]int
-
-func inodes(s *data.SHBD) ngrid {
-	var (
-		ng = make(ngrid)
-		r  = bytes.NewReader(s.Data)
-	)
-
-	for y := 0; y < s.Y; y++ {
-		for x := 0; x < s.X; x++ {
-			b, err := r.ReadByte()
-			if err != nil {
-				return ng
+// really inefficient
+// I should check how to avoid making use of the grid pointers
+func copyGrid(g grid) grid {
+	var ng = make(grid)
+	for k1, v1 := range g {
+		for k2, v2 := range v1 {
+			n := *v2
+			_, ok := ng[k1]
+			if !ok {
+				ng[k1] = make(map[int]*node)
 			}
-
-			for i := 0; i < 8; i++ {
-				if b&byte(math.Pow(2, float64(i))) == 0 {
-					rX := x*8 + i
-					rY := y
-					ng[rX] = append(ng[rX], rY)
-				}
-			}
+			ng[k1][k2] = &n
 		}
 	}
 	return ng
-}
-
-func Benchmark_node_prototype_1(b *testing.B) {
-	m := "Rou"
-	var s *data.SHBD
-	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
-
-	if err != nil {
-		logger.Error(err)
-	}
-
-	var grid1 ngrid
-
-	b.Run("grid1_init", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			grid1 = inodes(s)
-		}
-	})
-
-	b.Run("grid1_search", func(b *testing.B) {
-		grid1.search(835, 700)
-		grid1.search(1070, 1540)
-	})
-
-	var grid2 ngrid2
-
-	b.Run("grid2_init", func(b *testing.B) {
-		for i := 0; i < b.N; i++ {
-			grid2 = inodes2(s)
-		}
-	})
-
-	b.Run("grid2_search", func(b *testing.B) {
-		grid2.search(835, 700)
-		grid2.search(1070, 1540)
-	})
-}
-
-func Benchmark_node_prototype_2(b *testing.B) {
-	m := "Rou"
-	var s *data.SHBD
-	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
-
-	if err != nil {
-		logger.Error(err)
-	}
-
-	var grid1 ngrid
-	grid1 = inodes(s)
-
-	b.Run("grid1_search", func(b *testing.B) {
-		grid1.search(835, 700)
-		grid1.search(1070, 1540)
-	})
-
-}
-
-func (n ngrid) search(x,y int) bool {
-	_, xok := n[x]
-	if xok {
-		for _, i := range n[x] {
-			if i == y {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-type ngrid2 map[int]map[int]bool
-
-func inodes2(s *data.SHBD) ngrid2 {
-	var (
-		ng = make(ngrid2)
-		r  = bytes.NewReader(s.Data)
-	)
-
-	for y := 0; y < s.Y; y++ {
-		for x := 0; x < s.X; x++ {
-			b, err := r.ReadByte()
-			if err != nil {
-				return ng
-			}
-
-			for i := 0; i < 8; i++ {
-				if b&byte(math.Pow(2, float64(i))) == 0 {
-					rX := x*8 + i
-					rY := y
-					_, ok := ng[rX]
-					if !ok {
-						ng[rX] = make(map[int]bool)
-					}
-					ng[rX][rY] = true
-				}
-			}
-		}
-	}
-	return ng
-}
-
-func (n ngrid2) search(x,y int) bool {
-	_, ok := n[x][y]
-	return ok
 }

@@ -160,3 +160,7 @@ func Test_Map_Intermitent_Speed_Change_Path_A_B_AStar(t *testing.T)  {
 func Test_Entity_Chase(t *testing.T)  {
 
 }
+
+func Test_Path_A_B_Speed_Race(t *testing.T)  {
+
+}

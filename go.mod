@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/RoaringBitmap/roaring v0.6.0
-	github.com/disintegration/imaging v1.6.2
+	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/go-pg/migrations/v8 v8.1.0
 	github.com/go-pg/pg/v10 v10.9.1
 	github.com/go-redis/redis/v7 v7.4.0
