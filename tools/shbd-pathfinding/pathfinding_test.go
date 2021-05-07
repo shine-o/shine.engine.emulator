@@ -1110,18 +1110,18 @@ func astar(ng, rg grid, fx, fy, tx, ty, margin int) nodes {
 				continue
 			}
 
-			ng := cnode.g + euclideanDistance(cnode.x, cnode.y, neighbor.x, neighbor.y)
+			//ng := cnode.g + euclideanDistance(cnode.x, cnode.y, neighbor.x, neighbor.y)
+			ng := cnode.g + octileDistance(cnode, neighbor)
 
 			if !neighbor.opened || ng < neighbor.g {
 				neighbor.g = ng
-				//neighbor.h = octileDistance(neighbor, b)
+				neighbor.h = octileDistance(neighbor, b)
 				//neighbor.h = manhatanDistance(neighbor.x, neighbor.y, b.x, b.y)
-				neighbor.h = euclideanDistance(neighbor.x, neighbor.y, b.x, b.y)
+				//neighbor.h = euclideanDistance(neighbor.x, neighbor.y, b.x, b.y)
 				neighbor.f = neighbor.g + neighbor.h
 				neighbor.parent = cnode
 
 				if !neighbor.opened {
-					// if diagonally no obstacle
 					neighbor.opened = true
 					open = append(open, neighbor)
 				}
@@ -1295,9 +1295,6 @@ func adjacentNodes(ng, rg grid, x, y , margin int) nodes {
 		result nodes
 		n * node
 	)
-
-	// between x,y and adjacent node
-	// assert that between x,y and adjacent node there are only walkable nodes
 
 	// ↑
 	if !topObstacles(rg, x,y, y-margin) {
