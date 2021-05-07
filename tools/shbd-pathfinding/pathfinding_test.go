@@ -18,8 +18,8 @@ var (
 	mn string
 	s  *data.SHBD
 	v  grid
-	vNodesNoWallsMargin = 4
-	vNodesWithWallsMargin = 4
+	vNodesNoWallsMargin = 8
+	vNodesWithWallsMargin = 8
 	vNodesWithWalls  grid
 	vNodesNoWalls    grid
 )
@@ -43,7 +43,7 @@ func Test_Path_A_astar_paint(t *testing.T) {
 		logger.Error(err)
 	}
 
-	pathVertices1 := astar(v1, 835, 700, 1070, 1540, vNodesNoWallsMargin)
+	pathVertices1 := astar(v1, v, 835, 700, 1070, 1540, vNodesNoWallsMargin)
 	fmt.Printf("vNodesNoWallsMargin path nodes %v\n", len(pathVertices1))
 
 	for _, pv := range pathVertices1 {
@@ -70,8 +70,8 @@ func Test_Path_A_astar_paint(t *testing.T) {
 		logger.Error(err)
 	}
 
-	pathVertices2 := astar(v2, 835, 700, 1070, 1540, vNodesNoWallsMargin)
-	fmt.Printf("vNodesNoWallsMargin path nodes %v\n", len(pathVertices2))
+	pathVertices2 := astar(v2, v,835, 700, 1070, 1540, vNodesWithWallsMargin)
+	fmt.Printf("vNodesWithWalls path nodes %v\n", len(pathVertices2))
 
 	for _, pv := range pathVertices2 {
 		img2.Set(pv.x, pv.y, color.RGBA{
@@ -97,7 +97,7 @@ func Test_Path_A_astar_paint(t *testing.T) {
 		logger.Error(err)
 	}
 
-	pathVertices3 := astar(v3, 835, 700, 1070, 1540, 1)
+	pathVertices3 := astar(v3,v, 835, 700, 1070, 1540, 1)
 
 	fmt.Printf("raw path nodes %v\n", len(pathVertices3))
 
@@ -178,7 +178,7 @@ func Test_Paint_Path_Nodes_Multiple(*testing.T) {
 				logger.Fatal(err)
 			}
 
-			pathVertices := astar(cgrid, 835, 700, 1070, 1540, 1)
+			pathVertices := astar(cgrid,v, 835, 700, 1070, 1540, 1)
 
 			for _, pv := range pathVertices {
 				img.Set(pv.x, pv.y, color.RGBA{
@@ -244,7 +244,7 @@ func Test_Map_Intermitent_By_Speed_Path_A_B_AStar(t *testing.T) {
 		logger.Fatal(err)
 	}
 
-	pathVertices := astar(pn, 835, 700, 1070, 1540, 1)
+	pathVertices := astar(pn,v, 835, 700, 1070, 1540, 1)
 
 	pathVertices = reduce(pathVertices, 15)
 
@@ -268,22 +268,22 @@ func Test_Map_Intermitent_By_Speed_Path_A_B_AStar(t *testing.T) {
 func Benchmark_algorithms(b *testing.B) {
 	b.Run("astar_raw", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			v1 := copyGrid(v)
-			astar(v1, 835, 700, 1070, 1540, 1)
+			ng := copyGrid(v)
+			astar(ng, v, 835, 700, 1070, 1540, 1)
 		}
 	})
 
 	b.Run("astar_reduced_nodes", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			v := copyGrid(vNodesNoWalls)
-			astar(v, 835, 700, 1070, 1540, vNodesNoWallsMargin)
+			ng := copyGrid(vNodesNoWalls)
+			astar(ng, v, 835, 700, 1070, 1540, vNodesNoWallsMargin)
 		}
 	})
 
 	b.Run("astar_reduced_nodes_with_wall_margin", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			v := copyGrid(vNodesWithWalls)
-			astar(v, 835, 700, 1070, 1540, vNodesWithWallsMargin)
+			ng := copyGrid(vNodesWithWalls)
+			astar(ng,v, 835, 700, 1070, 1540, vNodesWithWallsMargin)
 		}
 	})
 }
@@ -326,7 +326,7 @@ func Benchmark_ReduceVertices(b *testing.B) {
 		logger.Fatal(err)
 	}
 
-	pathVertices := astar(pn, 835, 700, 1070, 1540, 1)
+	pathVertices := astar(pn, v, 835, 700, 1070, 1540, 1)
 	b.Run("reduce", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			_ = reduce(pathVertices, 15)
@@ -404,8 +404,8 @@ func PaintNodesAndWallMargins(s *data.SHBD, wv grid) (*image.RGBA, error) {
 				rX = x*8 + i
 				rY = y
 				if b&byte(math.Pow(2, float64(i))) == 0 {
-					countn := len(adjacentNodes(wv, rX, rY, 8))
-					if rX%8 == 0 && rY%8 == 0 {
+					countn := len(adjacentNodes(wv, v, rX, rY, 8))
+					if rX%vNodesWithWallsMargin == 0 && rY%vNodesWithWallsMargin == 0 {
 						if countn >= neighborNodes {
 								c = color.RGBA{
 									R: 255,
@@ -468,7 +468,7 @@ func PaintNodesWithoutWallMargins(s *data.SHBD, wv grid) (*image.RGBA, error) {
 				rY = y
 
 				if b&byte(math.Pow(2, float64(i))) == 0 {
-					if rX%4 == 0 && rY%4 == 0 {
+					if rX%vNodesNoWallsMargin == 0 && rY%vNodesNoWallsMargin == 0 {
 						c = color.RGBA{
 							R: 255,
 							G: 0,
@@ -586,7 +586,7 @@ func gridWithWallsMargin(s *data.SHBD, wv grid, margin int) grid {
 					rX := x*8 + i
 					rY := y
 					// add only half the nodes needed
-					count := len(adjacentNodes(wv, rX, rY, margin))
+					count := len(adjacentNodes(wv, v, rX, rY, margin))
 					if count >= neighborNodes { // do not add nodes if they are too close to inaccessible nodes
 						if rX%margin == 0 && rY%margin == 0 {
 
@@ -672,10 +672,10 @@ func (g grid) getNearest(x, y int) *node {
 		ch = make(chan *node)
 	)
 
-	go searchTopLeft(g, ch, x,y, perimeter, true)
-	go searchTopRight(g, ch, x,y, perimeter, true)
-	go searchBottomLeft(g, ch, x,y, perimeter, true)
-	go searchBottomRight(g, ch, x,y, perimeter, true)
+	go searchOneTopLeft(g, ch, x, y, perimeter)
+	go searchOneTopRight(g, ch, x, y, perimeter)
+	go searchOneBottomLeft(g, ch, x, y, perimeter)
+	go searchOneBottomRight(g, ch, x, y, perimeter)
 
 	return <- ch
 }
@@ -760,7 +760,7 @@ func (g grid) getNearest(x, y int) *node {
 //	return nil
 //}
 
-func searchTopLeft(g grid, ch chan <- *node, x, y, perimeter int, first bool) {
+func searchOneTopLeft(g grid, ch chan<- *node, x, y, perimeter int) {
 	bx := x-perimeter
 	by := y-perimeter
 	for cy := y; cy != by; cy-- {
@@ -777,7 +777,7 @@ func searchTopLeft(g grid, ch chan <- *node, x, y, perimeter int, first bool) {
 	}
 }
 
-func searchTopRight(g grid, ch chan <- *node, x, y, perimeter int,first bool) {
+func searchOneTopRight(g grid, ch chan<- *node, x, y, perimeter int) {
 	bx := x+perimeter
 	by := y-perimeter
 	for cy := y; cy != by; cy-- {
@@ -794,7 +794,7 @@ func searchTopRight(g grid, ch chan <- *node, x, y, perimeter int,first bool) {
 	}
 }
 
-func searchBottomLeft(g grid, ch chan <- *node, x, y, perimeter int,first bool) {
+func searchOneBottomLeft(g grid, ch chan<- *node, x, y, perimeter int) {
 	bx := x-perimeter
 	by := y+perimeter
 	for cy := y; cy != by; cy++ {
@@ -812,7 +812,7 @@ func searchBottomLeft(g grid, ch chan <- *node, x, y, perimeter int,first bool) 
 	}
 }
 
-func searchBottomRight(g grid, ch chan <- *node, x, y, perimeter int,first bool) {
+func searchOneBottomRight(g grid, ch chan<- *node, x, y, perimeter int) {
 	bx := x+perimeter
 	by := y+perimeter
 	for cy := y; cy != by; cy++ {
@@ -822,16 +822,69 @@ func searchBottomRight(g grid, ch chan <- *node, x, y, perimeter int,first bool)
 				select {
 				case ch <- n:
 				default:
-					if first {
-						return
-					} else {
-						logger.Info("failed to send node through channel")
-						break
-					}
+					return
 				}
 			}
 		}
 	}
+}
+
+
+//
+func getAllTopLeft(g grid, ch chan<- *node, done chan <- bool, x, y, perimeter int) {
+	bx := x-perimeter
+	by := y-perimeter
+	for cy := y; cy != by; cy-- {
+		for cx := x; cx != bx; cx-- {
+			n := g.get(cx, cy)
+			if n != nil{
+				ch <- n
+			}
+		}
+	}
+	done <- true
+}
+
+func getAllTopRight(g grid, ch chan<- *node, done chan <- bool, x, y, perimeter int) {
+	bx := x+perimeter
+	by := y-perimeter
+	for cy := y; cy != by; cy-- {
+		for cx := x; cx != bx; cx++ {
+			n := g.get(cx, cy)
+			if n != nil{
+				ch <- n
+			}
+		}
+	}
+	done <- true
+}
+
+func getAllBottomLeft(g grid, ch chan<- *node, done chan <- bool, x, y, perimeter int) {
+	bx := x-perimeter
+	by := y+perimeter
+	for cy := y; cy != by; cy++ {
+		for cx := x; cx != bx; cx-- {
+			n := g.get(cx, cy)
+			if n != nil{
+				ch <- n
+			}
+		}
+	}
+	done <- true
+}
+
+func getAllBottomRight(g grid, ch chan<- *node, done chan <- bool, x, y, perimeter int) {
+	bx := x+perimeter
+	by := y+perimeter
+	for cy := y; cy != by; cy++ {
+		for cx := x; cx != bx; cx++ {
+			n := g.get(cx, cy)
+			if n != nil{
+				ch <- n
+			}
+		}
+	}
+	done <- true
 }
 
 func (g grid) get(x, y int) *node {
@@ -886,9 +939,16 @@ func (g grid) get(x, y int) *node {
 //				continue
 //			}
 //
+//			//ng = float64(node.g)
+//			//if neighbor.x-node.x == 0 || neighbor.y-node.y == 0 {
+//			//	ng += 1
+//			//} else {
+//			//	ng += math.Sqrt2
+//			//}
+//
 //			ng = float64(node.g)
 //			if neighbor.x-node.x == 0 || neighbor.y-node.y == 0 {
-//				ng += 1
+//				ng += float64(margin/2)
 //			} else {
 //				ng += math.Sqrt2
 //			}
@@ -921,22 +981,109 @@ func (g grid) get(x, y int) *node {
 //	return foundPath
 //}
 
-func astar(wv grid, fx, fy, tx, ty, margin int) nodes {
+type nodeList struct {
+	list nodes
+	sync.RWMutex
+}
+
+func TestAllNearbyNodes(t *testing.T) {
+	//pathVertices3 := astar(v3, 835, 700, 1070, 1540, 1)
+	nodes := allNearbyNodes(vNodesWithWalls, 835, 700, 100)
+	fmt.Println(nodes)
+}
+
+func Benchmark_AllNearbyNodes(b *testing.B) {
+	b.Run("nodes_with_walls_10_perimeter", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			allNearbyNodes(vNodesWithWalls, 835, 700, 10)
+		}
+	})
+	b.Run("nodes_with_walls_100_perimeter", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			allNearbyNodes(vNodesWithWalls, 835, 700, 100)
+		}
+	})
+	b.Run("raw_10_perimeter", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			allNearbyNodes(v, 835, 700, 10)
+		}
+	})
+	b.Run("raw_100_perimeter", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			allNearbyNodes(v, 835, 700, 100)
+		}
+	})
+}
+
+func allNearbyNodes(g grid, x, y int, perimeter int) nodes {
 	var (
+		list nodes
+		ch = make(chan *node, 1500)
+		tld = make(chan bool)
+		trd = make(chan bool)
+		bld = make(chan bool)
+		brd = make(chan bool)
+		//sem = make(chan int, 100)
+		//wg sync.WaitGroup
+		topLeft, topRight, bottomLeft, bottomRight bool
+	)
+
+	go getAllTopLeft(g, ch, tld, x, y, perimeter)
+	go getAllTopRight(g, ch, trd, x, y, perimeter)
+	go getAllBottomLeft(g, ch, bld, x, y, perimeter)
+	go getAllBottomRight(g, ch, brd, x, y, perimeter)
+
+	for {
+		select {
+		case n := <- ch:
+			if !in(list, n) {
+				list = append(list, n)
+			}
+			//wg.Add(1)
+			//sem <- 1
+			//go func(open *nodeList, n * node) {
+			//	defer wg.Done()
+			//	n.g = euclideanDistance(n.x, n.y, b.x, b.y)
+			//	n.h = euclideanDistance(n.x, n.y, a.x, a.y)
+			//	n.f = n.g+n.h
+			//	open.RLock()
+			//	open.list = append(open.list, n)
+			//	open.RUnlock()
+			//	<-sem
+			//}(open, n)
+
+		case <-tld:
+			topLeft = true
+		case <-trd:
+			topRight = true
+		case <-bld:
+			bottomLeft = true
+		case <-brd:
+			bottomRight = true
+		default:
+			if topLeft && topRight && bottomLeft && bottomRight {
+				return list
+			}
+		}
+	}
+}
+
+func astar(ng, rg grid, fx, fy, tx, ty, margin int) nodes {
+	var (
+		//open, foundPath nodes
 		open, foundPath nodes
-		node            *node
-		ng              float64
-		a               = wv.get(fx, fy)
-		b               = wv.get(tx, ty)
+		cnode     *node
+		a         = ng.get(fx, fy)
+		b         = ng.get(tx, ty)
 		//start = time.Now().UnixNano()
 	)
 
 	if a == nil {
-		a = wv.getNearest(fx, fy)
+		a = ng.getNearest(fx, fy)
 	}
 
 	if b == nil {
-		b = wv.getNearest(tx, ty)
+		b = ng.getNearest(tx, ty)
 	}
 
 	if a == nil || b == nil {
@@ -951,45 +1098,41 @@ func astar(wv grid, fx, fy, tx, ty, margin int) nodes {
 
 	a.opened = true
 
-	for len(open) != 0 {
-		open, node = lowestF(open)
-		node.closed = true
+	for {
+		open, cnode = lowestF(open)
 
-		if equal(node, b) {
+		if equal(cnode, b) {
 			break
 		}
 
-		// find neighbours in a grid cage
-		for _, neighbor := range adjacentNodes(wv, node.x, node.y, margin) {
+		for _, neighbor := range adjacentNodes(ng, rg, cnode.x, cnode.y, margin) {
 			if neighbor.closed {
 				continue
 			}
 
-			ng = float64(node.g)
-			if neighbor.x-node.x == 0 || neighbor.y-node.y == 0 {
-				ng += 1
-			} else {
-				ng += math.Sqrt2
-			}
+			ng := cnode.g + euclideanDistance(cnode.x, cnode.y, neighbor.x, neighbor.y)
 
-			if !neighbor.opened || ng < float64(neighbor.g) {
-				neighbor.g = int(ng)
+			if !neighbor.opened || ng < neighbor.g {
+				neighbor.g = ng
 				//neighbor.h = octileDistance(neighbor, b)
 				//neighbor.h = manhatanDistance(neighbor.x, neighbor.y, b.x, b.y)
 				neighbor.h = euclideanDistance(neighbor.x, neighbor.y, b.x, b.y)
 				neighbor.f = neighbor.g + neighbor.h
-				neighbor.parent = node
+				neighbor.parent = cnode
 
 				if !neighbor.opened {
-					open = append(open, neighbor)
+					// if diagonally no obstacle
 					neighbor.opened = true
+					open = append(open, neighbor)
 				}
 			}
 		}
 	}
 
+	cnode.closed = true
+
 	//fmt.Println(time.Now().UnixNano()-start)
-	next := node
+	next := cnode
 	for next != nil {
 		foundPath = append(foundPath, next)
 		next = next.parent
@@ -1055,69 +1198,170 @@ func canWalk(wv grid, x, y int) bool {
 	return ok
 }
 
-func adjacentNodes(wv grid, x, y , margin int) nodes {
+func topObstacles(raw grid, x, y, ty int) bool {
+	for y != ty {
+		if !canWalk(raw, x, y) {
+			return true
+		}
+		y--
+	}
+
+	return false
+}
+
+func bottomObstacles(wv grid, x, y, ty int) bool {
+	for y != ty {
+		if !canWalk(wv, x, y) {
+			return true
+		}
+		y++
+	}
+	return false
+}
+
+func rightObstacles(wv grid, x, y, tx int) bool {
+	for x != tx {
+		if !canWalk(wv, x, y) {
+			return true
+		}
+		x++
+	}
+	return false
+}
+
+func leftObstacles(wv grid, x, y, tx int) bool {
+	for x != tx {
+		if !canWalk(wv, x, y) {
+			return true
+		}
+		x--
+	}
+	return false
+}
+
+func topRightDiagonalObstacles(wv grid, x, y, tx, ty int) bool {
+	for x != tx && y != ty {
+		if !canWalk(wv, x, y) {
+			return true
+		}
+		x++
+		y--
+	}
+
+	return false
+}
+
+
+func topLeftDiagonalObstacles(wv grid, x, y, tx, ty int) bool {
+	for x != tx && y != ty {
+		if !canWalk(wv, x, y) {
+			return true
+		}
+		x--
+		y--
+	}
+
+	return false
+}
+
+
+func bottomRightDiagonalObstacles(wv grid, x, y, tx, ty int) bool {
+	for x != tx && y != ty {
+		if !canWalk(wv, x, y) {
+			return true
+		}
+		x++
+		y++
+	}
+
+	return false
+}
+
+func bottomLeftDiagonalObstacles(wv grid, x, y, tx, ty int) bool {
+	for x != tx && y != ty {
+		if !canWalk(wv, x, y) {
+			return true
+		}
+		x--
+		y++
+	}
+
+	return false
+}
+
+// using node grid and raw grid, get neighboring nodes
+func adjacentNodes(ng, rg grid, x, y , margin int) nodes {
 	var (
 		result nodes
+		n * node
 	)
 
+	// between x,y and adjacent node
+	// assert that between x,y and adjacent node there are only walkable nodes
+
 	// ↑
-	n := wv.get(x, y-margin)
-	if n != nil {
-		result = append(result, n)
+	if !topObstacles(rg, x,y, y-margin) {
+		n = ng.get(x, y-margin)
+		if n != nil {
+			result = append(result, n)
+		}
 	}
 
 	// ↓
-	n = wv.get(x, y+margin)
-	if n != nil {
-		result = append(result, n)
+	if !bottomObstacles(rg, x, y, y+margin) {
+		n = ng.get(x, y+margin)
+		if n != nil {
+			result = append(result, n)
+		}
 	}
 
 	// →
-	n = wv.get(x+margin, y)
-	if n != nil {
-		result = append(result, n)
+	if !rightObstacles(rg, x, y, x+margin) {
+		n = ng.get(x+margin, y)
+		if n != nil {
+			result = append(result, n)
+		}
 	}
 
-	// ↓
-	n = wv.get(x-margin, y)
-	if n != nil {
-		result = append(result, n)
+	// left
+	if !leftObstacles(rg, x,y, x-margin) {
+		n = ng.get(x-margin, y)
+		if n != nil {
+			result = append(result, n)
+		}
 	}
 
 	// ↖
-	n = wv.get(x-margin, y-margin)
-	if n != nil {
-		result = append(result, n)
+	if !topLeftDiagonalObstacles(rg, x, y, x-margin, y-margin) {
+		n = ng.get(x-margin, y-margin)
+		if n != nil {
+			result = append(result, n)
+		}
 	}
 
 	// ↗
-	n = wv.get(x+margin, y-margin)
-	if n != nil {
-		result = append(result, n)
+	if !topRightDiagonalObstacles(rg, x,y, x+margin, y-margin) {
+		n = ng.get(x+margin, y-margin)
+		if n != nil {
+			result = append(result, n)
+		}
 	}
 
 	// ↘
-	n = wv.get(x+margin, y+margin)
-	if n != nil {
-		result = append(result, n)
+	if !bottomRightDiagonalObstacles(rg, x, y, x+margin, y+margin) {
+		n = ng.get(x+margin, y+margin)
+		if n != nil {
+			result = append(result, n)
+		}
 	}
 
 	// ↙
-	n = wv.get(x-margin, y+margin)
-	if n != nil {
-		result = append(result, n)
+	if !bottomLeftDiagonalObstacles(rg, x,y, x-margin, y+margin) {
+		n = ng.get(x-margin, y+margin)
+		if n != nil {
+			result = append(result, n)
+		}
 	}
-
-	//
-	//if len(result) == 0 {
-	//	fmt.Println("no neighbours")
-	//	n := wv.getNearest(x, y)
-	//	if n != nil {
-	//		result = append(result, n)
-	//	} else {
-	//		fmt.Println("still no neighbours")
-	//	}
-	//}
 
 	return result
 }
