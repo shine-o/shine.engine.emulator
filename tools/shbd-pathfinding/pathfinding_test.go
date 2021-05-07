@@ -18,8 +18,8 @@ var (
 	mn string
 	s  *data.SHBD
 	v  grid
-	vNodesNoWallsMargin = 8
-	vNodesWithWallsMargin = 8
+	vNodesNoWallsMargin = 4
+	vNodesWithWallsMargin = 4
 	vNodesWithWalls  grid
 	vNodesNoWalls    grid
 )
@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func Test_Path_A_astar_paint(t *testing.T) {
+func Test_Path_A_astar_paint_large_distance(t *testing.T) {
 	v1 := copyGrid(vNodesNoWalls)
 
 	img1, err := data.SHBDToImage(s)
@@ -43,7 +43,7 @@ func Test_Path_A_astar_paint(t *testing.T) {
 		logger.Error(err)
 	}
 
-	pathVertices1 := astar(v1, v, 835, 700, 1070, 1540, vNodesNoWallsMargin)
+	pathVertices1 := astar(v1, v,  1566, 500, 466, 1566,  vNodesNoWallsMargin)
 	fmt.Printf("vNodesNoWallsMargin path nodes %v\n", len(pathVertices1))
 
 	for _, pv := range pathVertices1 {
@@ -70,7 +70,7 @@ func Test_Path_A_astar_paint(t *testing.T) {
 		logger.Error(err)
 	}
 
-	pathVertices2 := astar(v2, v,835, 700, 1070, 1540, vNodesWithWallsMargin)
+	pathVertices2 := astar(v2, v, 1566, 500, 466, 1566, vNodesWithWallsMargin)
 	fmt.Printf("vNodesWithWalls path nodes %v\n", len(pathVertices2))
 
 	for _, pv := range pathVertices2 {
@@ -97,7 +97,7 @@ func Test_Path_A_astar_paint(t *testing.T) {
 		logger.Error(err)
 	}
 
-	pathVertices3 := astar(v3,v, 835, 700, 1070, 1540, 1)
+	pathVertices3 := astar(v3,v,  1566, 500, 466, 1566,  1)
 
 	fmt.Printf("raw path nodes %v\n", len(pathVertices3))
 
@@ -116,6 +116,90 @@ func Test_Path_A_astar_paint(t *testing.T) {
 		logger.Error(err)
 	}
 }
+
+func Test_Path_A_astar_paint_short_distance(t *testing.T) {
+	v1 := copyGrid(vNodesNoWalls)
+
+	img1, err := data.SHBDToImage(s)
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	pathVertices1 := astar(v1, v,  900, 862, 908, 821,  vNodesNoWallsMargin)
+	fmt.Printf("vNodesNoWallsMargin path nodes %v\n", len(pathVertices1))
+
+	for _, pv := range pathVertices1 {
+		img1.Set(pv.x, pv.y, color.RGBA{
+			R: 207,
+			G: 0,
+			B: 15,
+			A: 1,
+		})
+	}
+
+	err = data.SaveBmpFile(img1, "./", "path_nodes_no_walls")
+
+	if err != nil {
+		logger.Error(err)
+	}
+	// print an image with the node data
+
+	v2 := copyGrid(vNodesWithWalls)
+
+	img2, err := data.SHBDToImage(s)
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	pathVertices2 := astar(v2, v, 900, 862, 908, 821,  vNodesWithWallsMargin)
+	fmt.Printf("vNodesWithWalls path nodes %v\n", len(pathVertices2))
+
+	for _, pv := range pathVertices2 {
+		img2.Set(pv.x, pv.y, color.RGBA{
+			R: 207,
+			G: 0,
+			B: 15,
+			A: 1,
+		})
+	}
+
+	err = data.SaveBmpFile(img2, "./", "path_nodes_with_walls")
+
+	if err != nil {
+		logger.Error(err)
+	}
+	//
+
+	v3 := copyGrid(v)
+
+	img3, err := data.SHBDToImage(s)
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	pathVertices3 := astar(v3,v,  900, 862, 908, 821,  1)
+
+	fmt.Printf("raw path nodes %v\n", len(pathVertices3))
+
+	for _, pv := range pathVertices3 {
+		img3.Set(pv.x, pv.y, color.RGBA{
+			R: 207,
+			G: 0,
+			B: 15,
+			A: 1,
+		})
+	}
+
+	err = data.SaveBmpFile(img3, "./", "path_raw")
+
+	if err != nil {
+		logger.Error(err)
+	}
+}
+
 
 func Test_Paint_Path_Nodes(*testing.T) {
 	var (
@@ -266,24 +350,45 @@ func Test_Map_Intermitent_By_Speed_Path_A_B_AStar(t *testing.T) {
 }
 
 func Benchmark_algorithms(b *testing.B) {
-	b.Run("astar_raw", func(b *testing.B) {
+	b.Run("astar_large_distance_raw", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			ng := copyGrid(v)
-			astar(ng, v, 835, 700, 1070, 1540, 1)
+			astar(ng, v, 1566, 500, 466, 1566, 1)
 		}
 	})
 
-	b.Run("astar_reduced_nodes", func(b *testing.B) {
+	b.Run("astar_large_distance_reduced_nodes", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			ng := copyGrid(vNodesNoWalls)
-			astar(ng, v, 835, 700, 1070, 1540, vNodesNoWallsMargin)
+			astar(ng, v,  1566, 500, 466, 1566, vNodesNoWallsMargin)
 		}
 	})
 
-	b.Run("astar_reduced_nodes_with_wall_margin", func(b *testing.B) {
+	b.Run("astar_large_distance_reduced_nodes_with_wall_margin", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			ng := copyGrid(vNodesWithWalls)
-			astar(ng,v, 835, 700, 1070, 1540, vNodesWithWallsMargin)
+			astar(ng,v,  1566, 500, 466, 1566,  vNodesWithWallsMargin)
+		}
+	})
+
+	b.Run("astar_short_distance_raw", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			ng := copyGrid(v)
+			astar(ng, v, 900, 862, 908, 821, 1)
+		}
+	})
+
+	b.Run("astar_short_distance_reduced_nodes", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			ng := copyGrid(vNodesNoWalls)
+			astar(ng, v,  900, 862, 908, 821,  vNodesNoWallsMargin)
+		}
+	})
+
+	b.Run("astar_short_distance_reduced_nodes_with_wall_margin", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			ng := copyGrid(vNodesWithWalls)
+			astar(ng,v,  900, 862, 908, 821,   vNodesWithWallsMargin)
 		}
 	})
 }
@@ -404,7 +509,7 @@ func PaintNodesAndWallMargins(s *data.SHBD, wv grid) (*image.RGBA, error) {
 				rX = x*8 + i
 				rY = y
 				if b&byte(math.Pow(2, float64(i))) == 0 {
-					countn := len(adjacentNodes(wv, v, rX, rY, 8))
+					countn := len(adjacentNodes(wv, v, rX, rY, vNodesWithWallsMargin))
 					if rX%vNodesWithWallsMargin == 0 && rY%vNodesWithWallsMargin == 0 {
 						if countn >= neighborNodes {
 								c = color.RGBA{
@@ -1320,7 +1425,7 @@ func adjacentNodes(ng, rg grid, x, y , margin int) nodes {
 		}
 	}
 
-	// left
+	// ←
 	if !leftObstacles(rg, x,y, x-margin) {
 		n = ng.get(x-margin, y)
 		if n != nil {
@@ -1362,6 +1467,7 @@ func adjacentNodes(ng, rg grid, x, y , margin int) nodes {
 
 	return result
 }
+
 
 func in(list nodes, sv *node) bool {
 	for _, v := range list {
