@@ -18,8 +18,8 @@ var (
 	mn string
 	s  *data.SHBD
 	v  grid
-	vNodesNoWallsMargin = 4
-	vNodesWithWallsMargin = 4
+	vNodesNoWallsMargin = 10
+	vNodesWithWallsMargin = 10
 	vNodesWithWalls  grid
 	vNodesNoWalls    grid
 )
@@ -509,7 +509,7 @@ func PaintNodesAndWallMargins(s *data.SHBD, wv grid) (*image.RGBA, error) {
 				rX = x*8 + i
 				rY = y
 				if b&byte(math.Pow(2, float64(i))) == 0 {
-					countn := len(adjacentNodes(wv, v, rX, rY, vNodesWithWallsMargin))
+					countn := len(adjacentNodes(wv, v, rX, rY, 2))
 					if rX%vNodesWithWallsMargin == 0 && rY%vNodesWithWallsMargin == 0 {
 						if countn >= neighborNodes {
 								c = color.RGBA{
@@ -691,7 +691,7 @@ func gridWithWallsMargin(s *data.SHBD, wv grid, margin int) grid {
 					rX := x*8 + i
 					rY := y
 					// add only half the nodes needed
-					count := len(adjacentNodes(wv, v, rX, rY, margin))
+					count := len(adjacentNodes(wv, v, rX, rY, 2))
 					if count >= neighborNodes { // do not add nodes if they are too close to inaccessible nodes
 						if rX%margin == 0 && rY%margin == 0 {
 
@@ -773,7 +773,7 @@ func (g grid) getNearest(x, y int) *node {
 	// if neighbour is found, send to channel and exit function
 	// close channel so all other routines are canceled
 	var (
-		perimeter = 150
+		perimeter = 250
 		ch = make(chan *node)
 	)
 
@@ -1103,16 +1103,19 @@ func Benchmark_AllNearbyNodes(b *testing.B) {
 			allNearbyNodes(vNodesWithWalls, 835, 700, 10)
 		}
 	})
+
 	b.Run("nodes_with_walls_100_perimeter", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			allNearbyNodes(vNodesWithWalls, 835, 700, 100)
 		}
 	})
+
 	b.Run("raw_10_perimeter", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			allNearbyNodes(v, 835, 700, 10)
 		}
 	})
+
 	b.Run("raw_100_perimeter", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			allNearbyNodes(v, 835, 700, 100)
@@ -1175,7 +1178,6 @@ func allNearbyNodes(g grid, x, y int, perimeter int) nodes {
 
 func astar(ng, rg grid, fx, fy, tx, ty, margin int) nodes {
 	var (
-		//open, foundPath nodes
 		open, foundPath nodes
 		cnode     *node
 		a         = ng.get(fx, fy)
@@ -1464,6 +1466,17 @@ func adjacentNodes(ng, rg grid, x, y , margin int) nodes {
 			result = append(result, n)
 		}
 	}
+
+	//
+	//if len(result) == 0 {
+	//	fmt.Println("no neighbours")
+	//	n := ng.getNearest(x, y)
+	//	if n != nil {
+	//		result = append(result, n)
+	//	} else {
+	//		fmt.Println("still no neighbours")
+	//	}
+	//}
 
 	return result
 }
