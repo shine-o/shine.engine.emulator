@@ -31,4 +31,5 @@ files
 
 /*.bmp
 /*.shbd
-/tools/shbd-pathfinding/painted path.bmp
+/tools/shbd-pathfinding/*.bmp
+/internal/pkg/pathfinding/*.bmp

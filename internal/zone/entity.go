@@ -2,6 +2,7 @@ package zone
 
 import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
+	path "github.com/shine-o/shine.engine.emulator/internal/pkg/pathfinding"
 	"sync"
 )
 
@@ -95,7 +96,7 @@ func (b *baseEntity) getLocation() (int, int) {
 func (b *baseEntity) move(m *zoneMap, igX, igY int) error {
 	rX, rY := bitmapCoordinates(igX, igY)
 
-	if !canWalk(m.walkableX, m.walkableY, rX, rY) {
+	if !path.CanWalk(m.rawNodes, rX, rY) {
 		return errors.Err{
 			Code: errors.ZoneMapCollisionDetected,
 			Details: errors.ErrDetails{

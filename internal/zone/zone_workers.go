@@ -136,15 +136,6 @@ func playerMapLoginLogic(e event) {
 
 	zoneEvents[playerSHN] <- &e1
 
-	e2 = playerDataEvent{
-		player:     make(chan *player),
-		net:        ev.np,
-		playerName: ev.nc.CharData.CharID.Name,
-		err:        make(chan error),
-	}
-
-	zoneEvents[playerData] <- &e2
-
 	select {
 	case <-e1.ok:
 		break
@@ -154,6 +145,15 @@ func playerMapLoginLogic(e event) {
 		// drop connection
 		return
 	}
+
+	e2 = playerDataEvent{
+		player:     make(chan *player),
+		net:        ev.np,
+		playerName: ev.nc.CharData.CharID.Name,
+		err:        make(chan error),
+	}
+
+	zoneEvents[playerData] <- &e2
 
 	var p *player
 	select {

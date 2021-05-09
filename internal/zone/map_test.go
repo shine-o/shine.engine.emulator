@@ -20,11 +20,15 @@ func TestLoadMap(t *testing.T) {
 		t.Fatal("value should not be nil")
 	}
 
-	if zm.walkableNodes == nil {
+	if zm.rawNodes == nil {
 		t.Fatal("value should not be nil")
 	}
 
-	if zm.pathNodes == nil {
+	if zm.presetNodes == nil {
+		t.Fatal("value should not be nil")
+	}
+
+	if zm.presetNodesWithMargin == nil {
 		t.Fatal("value should not be nil")
 	}
 
