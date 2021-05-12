@@ -14,7 +14,7 @@ func Test_Move_Entity_A_B(t *testing.T) {
 
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	p := &player{
 		baseEntity: baseEntity{},

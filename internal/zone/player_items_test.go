@@ -12,7 +12,7 @@ import (
 func TestNewItem_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -56,7 +56,7 @@ func TestNewItem_WithAttributes(t *testing.T) {
 	persistence.CleanDB()
 
 	itemInxName := "KarenStaff"
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -218,7 +218,7 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 	persistence.CleanDB()
 
 	itemInxName := "KarenStaff"
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -386,7 +386,7 @@ func TestNewItem_CreateAllItems(t *testing.T) {
 func TestNewItem_BadItemIndex(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -938,7 +938,7 @@ func Test_AllItems_With_Attributes_NC(t *testing.T) {
 func TestNewItemStack_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -996,7 +996,7 @@ func TestLoadNewPlayer_Mage_EquippedItems(t *testing.T) {
 	// should have 1 staff in slot 12
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", true)
+	char := persistence.NewDummyCharacter("mage", true, "dummy")
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -1025,7 +1025,7 @@ func TestLoadNewPlayer_Warrior_EquippedItems(t *testing.T) {
 	// should have 1 staff in slot 12
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("fighter", true)
+	char := persistence.NewDummyCharacter("fighter", true, "dummy")
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -1053,7 +1053,7 @@ func TestLoadNewPlayer_Warrior_EquippedItems(t *testing.T) {
 func TestLoadNewPlayer_Archer_EquippedItems(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("archer", true)
+	char := persistence.NewDummyCharacter("archer", true, "dummy")
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -1081,7 +1081,7 @@ func TestLoadNewPlayer_Archer_EquippedItems(t *testing.T) {
 func TestLoadNewPlayer_Cleric_EquippedItems(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("cleric", true)
+	char := persistence.NewDummyCharacter("cleric", true, "dummy")
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -1124,7 +1124,7 @@ func TestPlayer_DeletesItem(t *testing.T) {
 func TestItemEquip_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1213,7 +1213,7 @@ func TestItemEquip_Success(t *testing.T) {
 func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1303,7 +1303,7 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 func TestItemEquip_Success_NC(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1386,7 +1386,7 @@ func TestItemEquip_Success_NC(t *testing.T) {
 func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1491,7 +1491,7 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 func TestItemEquip_BadItemEquipOrClass(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1548,7 +1548,7 @@ func TestItemEquip_LowLevel(t *testing.T) {
 func TestItemEquip_NoItemInSlot(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1601,7 +1601,7 @@ func TestItemUnEquip_Success(t *testing.T) {
 	//t.Fail()
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1670,7 +1670,7 @@ func TestItemUnEquip_Success(t *testing.T) {
 func TestItemUnEquip_InventoryFull(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		persistence: &playerPersistence{
@@ -1747,7 +1747,7 @@ func TestItemUnEquip_InventoryFull(t *testing.T) {
 func TestItemUnEquip_NonExistentSlot(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1814,7 +1814,7 @@ func TestItemUnEquip_NonExistentSlot(t *testing.T) {
 func TestOpen_Deposit_Inventory_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1866,7 +1866,7 @@ func TestOpen_Deposit_Inventory_Success(t *testing.T) {
 func TestOpen_Deposit_Inventory_NC_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -1977,7 +1977,7 @@ func TestOpen_Premium_Inventory_NC_Success(t *testing.T) {
 func TestChangeItemSlot_Inventory_EmptySlot_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2052,7 +2052,7 @@ func TestChangeItemSlot_Inventory_EmptySlot_Success(t *testing.T) {
 func TestChangeItemSlot_Inventory_OccupiedSlot_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2155,7 +2155,7 @@ func TestChangeItemSlot_Inventory_OccupiedSlot_Success(t *testing.T) {
 func TestChangeItemSlot_Inventory_EmptySlot_NC(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2232,7 +2232,7 @@ func TestChangeItemSlot_Inventory_EmptySlot_NC(t *testing.T) {
 func TestChangeItemSlot_Inventory_OccupiedSlot_NC(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2320,7 +2320,7 @@ func TestChangeItemSlot_Inventory_OccupiedSlot_NC(t *testing.T) {
 func TestChangeItem_Inventory_NonExistentSlot(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2388,7 +2388,7 @@ func TestChangeItem_Inventory_NonExistentSlot(t *testing.T) {
 func TestChangeItemSlot_Inventory_NoItemInSlot(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2446,7 +2446,7 @@ func TestChangeItemSlot_Inventory_To_PremiumInventory_Should_Fail(t *testing.T) 
 func TestChangeItemSlot_Deposit_EmptySlot_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2524,7 +2524,7 @@ func TestChangeItemSlot_Deposit_EmptySlot_Success(t *testing.T) {
 func TestChangeItemSlot_Deposit_OccupiedSlot_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2633,7 +2633,7 @@ func TestChangeItemSlot_Deposit_OccupiedSlot_Success(t *testing.T) {
 func TestChangeItemSlot_Deposit_NonExistentSlot(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2707,7 +2707,7 @@ func TestChangeItemSlot_Deposit_NonExistentSlot(t *testing.T) {
 func TestChangeItemSlot_Deposit_NoItemInSlot(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2751,7 +2751,7 @@ func TestChangeItemSlot_Deposit_NoItemInSlot(t *testing.T) {
 func TestChangeItemSlot_Deposit_To_Inventory_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2832,7 +2832,7 @@ func TestChangeItemSlot_MHInventory_To_Inventory_Should_Fail(t *testing.T) { t.F
 func TestChangeItemSlot_RewardInventory_Should_Fail(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2891,7 +2891,7 @@ func TestChangeItemSlot_RewardInventory_Should_Fail(t *testing.T) {
 func TestChangeItemSlot_RewardInventory_To_Inventory_Success(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -2970,7 +2970,7 @@ func TestChangeItemSlot_RewardInventory_To_Inventory_Success(t *testing.T) {
 func TestChangeItemSlot_RewardInventory_To_Inventory_InventoryFull(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},
@@ -3040,7 +3040,7 @@ func TestChangeItemSlot_RewardInventory_To_Inventory_InventoryFull(t *testing.T)
 func TestChangeItemSlot_RewardInventory_To_PremiumInventory_Should_Fail(t *testing.T) {
 	persistence.CleanDB()
 
-	char := persistence.NewDummyCharacter("mage", false)
+	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
 		baseEntity: baseEntity{},

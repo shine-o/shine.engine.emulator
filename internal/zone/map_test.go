@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"testing"
 )
 
@@ -150,10 +151,6 @@ func Test_Map_Path_A_B_astar(t *testing.T)  {
 	
 }
 
-func Test_Map_Path_A_B_BIAStar(t *testing.T)  {
-
-}
-
 func Test_Map_Intermitent_Speed_Change_Path_A_B_AStar(t *testing.T)  {
 	t.Fail()
 	// start moving entity from point A to point B using speed X
@@ -167,4 +164,62 @@ func Test_Entity_Chase(t *testing.T)  {
 
 func Test_Path_A_B_Speed_Race(t *testing.T)  {
 
+}
+
+func Test_Entity_Within_Range(t *testing.T) {
+	char := persistence.NewDummyCharacter("mage", false, "dummy1")
+	char := persistence.NewDummyCharacter("mage", false, "dummy2")
+
+	// load a map
+	// Roumen
+	zm, err := loadMap(1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// load players A and B in two distinct places
+	pA := &player{}
+	pB := &player{}
+
+	pA.load("dummy1")
+
+	pB.load("dummy2")
+
+	go pA.awareness(zm)
+	go pB.awareness(zm)
+
+
+	zm.entities.add(pA)
+	zm.entities.add(pB)
+	// make player get close to player B
+
+	x1, y1 := gameCoordinates(1060, 767)
+
+	x2, y2 := gameCoordinates(700, 763)
+
+	pA.move(zm, x1, y1)
+
+	pB.move(zm, x2, y2)
+
+	// assert player A and B get a notification that an entity is within his area
+	// assert that both players have each other close
+
+	// entities that entered the entity's interaction range
+	for e := range es[0].newWithinRange() {
+		// if player, send packet
+	}
+
+	// entities that exited the entity's interaction range
+	for e := range es[0].newOutOfRange() {
+
+	}
+}
+
+func Test_Entity_Out_Of_Range(t *testing.T) {
+	t.Fail()
+}
+
+func Test_Entity_Cast_(t *testing.T) {
+	
 }
