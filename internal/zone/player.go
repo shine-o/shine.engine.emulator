@@ -28,7 +28,7 @@ const (
 )
 
 type player struct {
-	baseEntity
+	*baseEntity
 	proximity   *playerProximity
 	conn        *playerConnection
 	view        *playerView
@@ -41,12 +41,26 @@ type player struct {
 	skills      *playerSkills
 	targeting   *targeting
 	prompt      *prompt
-
 	ticks       *entityTicks
 	persistence *playerPersistence
 
 	// dangerZone: only to be used when loading or other situation!!
 	sync.RWMutex
+}
+
+func (p *player) getNearbyEntities() <-chan entity {
+	panic("implement me")
+}
+
+func (p *player) removeNearbyEntity(e interface{}) {
+	panic("implement me")
+}
+
+func (p *player) addNearbyEntity(e entity) {
+	h := e.getHandle()
+	p.baseEntity.Lock()
+	p.baseEntity.proximity.entities[h] = e
+	p.baseEntity.Unlock()
 }
 
 type playerProximity struct {
@@ -947,6 +961,20 @@ func (p *player) newItem(i *item) error {
 	}
 
 	return p.inventories.add(persistence.InventoryType(i.pItem.InventoryType), i.pItem.Slot, i)
+}
+
+func withinRange(e1, e2 entity) bool {
+	l1 := e1.getLocation()
+	l2 := e2.getLocation()
+	if l1.mapID != l2.mapID {
+		return false
+	}
+
+	if entityInRange(l1, l2) {
+		return true
+	}
+
+	return false
 }
 
 func playerInRange(v, t *player) bool {

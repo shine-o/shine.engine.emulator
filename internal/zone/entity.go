@@ -7,16 +7,29 @@ import (
 )
 
 type entity interface {
-	basicActions
 	getHandle() uint16
-	getLocation() (int, int)
+	getLocation() location
+	move(m *zoneMap, x, y int) error
+	getNearbyEntities() <- chan entity
+	addNearbyEntity(e entity)
+	removeNearbyEntity(e interface{})
 }
 
-type basicActions interface {
-	move(m *zoneMap, x, y int) error
-	// teleport
-	// use emotion
-	// jump
+func (el *entities2) all() <-chan entity {
+	el.RLock()
+	ch := make(chan entity, len(el.list))
+	el.RUnlock()
+
+	go func(el *entities2, send chan<- entity) {
+		el.RLock()
+		for _, e := range el.list {
+			send <- e
+		}
+		el.RUnlock()
+		close(send)
+	}(el, ch)
+
+	return ch
 }
 
 type location struct {
@@ -33,14 +46,22 @@ type movement struct {
 type entityType int
 
 type baseEntity struct {
-	handle   uint16
-	eType    entityType
-	fallback location
-	previous location
-	current  location
-	next     location
-	events   events
+	handle    uint16
+	eType     entityType
+	fallback  location
+	previous  location
+	current   location
+	next      location
+	proximity *entityProximity
+	events    events
 	// dangerZone: only to be used when loading or other situation!!
+	sync.RWMutex
+}
+
+type entitiesmap map[uint16]entity
+
+type entityProximity struct {
+	entities entitiesmap
 	sync.RWMutex
 }
 
@@ -89,8 +110,10 @@ func (b *baseEntity) getHandle() uint16 {
 	return h
 }
 
-func (b *baseEntity) getLocation() (int, int) {
-	return b.current.x, b.current.y
+func (b *baseEntity) getLocation() location {
+	b.RLock()
+	defer b.RUnlock()
+	return b.current
 }
 
 func (b *baseEntity) move(m *zoneMap, igX, igY int) error {
@@ -117,6 +140,7 @@ func (b *baseEntity) move(m *zoneMap, igX, igY int) error {
 	return nil
 }
 
+// check if entities are within each other's interaction range
 func entityInRange(e1, e2 location) bool {
 	viewerX, viewerY := bitmapCoordinates(e1.x, e1.y)
 	targetX, targetY := bitmapCoordinates(e2.x, e2.y)

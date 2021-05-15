@@ -1,7 +1,6 @@
 package zone
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"testing"
 )
 
@@ -167,10 +166,6 @@ func Test_Path_A_B_Speed_Race(t *testing.T)  {
 }
 
 func Test_Entity_Within_Range(t *testing.T) {
-	char := persistence.NewDummyCharacter("mage", false, "dummy1")
-	char := persistence.NewDummyCharacter("mage", false, "dummy2")
-
-	// load a map
 	// Roumen
 	zm, err := loadMap(1)
 
@@ -179,46 +174,119 @@ func Test_Entity_Within_Range(t *testing.T) {
 	}
 
 	// load players A and B in two distinct places
-	pA := &player{}
-	pB := &player{}
-
-	pA.load("dummy1")
-
-	pB.load("dummy2")
-
-	go pA.awareness(zm)
-	go pB.awareness(zm)
-
-
-	zm.entities.add(pA)
-	zm.entities.add(pB)
-	// make player get close to player B
-
-	x1, y1 := gameCoordinates(1060, 767)
-
-	x2, y2 := gameCoordinates(700, 763)
-
-	pA.move(zm, x1, y1)
-
-	pB.move(zm, x2, y2)
-
-	// assert player A and B get a notification that an entity is within his area
-	// assert that both players have each other close
-
-	// entities that entered the entity's interaction range
-	for e := range es[0].newWithinRange() {
-		// if player, send packet
+	pA := &player{
+		baseEntity: &baseEntity{
+			handle:    1,
+			proximity: &entityProximity{
+				entities: make(entitiesmap),
+			},
+		},
 	}
 
-	// entities that exited the entity's interaction range
-	for e := range es[0].newOutOfRange() {
+	pB := &player{
+		baseEntity: &baseEntity{
+			handle:    2,
+			proximity: &entityProximity{
+				entities: make(entitiesmap),
+			},
+		},
+	}
 
+	zm.addEntity(pA)
+	zm.addEntity(pB)
+
+	// Move entities to designated
+	x1, y1 := gameCoordinates(1060, 767)
+	x2, y2 := gameCoordinates(700, 763)
+
+	_ = pA.move(zm, x1, y1)
+	_ = pB.move(zm, x2, y2)
+
+	// entities A and B should not be in range
+	if withinRange(pA, pB) {
+		t.Fatal("entity A should not be in range of entity B")
+	}
+
+	// move entity A closer to entity B
+	_ = pA.move(zm, x2+10, y2+10)
+
+	// manually find entities
+	addWithinRangeEntities(pA, zm)
+	addWithinRangeEntities(pB, zm)
+
+	// entities A and B should now be in range
+	if !withinRange(pA, pB) {
+		t.Fatal("entity A should be in range of entity B")
+	}
+
+	// assert entity A is stored in entity B's proximity list
+	_, ok := pB.baseEntity.proximity.entities[pA.getHandle()]
+	if !ok {
+		t.Fatal("entity A is not stored in entity B's proximity list")
+	}
+
+	_, ok = pA.baseEntity.proximity.entities[pB.getHandle()]
+	if !ok {
+		t.Fatal("entity B is not stored in entity A's proximity list")
 	}
 }
 
 func Test_Entity_Out_Of_Range(t *testing.T) {
-	t.Fail()
+	// Roumen
+	zm, err := loadMap(1)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// load players A and B in two distinct places
+	pA := &player{
+		baseEntity: &baseEntity{
+			handle:    1,
+			proximity: &entityProximity{
+				entities: make(entitiesmap),
+			},
+		},
+	}
+
+	pB := &player{
+		baseEntity: &baseEntity{
+			handle:    2,
+			proximity: &entityProximity{
+				entities: make(entitiesmap),
+			},
+		},
+	}
+
+	zm.addEntity(pA)
+	zm.addEntity(pB)
+
+	// Move entities to designated
+	x1, y1 := gameCoordinates(1060, 767)
+	x2, y2 := gameCoordinates(700, 763)
+
+	_ = pA.move(zm, x1, y1)
+	_ = pB.move(zm, x2, y2)
+
+	// move entity A closer to entity B
+	_ = pA.move(zm, x2+10, y2+10)
+
+	// manually find entities
+	addWithinRangeEntities(pA, zm)
+	addWithinRangeEntities(pB, zm)
+
+	// move entity back to its original position
+	_ = pA.move(zm, x1, y1)
+	removeOutOfRangeEntities(pA, zm)
+	removeOutOfRangeEntities(pB, zm)
+
+	// entities A and B should not be in range
+	if withinRange(pA, pB) {
+		t.Fatal("entity A should not be in range of entity B")
+	}
 }
+
+
 
 func Test_Entity_Cast_(t *testing.T) {
 	

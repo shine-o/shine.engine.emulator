@@ -15,6 +15,7 @@ type zoneMap struct {
 	presetNodes           path.Grid
 	presetNodesWithMargin path.Grid
 	entities              *entities
+	entities2             *entities2
 	events                *events
 }
 
@@ -22,6 +23,12 @@ type entities struct {
 	players *players
 	npcs    *npcs
 }
+
+type entities2 struct {
+	list entitiesmap
+	sync.RWMutex
+}
+
 
 func (zm *zoneMap) run() {
 
@@ -191,7 +198,7 @@ func (zm *zoneMap) spawnMonster(monsterNpc *npc, re *data.RegenEntry) {
 	}
 
 	m := &npc{
-		baseEntity: baseEntity{
+		baseEntity: &baseEntity{
 			handle: h,
 			fallback: location{
 				x: x,
@@ -233,6 +240,12 @@ func (zm *zoneMap) spawnMonster(monsterNpc *npc, re *data.RegenEntry) {
 		// for now its a weird thing, better not to use it
 		//go m.roam(zm)
 	}
+}
+
+func (zm *zoneMap) addEntity(e entity) {
+	zm.entities2.Lock()
+	zm.entities2.list[e.getHandle()] = e
+	zm.entities2.Unlock()
 }
 
 func validateLocation(zm *zoneMap, x, y, numSteps, speed int) bool {
@@ -321,6 +334,9 @@ func loadMap(mapID int) (*zoneMap, error) {
 				active: make(map[uint16]*npc),
 			},
 		},
+		entities2: &entities2{
+			list:    make(entitiesmap),
+		},
 		events: &events{
 			send: make(sendEvents),
 			recv: make(recvEvents),
@@ -334,4 +350,28 @@ func loadMap(mapID int) (*zoneMap, error) {
 	}
 
 	return zm, nil
+}
+
+func addWithinRangeEntities(e1 entity, zm *zoneMap) {
+	for e2 := range zm.entities2.all() {
+		if withinRange(e1, e2) {
+			if e1.getHandle() == e2.getHandle() {
+				continue
+			}
+			e1.addNearbyEntity(e2)
+			// go e1.
+		}
+	}
+}
+
+func removeOutOfRangeEntities(e1 entity) {
+	for e2 := range e1.getNearbyEntities() {
+		if !withinRange(e1, e2) {
+			if e1.getHandle() == e2.getHandle() {
+				continue
+			}
+			e1.removeNearbyEntity(e2)
+			// go e1.
+		}
+	}
 }

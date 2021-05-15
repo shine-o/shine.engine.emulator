@@ -12,7 +12,6 @@ type players struct {
 }
 
 func (p *players) all() <-chan *player {
-
 	p.RLock()
 	ch := make(chan *player, len(p.active))
 	p.RUnlock()

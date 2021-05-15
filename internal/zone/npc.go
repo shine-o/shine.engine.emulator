@@ -30,13 +30,43 @@ const (
 )
 
 type npc struct {
-	baseEntity
+	*baseEntity
 	data  *npcStaticData
 	ticks *entityTicks
 	state *entityState
 	stats *npcStats
 	nType npcType
 	sync.RWMutex
+}
+
+// return a buffered channel with all nearby entities
+func (n *npc) getNearbyEntities() <-chan entity {
+	n.baseEntity.proximity.RLock()
+	ch := make(chan entity, len(n.baseEntity.proximity.entities))
+	n.baseEntity.proximity.RUnlock()
+
+	go func(ep *entityProximity, send chan<- entity) {
+		ep.RLock()
+		for _, e := range ep.entities {
+			send <- e
+		}
+		ep.RUnlock()
+		close(send)
+	}(n.baseEntity.proximity, ch)
+
+	return ch
+}
+
+func (n *npc) removeNearbyEntity(e entity) {
+	n.Lock()
+	delete(n.proximity.entities, e.getHandle())
+	n.Unlock()
+}
+
+func (n *npc) addNearbyEntity(e entity) {
+	n.Lock()
+	n.proximity.entities[e.getHandle()] = e
+	n.Unlock()
 }
 
 type npcStats struct {
@@ -93,7 +123,7 @@ func loadBaseNpc(inxName string, eType entityType) (*npc, error) {
 
 	n := &npc{
 		nType: nType,
-		baseEntity: baseEntity{
+		baseEntity: &baseEntity{
 			eType: eType,
 		},
 		stats: &npcStats{

@@ -1127,7 +1127,7 @@ func TestItemEquip_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -1216,7 +1216,7 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -1306,7 +1306,7 @@ func TestItemEquip_Success_NC(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -1389,7 +1389,7 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -1494,7 +1494,7 @@ func TestItemEquip_BadItemEquipOrClass(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -1551,7 +1551,7 @@ func TestItemEquip_NoItemInSlot(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -1604,7 +1604,7 @@ func TestItemUnEquip_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -1750,7 +1750,7 @@ func TestItemUnEquip_NonExistentSlot(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -1817,7 +1817,7 @@ func TestOpen_Deposit_Inventory_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -1869,7 +1869,7 @@ func TestOpen_Deposit_Inventory_NC_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -1980,7 +1980,7 @@ func TestChangeItemSlot_Inventory_EmptySlot_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -2055,7 +2055,7 @@ func TestChangeItemSlot_Inventory_OccupiedSlot_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -2158,7 +2158,7 @@ func TestChangeItemSlot_Inventory_EmptySlot_NC(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -2235,7 +2235,7 @@ func TestChangeItemSlot_Inventory_OccupiedSlot_NC(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -2323,7 +2323,7 @@ func TestChangeItem_Inventory_NonExistentSlot(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -2391,7 +2391,7 @@ func TestChangeItemSlot_Inventory_NoItemInSlot(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -2449,7 +2449,7 @@ func TestChangeItemSlot_Deposit_EmptySlot_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -2527,7 +2527,7 @@ func TestChangeItemSlot_Deposit_OccupiedSlot_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -2636,7 +2636,7 @@ func TestChangeItemSlot_Deposit_NonExistentSlot(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -2710,7 +2710,7 @@ func TestChangeItemSlot_Deposit_NoItemInSlot(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -2754,7 +2754,7 @@ func TestChangeItemSlot_Deposit_To_Inventory_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -2835,7 +2835,7 @@ func TestChangeItemSlot_RewardInventory_Should_Fail(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -2894,7 +2894,7 @@ func TestChangeItemSlot_RewardInventory_To_Inventory_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -2973,7 +2973,7 @@ func TestChangeItemSlot_RewardInventory_To_Inventory_InventoryFull(t *testing.T)
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
@@ -3043,7 +3043,7 @@ func TestChangeItemSlot_RewardInventory_To_PremiumInventory_Should_Fail(t *testi
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},

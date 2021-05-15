@@ -212,7 +212,7 @@ func playerDataLogic(e event) {
 	}
 
 	p := &player{
-		baseEntity: baseEntity{},
+		baseEntity: &baseEntity{},
 		conn: &playerConnection{
 			lastHeartBeat: time.Now(),
 			close:         ev.net.CloseConnection,
