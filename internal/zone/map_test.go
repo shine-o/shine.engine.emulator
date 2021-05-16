@@ -277,12 +277,23 @@ func Test_Entity_Out_Of_Range(t *testing.T) {
 
 	// move entity back to its original position
 	_ = pA.move(zm, x1, y1)
-	removeOutOfRangeEntities(pA, zm)
-	removeOutOfRangeEntities(pB, zm)
+	removeOutOfRangeEntities(pA)
+	removeOutOfRangeEntities(pB)
 
 	// entities A and B should not be in range
 	if withinRange(pA, pB) {
 		t.Fatal("entity A should not be in range of entity B")
+	}
+
+	// assert entity A is NOT stored in entity B's proximity list
+	_, ok := pB.baseEntity.proximity.entities[pA.getHandle()]
+	if ok {
+		t.Fatal("entity A should not be stored in entity B's proximity list")
+	}
+
+	_, ok = pA.baseEntity.proximity.entities[pB.getHandle()]
+	if ok {
+		t.Fatal("entity B should not be stored in entity A's proximity list")
 	}
 }
 

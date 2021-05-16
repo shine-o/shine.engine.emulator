@@ -49,11 +49,13 @@ type player struct {
 }
 
 func (p *player) getNearbyEntities() <-chan entity {
-	panic("implement me")
+	return getNearbyEntities(p.baseEntity.proximity)
 }
 
-func (p *player) removeNearbyEntity(e interface{}) {
-	panic("implement me")
+func (p *player) removeNearbyEntity(e entity) {
+	p.Lock()
+	delete(p.baseEntity.proximity.entities, e.getHandle())
+	p.Unlock()
 }
 
 func (p *player) addNearbyEntity(e entity) {

@@ -359,7 +359,7 @@ func addWithinRangeEntities(e1 entity, zm *zoneMap) {
 				continue
 			}
 			e1.addNearbyEntity(e2)
-			// go e1.
+			// go notify e1 about new entity
 		}
 	}
 }
@@ -371,7 +371,7 @@ func removeOutOfRangeEntities(e1 entity) {
 				continue
 			}
 			e1.removeNearbyEntity(e2)
-			// go e1.
+			// go notify e1 about removed entity
 		}
 	}
 }

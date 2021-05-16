@@ -12,7 +12,7 @@ type entity interface {
 	move(m *zoneMap, x, y int) error
 	getNearbyEntities() <- chan entity
 	addNearbyEntity(e entity)
-	removeNearbyEntity(e interface{})
+	removeNearbyEntity(e entity)
 }
 
 func (el *entities2) all() <-chan entity {
@@ -63,6 +63,23 @@ type entitiesmap map[uint16]entity
 type entityProximity struct {
 	entities entitiesmap
 	sync.RWMutex
+}
+
+func getNearbyEntities(ep *entityProximity) <-chan entity {
+	ep.RLock()
+	ch := make(chan entity, len(ep.entities))
+	ep.RUnlock()
+
+	go func(ep *entityProximity, send chan<- entity) {
+		ep.RLock()
+		for _, e := range ep.entities {
+			send <- e
+		}
+		ep.RUnlock()
+		close(send)
+	}(ep, ch)
+
+	return ch
 }
 
 type targeting struct {

@@ -41,31 +41,19 @@ type npc struct {
 
 // return a buffered channel with all nearby entities
 func (n *npc) getNearbyEntities() <-chan entity {
-	n.baseEntity.proximity.RLock()
-	ch := make(chan entity, len(n.baseEntity.proximity.entities))
-	n.baseEntity.proximity.RUnlock()
-
-	go func(ep *entityProximity, send chan<- entity) {
-		ep.RLock()
-		for _, e := range ep.entities {
-			send <- e
-		}
-		ep.RUnlock()
-		close(send)
-	}(n.baseEntity.proximity, ch)
-
-	return ch
+	return getNearbyEntities(n.baseEntity.proximity)
 }
+
 
 func (n *npc) removeNearbyEntity(e entity) {
 	n.Lock()
-	delete(n.proximity.entities, e.getHandle())
+	delete(n.baseEntity.proximity.entities, e.getHandle())
 	n.Unlock()
 }
 
 func (n *npc) addNearbyEntity(e entity) {
 	n.Lock()
-	n.proximity.entities[e.getHandle()] = e
+	n.baseEntity.proximity.entities[e.getHandle()] = e
 	n.Unlock()
 }
 
