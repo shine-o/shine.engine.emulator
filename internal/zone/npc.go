@@ -5,6 +5,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"sync"
+	"time"
 )
 
 type npcType int
@@ -39,11 +40,63 @@ type npc struct {
 	sync.RWMutex
 }
 
+type monster npc
+
+func (n *npc) notifyAboutRemovedEntity(e entity) {
+	//panic("implement me")
+}
+
+func (n *npc) alreadyNearbyEntity(e entity) bool {
+	n.baseEntity.proximity.RLock()
+	_, exists := n.baseEntity.proximity.entities[e.getHandle()]
+	n.baseEntity.proximity.RUnlock()
+	return exists
+}
+
+func (n *npc) newNearbyEntitiesTicker(zm *zoneMap) {
+	log.Infof("[player_ticks] newNearbyEntitiesTicker for handle %v", n.getHandle())
+	tick := time.NewTicker(200 * time.Millisecond)
+	n.ticks.Lock()
+	n.ticks.list = append(n.ticks.list, tick)
+	n.ticks.Unlock()
+	defer tick.Stop()
+
+	for {
+		select {
+		case <-tick.C:
+			addWithinRangeEntities(n, zm)
+		}
+	}
+}
+
+func (n *npc) oldNearbyEntitiesTicker() {
+	log.Infof("[player_ticks] oldNearbyEntitiesTicker for handle %v", n.getHandle())
+	tick := time.NewTicker(200 * time.Millisecond)
+	n.ticks.Lock()
+	n.ticks.list = append(n.ticks.list, tick)
+	n.ticks.Unlock()
+	defer tick.Stop()
+
+	for {
+		select {
+		case <-tick.C:
+			removeOutOfRangeEntities(n)
+		}
+	}
+}
+
+func (n *npc) notifyAboutNewEntity(e entity) {
+	log.Info("implement me")
+}
+
+func (n *npc) getPacketData() interface{} {
+	return ncBriefInfoRegenMobCmd(n)
+}
+
 // return a buffered channel with all nearby entities
 func (n *npc) getNearbyEntities() <-chan entity {
 	return getNearbyEntities(n.baseEntity.proximity)
 }
-
 
 func (n *npc) removeNearbyEntity(e entity) {
 	n.Lock()
@@ -52,9 +105,9 @@ func (n *npc) removeNearbyEntity(e entity) {
 }
 
 func (n *npc) addNearbyEntity(e entity) {
-	n.Lock()
+	n.baseEntity.proximity.Lock()
 	n.baseEntity.proximity.entities[e.getHandle()] = e
-	n.Unlock()
+	n.baseEntity.proximity.Unlock()
 }
 
 type npcStats struct {
@@ -112,7 +165,17 @@ func loadBaseNpc(inxName string, eType entityType) (*npc, error) {
 	n := &npc{
 		nType: nType,
 		baseEntity: &baseEntity{
-			eType: eType,
+			handle:   0,
+			eType:    eType,
+			fallback: location{},
+			previous: location{},
+			current:  location{},
+			next:     location{},
+			proximity: &entityProximity{
+				entities: make(map[uint16]entity),
+			},
+			events:  events{},
+			RWMutex: sync.RWMutex{},
 		},
 		stats: &npcStats{
 			hp: mi.MaxHP,
@@ -122,6 +185,7 @@ func loadBaseNpc(inxName string, eType entityType) (*npc, error) {
 			mobInfo:       mi,
 			mobInfoServer: mis,
 		},
+
 		state: &entityState{
 			idling:   make(chan bool),
 			fighting: make(chan bool),
@@ -219,8 +283,8 @@ func ncBatTargetInfoCmd(n *npc) *structs.NcBatTargetInfoCmd {
 }
 
 // find a way to merge npc and monster structs
-func ncBriefInfoRegenMobCmd(n *npc) structs.NcBriefInfoRegenMobCmd {
-	var nc = structs.NcBriefInfoRegenMobCmd{
+func ncBriefInfoRegenMobCmd(n *npc) *structs.NcBriefInfoRegenMobCmd {
+	var nc = &structs.NcBriefInfoRegenMobCmd{
 		Handle: n.getHandle(),
 		Mode:   byte(n.data.mobInfoServer.EnemyDetect),
 		MobID:  n.data.mobInfo.ID,

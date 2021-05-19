@@ -3,8 +3,10 @@ package zone
 import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
+	"reflect"
 	"sync"
 	"time"
 )
@@ -29,7 +31,6 @@ const (
 
 type player struct {
 	*baseEntity
-	proximity   *playerProximity
 	conn        *playerConnection
 	view        *playerView
 	stats       *playerStats
@@ -43,9 +44,70 @@ type player struct {
 	prompt      *prompt
 	ticks       *entityTicks
 	persistence *playerPersistence
-
-	// dangerZone: only to be used when loading or other situation!!
 	sync.RWMutex
+}
+
+func (p *player) alreadyNearbyEntity(e entity) bool {
+	p.baseEntity.proximity.RLock()
+	_, exists := p.baseEntity.proximity.entities[e.getHandle()]
+	p.baseEntity.proximity.RUnlock()
+	return exists
+}
+
+func (p *player) newNearbyEntitiesTicker(zm *zoneMap) {
+	log.Infof("[player_ticks] newNearbyEntitiesTicker for handle %v", p.getHandle())
+	tick := time.NewTicker(200 * time.Millisecond)
+	p.ticks.Lock()
+	p.ticks.list = append(p.ticks.list, tick)
+	p.ticks.Unlock()
+	defer tick.Stop()
+
+	for {
+		select {
+		case <-tick.C:
+			addWithinRangeEntities(p, zm)
+		}
+	}
+}
+
+func (p *player) oldNearbyEntitiesTicker() {
+	log.Infof("[player_ticks] oldNearbyEntitiesTicker for handle %v", p.getHandle())
+	tick := time.NewTicker(200 * time.Millisecond)
+	p.ticks.Lock()
+	p.ticks.list = append(p.ticks.list, tick)
+	p.ticks.Unlock()
+	defer tick.Stop()
+
+	for {
+		select {
+		case <-tick.C:
+			removeOutOfRangeEntities(p)
+		}
+	}
+}
+
+func (p *player) getPacketData() interface{} {
+	return ncBriefInfoLoginCharacterCmd(p)
+}
+
+func (p *player) notifyAboutNewEntity(e entity) {
+	switch e.(type) {
+	case *player:
+		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, e.getPacketData())
+		break
+	case *npc:
+		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, e.getPacketData())
+		break
+	default:
+		log.Errorf("unknown entity type %v", reflect.TypeOf(e).String())
+	}
+}
+
+func (p *player) notifyAboutRemovedEntity(e entity) {
+	nc := &structs.NcBriefInfoDeleteHandleCmd{
+		Handle: e.getHandle(),
+	}
+	networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_BRIEFINFODELETE_CMD, nc)
 }
 
 func (p *player) getNearbyEntities() <-chan entity {
@@ -60,15 +122,9 @@ func (p *player) removeNearbyEntity(e entity) {
 
 func (p *player) addNearbyEntity(e entity) {
 	h := e.getHandle()
-	p.baseEntity.Lock()
+	p.baseEntity.proximity.Lock()
 	p.baseEntity.proximity.entities[h] = e
-	p.baseEntity.Unlock()
-}
-
-type playerProximity struct {
-	players map[uint16]*player
-	npcs    map[uint16]*npc
-	sync.RWMutex
+	p.baseEntity.proximity.Unlock()
 }
 
 type playerConnection struct {
@@ -89,18 +145,16 @@ type playerView struct {
 }
 
 type playerStats struct {
-	points            playerStatPoints
-	str               stat
-	end               stat
-	dex               stat
-	int               stat
-	spr               stat
-	minPhysicalDamage stat
-	maxPhysicalDamage stat
-
-	minMagicalDamage stat
-	maxMagicalDamage stat
-
+	points              playerStatPoints
+	str                 stat
+	end                 stat
+	dex                 stat
+	int                 stat
+	spr                 stat
+	minPhysicalDamage   stat
+	maxPhysicalDamage   stat
+	minMagicalDamage    stat
+	maxMagicalDamage    stat
 	physicalDefense     stat
 	magicalDefense      stat
 	evasion             stat
@@ -260,42 +314,6 @@ func (p *player) selectsPlayer(ap *player) byte {
 	return order
 }
 
-func (p *player) adjacentPlayers() <-chan *player {
-	ch := make(chan *player, maxProximityEntities)
-
-	go func(p *player, send chan<- *player) {
-		p.proximity.RLock()
-		for _, pp := range p.proximity.players {
-			send <- pp
-		}
-		p.proximity.RUnlock()
-		close(send)
-	}(p, ch)
-
-	return ch
-}
-
-func (p *player) adjacentNpcs() <-chan *npc {
-	ch := make(chan *npc, maxProximityEntities)
-
-	go func(p *player, send chan<- *npc) {
-		p.proximity.RLock()
-		for _, pn := range p.proximity.npcs {
-			send <- pn
-		}
-		p.proximity.RUnlock()
-		close(send)
-	}(p, ch)
-
-	return ch
-}
-
-func (p *player) removeAdjacentPlayer(h uint16) {
-	p.proximity.Lock()
-	delete(p.proximity.players, h)
-	p.proximity.Unlock()
-}
-
 func (p *player) selectedByPlayers() chan *player {
 	ch := make(chan *player, maxProximityEntities)
 
@@ -377,9 +395,8 @@ func (p *player) load(name string) error {
 	p.baseEntity.current.y = char.Location.Y
 	p.baseEntity.current.d = char.Location.D
 
-	p.proximity = &playerProximity{
-		players: make(map[uint16]*player),
-		npcs:    make(map[uint16]*npc),
+	p.baseEntity.proximity = &entityProximity{
+		entities: make(map[uint16]entity),
 	}
 
 	p.ticks = &entityTicks{}
@@ -965,39 +982,6 @@ func (p *player) newItem(i *item) error {
 	return p.inventories.add(persistence.InventoryType(i.pItem.InventoryType), i.pItem.Slot, i)
 }
 
-func withinRange(e1, e2 entity) bool {
-	l1 := e1.getLocation()
-	l2 := e2.getLocation()
-	if l1.mapID != l2.mapID {
-		return false
-	}
-
-	if entityInRange(l1, l2) {
-		return true
-	}
-
-	return false
-}
-
-func playerInRange(v, t *player) bool {
-	v.baseEntity.RLock()
-	t.baseEntity.RLock()
-	vc := v.baseEntity.current
-	tc := t.baseEntity.current
-	v.baseEntity.RUnlock()
-	t.baseEntity.RUnlock()
-
-	if vc.mapID != tc.mapID {
-		return false
-	}
-
-	if entityInRange(tc, vc) {
-		return true
-	}
-
-	return false
-}
-
 func loadInventory(it persistence.InventoryType, p *player) (itemBox, error) {
 	var box itemBox
 	items, err := persistence.GetCharacterItems(int(p.persistence.char.ID), it)
@@ -1040,9 +1024,9 @@ func justSpawned(p *player) bool {
 	return p.state.justSpawned
 }
 
-func ncBriefInfoLoginCharacterCmd(p *player) structs.NcBriefInfoLoginCharacterCmd {
+func ncBriefInfoLoginCharacterCmd(p *player) *structs.NcBriefInfoLoginCharacterCmd {
 
-	var nc = structs.NcBriefInfoLoginCharacterCmd{
+	var nc = &structs.NcBriefInfoLoginCharacterCmd{
 		Mode: 2,
 	}
 

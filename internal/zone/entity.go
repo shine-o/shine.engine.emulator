@@ -6,41 +6,51 @@ import (
 	"sync"
 )
 
+const (
+	//lengthX = 512
+	//lengthY = 512
+	lengthX = 256
+	lengthY = 256
+)
+
+const (
+	isMonster entityType = iota
+	isPlayer
+	isNPC
+)
+
+var _ entity = (*player)(nil)
+
+var _ entity = (*npc)(nil)
+
 type entity interface {
 	getHandle() uint16
-	getLocation() location
-	move(m *zoneMap, x, y int) error
-	getNearbyEntities() <- chan entity
-	addNearbyEntity(e entity)
-	removeNearbyEntity(e entity)
+	movement
+	proximity
 }
 
-func (el *entities2) all() <-chan entity {
-	el.RLock()
-	ch := make(chan entity, len(el.list))
-	el.RUnlock()
+type movement interface {
+	getLocation() location
+	move(*zoneMap, int, int) error
+}
 
-	go func(el *entities2, send chan<- entity) {
-		el.RLock()
-		for _, e := range el.list {
-			send <- e
-		}
-		el.RUnlock()
-		close(send)
-	}(el, ch)
-
-	return ch
+type proximity interface {
+	newNearbyEntitiesTicker(*zoneMap)
+	oldNearbyEntitiesTicker()
+	getNearbyEntities() <-chan entity
+	addNearbyEntity(entity)
+	removeNearbyEntity(entity)
+	alreadyNearbyEntity(entity) bool
+	notifyAboutNewEntity(entity)
+	notifyAboutRemovedEntity(entity)
+	getPacketData() interface{}
 }
 
 type location struct {
-	mapID     int
-	mapName   string
-	x, y, d   int
-	movements []movement
-}
-
-type movement struct {
-	x, y uint32
+	mapID   int
+	mapName string
+	x, y, d int
+	//movements []movement
 }
 
 type entityType int
@@ -58,10 +68,8 @@ type baseEntity struct {
 	sync.RWMutex
 }
 
-type entitiesmap map[uint16]entity
-
 type entityProximity struct {
-	entities entitiesmap
+	entities map[uint16]entity
 	sync.RWMutex
 }
 
@@ -103,23 +111,6 @@ type mover struct {
 	baseEntity
 }
 
-const (
-	//lengthX = 512
-	//lengthY = 512
-	lengthX = 256
-	lengthY = 256
-)
-
-const (
-	isMonster entityType = iota
-	isPlayer
-	isNPC
-)
-
-var _ entity = (*player)(nil)
-
-var _ entity = (*npc)(nil)
-
 func (b *baseEntity) getHandle() uint16 {
 	b.RLock()
 	h := b.handle
@@ -155,6 +146,20 @@ func (b *baseEntity) move(m *zoneMap, igX, igY int) error {
 	b.Unlock()
 
 	return nil
+}
+
+func withinRange(e1, e2 entity) bool {
+	l1 := e1.getLocation()
+	l2 := e2.getLocation()
+	if l1.mapID != l2.mapID {
+		return false
+	}
+
+	if entityInRange(l1, l2) {
+		return true
+	}
+
+	return false
 }
 
 // check if entities are within each other's interaction range

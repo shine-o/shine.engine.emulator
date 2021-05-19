@@ -62,10 +62,9 @@ func (z *zone) playerSession() {
 				p.baseEntity.current = newLocation
 				p.Unlock()
 
-				p.proximity.Lock()
-				p.proximity.players = make(map[uint16]*player)
-				p.proximity.npcs = make(map[uint16]*npc)
-				p.proximity.Unlock()
+				p.baseEntity.proximity = &entityProximity{
+					entities: make(map[uint16]entity),
+				}
 
 				nc := structs.NcMapLinkSameCmd{
 					MapID: ev.next.data.Info.ID,
@@ -77,9 +76,9 @@ func (z *zone) playerSession() {
 
 				ev.s.mapID = ev.next.data.ID
 
-				ev.prev.entities.players.remove(handle)
+				ev.prev.removeEntity(p)
 
-				ev.next.entities.players.add(p)
+				ev.next.addEntity(p)
 
 				ev.prev.events.send[playerDisappeared] <- &playerDisappearedEvent{
 					handle: handle,
@@ -246,7 +245,7 @@ func hearbeatUpdateLogic(e event) {
 		return
 	}
 
-	p, err := zm.entities.players.get(ev.session.handle)
+	p, err := zm.entities.getPlayer(ev.session.handle)
 	if err != nil {
 		log.Error(err)
 		return
@@ -273,7 +272,7 @@ func playerLogoutStartLogic(z *zone, e event) {
 		return
 	}
 
-	p, err := zm.entities.players.get(ev.handle)
+	p, err := zm.entities.getPlayer(ev.handle)
 	if err != nil {
 		log.Error(err)
 		return

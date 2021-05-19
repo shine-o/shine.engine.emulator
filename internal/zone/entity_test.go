@@ -58,8 +58,8 @@ func Test_Bitmap_Coordinates_Conversion(t *testing.T) {
 
 	log.Infof("%v %v", gx, gy)
 
-	if gx != 4087 ||  gy != 3212  {
-		t.Errorf("mismatched coordinates bx=%v by=%v ogx=%v ogy=%v gx=%v gy=%v",bx, by, ogx, ogy, gx, gy)
+	if gx != 4087 || gy != 3212 {
+		t.Errorf("mismatched coordinates bx=%v by=%v ogx=%v ogy=%v gx=%v gy=%v", bx, by, ogx, ogy, gx, gy)
 	}
 }
 

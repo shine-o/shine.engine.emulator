@@ -6,6 +6,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	path "github.com/shine-o/shine.engine.emulator/internal/pkg/pathfinding"
 	"github.com/spf13/viper"
+	"reflect"
 	"sync"
 )
 
@@ -15,20 +16,103 @@ type zoneMap struct {
 	presetNodes           path.Grid
 	presetNodesWithMargin path.Grid
 	entities              *entities
-	entities2             *entities2
 	events                *events
 }
 
 type entities struct {
-	players *players
-	npcs    *npcs
-}
-
-type entities2 struct {
-	list entitiesmap
+	players map[uint16]entity
+	npc     map[uint16]entity
 	sync.RWMutex
 }
 
+func (e *entities) getPlayer(handle uint16) (*player, error) {
+	e.RLock()
+	defer e.RUnlock()
+	p, ok := e.players[handle].(*player)
+	if !ok {
+		return nil, errors.Err{
+			Code: errors.ZoneMissingPlayer,
+			Details: errors.ErrDetails{
+				"handle": handle,
+			},
+		}
+	}
+	return p, nil
+}
+
+func (e *entities) getNpc(handle uint16) *npc {
+	e.RLock()
+	defer e.RUnlock()
+	p, ok := e.npc[handle].(*npc)
+	if ok {
+		return p
+	}
+	return nil
+}
+
+func (el *entities) allPlayers() <-chan *player {
+	el.RLock()
+	ch := make(chan *player, len(el.players))
+	el.RUnlock()
+
+	go func(el *entities, send chan<- *player) {
+		el.RLock()
+		for _, e := range el.players {
+			p, ok := e.(*player)
+			if ok {
+				send <- p
+			} else {
+				log.Error(errors.Err{
+					Code:    errors.ZoneBadEntityType,
+					Message: "",
+					Details: errors.ErrDetails{
+						"expected": "npc",
+						"got":      reflect.TypeOf(e).String(),
+					},
+				})
+			}
+		}
+		el.RUnlock()
+		close(send)
+	}(el, ch)
+
+	return ch
+}
+
+func (el *entities) allNpc() <-chan *npc {
+	el.RLock()
+	ch := make(chan *npc, len(el.npc))
+	el.RUnlock()
+
+	go func(el *entities, send chan<- *npc) {
+		el.RLock()
+		for _, e := range el.npc {
+			n, ok := e.(*npc)
+			if ok {
+				send <- n
+			} else {
+				log.Error(errors.Err{
+					Code:    errors.ZoneBadEntityType,
+					Message: "",
+					Details: errors.ErrDetails{
+						"expected": "npc",
+						"got":      reflect.TypeOf(e).String(),
+					},
+				})
+			}
+		}
+		el.RUnlock()
+		close(send)
+	}(el, ch)
+
+	return ch
+}
+
+func (e *entities) removePlayer(h uint16) {
+	e.Lock()
+	delete(e.players, h)
+	e.Unlock()
+}
 
 func (zm *zoneMap) run() {
 
@@ -110,9 +194,7 @@ func (zm *zoneMap) spawnNPC(inxName string, sn *data.ShineNPC) {
 	npc.baseEntity.handle = h
 	npc.spawnLocation(zm)
 
-	zm.entities.npcs.Lock()
-	zm.entities.npcs.active[h] = npc
-	zm.entities.npcs.Unlock()
+	zm.addEntity(npc)
 }
 
 // a mob is a collection of entities, in this case monsters
@@ -182,8 +264,7 @@ func (zm *zoneMap) spawnMonster(monsterNpc *npc, re *data.RegenEntry) {
 	node := zm.presetNodes.GetNearest(bx, by)
 
 	if node != nil {
-		x = node.X
-		y = node.Y
+		x, y = gameCoordinates(node.X, node.Y)
 		d = crypto.RandomIntBetween(1, 250)
 	} else {
 		log.Error("could not find spawn position, exiting")
@@ -206,12 +287,11 @@ func (zm *zoneMap) spawnMonster(monsterNpc *npc, re *data.RegenEntry) {
 				d: d,
 			},
 			current: location{
-				mapID:     zm.data.ID,
-				mapName:   zm.data.MapInfoIndex,
-				x:         x,
-				y:         y,
-				d:         d,
-				movements: []movement{},
+				mapID:   zm.data.ID,
+				mapName: zm.data.MapInfoIndex,
+				x:       x,
+				y:       y,
+				d:       d,
 			},
 		},
 		stats: &npcStats{
@@ -232,9 +312,7 @@ func (zm *zoneMap) spawnMonster(monsterNpc *npc, re *data.RegenEntry) {
 		ticks: &entityTicks{},
 	}
 
-	zm.entities.npcs.Lock()
-	zm.entities.npcs.active[h] = m
-	zm.entities.npcs.Unlock()
+	zm.addEntity(m)
 
 	if !staticMonster {
 		// for now its a weird thing, better not to use it
@@ -243,9 +321,32 @@ func (zm *zoneMap) spawnMonster(monsterNpc *npc, re *data.RegenEntry) {
 }
 
 func (zm *zoneMap) addEntity(e entity) {
-	zm.entities2.Lock()
-	zm.entities2.list[e.getHandle()] = e
-	zm.entities2.Unlock()
+	zm.entities.Lock()
+	h := e.getHandle()
+	switch e.(type) {
+	case *player:
+		zm.entities.players[h] = e
+		break
+	case *npc:
+		zm.entities.npc[h] = e
+		break
+	default:
+		log.Infof("unkown entity type %v", reflect.TypeOf(e).String())
+	}
+	zm.entities.Unlock()
+}
+
+func (zm *zoneMap) removeEntity(e entity) {
+	zm.entities.Lock()
+	switch e.(type) {
+	case *player:
+		delete(zm.entities.players, e.getHandle())
+		break
+	case *npc:
+		delete(zm.entities.npc, e.getHandle())
+		break
+	}
+	zm.entities.Unlock()
 }
 
 func validateLocation(zm *zoneMap, x, y, numSteps, speed int) bool {
@@ -327,15 +428,8 @@ func loadMap(mapID int) (*zoneMap, error) {
 		presetNodes:           presetNodes,
 		presetNodesWithMargin: presetNodesWallMargins,
 		entities: &entities{
-			players: &players{
-				active: make(map[uint16]*player),
-			},
-			npcs: &npcs{
-				active: make(map[uint16]*npc),
-			},
-		},
-		entities2: &entities2{
-			list:    make(entitiesmap),
+			players: make(map[uint16]entity),
+			npc:     make(map[uint16]entity),
 		},
 		events: &events{
 			send: make(sendEvents),
@@ -353,25 +447,41 @@ func loadMap(mapID int) (*zoneMap, error) {
 }
 
 func addWithinRangeEntities(e1 entity, zm *zoneMap) {
-	for e2 := range zm.entities2.all() {
+	for e2 := range zm.entities.allPlayers() {
+		if e1.getHandle() == e2.getHandle() {
+			continue
+		}
 		if withinRange(e1, e2) {
-			if e1.getHandle() == e2.getHandle() {
-				continue
+			if e1.alreadyNearbyEntity(e2) {
+				return
 			}
 			e1.addNearbyEntity(e2)
-			// go notify e1 about new entity
+			go e1.notifyAboutNewEntity(e2)
+		}
+	}
+
+	for e2 := range zm.entities.allNpc() {
+		if e1.getHandle() == e2.getHandle() {
+			continue
+		}
+		if withinRange(e1, e2) {
+			if e1.alreadyNearbyEntity(e2) {
+				return
+			}
+			e1.addNearbyEntity(e2)
+			go e1.notifyAboutNewEntity(e2)
 		}
 	}
 }
 
 func removeOutOfRangeEntities(e1 entity) {
 	for e2 := range e1.getNearbyEntities() {
+		if e1.getHandle() == e2.getHandle() {
+			continue
+		}
 		if !withinRange(e1, e2) {
-			if e1.getHandle() == e2.getHandle() {
-				continue
-			}
 			e1.removeNearbyEntity(e2)
-			// go notify e1 about removed entity
+			go e1.notifyAboutRemovedEntity(e2)
 		}
 	}
 }

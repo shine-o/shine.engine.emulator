@@ -146,22 +146,22 @@ func Test_Map_Spawn_Monster_Npc(t *testing.T) {
 	// 48
 }
 
-func Test_Map_Path_A_B_astar(t *testing.T)  {
-	
+func Test_Map_Path_A_B_astar(t *testing.T) {
+
 }
 
-func Test_Map_Intermitent_Speed_Change_Path_A_B_AStar(t *testing.T)  {
+func Test_Map_Intermitent_Speed_Change_Path_A_B_AStar(t *testing.T) {
 	t.Fail()
 	// start moving entity from point A to point B using speed X
 	// midway, change speed to Y, point A will now be current point
 	// assert entity arrives at destination in Z seconds ( time = distance / speed )
 }
 
-func Test_Entity_Chase(t *testing.T)  {
+func Test_Entity_Chase(t *testing.T) {
 
 }
 
-func Test_Path_A_B_Speed_Race(t *testing.T)  {
+func Test_Path_A_B_Speed_Race(t *testing.T) {
 
 }
 
@@ -176,7 +176,7 @@ func Test_Entity_Within_Range(t *testing.T) {
 	// load players A and B in two distinct places
 	pA := &player{
 		baseEntity: &baseEntity{
-			handle:    1,
+			handle: 1,
 			proximity: &entityProximity{
 				entities: make(entitiesmap),
 			},
@@ -185,7 +185,7 @@ func Test_Entity_Within_Range(t *testing.T) {
 
 	pB := &player{
 		baseEntity: &baseEntity{
-			handle:    2,
+			handle: 2,
 			proximity: &entityProximity{
 				entities: make(entitiesmap),
 			},
@@ -242,7 +242,7 @@ func Test_Entity_Out_Of_Range(t *testing.T) {
 	// load players A and B in two distinct places
 	pA := &player{
 		baseEntity: &baseEntity{
-			handle:    1,
+			handle: 1,
 			proximity: &entityProximity{
 				entities: make(entitiesmap),
 			},
@@ -251,7 +251,7 @@ func Test_Entity_Out_Of_Range(t *testing.T) {
 
 	pB := &player{
 		baseEntity: &baseEntity{
-			handle:    2,
+			handle: 2,
 			proximity: &entityProximity{
 				entities: make(entitiesmap),
 			},
@@ -297,8 +297,6 @@ func Test_Entity_Out_Of_Range(t *testing.T) {
 	}
 }
 
-
-
 func Test_Entity_Cast_(t *testing.T) {
-	
+
 }

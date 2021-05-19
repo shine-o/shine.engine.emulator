@@ -523,16 +523,16 @@ func PaintNodesAndWallMargins(s *data.SHBD, wv Grid) (*image.RGBA, error) {
 					countn := len(adjacentNodes(wv, v, rX, rY, 2))
 					if rX%vNodesWithWallsMargin == 0 && rY%vNodesWithWallsMargin == 0 {
 						if countn >= neighborNodes {
-								c = color.RGBA{
-									R: 255,
-									G: 0,
-									B: 0,
-									A: 1,
-								}
-								count++
-							} else {
-								c = color.White
+							c = color.RGBA{
+								R: 255,
+								G: 0,
+								B: 0,
+								A: 1,
 							}
+							count++
+						} else {
+							c = color.White
+						}
 
 					} else {
 						c = color.White
@@ -576,8 +576,8 @@ func PaintNodesWithoutWallMargins(s *data.SHBD, wv Grid) (*image.RGBA, error) {
 			// every ten pixels
 			for i := 0; i < 8; i++ {
 				var (
-					rX, rY    int
-					c         color.Color
+					rX, rY int
+					c      color.Color
 				)
 
 				rX = x*8 + i

@@ -48,12 +48,13 @@ func _() {
 	_ = x[ZoneHandlerMaxReached-37]
 	_ = x[ZoneHandlerCapacityWarning-38]
 	_ = x[ZoneHandlerMaxAttemptsReached-39]
-	_ = x[UnitTestError-40]
+	_ = x[ZoneBadEntityType-40]
+	_ = x[UnitTestError-41]
 }
 
-const _ShineErrorCode_name = "PersistenceErrDBPersistenceItemInvalidAmountPersistenceItemInvalidShnIdPersistenceItemInvalidCharacterIdPersistenceItemDistinctShnIDPersistenceItemSlotUpdatePersistenceInventoryFullPersistenceCharInvalidSlotPersistenceCharNameTakenPersistenceCharNoSlotPersistenceCharInvalidNamePersistenceCharInvalidClassGenderPersistenceCharNotExistsPersistenceUnknownInventoryPersistenceOutOfRangeSlotZoneItemEquipFailedZoneItemMissingDataZoneInventorySlotOccupiedZoneMapNotFoundZoneUnknownItemClassZoneItemSlotChangeNoItemZoneItemSlotEquipNoItemZoneItemSlotIsBoundZoneItemSlotInUseZoneItemSlotGTSZoneItemUnknownInventoryTypeZoneItemDeleteNoItemZoneItemNoItemInSlotZoneItemSlotIsOccupiedZoneItemEquipBadTypeZoneItemSlotChangeConstraintZoneMissingPlayerZoneUnexpectedEventZoneMapCollisionDetectedZoneUnknownNpcRoleZoneMissingMapDataZoneMissingNpcDataZoneHandlerMaxReachedZoneHandlerCapacityWarningZoneHandlerMaxAttemptsReachedUnitTestError"
+const _ShineErrorCode_name = "PersistenceErrDBPersistenceItemInvalidAmountPersistenceItemInvalidShnIdPersistenceItemInvalidCharacterIdPersistenceItemDistinctShnIDPersistenceItemSlotUpdatePersistenceInventoryFullPersistenceCharInvalidSlotPersistenceCharNameTakenPersistenceCharNoSlotPersistenceCharInvalidNamePersistenceCharInvalidClassGenderPersistenceCharNotExistsPersistenceUnknownInventoryPersistenceOutOfRangeSlotZoneItemEquipFailedZoneItemMissingDataZoneInventorySlotOccupiedZoneMapNotFoundZoneUnknownItemClassZoneItemSlotChangeNoItemZoneItemSlotEquipNoItemZoneItemSlotIsBoundZoneItemSlotInUseZoneItemSlotGTSZoneItemUnknownInventoryTypeZoneItemDeleteNoItemZoneItemNoItemInSlotZoneItemSlotIsOccupiedZoneItemEquipBadTypeZoneItemSlotChangeConstraintZoneMissingPlayerZoneUnexpectedEventZoneMapCollisionDetectedZoneUnknownNpcRoleZoneMissingMapDataZoneMissingNpcDataZoneHandlerMaxReachedZoneHandlerCapacityWarningZoneHandlerMaxAttemptsReachedZoneBadEntityTypeUnitTestError"
 
-var _ShineErrorCode_index = [...]uint16{0, 16, 44, 71, 104, 132, 157, 181, 207, 231, 252, 278, 311, 335, 362, 387, 406, 425, 450, 465, 485, 509, 532, 551, 568, 583, 611, 631, 651, 673, 693, 721, 738, 757, 781, 799, 817, 835, 856, 882, 911, 924}
+var _ShineErrorCode_index = [...]uint16{0, 16, 44, 71, 104, 132, 157, 181, 207, 231, 252, 278, 311, 335, 362, 387, 406, 425, 450, 465, 485, 509, 532, 551, 568, 583, 611, 631, 651, 673, 693, 721, 738, 757, 781, 799, 817, 835, 856, 882, 911, 928, 941}
 
 func (i ShineErrorCode) String() string {
 	if i < 0 || i >= ShineErrorCode(len(_ShineErrorCode_index)-1) {

@@ -11,9 +11,9 @@ import (
 
 const (
 	PresetNodesMargin = 8
-	WallsMargin = 2
-	neighborNodes = 8
-	gridWeight    = 2
+	WallsMargin       = 2
+	neighborNodes     = 8
+	gridWeight        = 2
 )
 
 type Grid map[int]map[int]*Node
@@ -48,7 +48,7 @@ func (g Grid) GetNearest(x, y int) *Node {
 	// close channel so all other routines are canceled
 	var (
 		perimeter = 250
-		ch = make(chan *Node)
+		ch        = make(chan *Node)
 	)
 
 	go searchOneTopLeft(g, ch, x, y, perimeter)
@@ -56,7 +56,7 @@ func (g Grid) GetNearest(x, y int) *Node {
 	go searchOneBottomLeft(g, ch, x, y, perimeter)
 	go searchOneBottomRight(g, ch, x, y, perimeter)
 
-	return <- ch
+	return <-ch
 }
 
 func (g Grid) Get(x, y int) *Node {
@@ -149,8 +149,8 @@ func PresetNodesGrid(s *data.SHBD, margin int) Grid {
 // preset Nodes + extra walls so that NPCs don't Get too close to collision areas
 func PresetNodesWithMargins(s *data.SHBD, wv Grid, margin int) Grid {
 	var (
-		pn    = make(Grid)
-		r     = bytes.NewReader(s.Data)
+		pn     = make(Grid)
+		r      = bytes.NewReader(s.Data)
 		ncount = 0
 	)
 
@@ -191,12 +191,12 @@ func PresetNodesWithMargins(s *data.SHBD, wv Grid, margin int) Grid {
 }
 
 func searchOneTopLeft(g Grid, ch chan<- *Node, x, y, perimeter int) {
-	bx := x-perimeter
-	by := y-perimeter
+	bx := x - perimeter
+	by := y - perimeter
 	for cy := y; cy != by; cy-- {
 		for cx := x; cx != bx; cx-- {
 			n := g.Get(cx, cy)
-			if n != nil{
+			if n != nil {
 				select {
 				case ch <- n:
 				default:
@@ -209,8 +209,8 @@ func searchOneTopLeft(g Grid, ch chan<- *Node, x, y, perimeter int) {
 }
 
 func searchOneTopRight(g Grid, ch chan<- *Node, x, y, perimeter int) {
-	bx := x+perimeter
-	by := y-perimeter
+	bx := x + perimeter
+	by := y - perimeter
 	for cy := y; cy != by; cy-- {
 		for cx := x; cx != bx; cx++ {
 			n := g.Get(cx, cy)
@@ -227,12 +227,12 @@ func searchOneTopRight(g Grid, ch chan<- *Node, x, y, perimeter int) {
 }
 
 func searchOneBottomLeft(g Grid, ch chan<- *Node, x, y, perimeter int) {
-	bx := x-perimeter
-	by := y+perimeter
+	bx := x - perimeter
+	by := y + perimeter
 	for cy := y; cy != by; cy++ {
 		for cx := x; cx != bx; cx-- {
 			n := g.Get(cx, cy)
-			if n != nil{
+			if n != nil {
 				ch <- n
 				select {
 				case ch <- n:
@@ -246,8 +246,8 @@ func searchOneBottomLeft(g Grid, ch chan<- *Node, x, y, perimeter int) {
 }
 
 func searchOneBottomRight(g Grid, ch chan<- *Node, x, y, perimeter int) {
-	bx := x+perimeter
-	by := y+perimeter
+	bx := x + perimeter
+	by := y + perimeter
 	for cy := y; cy != by; cy++ {
 		for cx := x; cx != bx; cx++ {
 			n := g.Get(cx, cy)
@@ -263,13 +263,13 @@ func searchOneBottomRight(g Grid, ch chan<- *Node, x, y, perimeter int) {
 	ch <- nil
 }
 
-func getAllTopLeft(g Grid, ch chan<- *Node, done chan <- bool, x, y, perimeter int) {
-	bx := x-perimeter
-	by := y-perimeter
+func getAllTopLeft(g Grid, ch chan<- *Node, done chan<- bool, x, y, perimeter int) {
+	bx := x - perimeter
+	by := y - perimeter
 	for cy := y; cy != by; cy-- {
 		for cx := x; cx != bx; cx-- {
 			n := g.Get(cx, cy)
-			if n != nil{
+			if n != nil {
 				ch <- n
 			}
 		}
@@ -277,13 +277,13 @@ func getAllTopLeft(g Grid, ch chan<- *Node, done chan <- bool, x, y, perimeter i
 	done <- true
 }
 
-func getAllTopRight(g Grid, ch chan<- *Node, done chan <- bool, x, y, perimeter int) {
-	bx := x+perimeter
-	by := y-perimeter
+func getAllTopRight(g Grid, ch chan<- *Node, done chan<- bool, x, y, perimeter int) {
+	bx := x + perimeter
+	by := y - perimeter
 	for cy := y; cy != by; cy-- {
 		for cx := x; cx != bx; cx++ {
 			n := g.Get(cx, cy)
-			if n != nil{
+			if n != nil {
 				ch <- n
 			}
 		}
@@ -291,13 +291,13 @@ func getAllTopRight(g Grid, ch chan<- *Node, done chan <- bool, x, y, perimeter 
 	done <- true
 }
 
-func getAllBottomLeft(g Grid, ch chan<- *Node, done chan <- bool, x, y, perimeter int) {
-	bx := x-perimeter
-	by := y+perimeter
+func getAllBottomLeft(g Grid, ch chan<- *Node, done chan<- bool, x, y, perimeter int) {
+	bx := x - perimeter
+	by := y + perimeter
 	for cy := y; cy != by; cy++ {
 		for cx := x; cx != bx; cx-- {
 			n := g.Get(cx, cy)
-			if n != nil{
+			if n != nil {
 				ch <- n
 			}
 		}
@@ -305,13 +305,13 @@ func getAllBottomLeft(g Grid, ch chan<- *Node, done chan <- bool, x, y, perimete
 	done <- true
 }
 
-func getAllBottomRight(g Grid, ch chan<- *Node, done chan <- bool, x, y, perimeter int) {
-	bx := x+perimeter
-	by := y+perimeter
+func getAllBottomRight(g Grid, ch chan<- *Node, done chan<- bool, x, y, perimeter int) {
+	bx := x + perimeter
+	by := y + perimeter
 	for cy := y; cy != by; cy++ {
 		for cx := x; cx != bx; cx++ {
 			n := g.Get(cx, cy)
-			if n != nil{
+			if n != nil {
 				ch <- n
 			}
 		}
@@ -339,7 +339,7 @@ func allNearbyNodes(g Grid, x, y int, perimeter int) Nodes {
 
 	for {
 		select {
-		case n := <- ch:
+		case n := <-ch:
 			if !in(list, n) {
 				list = append(list, n)
 			}
@@ -630,14 +630,14 @@ func bottomLeftDiagonalObstacles(wv Grid, x, y, tx, ty int) bool {
 }
 
 // using Node Grid and raw Grid, Get neighboring Nodes
-func adjacentNodes(ng, rg Grid, x, y , margin int) Nodes {
+func adjacentNodes(ng, rg Grid, x, y, margin int) Nodes {
 	var (
 		result Nodes
 		n      *Node
 	)
 
 	// ↑
-	if !topObstacles(rg, x,y, y-margin) {
+	if !topObstacles(rg, x, y, y-margin) {
 		n = ng.Get(x, y-margin)
 		if n != nil {
 			result = append(result, n)
@@ -661,7 +661,7 @@ func adjacentNodes(ng, rg Grid, x, y , margin int) Nodes {
 	}
 
 	// ←
-	if !leftObstacles(rg, x,y, x-margin) {
+	if !leftObstacles(rg, x, y, x-margin) {
 		n = ng.Get(x-margin, y)
 		if n != nil {
 			result = append(result, n)
@@ -677,7 +677,7 @@ func adjacentNodes(ng, rg Grid, x, y , margin int) Nodes {
 	}
 
 	// ↗
-	if !topRightDiagonalObstacles(rg, x,y, x+margin, y-margin) {
+	if !topRightDiagonalObstacles(rg, x, y, x+margin, y-margin) {
 		n = ng.Get(x+margin, y-margin)
 		if n != nil {
 			result = append(result, n)
@@ -693,7 +693,7 @@ func adjacentNodes(ng, rg Grid, x, y , margin int) Nodes {
 	}
 
 	// ↙
-	if !bottomLeftDiagonalObstacles(rg, x,y, x-margin, y+margin) {
+	if !bottomLeftDiagonalObstacles(rg, x, y, x-margin, y+margin) {
 		n = ng.Get(x-margin, y+margin)
 		if n != nil {
 			result = append(result, n)

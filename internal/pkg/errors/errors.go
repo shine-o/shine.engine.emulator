@@ -47,6 +47,7 @@ const (
 	ZoneHandlerMaxReached
 	ZoneHandlerCapacityWarning
 	ZoneHandlerMaxAttemptsReached
+	ZoneBadEntityType
 	UnitTestError
 )
 
