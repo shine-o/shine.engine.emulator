@@ -12,10 +12,6 @@ type handlerPetition struct {
 	err                       chan error
 }
 
-var newHandler chan *handlerPetition
-var removeHandler chan *handlerPetition
-var queryHandler chan *handlerPetition
-
 func (h *handler) handleWorker() {
 	for {
 		select {

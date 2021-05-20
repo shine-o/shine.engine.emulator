@@ -48,6 +48,7 @@ const (
 	ZoneHandlerCapacityWarning
 	ZoneHandlerMaxAttemptsReached
 	ZoneBadEntityType
+	ZoneNilPlayerFields
 	UnitTestError
 )
 

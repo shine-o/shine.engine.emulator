@@ -90,7 +90,7 @@ services:
     image: grafana/loki:1.5.0
     container_name: metrics_loki
     ports:
-      - "3100:3100"
+      - "31000:31000"
     command: -config.file=/etc/loki/local-config.yaml
     networks:
       - intranet

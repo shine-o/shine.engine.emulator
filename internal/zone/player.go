@@ -47,86 +47,6 @@ type player struct {
 	sync.RWMutex
 }
 
-func (p *player) alreadyNearbyEntity(e entity) bool {
-	p.baseEntity.proximity.RLock()
-	_, exists := p.baseEntity.proximity.entities[e.getHandle()]
-	p.baseEntity.proximity.RUnlock()
-	return exists
-}
-
-func (p *player) newNearbyEntitiesTicker(zm *zoneMap) {
-	log.Infof("[player_ticks] newNearbyEntitiesTicker for handle %v", p.getHandle())
-	tick := time.NewTicker(200 * time.Millisecond)
-	p.ticks.Lock()
-	p.ticks.list = append(p.ticks.list, tick)
-	p.ticks.Unlock()
-	defer tick.Stop()
-
-	for {
-		select {
-		case <-tick.C:
-			addWithinRangeEntities(p, zm)
-		}
-	}
-}
-
-func (p *player) oldNearbyEntitiesTicker() {
-	log.Infof("[player_ticks] oldNearbyEntitiesTicker for handle %v", p.getHandle())
-	tick := time.NewTicker(200 * time.Millisecond)
-	p.ticks.Lock()
-	p.ticks.list = append(p.ticks.list, tick)
-	p.ticks.Unlock()
-	defer tick.Stop()
-
-	for {
-		select {
-		case <-tick.C:
-			removeOutOfRangeEntities(p)
-		}
-	}
-}
-
-func (p *player) getPacketData() interface{} {
-	return ncBriefInfoLoginCharacterCmd(p)
-}
-
-func (p *player) notifyAboutNewEntity(e entity) {
-	switch e.(type) {
-	case *player:
-		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, e.getPacketData())
-		break
-	case *npc:
-		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, e.getPacketData())
-		break
-	default:
-		log.Errorf("unknown entity type %v", reflect.TypeOf(e).String())
-	}
-}
-
-func (p *player) notifyAboutRemovedEntity(e entity) {
-	nc := &structs.NcBriefInfoDeleteHandleCmd{
-		Handle: e.getHandle(),
-	}
-	networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_BRIEFINFODELETE_CMD, nc)
-}
-
-func (p *player) getNearbyEntities() <-chan entity {
-	return getNearbyEntities(p.baseEntity.proximity)
-}
-
-func (p *player) removeNearbyEntity(e entity) {
-	p.Lock()
-	delete(p.baseEntity.proximity.entities, e.getHandle())
-	p.Unlock()
-}
-
-func (p *player) addNearbyEntity(e entity) {
-	h := e.getHandle()
-	p.baseEntity.proximity.Lock()
-	p.baseEntity.proximity.entities[h] = e
-	p.baseEntity.proximity.Unlock()
-}
-
 type playerConnection struct {
 	lastHeartBeat time.Time
 	close         chan<- bool
@@ -284,6 +204,99 @@ type title struct {
 type stat struct {
 	base       uint32
 	withExtras uint32
+}
+
+func (p *player) alreadyNearbyEntity(e entity) bool {
+	h := e.getHandle()
+	p.baseEntity.proximity.RLock()
+	_, exists := p.baseEntity.proximity.entities[h]
+	p.baseEntity.proximity.RUnlock()
+	return exists
+}
+
+func (p *player) newNearbyEntitiesTicker(zm *zoneMap) {
+	log.Infof("[player_ticks] newNearbyEntitiesTicker for handle %v", p.getHandle())
+	tick := time.NewTicker(200 * time.Millisecond)
+	p.ticks.Lock()
+	p.ticks.list = append(p.ticks.list, tick)
+	p.ticks.Unlock()
+	defer tick.Stop()
+
+	for {
+		select {
+		case <-tick.C:
+			newEntities := addWithinRangeEntities(p, zm)
+			for _, e := range newEntities {
+				go p.notifyAboutNewEntity(e)
+			}
+		}
+	}
+}
+
+func (p *player) oldNearbyEntitiesTicker() {
+	log.Infof("[player_ticks] oldNearbyEntitiesTicker for handle %v", p.getHandle())
+	tick := time.NewTicker(200 * time.Millisecond)
+	p.ticks.Lock()
+	p.ticks.list = append(p.ticks.list, tick)
+	p.ticks.Unlock()
+	defer tick.Stop()
+
+	for {
+		select {
+		case <-tick.C:
+			removedEntities := removeOutOfRangeEntities(p)
+			for _, e := range removedEntities {
+				go p.notifyAboutRemovedEntity(e)
+			}
+		}
+	}
+}
+
+func (p *player) getPacketData() interface{} {
+	return ncBriefInfoLoginCharacterCmd(p)
+}
+
+func (p *player) notifyAboutNewEntity(e entity) {
+	switch e.(type) {
+	case *player:
+		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, e.getPacketData())
+		break
+	case *npc:
+		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, e.getPacketData())
+		break
+	case *monster:
+		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, e.getPacketData())
+		break
+	default:
+		log.Errorf("unknown entity type %v", reflect.TypeOf(e).String())
+	}
+}
+
+func (p *player) notifyAboutRemovedEntity(e entity) {
+	_, ok := e.(*monster)
+	if ok {
+		nc := &structs.NcBriefInfoDeleteHandleCmd{
+			Handle: e.getHandle(),
+		}
+		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_BRIEFINFODELETE_CMD, nc)
+	}
+}
+
+func (p *player) getNearbyEntities() <-chan entity {
+	return getNearbyEntities(p.baseEntity.proximity)
+}
+
+func (p *player) removeNearbyEntity(e entity) {
+	p.baseEntity.proximity.Lock()
+	delete(p.baseEntity.proximity.entities, e.getHandle())
+	p.baseEntity.proximity.Unlock()
+}
+
+func (p *player) addNearbyEntity(e entity) {
+	h := e.getHandle()
+	p.baseEntity.proximity.Lock()
+	p.baseEntity.proximity.entities[h] = e
+	p.baseEntity.proximity.Unlock()
 }
 
 func (p *player) selectsNPC(n *npc) byte {
@@ -517,7 +530,7 @@ func (p *player) stateData() {
 		moverHandle: 0,
 		moverSlot:   0,
 		miniPet:     0,
-		justSpawned: false,
+		justSpawned: true,
 	}
 	p.Lock()
 	p.state = s
@@ -760,25 +773,6 @@ func (p *player) charParameterData() structs.CharParameterData {
 	return nc
 }
 
-func canBeEquipped(equip int, class int) bool {
-	if equip >= 1 && equip <= 29 {
-		return true
-	}
-
-	switch data.ItemClassEnum(class) {
-	case data.ItemBracelet:
-	case data.ItemCosShield:
-	case data.ItemClassBoot:
-	case data.ItemClassShield:
-	case data.ItemClassArmor:
-	case data.ItemClassWeapon:
-	case data.ItemClassAmulet:
-		return true
-	}
-
-	return false
-}
-
 func (p *player) equip(slot int) (itemSlotChange, error) {
 	var (
 		change   itemSlotChange
@@ -982,6 +976,25 @@ func (p *player) newItem(i *item) error {
 	return p.inventories.add(persistence.InventoryType(i.pItem.InventoryType), i.pItem.Slot, i)
 }
 
+func canBeEquipped(equip int, class int) bool {
+	if equip >= 1 && equip <= 29 {
+		return true
+	}
+
+	switch data.ItemClassEnum(class) {
+	case data.ItemBracelet:
+	case data.ItemCosShield:
+	case data.ItemClassBoot:
+	case data.ItemClassShield:
+	case data.ItemClassArmor:
+	case data.ItemClassWeapon:
+	case data.ItemClassAmulet:
+		return true
+	}
+
+	return false
+}
+
 func loadInventory(it persistence.InventoryType, p *player) (itemBox, error) {
 	var box itemBox
 	items, err := persistence.GetCharacterItems(int(p.persistence.char.ID), it)
@@ -1024,7 +1037,28 @@ func justSpawned(p *player) bool {
 	return p.state.justSpawned
 }
 
+func validatePlayerEntity(p * player) error {
+	if p.baseEntity == nil || p.view == nil || p.state == nil ||
+		p.conn == nil {
+		return errors.Err{
+			Code:    errors.ZoneNilPlayerFields,
+			Message: "some player fields are nil which can cause a panic",
+			Details: errors.ErrDetails{
+				"player": p,
+			},
+		}
+	}
+	return nil
+}
+
 func ncBriefInfoLoginCharacterCmd(p *player) *structs.NcBriefInfoLoginCharacterCmd {
+
+	err := validatePlayerEntity(p)
+
+	if err != nil {
+		log.Error(err)
+		return nil
+	}
 
 	var nc = &structs.NcBriefInfoLoginCharacterCmd{
 		Mode: 2,

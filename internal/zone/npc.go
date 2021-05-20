@@ -40,7 +40,16 @@ type npc struct {
 	sync.RWMutex
 }
 
-type monster npc
+type npcStats struct {
+	hp, sp uint32
+}
+
+type npcStaticData struct {
+	mobInfo       *data.MobInfo
+	mobInfoServer *data.MobInfoServer
+	regenData     *data.RegenEntry
+	npcData       *data.ShineNPC
+}
 
 func (n *npc) notifyAboutRemovedEntity(e entity) {
 	//panic("implement me")
@@ -64,7 +73,10 @@ func (n *npc) newNearbyEntitiesTicker(zm *zoneMap) {
 	for {
 		select {
 		case <-tick.C:
-			addWithinRangeEntities(n, zm)
+			newEntities := addWithinRangeEntities(n, zm)
+			for _, e := range newEntities {
+				go n.notifyAboutNewEntity(e)
+			}
 		}
 	}
 }
@@ -90,7 +102,7 @@ func (n *npc) notifyAboutNewEntity(e entity) {
 }
 
 func (n *npc) getPacketData() interface{} {
-	return ncBriefInfoRegenMobCmd(n)
+	return npcNcBriefInfoRegenMobCmd(n)
 }
 
 // return a buffered channel with all nearby entities
@@ -99,26 +111,16 @@ func (n *npc) getNearbyEntities() <-chan entity {
 }
 
 func (n *npc) removeNearbyEntity(e entity) {
-	n.Lock()
-	delete(n.baseEntity.proximity.entities, e.getHandle())
-	n.Unlock()
-}
-
-func (n *npc) addNearbyEntity(e entity) {
 	n.baseEntity.proximity.Lock()
-	n.baseEntity.proximity.entities[e.getHandle()] = e
+	delete(n.baseEntity.proximity.entities, e.getHandle())
 	n.baseEntity.proximity.Unlock()
 }
 
-type npcStats struct {
-	hp, sp uint32
-}
-
-type npcStaticData struct {
-	mobInfo       *data.MobInfo
-	mobInfoServer *data.MobInfoServer
-	regenData     *data.RegenEntry
-	npcData       *data.ShineNPC
+func (n *npc) addNearbyEntity(e entity) {
+	h := e.getHandle()
+	n.baseEntity.proximity.Lock()
+	n.baseEntity.proximity.entities[h] = e
+	n.baseEntity.proximity.Unlock()
 }
 
 func (n *npc) spawnLocation(zm *zoneMap) {
@@ -165,17 +167,10 @@ func loadBaseNpc(inxName string, eType entityType) (*npc, error) {
 	n := &npc{
 		nType: nType,
 		baseEntity: &baseEntity{
-			handle:   0,
 			eType:    eType,
-			fallback: location{},
-			previous: location{},
-			current:  location{},
-			next:     location{},
 			proximity: &entityProximity{
 				entities: make(map[uint16]entity),
 			},
-			events:  events{},
-			RWMutex: sync.RWMutex{},
 		},
 		stats: &npcStats{
 			hp: mi.MaxHP,
@@ -283,7 +278,7 @@ func ncBatTargetInfoCmd(n *npc) *structs.NcBatTargetInfoCmd {
 }
 
 // find a way to merge npc and monster structs
-func ncBriefInfoRegenMobCmd(n *npc) *structs.NcBriefInfoRegenMobCmd {
+func npcNcBriefInfoRegenMobCmd(n *npc) *structs.NcBriefInfoRegenMobCmd {
 	var nc = &structs.NcBriefInfoRegenMobCmd{
 		Handle: n.getHandle(),
 		Mode:   byte(n.data.mobInfoServer.EnemyDetect),
@@ -299,5 +294,24 @@ func ncBriefInfoRegenMobCmd(n *npc) *structs.NcBriefInfoRegenMobCmd {
 		Direction: uint8(n.current.d),
 	}
 	n.baseEntity.RUnlock()
+	return nc
+}
+
+func monsterNcBriefInfoRegenMobCmd(m *monster) *structs.NcBriefInfoRegenMobCmd {
+	var nc = &structs.NcBriefInfoRegenMobCmd{
+		Handle: m.getHandle(),
+		Mode:   byte(m.data.mobInfoServer.EnemyDetect),
+		MobID:  m.data.mobInfo.ID,
+		//AnimationLevel: 2,
+	}
+	m.baseEntity.RLock()
+	nc.Coord = structs.ShineCoordType{
+		XY: structs.ShineXYType{
+			X: uint32(m.current.x),
+			Y: uint32(m.current.y),
+		},
+		Direction: uint8(m.current.d),
+	}
+	m.baseEntity.RUnlock()
 	return nc
 }

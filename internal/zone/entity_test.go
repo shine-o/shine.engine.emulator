@@ -22,7 +22,7 @@ func Test_Move_Entity_A_B(t *testing.T) {
 
 	err = p.load(char.Name)
 
-	zm.entities.players.add(p)
+	zm.addEntity(p)
 
 	x := 4089
 	y := 3214

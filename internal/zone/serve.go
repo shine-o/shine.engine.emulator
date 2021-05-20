@@ -46,6 +46,17 @@ func Start(cmd *cobra.Command, args []string) {
 		log.Fatal(err)
 	}
 
+	var registerMaps []int32
+	for m := range z.allMaps() {
+		registerMaps = append(registerMaps, int32(m.data.ID))
+	}
+
+	err = registerZone(registerMaps)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	go z.run()
 
 	persistence.InitDB(database.ConnectionParams{

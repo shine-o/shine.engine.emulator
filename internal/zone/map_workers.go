@@ -8,6 +8,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"reflect"
 	"strings"
+	"time"
 )
 
 const (
@@ -680,7 +681,12 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 	go p.newNearbyEntitiesTicker(zm)
 	go p.oldNearbyEntitiesTicker()
 
-	//go adjacentMonstersInform(p, zm)
+	go func() {
+		time.Sleep(10 * time.Second)
+		p.state.Lock()
+		p.state.justSpawned = false
+		p.state.Unlock()
+	}()
 }
 
 // send data about equippedID or unequipped slots
@@ -1008,7 +1014,7 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 	}
 
 	if withinRange(p1, n) {
-		nc := ncBriefInfoRegenMobCmd(n)
+		nc := npcNcBriefInfoRegenMobCmd(n)
 		go networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
 	}
 
@@ -1080,7 +1086,7 @@ func ncBriefInfoMobCmd(zm *zoneMap) structs.NcBriefInfoMobCmd {
 	var npcs structs.NcBriefInfoMobCmd
 	for n := range zm.entities.allNpc() {
 		if n.baseEntity.eType == isNPC {
-			info := ncBriefInfoRegenMobCmd(n)
+			info := npcNcBriefInfoRegenMobCmd(n)
 
 			if n.nType == npcPortal {
 				info.FlagState = 1

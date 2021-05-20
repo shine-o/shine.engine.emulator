@@ -14,7 +14,6 @@ type zone struct {
 	events        *events
 	dynamicEvents *dynamicEvents
 	sync.RWMutex
-	handler *handler
 }
 
 type runningMaps struct {
@@ -23,19 +22,27 @@ type runningMaps struct {
 }
 
 var (
-	zoneEvents  sendEvents
-	maps        *runningMaps
-	monsterData *data.MonsterData
-	mapData     *data.MapData
-	npcData     *data.NpcData
-	itemsData   *data.ItemData
+	monsterData    *data.MonsterData
+	mapData        *data.MapData
+	npcData        *data.NpcData
+	itemsData      *data.ItemData
+	zoneEvents     sendEvents
+	maps           *runningMaps
+	handlerManager = &handler{
+		index: 0,
+		inUse: make(map[uint16]bool),
+	}
+	newHandler    = make(chan *handlerPetition, 1500)
+	removeHandler = make(chan *handlerPetition, 1500)
+	queryHandler  = make(chan *handlerPetition, 1500)
 )
 
+func init() {
+	go handlerManager.handleWorker()
+}
+
 func (z *zone) load() error {
-
-	shinePath := viper.GetString("shine_folder")
-
-	loadGameData(shinePath)
+	loadGameData()
 
 	z.rm = &runningMaps{
 		list: make(map[int]*zoneMap),
@@ -58,25 +65,13 @@ func (z *zone) load() error {
 		events: make(map[string]events),
 	}
 
-	z.handler = &handler{
-		index: 0,
-		inUse: make(map[uint16]bool),
-	}
-
-	newHandler = make(chan *handlerPetition, 1500)
-	removeHandler = make(chan *handlerPetition, 1500)
-	queryHandler = make(chan *handlerPetition, 1500)
-
 	normalMaps := viper.GetIntSlice("normal_maps")
-
-	var registerMaps []int32
 
 	var wg sync.WaitGroup
 	var sem = make(chan int, 10)
 	for _, id := range normalMaps {
 		wg.Add(1)
 		sem <- 1
-		registerMaps = append(registerMaps, int32(id))
 
 		go func(id int) {
 			defer wg.Done()
@@ -86,13 +81,6 @@ func (z *zone) load() error {
 	}
 
 	wg.Wait()
-
-	// move outside!
-	err := registerZone(registerMaps)
-
-	if err != nil {
-		return err
-	}
 
 	maps = z.rm
 
@@ -113,9 +101,6 @@ func (z *zone) addMap(mapID int) {
 }
 
 func (z *zone) run() {
-
-	go z.handler.handleWorker()
-
 	num := viper.GetInt("workers.num_zone_workers")
 	for i := 0; i <= num; i++ {
 		go z.security()
@@ -141,7 +126,8 @@ func (z *zone) allMaps() <-chan *zoneMap {
 	return ch
 }
 
-func loadGameData(filesPath string) {
+func loadGameData() {
+	filesPath := viper.GetString("shine_folder")
 
 	var wg sync.WaitGroup
 

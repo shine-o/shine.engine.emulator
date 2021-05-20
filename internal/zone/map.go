@@ -22,6 +22,7 @@ type zoneMap struct {
 type entities struct {
 	players map[uint16]entity
 	npc     map[uint16]entity
+	monster map[uint16]entity
 	sync.RWMutex
 }
 
@@ -50,10 +51,33 @@ func (e *entities) getNpc(handle uint16) *npc {
 	return nil
 }
 
-func (el *entities) allPlayers() <-chan *player {
-	el.RLock()
-	ch := make(chan *player, len(el.players))
-	el.RUnlock()
+func (e *entities) all() <-chan entity {
+	e.RLock()
+	ch := make(chan entity, len(e.players)+len(e.npc)+len(e.monster))
+	e.RUnlock()
+
+	go func(el *entities, send chan<- entity) {
+		el.RLock()
+		for _, e := range el.players {
+			send <- e
+		}
+		for _, e := range el.npc {
+			send <- e
+		}
+		for _, e := range el.monster {
+			send <- e
+		}
+		el.RUnlock()
+		close(send)
+	}(e, ch)
+
+	return ch
+}
+
+func (e *entities) allPlayers() <-chan *player {
+	e.RLock()
+	ch := make(chan *player, len(e.players))
+	e.RUnlock()
 
 	go func(el *entities, send chan<- *player) {
 		el.RLock()
@@ -66,7 +90,7 @@ func (el *entities) allPlayers() <-chan *player {
 					Code:    errors.ZoneBadEntityType,
 					Message: "",
 					Details: errors.ErrDetails{
-						"expected": "npc",
+						"expected": "player",
 						"got":      reflect.TypeOf(e).String(),
 					},
 				})
@@ -74,15 +98,15 @@ func (el *entities) allPlayers() <-chan *player {
 		}
 		el.RUnlock()
 		close(send)
-	}(el, ch)
+	}(e, ch)
 
 	return ch
 }
 
-func (el *entities) allNpc() <-chan *npc {
-	el.RLock()
-	ch := make(chan *npc, len(el.npc))
-	el.RUnlock()
+func (e *entities) allNpc() <-chan *npc {
+	e.RLock()
+	ch := make(chan *npc, len(e.npc))
+	e.RUnlock()
 
 	go func(el *entities, send chan<- *npc) {
 		el.RLock()
@@ -103,7 +127,36 @@ func (el *entities) allNpc() <-chan *npc {
 		}
 		el.RUnlock()
 		close(send)
-	}(el, ch)
+	}(e, ch)
+
+	return ch
+}
+
+func (e *entities) allMonsters() <-chan *monster {
+	e.RLock()
+	ch := make(chan *monster, len(e.players))
+	e.RUnlock()
+
+	go func(el *entities, send chan<- *monster) {
+		el.RLock()
+		for _, e := range el.players {
+			m, ok := e.(*monster)
+			if ok {
+				send <- m
+			} else {
+				log.Error(errors.Err{
+					Code:    errors.ZoneBadEntityType,
+					Message: "",
+					Details: errors.ErrDetails{
+						"expected": "monster",
+						"got":      reflect.TypeOf(e).String(),
+					},
+				})
+			}
+		}
+		el.RUnlock()
+		close(send)
+	}(e, ch)
 
 	return ch
 }
@@ -220,7 +273,6 @@ func (zm *zoneMap) spawnMobs() {
 }
 
 func (zm *zoneMap) spawnMob(re *data.RegenEntry) {
-
 	var (
 		wg  sync.WaitGroup
 		sem = make(chan int, 100)
@@ -247,13 +299,14 @@ func (zm *zoneMap) spawnMob(re *data.RegenEntry) {
 	wg.Wait()
 }
 
-func (zm *zoneMap) spawnMonster(monsterNpc *npc, re *data.RegenEntry) {
+func (zm *zoneMap) spawnMonster(baseNpc *npc, re *data.RegenEntry) {
 	var (
-		x, y, d       int
-		staticMonster = false
-		mi            = monsterNpc.data.mobInfo
-		mis           = monsterNpc.data.mobInfoServer
+		x, y, d int
 	)
+
+	staticMonster := false
+	mi := baseNpc.data.mobInfo
+	mis := baseNpc.data.mobInfoServer
 
 	if mi.WalkSpeed == 0 && mi.RunSpeed == 0 {
 		staticMonster = true
@@ -278,13 +331,16 @@ func (zm *zoneMap) spawnMonster(monsterNpc *npc, re *data.RegenEntry) {
 		return
 	}
 
-	m := &npc{
+	m := &monster{
 		baseEntity: &baseEntity{
 			handle: h,
 			fallback: location{
 				x: x,
 				y: y,
 				d: d,
+			},
+			proximity: &entityProximity{
+				entities: make(map[uint16]entity),
 			},
 			current: location{
 				mapID:   zm.data.ID,
@@ -329,6 +385,9 @@ func (zm *zoneMap) addEntity(e entity) {
 		break
 	case *npc:
 		zm.entities.npc[h] = e
+		break
+	case *monster:
+		zm.entities.monster[h] = e
 		break
 	default:
 		log.Infof("unkown entity type %v", reflect.TypeOf(e).String())
@@ -430,6 +489,7 @@ func loadMap(mapID int) (*zoneMap, error) {
 		entities: &entities{
 			players: make(map[uint16]entity),
 			npc:     make(map[uint16]entity),
+			monster:     make(map[uint16]entity),
 		},
 		events: &events{
 			send: make(sendEvents),
@@ -446,42 +506,47 @@ func loadMap(mapID int) (*zoneMap, error) {
 	return zm, nil
 }
 
-func addWithinRangeEntities(e1 entity, zm *zoneMap) {
-	for e2 := range zm.entities.allPlayers() {
-		if e1.getHandle() == e2.getHandle() {
-			continue
-		}
-		if withinRange(e1, e2) {
-			if e1.alreadyNearbyEntity(e2) {
-				return
-			}
-			e1.addNearbyEntity(e2)
-			go e1.notifyAboutNewEntity(e2)
-		}
-	}
+// add entities within range and return a slice of the added entities
+func addWithinRangeEntities(e1 entity, zm *zoneMap) []entity {
+	var newEntities []entity
 
-	for e2 := range zm.entities.allNpc() {
+	for e2 := range zm.entities.all() {
 		if e1.getHandle() == e2.getHandle() {
 			continue
 		}
 		if withinRange(e1, e2) {
 			if e1.alreadyNearbyEntity(e2) {
-				return
+				continue
 			}
 			e1.addNearbyEntity(e2)
-			go e1.notifyAboutNewEntity(e2)
+			newEntities = append(newEntities, e2)
 		}
 	}
+	return newEntities
 }
 
-func removeOutOfRangeEntities(e1 entity) {
+// remove entities out of range and return a slice of the removed entities
+func removeOutOfRangeEntities(e1 entity) []entity {
+	var removedEntities []entity
 	for e2 := range e1.getNearbyEntities() {
 		if e1.getHandle() == e2.getHandle() {
 			continue
 		}
 		if !withinRange(e1, e2) {
 			e1.removeNearbyEntity(e2)
-			go e1.notifyAboutRemovedEntity(e2)
+			removedEntities = append(removedEntities, e2)
+		}
+		p, ok := e2.(*player)
+		if ok {
+			err := validatePlayerEntity(p)
+			if err != nil {
+				continue
+			}
+			if lastHeartbeat(p) > playerHeartbeatLimit {
+				e1.removeNearbyEntity(e2)
+				removedEntities = append(removedEntities, e2)
+			}
 		}
 	}
+	return removedEntities
 }
