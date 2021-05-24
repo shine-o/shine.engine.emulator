@@ -48,6 +48,7 @@ type player struct {
 	sync.RWMutex
 }
 
+// return this entity's target data
 func (p *player) getTargetPacketData() *structs.NcBatTargetInfoCmd {
 	p.targeting.RLock()
 	order := p.targeting.selectionOrder
@@ -56,11 +57,13 @@ func (p *player) getTargetPacketData() *structs.NcBatTargetInfoCmd {
 	return nc
 }
 
+// return this entity's selected entity target data
 func (p *player) getNextTargetPacketData() *structs.NcBatTargetInfoCmd {
 	p.targeting.RLock()
 	order := p.targeting.selectionOrder + 1
 	p.targeting.RUnlock()
-	nc := playerNcBatTargetInfo(p, order)
+	nc := p.targeting.currentlySelected.getTargetPacketData()
+	nc.Order = order
 	return nc
 }
 
@@ -74,9 +77,7 @@ func (p *player) selects(e entity) {
 }
 
 func (p *player) selectedBy(e entity) {
-	p.targeting.Lock()
-	p.targeting.selectedBy[e.getHandle()] = e
-	p.targeting.Unlock()
+	p.targeting.selectedBy(e)
 }
 
 func (p *player) currentlySelected() entity {
@@ -358,96 +359,6 @@ func (p *player) addNearbyEntity(e entity) {
 	p.baseEntity.proximity.Unlock()
 }
 
-func (p *player) selectsNPC(n *npc) byte {
-	var order byte
-	p.targeting.Lock()
-	p.targeting.selectingP = nil
-	p.targeting.selectingN = n
-	p.targeting.selectionOrder += 32
-	order = p.targeting.selectionOrder
-	p.targeting.Unlock()
-	return order
-}
-
-func (p *player) selectsMonster(m *monster) byte {
-	var order byte
-	p.targeting.Lock()
-	p.targeting.selectingP = nil
-	p.targeting.selectingN = nil
-	p.targeting.selectingM = m
-	p.targeting.selectionOrder += 32
-	order = p.targeting.selectionOrder
-	p.targeting.Unlock()
-	return order
-}
-
-func (p *player) selectsPlayer(ap *player) byte {
-	var order byte
-	p.targeting.Lock()
-	p.targeting.selectingP = ap
-	p.targeting.selectingN = nil
-
-	p.targeting.selectionOrder += 32
-	order = p.targeting.selectionOrder
-	p.targeting.Unlock()
-
-	ap.targeting.Lock()
-	ap.targeting.selectedByP = append(ap.targeting.selectedByP, p)
-	ap.targeting.Unlock()
-
-	return order
-}
-
-func (p *player) selectedByPlayers() chan *player {
-	ch := make(chan *player, maxProximityEntities)
-
-	go func(p *player, send chan<- *player) {
-		p.targeting.RLock()
-		for _, ap := range p.targeting.selectedByP {
-			send <- ap
-		}
-		p.targeting.RUnlock()
-		close(send)
-	}(p, ch)
-	return ch
-}
-
-func (p *player) selectedByNPCs() chan *npc {
-	ch := make(chan *npc, maxProximityEntities)
-
-	go func(p *player, send chan<- *npc) {
-		p.targeting.RLock()
-		for _, n := range p.targeting.selectedByN {
-			send <- n
-		}
-		p.targeting.RUnlock()
-		close(send)
-	}(p, ch)
-
-	return ch
-}
-
-func (p *player) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
-	nc := &structs.NcBatTargetInfoCmd{}
-
-	nc.Handle = p.getHandle()
-
-	p.stats.RLock()
-	nc.TargetHP = p.stats.hp
-	nc.TargetMaxHP = p.stats.maxHP
-	nc.TargetSP = p.stats.sp
-	nc.TargetMaxSP = p.stats.maxSP
-	nc.TargetLP = p.stats.lp
-	nc.TargetMaxLP = p.stats.maxLP
-	p.stats.RUnlock()
-
-	p.state.RLock()
-	nc.TargetLevel = p.state.level
-	p.state.RUnlock()
-
-	return nc
-}
-
 func (p *player) load(name string) error {
 	char, err := persistence.GetCharacterByName(name)
 	if err != nil {
@@ -483,10 +394,12 @@ func (p *player) load(name string) error {
 	}
 
 	p.ticks = &entityTicks{}
-
 	p.prompt = &prompt{}
-
-	p.targeting = &targeting{}
+	p.targeting = &targeting{
+		players:  make(map[uint16]*player),
+		monsters: make(map[uint16]*monster),
+		npc:      make(map[uint16]*npc),
+	}
 
 	wg := &sync.WaitGroup{}
 	wg.Add(7)

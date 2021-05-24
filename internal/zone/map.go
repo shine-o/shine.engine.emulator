@@ -168,6 +168,15 @@ func (e *entities) removePlayer(h uint16) {
 	e.Unlock()
 }
 
+func (e *entities) getEntity(handle uint16) entity {
+	for en := range e.all() {
+		if en.getHandle() == handle {
+			return en
+		}
+	}
+	return nil
+}
+
 func (zm *zoneMap) run() {
 	num := viper.GetInt("workers.num_map_workers")
 
@@ -344,6 +353,11 @@ func (zm *zoneMap) spawnMonster(baseNpc *npc, re *data.RegenEntry) {
 				y:       y,
 				d:       d,
 			},
+		},
+		targeting: &targeting{
+			players:  make(map[uint16]*player),
+			monsters: make(map[uint16]*monster),
+			npc:      make(map[uint16]*npc),
 		},
 		stats: &npcStats{
 			hp: mi.MaxHP,

@@ -107,7 +107,7 @@ func ImageToSHBD(img *image.RGBA) SHBD {
 
 // SaveBmpFile for debugging purposes
 func SaveBmpFile(img *image.RGBA, path, fileName string) error {
-	out, err := os.OpenFile(path+fileName+".bmp", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0700)
+	out, err := os.OpenFile(path+fileName+".bmp", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o700)
 	if err != nil {
 		return err
 	}
@@ -126,7 +126,7 @@ func SaveSHBDFile(s *SHBD, path, fileName string) error {
 		return err
 	}
 
-	out, err := os.OpenFile(path+fileName+".shbd", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0700)
+	out, err := os.OpenFile(path+fileName+".shbd", os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o700)
 	if err != nil {
 		return err
 	}

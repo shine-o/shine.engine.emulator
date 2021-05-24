@@ -117,7 +117,7 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 			}
 
 			p.targeting.Lock()
-			p.targeting.selectingN = n
+			p.targeting.currentlySelected = n
 			p.targeting.Unlock()
 
 			if n.nType == npcPortal {
@@ -203,13 +203,25 @@ func playerPromptReplyLogic(zm *zoneMap, e event) {
 		return
 	}
 
-	if p.targeting.selectingN == nil {
-		log.Warning("prompt cannot be answered, player is no longer currentlySelected an NPC")
+	if p.targeting.currentlySelected == nil {
+		log.Error("prompt cannot be answered, player is no longer currentlySelected an NPC")
 		return
 	}
 
+	n, ok := p.targeting.currentlySelected.(*npc)
+
+	if !ok {
+		log.Error(errors.Err{
+			Code:    errors.ZoneBadEntityType,
+			Message: "expected npc type for prompt reply logic",
+			Details: errors.ErrDetails{
+				"got_type": reflect.TypeOf(n).String(),
+			},
+		})
+	}
+
 	// for now, its only about portals
-	if p.targeting.selectingN.nType == npcPortal && portalMatchesLocation(p.targeting.selectingN.data.npcData.ShinePortal, p.baseEntity.next) {
+	if n.nType == npcPortal && portalMatchesLocation(n.data.npcData.ShinePortal, p.baseEntity.next) {
 		// move player to map
 		nzm, ok := maps.list[p.next.mapID]
 		if !ok {
@@ -240,103 +252,47 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 		return
 	}
 
-	vp, err := zm.entities.getPlayer(ev.handle)
+	p, err := zm.entities.getPlayer(ev.handle)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	pch, nch, mch := findFirstEntity(zm, ev.nc.TargetHandle)
+	en := zm.entities.getEntity(ev.nc.TargetHandle)
 
-	// set timeout in case of nonexistent handle
-	// or use bool channels, and in the default case check if all three are false and return if so
-	var nc *structs.NcBatTargetInfoCmd
+	// this must return the order for the player making the selection
+	// the way I do it now, I return the order of the selected entity which IS WRONG
+	p.selects(en)
+	en.selectedBy(p)
 
-	var notP, notN, notM bool
-	for {
-		select {
-		case ap := <-pch:
-			if ap == nil {
-				notP = true
-				break
-			}
+	var (
+		current = en.getTargetPacketData()
+		next    *structs.NcBatTargetInfoCmd
+	)
 
-			nc = ap.ncBatTargetInfoCmd()
+	// player 1 targets monster 1
+	// INFO : 2021/05/24 23:53:30.208108 handlers.go:271: 2021-05-24 23:53:30.19692 +0200 CEST 21390->9120 outbound NC_BAT_TARGETTING_REQ {"packetType":"small","length":4,"department":9,"command":"1","opCode":9217,"data":"1b1b","rawData":"0401241b1b","friendlyName":""}
+	// INFO : 2021/05/24 23:53:30.331586 handlers.go:271: 2021-05-24 23:53:30.330564 +0200 CEST 9120->21390 inbound NC_BAT_TARGETINFO_CMD {"packetType":"small","length":32,"department":9,"command":"2","opCode":9218,"data":"a01b1b90010000900100006400000064000000000000000000000007f60b","rawData":"200224a01b1b90010000900100006400000064000000000000000000000007f60b","friendlyName":""}
 
-			order := vp.selectsPlayer(ap)
+	// monster 1 targets player 1
+	// INFO : 2021/05/24 23:53:55.224533 handlers.go:271: 2021-05-24 23:53:55.22147 +0200 CEST 9120->21390 inbound NC_BAT_TARGETINFO_CMD {"packetType":"small","length":32,"department":9,"command":"2","opCode":9218,"data":"81b923be020000be020000ea030000fc030000000000000000000019df52","rawData":"20022481b923be020000be020000ea030000fc030000000000000000000019df52","friendlyName":""}
 
-			nc.Order = order
-			networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nc)
+	networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, current)
 
-			if ap.targeting.selectingP != nil {
-				nextNc := ap.targeting.selectingP.ncBatTargetInfoCmd()
-				nextNc.Order = order + 1
-				networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
-			}
+	nnext := *current
+	nnext.Order++
+	for sp := range p.targeting.selectedByPlayers() {
+		log.Info(sp.getHandle())
+		networking.Send(sp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nnext)
+	}
 
-			if ap.targeting.selectingN != nil {
-				nextNc := npcNcBatTargetInfoCmd(ap.targeting.selectingN)
-				nextNc.Order = order + 1
-				networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
-			}
+	if en.currentlySelected() != nil {
+		next = en.getNextTargetPacketData()
+		networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, next)
 
-			for p := range vp.selectedByPlayers() {
-				nextNc := *nc
-				nextNc.Order++
-				networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
-			}
-
-			return
-		case an := <-nch:
-			if an == nil {
-				notN = true
-				break
-			}
-			order := vp.selectsNPC(an)
-
-			nc = npcNcBatTargetInfoCmd(an)
-
-			nc.Order = order
-
-			networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nc)
-
-			for p := range vp.selectedByPlayers() {
-				nextNc := *nc
-				nextNc.Order++
-				networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
-			}
-			return
-		case am := <-mch:
-			if am == nil {
-				notM = true
-				break
-			}
-			order := vp.selectsMonster(am)
-
-			nc = monsterNcBatTargetInfoCmd(am)
-
-			nc.Order = order
-
-			networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nc)
-
-			for p := range vp.selectedByPlayers() {
-				nextNc := *nc
-				nextNc.Order++
-				networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
-			}
-			return
-		default:
-			if notP && notN && notM {
-				log.Error(errors.Err{
-					Code:    errors.ZonePlayerSelectedUnknownEntity,
-					Message: "handler did not match any player, npc or monster entity available",
-					Details: errors.ErrDetails{
-						"player_handle": ev.handle,
-						"target_handle": ev.nc.TargetHandle,
-					},
-				})
-				return
-			}
+		for sp := range p.targeting.selectedByPlayers() {
+			log.Info(sp.getHandle())
+			networking.Send(sp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, next)
 		}
 	}
 }
@@ -357,25 +313,16 @@ func playerUnselectsEntityLogic(zm *zoneMap, e event) {
 	var order byte
 	vp.targeting.Lock()
 	order = vp.targeting.selectionOrder
-	vp.targeting.selectingP = nil
-	vp.targeting.selectingN = nil
+	vp.targeting.currentlySelected = nil
 	vp.targeting.Unlock()
 
 	nc := structs.NcBatTargetInfoCmd{
-		Order:         order + 1,
-		Handle:        65535,
-		TargetHP:      0,
-		TargetMaxHP:   0,
-		TargetSP:      0,
-		TargetMaxSP:   0,
-		TargetLP:      0,
-		TargetMaxLP:   0,
-		TargetLevel:   0,
-		HpChangeOrder: 0,
+		Order:  order + 1,
+		Handle: 65535,
 	}
 
 	vp.targeting.RLock()
-	for _, p := range vp.targeting.selectedByP {
+	for p := range vp.targeting.selectedByPlayers() {
 		go networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, &nc)
 	}
 	vp.targeting.RUnlock()

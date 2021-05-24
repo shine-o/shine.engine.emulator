@@ -43,27 +43,59 @@ type npc struct {
 }
 
 func (n *npc) getTargetPacketData() *structs.NcBatTargetInfoCmd {
-	panic("implement me")
+	n.targeting.RLock()
+	order := n.targeting.selectionOrder
+	n.targeting.RUnlock()
+	nc := npcNcBatTargetInfo(n, order)
+	return nc
 }
 
 func (n *npc) getNextTargetPacketData() *structs.NcBatTargetInfoCmd {
-	panic("implement me")
+	n.targeting.RLock()
+	order := n.targeting.selectionOrder + 1
+	n.targeting.RUnlock()
+	nc := n.targeting.currentlySelected.getTargetPacketData()
+	nc.Order = order
+	return nc
 }
 
 func (n *npc) selects(e entity) {
-	panic("implement me")
+	n.targeting.Lock()
+	n.targeting.selectionOrder += 32
+	n.targeting.currentlySelected = e
+	n.targeting.Unlock()
 }
 
 func (n *npc) selectedBy(e entity) {
-	panic("implement me")
+	n.targeting.selectedBy(e)
 }
 
 func (n *npc) currentlySelected() entity {
-	panic("implement me")
+	n.targeting.RLock()
+	defer n.targeting.RUnlock()
+	return n.targeting.currentlySelected
 }
 
-func (n *npc) getCurrentTargetPacketData() []interface{} {
-	panic("implement me")
+func npcNcBatTargetInfo(n *npc, assignedOrder byte) *structs.NcBatTargetInfoCmd {
+	nc := &structs.NcBatTargetInfoCmd{
+		Order:       assignedOrder,
+		Handle:      n.getHandle(),
+		TargetMaxHP: n.data.mobInfo.MaxHP,               // todo: use the same player stat system for mobs and NPCs
+		TargetMaxSP: uint32(n.data.mobInfoServer.MaxSP), // todo: use the same player stat system for mobs and NPCs
+		TargetLevel: byte(n.data.mobInfo.Level),
+		TargetHP:    n.data.mobInfo.MaxHP,               // for now we use the static value, later it should be switched to stats value
+		TargetSP:    uint32(n.data.mobInfoServer.MaxSP), // for now we use the static value, later it should be switched to stats value
+	}
+	// TODO: dynamically add this data in the SHN files, NPC look ugly with no SP/HP or the star level
+	if n.nType != npcNoRole {
+		nc.TargetMaxHP = 1000
+		nc.TargetHP = 1000
+		nc.TargetMaxSP = 1000
+		nc.TargetSP = 1000
+		nc.TargetLevel = 200
+	}
+
+	return nc
 }
 
 type npcStats struct {
@@ -206,7 +238,11 @@ func loadBaseNpc(inxName string, eType entityType) (*npc, error) {
 			mobInfo:       mi,
 			mobInfoServer: mis,
 		},
-
+		targeting: &targeting{
+			players:  make(map[uint16]*player),
+			monsters: make(map[uint16]*monster),
+			npc:      make(map[uint16]*npc),
+		},
 		state: &entityState{
 			idling:   make(chan bool),
 			fighting: make(chan bool),

@@ -33,3 +33,4 @@ files
 /*.shbd
 /tools/shbd-pathfinding/*.bmp
 /internal/pkg/pathfinding/*.bmp
+/.scannerwork/

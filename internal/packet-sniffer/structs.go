@@ -68,7 +68,7 @@ func generateOpCodeSwitch() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	f, err := os.OpenFile(pathName, os.O_WRONLY|os.O_CREATE, 0666)
+	f, err := os.OpenFile(pathName, os.O_WRONLY|os.O_CREATE, 0o666)
 	if err != nil {
 		log.Fatal(err)
 	}

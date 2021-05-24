@@ -10,6 +10,17 @@ volumes:
 
 services:
   #######################################
+  ############## SONARQUBE ##############
+  #######################################
+  sonarqube:
+    image: sonarqube:latest
+    container_name: shineo_sonarqube
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    ports:
+      - "9000:9000"
+
+  #######################################
   ############## POSTGRES ###############
   #######################################
   postgres:

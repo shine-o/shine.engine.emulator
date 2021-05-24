@@ -1,6 +1,7 @@
 package zone
 
 import (
+	"reflect"
 	"sync"
 
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
@@ -69,7 +70,6 @@ type location struct {
 	mapID   int
 	mapName string
 	x, y, d int
-	// movements []movement
 }
 
 type entityType int
@@ -83,7 +83,6 @@ type baseEntity struct {
 	next      location
 	proximity *entityProximity
 	events    events
-	// dangerZone: only to be used when loading or other situation!!
 	sync.RWMutex
 }
 
@@ -110,30 +109,86 @@ func getNearbyEntities(ep *entityProximity) <-chan entity {
 }
 
 type targeting struct {
-	selectionOrder byte
-	selectingP     *player
-	selectingN     *npc
-	selectingM     *monster
-	selectedByP    []*player
-	selectedByN    []*npc
-	selectedByM    []*monster
-
+	selectionOrder    byte
 	currentlySelected entity
-	selectedBy        map[uint16]entity
-
+	players           map[uint16]*player
+	monsters          map[uint16]*monster
+	npc               map[uint16]*npc
 	sync.RWMutex
 }
 
-func (t *targeting) selectedByPlayers() <-chan *npc {
-	return nil
+func (t *targeting) selectedBy(e entity) {
+	t.Lock()
+	switch e.(type) {
+	case *player:
+		t.players[e.getHandle()] = e.(*player)
+		break
+	case *monster:
+		t.monsters[e.getHandle()] = e.(*monster)
+		break
+	case *npc:
+		t.npc[e.getHandle()] = e.(*npc)
+		break
+	default:
+		log.Error(errors.Err{
+			Code: errors.ZoneBadEntityType,
+			Details: errors.ErrDetails{
+				"got_type": reflect.TypeOf(e).String(),
+			},
+		})
+	}
+	t.Unlock()
+}
+
+func (t *targeting) selectedByPlayers() <-chan *player {
+	t.RLock()
+	ch := make(chan *player, len(t.players))
+	t.RUnlock()
+
+	go func(t *targeting, send chan<- *player) {
+		t.RLock()
+		for _, p := range t.players {
+			send <- p
+		}
+		t.RUnlock()
+		close(send)
+	}(t, ch)
+
+	return ch
 }
 
 func (t *targeting) selectedByMonsters() <-chan *monster {
-	return nil
+	t.RLock()
+	ch := make(chan *monster, len(t.monsters))
+	t.RUnlock()
+
+	go func(t *targeting, send chan<- *monster) {
+		t.RLock()
+		for _, m := range t.monsters {
+			send <- m
+		}
+		t.RUnlock()
+		close(send)
+	}(t, ch)
+
+	return ch
 }
 
 func (t *targeting) selectedByNPCs() <-chan *npc {
-	return nil
+	t.RLock()
+	ch := make(chan *npc, len(t.npc))
+	t.RUnlock()
+
+	go func(t *targeting, send chan<- *npc) {
+		t.RLock()
+		for _, n := range t.npc {
+			send <- n
+		}
+		t.RUnlock()
+		close(send)
+	}(t, ch)
+
+	return ch
 }
 
 type entityState struct {

@@ -20,7 +20,8 @@ func (m *monster) getNextTargetPacketData() *structs.NcBatTargetInfoCmd {
 	m.targeting.RLock()
 	order := m.targeting.selectionOrder + 1
 	m.targeting.RUnlock()
-	nc := monsterNcBatTargetInfo(m, order)
+	nc := m.targeting.currentlySelected.getTargetPacketData()
+	nc.Order = order
 	return nc
 }
 
@@ -32,9 +33,7 @@ func (m *monster) selects(e entity) {
 }
 
 func (m *monster) selectedBy(e entity) {
-	m.targeting.Lock()
-	m.targeting.selectedBy[e.getHandle()] = e
-	m.targeting.Unlock()
+	m.targeting.selectedBy(e)
 }
 
 func (m *monster) currentlySelected() entity {
@@ -50,8 +49,8 @@ func monsterNcBatTargetInfo(m *monster, assignedOrder byte) *structs.NcBatTarget
 		TargetMaxHP: m.data.mobInfo.MaxHP,               // todo: use the same player stat system for mobs and NPCs
 		TargetMaxSP: uint32(m.data.mobInfoServer.MaxSP), // todo: use the same player stat system for mobs and NPCs
 		TargetLevel: byte(m.data.mobInfo.Level),
-		TargetHP:    m.stats.sp,
-		TargetSP:    m.stats.hp,
+		TargetHP:    m.data.mobInfo.MaxHP,               // for now we use the static value, later it should be switched to stats value
+		TargetSP:    uint32(m.data.mobInfoServer.MaxSP), // for now we use the static value, later it should be switched to stats value
 	}
 	return nc
 }

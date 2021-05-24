@@ -182,7 +182,6 @@ func ncActNpcClickCmd(ctx context.Context, np *networking.Parameters) {
 
 func ncActNpcMenuOpenAck(ctx context.Context, np *networking.Parameters) {
 	// INFO : 2021/04/26 10:00:13.035168 handlers.go:272: 2021-04-26 10:00:13.021596 +0200 CEST 6233->9120 outbound NC_ACT_NPCMENUOPEN_ACK {"packetType":"small","length":3,"department":8,"command":"1D","opCode":8221,"data":"01","rawData":"031d2001","friendlyName":""}
-
 }
 
 // NC_ACT_NPCMENUOPEN_ACK
