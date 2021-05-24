@@ -6,17 +6,20 @@ package world
 import (
 	context "context"
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto.Marshal
-var _ = fmt.Errorf
-var _ = math.Inf
+var (
+	_ = proto.Marshal
+	_ = fmt.Errorf
+	_ = math.Inf
+)
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -42,15 +45,19 @@ func (*WorldQuery) Descriptor() ([]byte, []int) {
 func (m *WorldQuery) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorldQuery.Unmarshal(m, b)
 }
+
 func (m *WorldQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WorldQuery.Marshal(b, m, deterministic)
 }
+
 func (m *WorldQuery) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_WorldQuery.Merge(m, src)
 }
+
 func (m *WorldQuery) XXX_Size() int {
 	return xxx_messageInfo_WorldQuery.Size(m)
 }
+
 func (m *WorldQuery) XXX_DiscardUnknown() {
 	xxx_messageInfo_WorldQuery.DiscardUnknown(m)
 }
@@ -92,15 +99,19 @@ func (*WorldData) Descriptor() ([]byte, []int) {
 func (m *WorldData) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorldData.Unmarshal(m, b)
 }
+
 func (m *WorldData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WorldData.Marshal(b, m, deterministic)
 }
+
 func (m *WorldData) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_WorldData.Merge(m, src)
 }
+
 func (m *WorldData) XXX_Size() int {
 	return xxx_messageInfo_WorldData.Size(m)
 }
+
 func (m *WorldData) XXX_DiscardUnknown() {
 	xxx_messageInfo_WorldData.DiscardUnknown(m)
 }
@@ -159,15 +170,19 @@ func (*CharacterQuery) Descriptor() ([]byte, []int) {
 func (m *CharacterQuery) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CharacterQuery.Unmarshal(m, b)
 }
+
 func (m *CharacterQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CharacterQuery.Marshal(b, m, deterministic)
 }
+
 func (m *CharacterQuery) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_CharacterQuery.Merge(m, src)
 }
+
 func (m *CharacterQuery) XXX_Size() int {
 	return xxx_messageInfo_CharacterQuery.Size(m)
 }
+
 func (m *CharacterQuery) XXX_DiscardUnknown() {
 	xxx_messageInfo_CharacterQuery.DiscardUnknown(m)
 }
@@ -198,15 +213,19 @@ func (*CharacterData) Descriptor() ([]byte, []int) {
 func (m *CharacterData) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CharacterData.Unmarshal(m, b)
 }
+
 func (m *CharacterData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CharacterData.Marshal(b, m, deterministic)
 }
+
 func (m *CharacterData) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_CharacterData.Merge(m, src)
 }
+
 func (m *CharacterData) XXX_Size() int {
 	return xxx_messageInfo_CharacterData.Size(m)
 }
+
 func (m *CharacterData) XXX_DiscardUnknown() {
 	xxx_messageInfo_CharacterData.DiscardUnknown(m)
 }
@@ -236,15 +255,19 @@ func (*Empty) Descriptor() ([]byte, []int) {
 func (m *Empty) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Empty.Unmarshal(m, b)
 }
+
 func (m *Empty) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Empty.Marshal(b, m, deterministic)
 }
+
 func (m *Empty) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Empty.Merge(m, src)
 }
+
 func (m *Empty) XXX_Size() int {
 	return xxx_messageInfo_Empty.Size(m)
 }
+
 func (m *Empty) XXX_DiscardUnknown() {
 	xxx_messageInfo_Empty.DiscardUnknown(m)
 }
@@ -267,15 +290,19 @@ func (*DatabaseInfo) Descriptor() ([]byte, []int) {
 func (m *DatabaseInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DatabaseInfo.Unmarshal(m, b)
 }
+
 func (m *DatabaseInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DatabaseInfo.Marshal(b, m, deterministic)
 }
+
 func (m *DatabaseInfo) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_DatabaseInfo.Merge(m, src)
 }
+
 func (m *DatabaseInfo) XXX_Size() int {
 	return xxx_messageInfo_DatabaseInfo.Size(m)
 }
+
 func (m *DatabaseInfo) XXX_DiscardUnknown() {
 	xxx_messageInfo_DatabaseInfo.DiscardUnknown(m)
 }
@@ -318,8 +345,10 @@ var fileDescriptor_b509c40833d40ff2 = []byte{
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
+var (
+	_ context.Context
+	_ grpc.ClientConnInterface
+)
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
@@ -377,15 +406,16 @@ type WorldServer interface {
 }
 
 // UnimplementedWorldServer can be embedded to have forward compatible implementations.
-type UnimplementedWorldServer struct {
-}
+type UnimplementedWorldServer struct{}
 
 func (*UnimplementedWorldServer) GetWorldData(ctx context.Context, req *WorldQuery) (*WorldData, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWorldData not implemented")
 }
+
 func (*UnimplementedWorldServer) Character(ctx context.Context, req *CharacterQuery) (*CharacterData, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Character not implemented")
 }
+
 func (*UnimplementedWorldServer) Database(ctx context.Context, req *Empty) (*DatabaseInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Database not implemented")
 }

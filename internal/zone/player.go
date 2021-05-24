@@ -1,14 +1,15 @@
 package zone
 
 import (
+	"reflect"
+	"sync"
+	"time"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
-	"reflect"
-	"sync"
-	"time"
 )
 
 const (
@@ -45,6 +46,64 @@ type player struct {
 	ticks       *entityTicks
 	persistence *playerPersistence
 	sync.RWMutex
+}
+
+func (p *player) getTargetPacketData() *structs.NcBatTargetInfoCmd {
+	p.targeting.RLock()
+	order := p.targeting.selectionOrder
+	p.targeting.RUnlock()
+	nc := playerNcBatTargetInfo(p, order)
+	return nc
+}
+
+func (p *player) getNextTargetPacketData() *structs.NcBatTargetInfoCmd {
+	p.targeting.RLock()
+	order := p.targeting.selectionOrder + 1
+	p.targeting.RUnlock()
+	nc := playerNcBatTargetInfo(p, order)
+	return nc
+}
+
+// set entity as currentlySelected target
+// return currentlySelected target's selected entity
+func (p *player) selects(e entity) {
+	p.targeting.Lock()
+	p.targeting.selectionOrder += 32
+	p.targeting.currentlySelected = e
+	p.targeting.Unlock()
+}
+
+func (p *player) selectedBy(e entity) {
+	p.targeting.Lock()
+	p.targeting.selectedBy[e.getHandle()] = e
+	p.targeting.Unlock()
+}
+
+func (p *player) currentlySelected() entity {
+	p.targeting.RLock()
+	defer p.targeting.RUnlock()
+	return p.targeting.currentlySelected
+}
+
+func playerNcBatTargetInfo(p *player, assignedOrder byte) *structs.NcBatTargetInfoCmd {
+	nc := &structs.NcBatTargetInfoCmd{
+		Order:  assignedOrder,
+		Handle: p.getHandle(),
+	}
+
+	p.stats.RLock()
+	nc.TargetHP = p.stats.hp
+	nc.TargetMaxHP = p.stats.maxHP
+	nc.TargetSP = p.stats.sp
+	nc.TargetMaxSP = p.stats.maxSP
+	nc.TargetLP = p.stats.lp
+	nc.TargetMaxLP = p.stats.maxLP
+	p.stats.RUnlock()
+
+	p.state.RLock()
+	nc.TargetLevel = p.state.level
+	p.state.RUnlock()
+	return nc
 }
 
 type playerConnection struct {
@@ -252,20 +311,20 @@ func (p *player) oldNearbyEntitiesTicker() {
 	}
 }
 
-func (p *player) getPacketData() interface{} {
+func (p *player) getNewEntityNearbyPacketData() interface{} {
 	return ncBriefInfoLoginCharacterCmd(p)
 }
 
 func (p *player) notifyAboutNewEntity(e entity) {
 	switch e.(type) {
 	case *player:
-		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, e.getPacketData())
+		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_LOGINCHARACTER_CMD, e.getNewEntityNearbyPacketData())
 		break
 	case *npc:
-		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, e.getPacketData())
+		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, e.getNewEntityNearbyPacketData())
 		break
 	case *monster:
-		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, e.getPacketData())
+		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, e.getNewEntityNearbyPacketData())
 		break
 	default:
 		log.Errorf("unknown entity type %v", reflect.TypeOf(e).String())
@@ -304,6 +363,18 @@ func (p *player) selectsNPC(n *npc) byte {
 	p.targeting.Lock()
 	p.targeting.selectingP = nil
 	p.targeting.selectingN = n
+	p.targeting.selectionOrder += 32
+	order = p.targeting.selectionOrder
+	p.targeting.Unlock()
+	return order
+}
+
+func (p *player) selectsMonster(m *monster) byte {
+	var order byte
+	p.targeting.Lock()
+	p.targeting.selectingP = nil
+	p.targeting.selectingN = nil
+	p.targeting.selectingM = m
 	p.targeting.selectionOrder += 32
 	order = p.targeting.selectionOrder
 	p.targeting.Unlock()
@@ -357,7 +428,7 @@ func (p *player) selectedByNPCs() chan *npc {
 }
 
 func (p *player) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
-	var nc = &structs.NcBatTargetInfoCmd{}
+	nc := &structs.NcBatTargetInfoCmd{}
 
 	nc.Handle = p.getHandle()
 
@@ -379,7 +450,6 @@ func (p *player) ncBatTargetInfoCmd() *structs.NcBatTargetInfoCmd {
 
 func (p *player) load(name string) error {
 	char, err := persistence.GetCharacterByName(name)
-
 	if err != nil {
 		return err
 	}
@@ -463,7 +533,7 @@ func (p *player) itemData() error {
 	// for this character, load all items in each respective box
 	// each item loaded should be validated so that, best way is to iterate all items and for each item launch a routine that validates it and returns the valid item through a channel
 	// we also forward the error channel in case there is an error
-	var ivs = &playerInventories{}
+	ivs := &playerInventories{}
 
 	eiBox, err := loadInventory(persistence.EquippedInventory, p)
 	if err != nil {
@@ -539,8 +609,8 @@ func (p *player) stateData() {
 
 func (p *player) statsData() {
 	// given all:
-	//  class base stats for current level, equippedID items, charged buffs, buffs/debuffs, assigned stat points
-	// calculate base stats (class base stats for current level, assigned stat points) , and stats with gear on (equippedID items, charged buffs, buffs/debuffs)
+	//  class base stats for currentlySelected level, equippedID items, charged buffs, buffs/debuffs, assigned stat points
+	// calculate base stats (class base stats for currentlySelected level, assigned stat points) , and stats with gear on (equippedID items, charged buffs, buffs/debuffs)
 	// given that equippedID
 	s := &playerStats{
 		str: stat{
@@ -817,7 +887,6 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 	}
 
 	opItem, err := fromItem.pItem.MoveTo(persistence.EquippedInventory, equip)
-
 	if err != nil {
 		return change, err
 	}
@@ -891,7 +960,6 @@ func (p *player) unEquip(from, to int) (itemSlotChange, error) {
 	}
 
 	_, err := fromItem.pItem.MoveTo(persistence.BagInventory, to)
-
 	if err != nil {
 		return change, err
 	}
@@ -968,7 +1036,6 @@ func (p *player) newItem(i *item) error {
 	i.pItem.Attributes.MaxHPBase = i.stats.maxHP.extra
 
 	err := i.pItem.Insert()
-
 	if err != nil {
 		return err
 	}
@@ -998,7 +1065,6 @@ func canBeEquipped(equip int, class int) bool {
 func loadInventory(it persistence.InventoryType, p *player) (itemBox, error) {
 	var box itemBox
 	items, err := persistence.GetCharacterItems(int(p.persistence.char.ID), it)
-
 	if err != nil {
 		return box, err
 	}
@@ -1037,7 +1103,7 @@ func justSpawned(p *player) bool {
 	return p.state.justSpawned
 }
 
-func validatePlayerEntity(p * player) error {
+func validatePlayerEntity(p *player) error {
 	if p.baseEntity == nil || p.view == nil || p.state == nil ||
 		p.conn == nil {
 		return errors.Err{
@@ -1052,15 +1118,13 @@ func validatePlayerEntity(p * player) error {
 }
 
 func ncBriefInfoLoginCharacterCmd(p *player) *structs.NcBriefInfoLoginCharacterCmd {
-
 	err := validatePlayerEntity(p)
-
 	if err != nil {
 		log.Error(err)
 		return nil
 	}
 
-	var nc = &structs.NcBriefInfoLoginCharacterCmd{
+	nc := &structs.NcBriefInfoLoginCharacterCmd{
 		Mode: 2,
 	}
 
@@ -1166,7 +1230,7 @@ func shapeData(p *player) structs.NcBriefInfoLoginCharacterCmdShapeData {
 				EquAccShield:    equippedID(p.inventories, data.ItemEquipShieldAcc),
 				Upgrade: structs.EquipmentUpgrade{
 					Gap: [2]uint8{0, 12},
-					//Gap: 12,
+					// Gap: 12,
 					BF2: 1,
 				},
 			},

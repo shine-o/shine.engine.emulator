@@ -13,6 +13,9 @@
 - Install [NMAP](https://nmap.org/download.html)
 - Adjust the **configs/packet-sniffer-client.yml** file to your needs
 
+    
+        # list active devices
+        nmap --iflist
 
 ## build
 

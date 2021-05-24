@@ -4,13 +4,14 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/go-restruct/restruct"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sync"
+
+	"github.com/go-restruct/restruct"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
 var ocs *opCodeStructs
@@ -93,7 +94,7 @@ func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error
 		// NC_CHAR_CLIENT_SHAPE_CMD
 		nc := structs.NcCharClientShapeCmd{}
 		return ncStructData(&nc, data)
-		//break
+		// break
 	case 4157:
 		// NC_CHAR_CLIENT_SKILL_CMD
 		nc := structs.NcCharClientSkillCmd{}
@@ -166,7 +167,7 @@ func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error
 		// NC_CHAR_CLIENT_BASE_CMD
 		nc := structs.NcCharClientBaseCmd{}
 		return ncStructData(&nc, data)
-		//break
+		// break
 	case 4169:
 		// NC_CHAR_CLIENT_CHARTITLE_CMD
 		nc := structs.NcClientCharTitleCmd{}
@@ -733,7 +734,7 @@ func ncStructRepresentation(opCode uint16, data []byte) (ncRepresentation, error
 		// NC_MAP_LINKOTHER_CMD
 		nc := structs.NcMapLinkOtherCmd{}
 		return ncStructData(&nc, data)
-		//break
+		// break
 	case 11554:
 		//
 		// return ncStructData(&nc, data)

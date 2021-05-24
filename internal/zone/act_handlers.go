@@ -2,6 +2,7 @@ package zone
 
 import (
 	"context"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
@@ -9,9 +10,7 @@ import (
 
 // NC_ACT_MOVEWALK_CMD
 func ncActMoveWalkCmd(ctx context.Context, np *networking.Parameters) {
-	var (
-		e playerWalksEvent
-	)
+	var e playerWalksEvent
 
 	session, ok := np.Session.(*session)
 
@@ -46,9 +45,7 @@ func ncActMoveWalkCmd(ctx context.Context, np *networking.Parameters) {
 
 // NC_ACT_MOVERUN_CMD
 func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
-	var (
-		e playerRunsEvent
-	)
+	var e playerRunsEvent
 
 	session, ok := np.Session.(*session)
 
@@ -84,9 +81,7 @@ func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 
 // NC_ACT_JUMP_CMD
 func ncActJumpCmd(ctx context.Context, np *networking.Parameters) {
-	var (
-		e playerJumpedEvent
-	)
+	var e playerJumpedEvent
 
 	session, ok := np.Session.(*session)
 
@@ -115,9 +110,7 @@ func ncActJumpCmd(ctx context.Context, np *networking.Parameters) {
 
 // NC_ACT_STOP_REQ
 func ncActStopReq(ctx context.Context, np *networking.Parameters) {
-	var (
-		e playerStoppedEvent
-	)
+	var e playerStoppedEvent
 
 	session, ok := np.Session.(*session)
 
@@ -153,9 +146,7 @@ func ncActStopReq(ctx context.Context, np *networking.Parameters) {
 
 // NC_ACT_NPCCLICK_CMD
 func ncActNpcClickCmd(ctx context.Context, np *networking.Parameters) {
-	var (
-		e playerClicksOnNpcEvent
-	)
+	var e playerClicksOnNpcEvent
 
 	session, ok := np.Session.(*session)
 
@@ -170,7 +161,6 @@ func ncActNpcClickCmd(ctx context.Context, np *networking.Parameters) {
 	}
 
 	err := structs.Unpack(np.Command.Base.Data, e.nc)
-
 	if err != nil {
 		log.Error(err)
 		return
@@ -188,11 +178,10 @@ func ncActNpcClickCmd(ctx context.Context, np *networking.Parameters) {
 	}
 
 	zm.events.send[playerClicksOnNpc] <- &e
-
 }
 
 func ncActNpcMenuOpenAck(ctx context.Context, np *networking.Parameters) {
-	//INFO : 2021/04/26 10:00:13.035168 handlers.go:272: 2021-04-26 10:00:13.021596 +0200 CEST 6233->9120 outbound NC_ACT_NPCMENUOPEN_ACK {"packetType":"small","length":3,"department":8,"command":"1D","opCode":8221,"data":"01","rawData":"031d2001","friendlyName":""}
+	// INFO : 2021/04/26 10:00:13.035168 handlers.go:272: 2021-04-26 10:00:13.021596 +0200 CEST 6233->9120 outbound NC_ACT_NPCMENUOPEN_ACK {"packetType":"small","length":3,"department":8,"command":"1D","opCode":8221,"data":"01","rawData":"031d2001","friendlyName":""}
 
 }
 
@@ -207,9 +196,7 @@ func ncActNpcMenuOpenAck(ctx context.Context, np *networking.Parameters) {
 
 // NC_MENU_SERVERMENU_ACK
 func ncMenuServerMenuAck(ctx context.Context, np *networking.Parameters) {
-	var (
-		e playerPromptReplyEvent
-	)
+	var e playerPromptReplyEvent
 
 	session, ok := np.Session.(*session)
 
@@ -224,7 +211,6 @@ func ncMenuServerMenuAck(ctx context.Context, np *networking.Parameters) {
 	}
 
 	err := structs.Unpack(np.Command.Base.Data, e.nc)
-
 	if err != nil {
 		log.Error(err)
 		return

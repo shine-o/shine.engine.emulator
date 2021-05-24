@@ -35,7 +35,7 @@ type RegenEntryMob struct {
 // load into MonsterData
 // persist monsterData
 func LoadMonsterData(shineFolder string) (*MonsterData, error) {
-	var monsterData = &MonsterData{}
+	monsterData := &MonsterData{}
 	var mobInfo ShineMobInfo
 	var mobInfoServer ShineMobInfoServer
 
@@ -51,7 +51,6 @@ func LoadMonsterData(shineFolder string) (*MonsterData, error) {
 	}
 
 	mobInfoServerPath, err := ValidPath(shineFolder + "/shn/" + "MobInfoServer.shn")
-
 	if err != nil {
 		return monsterData, err
 	}
@@ -66,7 +65,6 @@ func LoadMonsterData(shineFolder string) (*MonsterData, error) {
 	monsterData.MobInfoServer = mobInfoServer
 
 	mapRegens, err := loadRegenData(shineFolder)
-
 	if err != nil {
 		return monsterData, err
 	}
@@ -77,7 +75,6 @@ func LoadMonsterData(shineFolder string) (*MonsterData, error) {
 }
 
 func loadRegenData(shineFolder string) (map[string]MonsterRegenTable, error) {
-
 	mapRegens := make(map[string]MonsterRegenTable)
 
 	// serialize into
@@ -85,7 +82,6 @@ func loadRegenData(shineFolder string) (map[string]MonsterRegenTable, error) {
 	root := shineFolder + "/monsters/regens"
 
 	root, err := ValidPath(root)
-
 	if err != nil {
 		return mapRegens, err
 	}
@@ -102,7 +98,6 @@ func loadRegenData(shineFolder string) (map[string]MonsterRegenTable, error) {
 	for _, f := range files[1:] {
 
 		data, err := loadTxtFile(f)
-
 		if err != nil {
 			return mapRegens, err
 		}
@@ -135,7 +130,6 @@ func loadRegenData(shineFolder string) (map[string]MonsterRegenTable, error) {
 				}
 
 				x, err := strconv.Atoi(strings.TrimSpace(row[4]))
-
 				if err != nil {
 					log.Error(err)
 					continue
@@ -196,7 +190,6 @@ func loadRegenData(shineFolder string) (map[string]MonsterRegenTable, error) {
 				mobIndex = row[3]
 
 				mobNum, err := strconv.Atoi(row[4])
-
 				if err != nil {
 					log.Error(err)
 					continue

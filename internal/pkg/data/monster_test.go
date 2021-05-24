@@ -4,7 +4,6 @@ import "testing"
 
 func TestLoadMobData(t *testing.T) {
 	data, err := LoadMonsterData(filesPath)
-
 	if err != nil {
 		t.Fatal(err)
 	}

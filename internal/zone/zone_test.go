@@ -2,19 +2,19 @@ package zone
 
 import (
 	"encoding/hex"
+	"reflect"
+	"testing"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/utils"
-	"reflect"
-	"testing"
 )
 
 func TestLoadZone(t *testing.T) {
 	z := zone{}
 
 	err := z.load()
-
 	if err != nil {
 		t.Fatal(err)
 	}

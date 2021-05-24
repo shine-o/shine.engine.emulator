@@ -3,13 +3,14 @@ package persistence
 import (
 	"encoding/hex"
 	"fmt"
+	"io/ioutil"
+	"regexp"
+	"time"
+
 	"github.com/google/logger"
 	"github.com/google/uuid"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
-	"io/ioutil"
-	"regexp"
-	"time"
 )
 
 var log *logger.Logger
@@ -148,7 +149,6 @@ const (
 
 // ValidateCharacter checks data sent by the client is valid
 func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
-
 	if req.SlotNum > 5 {
 		return errors.Err{
 			Code: errors.PersistenceCharInvalidSlot,
@@ -166,7 +166,7 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 	err := db.Model((*Character)(nil)).Column("name").Where("name = ?", name).Select(&charName)
 
 	if err == nil {
-		//return ErrNameTaken
+		// return ErrNameTaken
 		return errors.Err{
 			Code: errors.PersistenceCharNameTaken,
 			Details: errors.ErrDetails{
@@ -237,7 +237,6 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq, initialItems bool) (*Character, error) {
 	var char *Character
 	tx, err := db.Begin()
-
 	if err != nil {
 		return char, err
 	}
@@ -334,7 +333,6 @@ func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq, initialItems bo
 		char.initialItems()
 
 		itx, err := db.Begin()
-
 		if err != nil {
 			return char, err
 		}
@@ -357,7 +355,6 @@ func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq, initialItems bo
 	}
 
 	return char, tx.Commit()
-
 }
 
 func GetCharacter(characterID uint64) (Character, error) {

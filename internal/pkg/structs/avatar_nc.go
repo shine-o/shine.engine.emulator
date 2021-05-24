@@ -13,17 +13,17 @@ type NcAvatarCreateSuccAck struct {
 	Avatar      AvatarInformation
 }
 
-//struct PROTO_NC_AVATAR_CREATEFAIL_ACK
+// struct PROTO_NC_AVATAR_CREATEFAIL_ACK
 type NcAvatarCreateFailAck struct {
 	Err uint16
 }
 
-//struct PROTO_NC_AVATAR_ERASE_REQ
+// struct PROTO_NC_AVATAR_ERASE_REQ
 type NcAvatarEraseReq struct {
 	Slot byte
 }
 
-//struct PROTO_NC_AVATAR_ERASESUCC_ACK
+// struct PROTO_NC_AVATAR_ERASESUCC_ACK
 type NcAvatarEraseSuccAck struct {
 	Slot byte
 }

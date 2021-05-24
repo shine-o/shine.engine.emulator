@@ -2,11 +2,12 @@ package world
 
 import (
 	"context"
+	"reflect"
+
 	zm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
-	"reflect"
 )
 
 func (w *world) characterCRUD() {
@@ -56,7 +57,6 @@ func createCharacterLogic(e event) {
 	}
 
 	err := persistence.ValidateCharacter(s.UserID, ev.nc)
-
 	if err != nil {
 		log.Error(err)
 		ncAvatarCreateFailAck(ev.np, 385)
@@ -65,7 +65,6 @@ func createCharacterLogic(e event) {
 	}
 
 	char, err := persistence.NewCharacter(s.UserID, ev.nc, true)
-
 	if err != nil {
 		log.Error(err)
 		ncAvatarCreateFailAck(ev.np, 385)
@@ -103,7 +102,6 @@ func deleteCharacterLogic(e event) {
 		Slot: ev.nc.Slot,
 	}
 	networking.Send(ev.np.OutboundSegments.Send, networking.NC_AVATAR_ERASESUCC_ACK, nc)
-
 }
 
 func characterLoginLogic(e event) {
@@ -164,21 +162,18 @@ func characterSettingsLogic(e event) {
 	}
 
 	gameOptions, err := ncGameOptions(ev.char.Options.GameOptions)
-
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
 	keyMap, err := ncKeyMap(ev.char.Options.Keymap)
-
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
 	shortcuts, err := ncShortcutData(ev.char.Options.Shortcuts)
-
 	if err != nil {
 		log.Error(err)
 		return
@@ -187,7 +182,6 @@ func characterSettingsLogic(e event) {
 	networking.Send(ev.np.OutboundSegments.Send, networking.NC_CHAR_OPTION_IMPROVE_GET_GAMEOPTION_CMD, &gameOptions)
 	networking.Send(ev.np.OutboundSegments.Send, networking.NC_CHAR_OPTION_IMPROVE_GET_KEYMAP_CMD, &keyMap)
 	networking.Send(ev.np.OutboundSegments.Send, networking.NC_CHAR_OPTION_IMPROVE_GET_SHORTCUTDATA_CMD, &shortcuts)
-
 }
 
 func updateShortcutsLogic(e event) {
@@ -199,7 +193,6 @@ func updateShortcutsLogic(e event) {
 	}
 
 	c, err := persistence.GetCharacter(ev.characterID)
-
 	if err != nil {
 		log.Error(err)
 		return
@@ -234,7 +227,6 @@ func updateShortcutsLogic(e event) {
 	storedShortcuts.Count = uint16(len(storedShortcuts.Shortcuts))
 
 	data, err := structs.Pack(&storedShortcuts)
-
 	if err != nil {
 		log.Error(err)
 		return
@@ -267,7 +259,7 @@ func characterSelectLogic(e event) {
 		return
 	}
 
-	//networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGOUT_DB, &nc)
+	// networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGOUT_DB, &nc)
 	networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGINWORLD_ACK, &nc)
 }
 
@@ -285,7 +277,6 @@ func zoneConnectionInfo(char persistence.Character) (structs.NcCharLoginAck, err
 	ci, err := c.WhereIsMap(ctx, &zm.MapQuery{
 		ID: int32(char.Location.MapID),
 	})
-
 	if err != nil {
 		return nc, err
 	}

@@ -1,12 +1,13 @@
 package zone
 
 import (
+	"reflect"
+	"time"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
-	"reflect"
-	"time"
 )
 
 func (z *zone) security() {
@@ -43,7 +44,7 @@ func (z *zone) playerSession() {
 					return
 				}
 
-				//todo: zone rpc method for external maps, for now, all maps are running in the same zone
+				// todo: zone rpc method for external maps, for now, all maps are running in the same zone
 				p := ev.p
 				handle := p.getHandle()
 
@@ -89,7 +90,6 @@ func (z *zone) playerSession() {
 				}
 
 				networking.Send(p.conn.outboundData, networking.NC_MAP_LINKSAME_CMD, &nc)
-
 			}()
 		}
 	}
@@ -220,7 +220,6 @@ func playerDataLogic(e event) {
 	}
 
 	err := p.load(ev.playerName)
-
 	if err != nil {
 		log.Error(err)
 		ev.err <- err
@@ -350,7 +349,6 @@ func persistPLayerPositionLogic(e event) {
 	c.Location.IsKQ = false
 
 	err := persistence.UpdateLocation(c)
-
 	if err != nil {
 		log.Error(err)
 		return
@@ -493,7 +491,7 @@ func ncCharClientItemCmd(p *player, inventoryType persistence.InventoryType) *st
 
 	switch inventoryType {
 	case persistence.EquippedInventory:
-		//p.inventories.inventory.
+		// p.inventories.inventory.
 		nc.NumOfItem = byte(len(p.inventories.equipped.items))
 		for _, item := range p.inventories.equipped.items {
 			//           v7->location.Inven = ((_WORD)box << 10) ^ slot & 0x3FF;

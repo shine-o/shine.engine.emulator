@@ -8,7 +8,7 @@ import (
 var (
 	xorKey   []byte
 	xorLimit uint16
-	//commandList *PCList
+	// commandList *PCList
 )
 
 // PacketBoundary of a packet in a data segment
@@ -43,7 +43,6 @@ func PacketBoundary(offset int, data []byte) (uint16, int) {
 
 // DecodePacket data into a struct
 func DecodePacket(data []byte) (Command, error) {
-
 	var (
 		opCode     uint16
 		department uint16

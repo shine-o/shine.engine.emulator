@@ -19,7 +19,7 @@ type ShineDateTime struct {
 	BF0 int32
 }
 
-//union NETCOMMAND
+// union NETCOMMAND
 type NetCommand struct {
 	Protocol uint16
 }

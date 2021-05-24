@@ -3,10 +3,11 @@ package zone
 import (
 	"context"
 	"errors"
+	"sync"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	zm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	"github.com/spf13/viper"
-	"sync"
 )
 
 type zone struct {
@@ -68,7 +69,7 @@ func (z *zone) load() error {
 	normalMaps := viper.GetIntSlice("normal_maps")
 
 	var wg sync.WaitGroup
-	var sem = make(chan int, 10)
+	sem := make(chan int, 10)
 	for _, id := range normalMaps {
 		wg.Add(1)
 		sem <- 1
@@ -176,7 +177,6 @@ func registerZone(mapIDs []int32) error {
 	zonePort := viper.GetInt32("serve.port")
 
 	conn, err := newRPCClient("zone_master")
-
 	if err != nil {
 		return err
 	}
@@ -190,7 +190,6 @@ func registerZone(mapIDs []int32) error {
 			Port: zonePort,
 		},
 	})
-
 	if err != nil {
 		return err
 	}

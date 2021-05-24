@@ -2,9 +2,10 @@ package shinelog
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/google/logger"
 	"github.com/sirupsen/logrus"
-	"os"
 )
 
 func NewLogger(name, outputFolder string, level logrus.Level) *logger.Logger {
@@ -16,7 +17,6 @@ func NewLogger(name, outputFolder string, level logrus.Level) *logger.Logger {
 	}
 	path := fmt.Sprintf("%v/%v.log", outputFolder, name)
 	lf, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0666)
-
 	if err != nil {
 		logger.Fatalf("Failed to create output file: %v", err)
 	}

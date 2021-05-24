@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"net/http"
+	"path/filepath"
+
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
@@ -12,8 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"net/http"
-	"path/filepath"
 )
 
 var log = shinelog.NewLogger("world", "../../output", logrus.DebugLevel)
@@ -64,7 +65,6 @@ func Start(cmd *cobra.Command, args []string) {
 	s := networking.Settings{}
 
 	xk, err := hex.DecodeString(xorKey)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,7 +74,6 @@ func Start(cmd *cobra.Command, args []string) {
 	s.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
 
 	path, err := filepath.Abs(viper.GetString("protocol.commands"))
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -100,7 +99,7 @@ func Start(cmd *cobra.Command, args []string) {
 			Handler: ncMiscSeedAck,
 		},
 		networking.NC_USER_LOGINWORLD_REQ: networking.ShinePacket{
-			//networking.NC_USER_LOGIN_DB: networking.ShinePacket{
+			// networking.NC_USER_LOGIN_DB: networking.ShinePacket{
 			Handler: ncUserLoginWorldReq,
 		},
 		networking.NC_MISC_GAMETIME_REQ: networking.ShinePacket{
@@ -131,7 +130,7 @@ func Start(cmd *cobra.Command, args []string) {
 			Handler: ncCharOptionImproveSetShortcutDataReq,
 		},
 		networking.NC_USER_AVATAR_LIST_REQ: networking.ShinePacket{
-			//networking.NC_USER_WORLD_STATUS_ACK: networking.ShinePacket{
+			// networking.NC_USER_WORLD_STATUS_ACK: networking.ShinePacket{
 			Handler: ncUserAvatarListReq,
 		},
 	}

@@ -4,16 +4,17 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"os"
+	"os/signal"
+	"runtime"
+	"syscall"
+
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
 	"github.com/google/gopacket/reassembly"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
-	"os/signal"
-	"runtime"
-	"syscall"
 )
 
 type Context struct {
@@ -79,7 +80,6 @@ func ExtendedCapture(p *Params) {
 	params = p
 
 	xb, err := hex.DecodeString(viper.GetString("protocol.xorKey"))
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -117,9 +117,9 @@ func ExtendedCapture(p *Params) {
 		select {
 		case <-c:
 			cancel()
-			//generateOpCodeSwitch()
-			exportEntitiesMovements()
-			exportPackets()
+			// generateOpCodeSwitch()
+			// exportEntitiesMovements()
+			// exportPackets()
 		}
 	}
 }

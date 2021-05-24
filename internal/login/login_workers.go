@@ -1,10 +1,11 @@
 package login
 
 import (
+	"reflect"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"google.golang.org/grpc/connectivity"
-	"reflect"
 )
 
 func (l *login) authentication() {
@@ -38,7 +39,7 @@ func clientVersionLogic(e event) {
 		networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_CLIENT_WRONGVERSION_CHECK_ACK, nil)
 		return
 	}
-	//ncUserClientRightVersionCheckAck(ev.np)
+	// ncUserClientRightVersionCheckAck(ev.np)
 	networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_CLIENT_RIGHTVERSION_CHECK_ACK, nil)
 }
 
@@ -50,7 +51,6 @@ func worldManagerStatusLogic(e event) {
 	}
 
 	conn, err := newRPCClient("world_master")
-
 	if err != nil {
 		log.Error(err)
 		return
@@ -122,7 +122,7 @@ func loginSuccessful(l *login, np *networking.Parameters) {
 	}
 	nc.NumOfWorld = byte(len(l.worlds))
 	networking.Send(np.OutboundSegments.Send, networking.NC_USER_LOGIN_ACK, &nc)
-	//networking.Send(np.OutboundSegments.Send, networking.NC_USER_PASSWORD_CHECK_ACK, &nc)
+	// networking.Send(np.OutboundSegments.Send, networking.NC_USER_PASSWORD_CHECK_ACK, &nc)
 }
 
 func serverSelectLogic(l *login, e event) {
@@ -141,7 +141,7 @@ func serverSelectLogic(l *login, e event) {
 				Port: uint16(w.port),
 			}
 			networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_WORLDSELECT_ACK, &nc)
-			//networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_WILLLOGIN_REQ, &nc)
+			// networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_WILLLOGIN_REQ, &nc)
 			return
 		}
 	}

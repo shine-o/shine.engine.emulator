@@ -6,9 +6,7 @@ import (
 
 // NewDummyCharacter to be used only for testing purposes where a character is needed
 func NewDummyCharacter(class string, initialItems bool, name string) *Character {
-	var (
-		bitField byte
-	)
+	var bitField byte
 
 	switch class {
 	case "mage":

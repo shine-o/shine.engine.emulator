@@ -1,15 +1,16 @@
 package zone
 
 import (
+	"math/rand"
+	sort "sort"
+	"sync"
+	"time"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
-	"math/rand"
-	sort "sort"
-	"sync"
-	"time"
 )
 
 type playerInventories struct {
@@ -252,7 +253,6 @@ func (pi *playerInventories) moveItem(from, to uint16) (itemSlotChange, error) {
 	}
 
 	fromItem, err := pi.get(fromInventoryType, fromInventorySlot)
-
 	if err != nil {
 		return change, err
 	}
@@ -260,7 +260,6 @@ func (pi *playerInventories) moveItem(from, to uint16) (itemSlotChange, error) {
 	toItem, _ = pi.get(toInventoryType, toInventorySlot)
 
 	opItem, err := fromItem.pItem.MoveTo(toInventoryType, toInventorySlot)
-
 	if err != nil {
 		return change, err
 	}
@@ -556,7 +555,6 @@ func (i *item) generateStats() (int, []data.RandomOptionType) {
 }
 
 func (is *itemStats) staticStats(id *itemData) {
-
 	is.staticAttackSpeed.base = int(id.itemInfo.AtkSpeed)
 	is.staticMinPAttack.base = int(id.itemInfo.MinWC)
 	is.staticMaxPAttack.base = int(id.itemInfo.MaxWC)
@@ -653,7 +651,6 @@ func (is *itemStats) staticStats(id *itemData) {
 			is.staticEvasionRate.base = int(id.gradeItemOption.EvasionRate - 1000)
 		}
 	}
-
 }
 
 func itemAttributesBytes(i *item) ([]byte, error) {
@@ -1150,7 +1147,7 @@ func itemOptionStorage(stats itemStats) structs.ItemOptionStorage {
 // todo: extend this beyond RNG using the player's session data for deciding amount of stats, e.g: how much damage he did to the mob that dropped it, how many kills before, etc
 func amountStats(id *itemData) int {
 	var keys []int
-	for k, _ := range id.randomOptionCount {
+	for k := range id.randomOptionCount {
 		keys = append(keys, int(k))
 	}
 	if len(keys) > 0 {
@@ -1162,7 +1159,7 @@ func amountStats(id *itemData) int {
 func chosenStatTypes(amount int, id *itemData) []data.RandomOptionType {
 	var types []data.RandomOptionType
 
-	for rot, _ := range id.randomOption {
+	for rot := range id.randomOption {
 		types = append(types, rot)
 	}
 
@@ -1368,7 +1365,7 @@ func addRandomOptionRow(dropItemIndex string, id *itemData, wg *sync.WaitGroup) 
 			id.Lock()
 			id.randomOption[row.RandomOptionType] = &itemsData.RandomOption.ShineRow[i]
 			id.Unlock()
-			//return
+			// return
 		}
 	}
 }
@@ -1383,7 +1380,7 @@ func addRandomOptionCountRow(dropItemIndex string, id *itemData, wg *sync.WaitGr
 			id.Lock()
 			id.randomOptionCount[row.LimitCount] = &itemsData.RandomOptionCount.ShineRow[i]
 			id.Unlock()
-			//return
+			// return
 		}
 	}
 }
@@ -1397,7 +1394,7 @@ func playerDeposit(inventories *playerInventories) []depositPage {
 
 	inventories.RLock()
 
-	for k, _ := range inventories.deposit.items {
+	for k := range inventories.deposit.items {
 		keys = append(keys, k)
 	}
 
@@ -1448,7 +1445,6 @@ func ncItemCellChangeCmd(change itemSlotChange) (*structs.NcItemCellChangeCmd, *
 	nc1.Location.Inventory = change.gameTo
 	nc1.Item.ItemID = change.from.item.itemData.itemInfo.ID
 	itemAttr, err := itemAttributesBytes(change.from.item)
-
 	if err != nil {
 		return nc1, nc2, err
 	}
@@ -1460,7 +1456,6 @@ func ncItemCellChangeCmd(change itemSlotChange) (*structs.NcItemCellChangeCmd, *
 	if change.to.item != nil {
 		nc2.Item.ItemID = change.to.item.itemData.itemInfo.ID
 		itemAttr1, err := itemAttributesBytes(change.to.item)
-
 		if err != nil {
 			return nc1, nc2, err
 		}
@@ -1492,7 +1487,6 @@ func ncItemEquipChangeCmd(change itemSlotChange) (structs.NcItemEquipChangeCmd, 
 	}
 
 	fromAttr, err := itemAttributesBytes(change.from.item)
-
 	if err != nil {
 		return fromNc, toNc, err
 	}
@@ -1511,7 +1505,6 @@ func ncItemEquipChangeCmd(change itemSlotChange) (structs.NcItemEquipChangeCmd, 
 
 	if change.to.item != nil {
 		toAttr, err := itemAttributesBytes(change.to.item)
-
 		if err != nil {
 			return fromNc, toNc, err
 		}

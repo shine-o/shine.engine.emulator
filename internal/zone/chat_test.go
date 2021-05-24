@@ -16,10 +16,12 @@ type chatLine interface {
 	chatType() chatType
 }
 
-type whisperLine struct{}
-type guildLine struct{}
-type partyLine struct{}
-type academyLine struct{}
+type (
+	whisperLine struct{}
+	guildLine   struct{}
+	partyLine   struct{}
+	academyLine struct{}
+)
 
 func Test_Chat_Process_Whisper_Command(t *testing.T) {
 	t.Fail()

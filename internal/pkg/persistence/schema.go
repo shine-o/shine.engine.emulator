@@ -3,6 +3,7 @@ package persistence
 import (
 	"context"
 	"fmt"
+
 	"github.com/go-pg/pg/v10"
 	"github.com/go-pg/pg/v10/orm"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"

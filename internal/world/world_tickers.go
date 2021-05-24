@@ -1,13 +1,14 @@
 package world
 
 import (
+	"time"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
-	"time"
 )
 
 func worldTimeNotification(np *networking.Parameters) {
-	//log.Infof("[world_ticks] worldTimeNotification ticker/worker %v", np.Session)
+	// log.Infof("[world_ticks] worldTimeNotification ticker/worker %v", np.Session)
 	tick := time.Tick(10 * time.Second)
 	for {
 		select {
@@ -18,7 +19,7 @@ func worldTimeNotification(np *networking.Parameters) {
 			hour := t.Hour()
 			day := t.Day()
 			month := t.Month()
-			//year := t.Year()
+			// year := t.Year()
 			weekDay := t.Weekday()
 			yearDay := t.YearDay()
 
@@ -29,7 +30,7 @@ func worldTimeNotification(np *networking.Parameters) {
 					Hour:     int32(hour),
 					MonthDay: int32(day),
 					Month:    int32(month),
-					//Year:     int32(year),
+					// Year:     int32(year),
 					Year:    120, // 120 = 2020, why? because potatoes
 					WeekDay: int32(weekDay),
 					YearDay: int32(yearDay),

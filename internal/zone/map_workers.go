@@ -2,13 +2,14 @@ package zone
 
 import (
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
-	"reflect"
-	"strings"
-	"time"
 )
 
 const (
@@ -203,7 +204,7 @@ func playerPromptReplyLogic(zm *zoneMap, e event) {
 	}
 
 	if p.targeting.selectingN == nil {
-		log.Warning("prompt cannot be answered, player is no longer selecting an NPC")
+		log.Warning("prompt cannot be answered, player is no longer currentlySelected an NPC")
 		return
 	}
 
@@ -245,16 +246,16 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 		return
 	}
 
-	p, n := findFirstEntity(zm, ev.nc.TargetHandle)
+	pch, nch, mch := findFirstEntity(zm, ev.nc.TargetHandle)
 
 	// set timeout in case of nonexistent handle
 	// or use bool channels, and in the default case check if all three are false and return if so
 	var nc *structs.NcBatTargetInfoCmd
 
-	var notP, notN bool
+	var notP, notN, notM bool
 	for {
 		select {
-		case ap := <-p:
+		case ap := <-pch:
 			if ap == nil {
 				notP = true
 				break
@@ -274,7 +275,7 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 			}
 
 			if ap.targeting.selectingN != nil {
-				nextNc := ncBatTargetInfoCmd(ap.targeting.selectingN)
+				nextNc := npcNcBatTargetInfoCmd(ap.targeting.selectingN)
 				nextNc.Order = order + 1
 				networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
 			}
@@ -286,14 +287,33 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 			}
 
 			return
-		case an := <-n:
+		case an := <-nch:
 			if an == nil {
 				notN = true
 				break
 			}
 			order := vp.selectsNPC(an)
 
-			nc = ncBatTargetInfoCmd(an)
+			nc = npcNcBatTargetInfoCmd(an)
+
+			nc.Order = order
+
+			networking.Send(vp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nc)
+
+			for p := range vp.selectedByPlayers() {
+				nextNc := *nc
+				nextNc.Order++
+				networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nextNc)
+			}
+			return
+		case am := <-mch:
+			if am == nil {
+				notM = true
+				break
+			}
+			order := vp.selectsMonster(am)
+
+			nc = monsterNcBatTargetInfoCmd(am)
 
 			nc.Order = order
 
@@ -306,7 +326,15 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 			}
 			return
 		default:
-			if notP && notN {
+			if notP && notN && notM {
+				log.Error(errors.Err{
+					Code:    errors.ZonePlayerSelectedUnknownEntity,
+					Message: "handler did not match any player, npc or monster entity available",
+					Details: errors.ErrDetails{
+						"player_handle": ev.handle,
+						"target_handle": ev.nc.TargetHandle,
+					},
+				})
 				return
 			}
 		}
@@ -414,7 +442,7 @@ func itemEquipLogic(e event, zm *zoneMap) {
 
 	networking.Send(p.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, nc2)
 
-	var ph = p.getHandle()
+	ph := p.getHandle()
 
 	switch ev1.change.from.item.itemData.itemInfo.Class {
 	case data.ItemClassWeapon, data.ItemClassShield:
@@ -501,7 +529,7 @@ func itemUnEquipLogic(e event, zm *zoneMap) {
 
 	networking.Send(p.conn.outboundData, networking.NC_ITEM_CELLCHANGE_CMD, nc2)
 
-	//NC_BRIEFINFO_UNEQUIP_CMD
+	// NC_BRIEFINFO_UNEQUIP_CMD
 	nc3 := &structs.NcBriefInfoUnEquipCmd{
 		Handle: p.getHandle(),
 		Slot:   ev.nc.SlotEquip,
@@ -534,7 +562,7 @@ func itemIsMovedLogic(e event, zm *zoneMap) {
 	change, err := p.inventories.moveItem(ev.nc.From.Inventory, ev.nc.To.Inventory)
 	if err != nil {
 		log.Error(err)
-		//TODO: check error type, send custom NC_ITEM_RELOC_ACK with error code
+		// TODO: check error type, send custom NC_ITEM_RELOC_ACK with error code
 		networking.Send(p.conn.outboundData, networking.NC_ITEM_RELOC_ACK, &structs.NcItemRelocateAck{
 			Code: ItemSlotChangeCommon,
 		})
@@ -544,7 +572,7 @@ func itemIsMovedLogic(e event, zm *zoneMap) {
 	cc1, cc2, err := ncItemCellChangeCmd(change)
 	if err != nil {
 		log.Error(err)
-		//TODO: check error type, send custom NC_ITEM_RELOC_ACK with error code
+		// TODO: check error type, send custom NC_ITEM_RELOC_ACK with error code
 		networking.Send(p.conn.outboundData, networking.NC_ITEM_RELOC_ACK, &structs.NcItemRelocateAck{
 			Code: ItemSlotChangeCommon,
 		})
@@ -594,7 +622,6 @@ func npcRunsLogic(zm *zoneMap, e event) {
 func playerHandleMaintenanceLogic(zm *zoneMap) {
 	for ap := range zm.entities.allPlayers() {
 		go func(p *player) {
-
 			if justSpawned(p) {
 				return
 			}
@@ -628,7 +655,6 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 			removeHandle(h)
 
 			p.conn.close <- true
-
 		}(ap)
 	}
 }
@@ -641,7 +667,6 @@ func playerHandleLogic(e event, zm *zoneMap) {
 	}
 
 	handle, err := newHandle()
-
 	if err != nil {
 		ev.err <- err
 		return
@@ -721,7 +746,7 @@ func equippedItems(p1 *player) {
 			nc3 = append(nc3, structs.NcBriefInfoChangeUpgradeCmd{
 				Handle: p1h,
 				Item:   eItem.itemData.itemInfo.ID,
-				//Slot:   byte(eItem.itemData.itemInfo.Equip),
+				// Slot:   byte(eItem.itemData.itemInfo.Equip),
 			})
 			break
 		case data.ItemClassWeapon:
@@ -729,7 +754,7 @@ func equippedItems(p1 *player) {
 				UpgradeInfo: structs.NcBriefInfoChangeUpgradeCmd{
 					Handle: p1h,
 					Item:   eItem.itemData.itemInfo.ID,
-					//Slot:   byte(eItem.itemData.itemInfo.Equip),
+					// Slot:   byte(eItem.itemData.itemInfo.Equip),
 				},
 				CurrentMobID:     65535,
 				CurrentKillLevel: 255,
@@ -741,7 +766,7 @@ func equippedItems(p1 *player) {
 			nc4 = append(nc4, structs.NcBriefInfoChangeDecorateCmd{
 				Handle: p1h,
 				Item:   eItem.itemData.itemInfo.ID,
-				//Slot:   byte(eItem.itemData.itemInfo.Equip),
+				// Slot:   byte(eItem.itemData.itemInfo.Equip),
 			})
 			break
 		}
@@ -783,7 +808,6 @@ func playerDisappearedLogic(e event, zm *zoneMap) {
 			networking.Send(p2.conn.outboundData, networking.NC_BRIEFINFO_BRIEFINFODELETE_CMD, nc)
 		}(ap)
 	}
-
 }
 
 func playerWalksLogic(e event, zm *zoneMap) {
@@ -993,7 +1017,7 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	//TODO: could also be NPC, Item on the ground or a Monster
+	// TODO: could also be NPC, Item on the ground or a Monster
 	p2, err := zm.entities.getPlayer(ev.handle)
 	if err != nil {
 		log.Error(err)
@@ -1017,39 +1041,47 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 		nc := npcNcBriefInfoRegenMobCmd(n)
 		go networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
 	}
-
 }
 
-func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *npc) {
-	p := make(chan *player, 1)
-	n := make(chan *npc, 1)
+func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *npc, chan *monster) {
+	pc := make(chan *player, 1)
+	nc := make(chan *npc, 1)
+	mc := make(chan *monster, 1)
 
-	go func(p chan<- *player, zm *zoneMap, targetHandle uint16) {
-		for ap := range zm.entities.allPlayers() {
-			if ap.getHandle() == targetHandle {
-				p <- ap
+	go func(pc chan<- *player, zm *zoneMap, targetHandle uint16) {
+		for p := range zm.entities.allPlayers() {
+			if p.getHandle() == targetHandle {
+				pc <- p
 				return
 			}
 		}
-		p <- nil
-	}(p, zm, handle)
+		pc <- nil
+	}(pc, zm, handle)
 
-	go func(n chan<- *npc, zm *zoneMap, targetHandle uint16) {
-		for an := range zm.entities.allNpc() {
-			if an.getHandle() == targetHandle {
-				n <- an
+	go func(nc chan<- *npc, zm *zoneMap, targetHandle uint16) {
+		for n := range zm.entities.allNpc() {
+			if n.getHandle() == targetHandle {
+				nc <- n
 				return
 			}
 		}
-		n <- nil
-	}(n, zm, handle)
-	return p, n
+		nc <- nil
+	}(nc, zm, handle)
+
+	go func(mc chan<- *monster, zm *zoneMap, targetHandle uint16) {
+		for m := range zm.entities.allMonsters() {
+			if m.getHandle() == targetHandle {
+				mc <- m
+			}
+		}
+		mc <- nil
+	}(mc, zm, handle)
+
+	return pc, nc, mc
 }
 
 func portalMatchesLocation(portal *data.ShinePortal, next location) bool {
-	var (
-		md *data.Map
-	)
+	var md *data.Map
 
 	for i, m := range mapData.Maps {
 		if m.MapInfoIndex == portal.ClientMapIndex {

@@ -1,8 +1,9 @@
 package zone
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"reflect"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 )
 
 // combination of events that must be processed in order
@@ -19,7 +20,7 @@ func (p *player) eduPlayerEvents001() {
 			eduEquipItemLogic(e, p)
 		case e := <-p.events.recv[eduUnEquipItem]:
 			eduUnEquipItemLogic(e, p)
-			//case e := <-p.events.recv[eduUseItem]:
+			// case e := <-p.events.recv[eduUseItem]:
 		}
 	}
 }
@@ -32,7 +33,6 @@ func (p *player) eduPlayerEvents002() {
 		select {
 		case e := <-p.events.recv[eduPosition]:
 			eduPositionLogic(e, p)
-
 		}
 	}
 }

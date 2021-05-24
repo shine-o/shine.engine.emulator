@@ -1,6 +1,6 @@
 package structs
 
-//struct PROTO_SKILLREADBLOCKCLIENT
+// struct PROTO_SKILLREADBLOCKCLIENT
 type SkillReadBlockClient struct {
 	SkillID  uint16
 	CoolTime uint32
@@ -8,23 +8,23 @@ type SkillReadBlockClient struct {
 	Mastery  uint32
 }
 
-//struct PROTO_SKILLREADBLOCKCLIENT::<unnamed-type-empow>
+// struct PROTO_SKILLREADBLOCKCLIENT::<unnamed-type-empow>
 type SkillReadBlockClientEmpower struct {
 	Gap0 byte
 	BF1  byte
 }
 
-//struct PARTMARK
+// struct PARTMARK
 type PartMark struct {
 	BF0 byte
 }
 
-//struct PROTO_NC_CHAR_CLIENT_ITEM_CMD::<unnamed-type-flag>
+// struct PROTO_NC_CHAR_CLIENT_ITEM_CMD::<unnamed-type-flag>
 type ProtoNcCharClientItemCmdFlag struct {
 	BF0 byte
 }
 
-//struct PROTO_ITEMPACKET_INFORM
+// struct PROTO_ITEMPACKET_INFORM
 type ProtoItemPacketInformation struct {
 	DataSize byte
 	Location ItemInventory
@@ -32,7 +32,7 @@ type ProtoItemPacketInformation struct {
 	ItemAttr []byte `struct-size:"DataSize - 4"`
 }
 
-//struct ShineItemAttr_ByteLot
+// struct ShineItemAttr_ByteLot
 type ShineItemAttrByteLot byte
 
 type ShineItemAttrWordLot uint16
@@ -41,7 +41,7 @@ type ShineItemAttrDwrdLot uint32
 
 type ShineItemAttrQuestItem uint16
 
-//struct ShineItemAttr_Amulet
+// struct ShineItemAttr_Amulet
 type ShineItemAttrAmulet struct {
 	DeleteTime       int32
 	IsBound          uint32
@@ -107,7 +107,7 @@ type ShineItemWeaponGemSocket struct {
 	RestCount byte
 }
 
-//struct ShineItemAttr_Armor
+// struct ShineItemAttr_Armor
 type ShineItemAttrArmor struct {
 	Upgrade                  byte
 	Strengthen               byte
@@ -255,21 +255,21 @@ type ShineItemAttrCostumeShield struct {
 
 type ShineItem struct {
 	ItemID uint16
-	//Attr [101]byte
+	// Attr [101]byte
 }
 
-//struct CT_INFO
+// struct CT_INFO
 type CharTitleInfo struct {
 	Type byte
 	BF1  byte
 }
 
-//struct PROTO_NC_CHAR_OPTION_SHORTCUTSIZE
+// struct PROTO_NC_CHAR_OPTION_SHORTCUTSIZE
 type NcCharOptionShortcutSize struct {
 	Data [24]byte
 }
 
-//struct GUILD_CLIENT
+// struct GUILD_CLIENT
 type GuildClient struct { // WRONG, 2020 uses different struct
 	Number           uint32
 	Name             Name4
@@ -307,13 +307,13 @@ type GuildClient struct { // WRONG, 2020 uses different struct
 	Notify           [512]byte
 }
 
-//struct SHINE_GUILD_SCORE
+// struct SHINE_GUILD_SCORE
 type ShineGuildScore struct {
 	KillCount [7]uint16
 	KillScore [7]uint32
 }
 
-//struct tm
+// struct tm
 type TM struct {
 	Seconds  int32
 	Minutes  int32
@@ -326,7 +326,7 @@ type TM struct {
 	IsDst    int32
 }
 
-//struct USEITEM_MINIMON_INFO
+// struct USEITEM_MINIMON_INFO
 type UseItemMiniMonsterInfo struct {
 	NormalItem      byte
 	ChargedItem     byte
@@ -334,13 +334,13 @@ type UseItemMiniMonsterInfo struct {
 	ChargedItemList [12]uint16
 }
 
-//struct GAME_OPTION_DATA
+// struct GAME_OPTION_DATA
 type GameOptionData struct {
 	OptionNo uint16
 	Value    byte
 }
 
-//struct GUILD_ACADEMY_CLIENT
+// struct GUILD_ACADEMY_CLIENT
 type GuildAcademyClient struct {
 	AcademyMasterName Name5
 	NumAcademyMembers uint16
@@ -355,7 +355,7 @@ type GuildAcademyClient struct {
 	Notify            [512]byte
 }
 
-//struct SHORT_CUT_DATA
+// struct SHORT_CUT_DATA
 type ShortCutData struct {
 	SlotNo byte
 	// 0 = remove item
@@ -365,25 +365,25 @@ type ShortCutData struct {
 	Value int32
 }
 
-//struct KEY_MAP_DATA
+// struct KEY_MAP_DATA
 type KeyMapData struct {
 	FunctionNo uint16
 	ExtendKey  byte
 	AsciiCode  byte
 }
 
-//struct PROTO_NC_CHAR_OPTION_WINDOWPOS
+// struct PROTO_NC_CHAR_OPTION_WINDOWPOS
 type NcCharOptionWindowPos struct {
 	Data [392]byte
 }
 
-//struct PROTO_NC_CHAR_BASE_CMD::LoginLocation
+// struct PROTO_NC_CHAR_BASE_CMD::LoginLocation
 type NcCharBaseCmdLoginLocation struct {
 	CurrentMap   Name3
 	CurrentCoord ShineCoordType
 }
 
-//struct CHARSTATDISTSTR
+// struct CHARSTATDISTSTR
 type CharStats struct {
 	Strength          byte
 	Constitute        byte
@@ -393,12 +393,12 @@ type CharStats struct {
 	RedistributePoint byte
 }
 
-//struct PROTO_NC_CHAR_BASE_CMD::<unnamed-type-flags>::<unnamed-type-str>
+// struct PROTO_NC_CHAR_BASE_CMD::<unnamed-type-flags>::<unnamed-type-str>
 type NcCharBaseCmdFlag struct {
 	Val int32
 }
 
-//struct CHAR_PARAMETER_DATA
+// struct CHAR_PARAMETER_DATA
 type CharParameterData struct {
 	// i'll have to rename these fields later when I can identify exactly what each field is for x.x
 	PrevExp      uint64
@@ -412,8 +412,8 @@ type CharParameterData struct {
 	WCLow        ShineCharStatVar // min physical dmg
 	WCHigh       ShineCharStatVar // max physical dmg
 	AC           ShineCharStatVar // physical defense
-	TH           ShineCharStatVar //aim
-	TB           ShineCharStatVar //evasion
+	TH           ShineCharStatVar // aim
+	TB           ShineCharStatVar // evasion
 	MALow        ShineCharStatVar // min magical dmg
 	MAHigh       ShineCharStatVar // max magical dmg
 	MR           ShineCharStatVar // magical defense
@@ -433,7 +433,7 @@ type CharParameterData struct {
 	ShockRes     ShineCharStatVar
 }
 
-//struct CHAR_PARAMETER_DATA::<unnamed-type-PwrStone>
+// struct CHAR_PARAMETER_DATA::<unnamed-type-PwrStone>
 type CharParameterDataPwrStone struct {
 	Flag      uint32
 	EPPPhysic uint32
@@ -441,20 +441,20 @@ type CharParameterDataPwrStone struct {
 	MaxStone  uint32
 }
 
-//struct SHINE_CHAR_STATVAR
+// struct SHINE_CHAR_STATVAR
 type ShineCharStatVar struct {
 	Base   uint32
 	Change uint32
 }
 
-//struct PLAYER_QUEST_INFO
+// struct PLAYER_QUEST_INFO
 type PlayerQuestInfo struct {
 	ID     uint16
 	Status byte
 	Data   PlayerQuestData
 }
 
-//struct PLAYER_QUEST_DATA
+// struct PLAYER_QUEST_DATA
 type PlayerQuestData struct {
 	StartTime         int64
 	EndTime           int64
@@ -465,13 +465,13 @@ type PlayerQuestData struct {
 	EndRunningTimeSec uint16
 }
 
-//struct PLAYER_QUEST_DONE_INFO
+// struct PLAYER_QUEST_DONE_INFO
 type PlayerQuestDoneInfo struct {
 	ID      uint16
 	EndTime int64
 }
 
-//struct PROTO_CHARGEDBUFF_INFO
+// struct PROTO_CHARGEDBUFF_INFO
 type ChargedBuffInfo struct {
 	BuffKey uint32
 	BuffID  uint16

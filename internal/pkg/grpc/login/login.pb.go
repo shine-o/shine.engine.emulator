@@ -6,17 +6,20 @@ package login
 import (
 	context "context"
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto.Marshal
-var _ = fmt.Errorf
-var _ = math.Inf
+var (
+	_ = proto.Marshal
+	_ = fmt.Errorf
+	_ = math.Inf
+)
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -41,15 +44,19 @@ func (*User) Descriptor() ([]byte, []int) {
 func (m *User) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_User.Unmarshal(m, b)
 }
+
 func (m *User) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_User.Marshal(b, m, deterministic)
 }
+
 func (m *User) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_User.Merge(m, src)
 }
+
 func (m *User) XXX_Size() int {
 	return xxx_messageInfo_User.Size(m)
 }
+
 func (m *User) XXX_DiscardUnknown() {
 	xxx_messageInfo_User.DiscardUnknown(m)
 }
@@ -80,15 +87,19 @@ func (*UserInfo) Descriptor() ([]byte, []int) {
 func (m *UserInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_UserInfo.Unmarshal(m, b)
 }
+
 func (m *UserInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_UserInfo.Marshal(b, m, deterministic)
 }
+
 func (m *UserInfo) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_UserInfo.Merge(m, src)
 }
+
 func (m *UserInfo) XXX_Size() int {
 	return xxx_messageInfo_UserInfo.Size(m)
 }
+
 func (m *UserInfo) XXX_DiscardUnknown() {
 	xxx_messageInfo_UserInfo.DiscardUnknown(m)
 }
@@ -124,8 +135,10 @@ var fileDescriptor_67c21677aa7f4e4f = []byte{
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
+var (
+	_ context.Context
+	_ grpc.ClientConnInterface
+)
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
@@ -161,8 +174,7 @@ type LoginServer interface {
 }
 
 // UnimplementedLoginServer can be embedded to have forward compatible implementations.
-type UnimplementedLoginServer struct {
-}
+type UnimplementedLoginServer struct{}
 
 func (*UnimplementedLoginServer) AccountInfo(ctx context.Context, req *User) (*UserInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AccountInfo not implemented")

@@ -34,7 +34,7 @@ type AbState struct {
 
 type AbStateIndex uint32
 
-//noinspection ALL
+// noinspection ALL
 const (
 	StaSeverBone AbStateIndex = iota
 	StaRedSlash

@@ -6,17 +6,20 @@ package wm
 import (
 	context "context"
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto.Marshal
-var _ = fmt.Errorf
-var _ = math.Inf
+var (
+	_ = proto.Marshal
+	_ = fmt.Errorf
+	_ = math.Inf
+)
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -40,15 +43,19 @@ func (*Empty) Descriptor() ([]byte, []int) {
 func (m *Empty) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Empty.Unmarshal(m, b)
 }
+
 func (m *Empty) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Empty.Marshal(b, m, deterministic)
 }
+
 func (m *Empty) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Empty.Merge(m, src)
 }
+
 func (m *Empty) XXX_Size() int {
 	return xxx_messageInfo_Empty.Size(m)
 }
+
 func (m *Empty) XXX_DiscardUnknown() {
 	xxx_messageInfo_Empty.DiscardUnknown(m)
 }
@@ -73,15 +80,19 @@ func (*ConnectionInfo) Descriptor() ([]byte, []int) {
 func (m *ConnectionInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ConnectionInfo.Unmarshal(m, b)
 }
+
 func (m *ConnectionInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ConnectionInfo.Marshal(b, m, deterministic)
 }
+
 func (m *ConnectionInfo) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ConnectionInfo.Merge(m, src)
 }
+
 func (m *ConnectionInfo) XXX_Size() int {
 	return xxx_messageInfo_ConnectionInfo.Size(m)
 }
+
 func (m *ConnectionInfo) XXX_DiscardUnknown() {
 	xxx_messageInfo_ConnectionInfo.DiscardUnknown(m)
 }
@@ -121,15 +132,19 @@ func (*WorldDetails) Descriptor() ([]byte, []int) {
 func (m *WorldDetails) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorldDetails.Unmarshal(m, b)
 }
+
 func (m *WorldDetails) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WorldDetails.Marshal(b, m, deterministic)
 }
+
 func (m *WorldDetails) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_WorldDetails.Merge(m, src)
 }
+
 func (m *WorldDetails) XXX_Size() int {
 	return xxx_messageInfo_WorldDetails.Size(m)
 }
+
 func (m *WorldDetails) XXX_DiscardUnknown() {
 	xxx_messageInfo_WorldDetails.DiscardUnknown(m)
 }
@@ -174,15 +189,19 @@ func (*WorldRegistered) Descriptor() ([]byte, []int) {
 func (m *WorldRegistered) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_WorldRegistered.Unmarshal(m, b)
 }
+
 func (m *WorldRegistered) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_WorldRegistered.Marshal(b, m, deterministic)
 }
+
 func (m *WorldRegistered) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_WorldRegistered.Merge(m, src)
 }
+
 func (m *WorldRegistered) XXX_Size() int {
 	return xxx_messageInfo_WorldRegistered.Size(m)
 }
+
 func (m *WorldRegistered) XXX_DiscardUnknown() {
 	xxx_messageInfo_WorldRegistered.DiscardUnknown(m)
 }
@@ -213,15 +232,19 @@ func (*Worlds) Descriptor() ([]byte, []int) {
 func (m *Worlds) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Worlds.Unmarshal(m, b)
 }
+
 func (m *Worlds) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Worlds.Marshal(b, m, deterministic)
 }
+
 func (m *Worlds) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_Worlds.Merge(m, src)
 }
+
 func (m *Worlds) XXX_Size() int {
 	return xxx_messageInfo_Worlds.Size(m)
 }
+
 func (m *Worlds) XXX_DiscardUnknown() {
 	xxx_messageInfo_Worlds.DiscardUnknown(m)
 }
@@ -269,8 +292,10 @@ var fileDescriptor_6a09909aeaab56b5 = []byte{
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
+var (
+	_ context.Context
+	_ grpc.ClientConnInterface
+)
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
@@ -317,12 +342,12 @@ type MasterServer interface {
 }
 
 // UnimplementedMasterServer can be embedded to have forward compatible implementations.
-type UnimplementedMasterServer struct {
-}
+type UnimplementedMasterServer struct{}
 
 func (*UnimplementedMasterServer) RegisterWorld(ctx context.Context, req *WorldDetails) (*WorldRegistered, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterWorld not implemented")
 }
+
 func (*UnimplementedMasterServer) GetWorlds(ctx context.Context, req *Empty) (*Worlds, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetWorlds not implemented")
 }

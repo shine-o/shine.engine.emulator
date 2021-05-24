@@ -366,7 +366,6 @@ func (s *ShineItemInfo) MissingIdentifiers(filesPath string) (Files, error) {
 
 	res["ItemInfoServer.shn"] = Identifiers{}
 	err := Load(filesPath+"/shn/ItemInfoServer.shn", iis)
-
 	if err != nil {
 		return res, err
 	}

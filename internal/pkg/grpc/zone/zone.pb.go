@@ -6,17 +6,20 @@ package zone
 import (
 	context "context"
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto.Marshal
-var _ = fmt.Errorf
-var _ = math.Inf
+var (
+	_ = proto.Marshal
+	_ = fmt.Errorf
+	_ = math.Inf
+)
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -40,15 +43,19 @@ func (*CharacterData) Descriptor() ([]byte, []int) {
 func (m *CharacterData) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_CharacterData.Unmarshal(m, b)
 }
+
 func (m *CharacterData) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_CharacterData.Marshal(b, m, deterministic)
 }
+
 func (m *CharacterData) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_CharacterData.Merge(m, src)
 }
+
 func (m *CharacterData) XXX_Size() int {
 	return xxx_messageInfo_CharacterData.Size(m)
 }
+
 func (m *CharacterData) XXX_DiscardUnknown() {
 	xxx_messageInfo_CharacterData.DiscardUnknown(m)
 }
@@ -71,15 +78,19 @@ func (*TransferStatus) Descriptor() ([]byte, []int) {
 func (m *TransferStatus) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TransferStatus.Unmarshal(m, b)
 }
+
 func (m *TransferStatus) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TransferStatus.Marshal(b, m, deterministic)
 }
+
 func (m *TransferStatus) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_TransferStatus.Merge(m, src)
 }
+
 func (m *TransferStatus) XXX_Size() int {
 	return xxx_messageInfo_TransferStatus.Size(m)
 }
+
 func (m *TransferStatus) XXX_DiscardUnknown() {
 	xxx_messageInfo_TransferStatus.DiscardUnknown(m)
 }
@@ -107,8 +118,10 @@ var fileDescriptor_b71619a26b0a679a = []byte{
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
+var (
+	_ context.Context
+	_ grpc.ClientConnInterface
+)
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
@@ -144,8 +157,7 @@ type ZoneServer interface {
 }
 
 // UnimplementedZoneServer can be embedded to have forward compatible implementations.
-type UnimplementedZoneServer struct {
-}
+type UnimplementedZoneServer struct{}
 
 func (*UnimplementedZoneServer) TransferCharacter(ctx context.Context, req *CharacterData) (*TransferStatus, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method TransferCharacter not implemented")

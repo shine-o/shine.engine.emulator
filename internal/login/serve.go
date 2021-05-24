@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
@@ -12,9 +16,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"net/http"
-	"os"
-	"path/filepath"
 )
 
 var log = shinelog.NewLogger("login", "./output", logrus.DebugLevel)
@@ -97,7 +98,7 @@ func Start(cmd *cobra.Command, args []string) {
 				Handler: ncUserWorldStatusReq,
 			},
 			networking.NC_USER_WORLDSELECT_REQ: {
-				//networking.NC_USER_WORLDSELECT_ACK: {
+				// networking.NC_USER_WORLDSELECT_ACK: {
 				Handler: ncUserWorldSelectReq,
 			},
 			networking.NC_USER_NORMALLOGOUT_CMD: {

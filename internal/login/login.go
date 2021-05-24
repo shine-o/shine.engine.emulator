@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
+	"time"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
-	"time"
 
 	wm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world-master"
 	"github.com/spf13/viper"
-	"strings"
 )
 
 type login struct {
@@ -93,7 +94,6 @@ func (l *login) availableWorlds() error {
 	l.worlds = make(map[int]world)
 
 	conn, err := newRPCClient("world_master")
-
 	if err != nil {
 		return err
 	}
@@ -105,7 +105,6 @@ func (l *login) availableWorlds() error {
 	ctx := context.Background()
 
 	worlds, err := c.GetWorlds(ctx, &wm.Empty{})
-
 	if err != nil {
 		return err
 	}
@@ -136,11 +135,10 @@ func checkClientVersion(req *structs.NcUserClientVersionCheckReq) error {
 }
 
 // check against database that the user name and password combination are correct
-//func checkCredentials(req *structs.NewUserLoginReq) error {
+// func checkCredentials(req *structs.NewUserLoginReq) error {
 func checkCredentials(req *structs.NewUserLoginReq) error {
 	var storedPassword string
 	err := persistence.DB().Model((*User)(nil)).Column("password").Where("user_name = ?", req.UserName).Limit(1).Select(&storedPassword)
-
 	if err != nil {
 		return fmt.Errorf("%v: [ %v ]", ErrDBE, err)
 	}

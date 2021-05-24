@@ -1,10 +1,11 @@
 package world
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"reflect"
 	"time"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
 func (w *world) session() {
@@ -41,7 +42,6 @@ func serverTimeLogic(e event) {
 	}
 
 	networking.Send(ev.np.OutboundSegments.Send, networking.NC_MISC_GAMETIME_ACK, nc)
-
 }
 
 func serverSelectLogic(e event, w *world) {
@@ -60,20 +60,18 @@ func serverSelectLogic(e event, w *world) {
 	}
 
 	err := verifyUser(s, ev.nc)
-
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
 	nc, err := userCharacters(s)
-
 	if err != nil {
 		log.Error(err)
 		return
 	}
 	networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGINWORLD_ACK, &nc)
-	//networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGOUT_DB, &nc)
+	// networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGOUT_DB, &nc)
 }
 
 func serverSelectTokenLogic(e event) {
@@ -85,7 +83,6 @@ func serverSelectTokenLogic(e event) {
 	}
 
 	nc, err := returnToServerSelect()
-
 	if err != nil {
 		log.Error(err)
 		return

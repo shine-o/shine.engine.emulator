@@ -7,7 +7,6 @@ import (
 func TestLoadMap(t *testing.T) {
 	// Roumen
 	zm, err := loadMap(1)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +62,6 @@ func TestLoadMap(t *testing.T) {
 
 func Test_Map_Spawn_Npc(t *testing.T) {
 	zm, err := loadMap(1)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +83,6 @@ func Test_Map_Spawn_Npc(t *testing.T) {
 	}
 
 	zm1, err := loadMap(4)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +108,6 @@ func Test_Map_Spawn_Monster_Npc(t *testing.T) {
 	z := zone{}
 
 	err := z.load()
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -119,7 +115,6 @@ func Test_Map_Spawn_Monster_Npc(t *testing.T) {
 	go z.run()
 
 	zm, err := loadMap(1)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,7 +138,7 @@ func Test_Map_Path_A_B_astar(t *testing.T) {
 func Test_Map_Intermitent_Speed_Change_Path_A_B_AStar(t *testing.T) {
 	t.Fail()
 	// start moving entity from point A to point B using speed X
-	// midway, change speed to Y, point A will now be current point
+	// midway, change speed to Y, point A will now be currentlySelected point
 	// assert entity arrives at destination in Z seconds ( time = distance / speed )
 }
 
@@ -153,140 +148,4 @@ func Test_Entity_Chase(t *testing.T) {
 
 func Test_Path_A_B_Speed_Race(t *testing.T) {
 	t.Fail()
-}
-
-func Test_Entity_Within_Range(t *testing.T) {
-	// Roumen
-	zm, err := loadMap(1)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// load players A and B in two distinct places
-	pA := &player{
-		baseEntity: &baseEntity{
-			handle: 1,
-			proximity: &entityProximity{
-				entities: make(map[uint16]entity),
-			},
-		},
-	}
-
-	pB := &player{
-		baseEntity: &baseEntity{
-			handle: 2,
-			proximity: &entityProximity{
-				entities: make(map[uint16]entity),
-			},
-		},
-	}
-
-	zm.addEntity(pA)
-	zm.addEntity(pB)
-
-	// Move entities to designated
-	x1, y1 := gameCoordinates(1060, 767)
-	x2, y2 := gameCoordinates(700, 763)
-
-	_ = pA.move(zm, x1, y1)
-	_ = pB.move(zm, x2, y2)
-
-	// entities A and B should not be in range
-	if withinRange(pA, pB) {
-		t.Fatal("entity A should not be in range of entity B")
-	}
-
-	// move entity A closer to entity B
-	_ = pA.move(zm, x2+10, y2+10)
-
-	// manually find entities
-	addWithinRangeEntities(pA, zm)
-	addWithinRangeEntities(pB, zm)
-
-	// entities A and B should now be in range
-	if !withinRange(pA, pB) {
-		t.Fatal("entity A should be in range of entity B")
-	}
-
-	// assert entity A is stored in entity B's proximity list
-	_, ok := pB.baseEntity.proximity.entities[pA.getHandle()]
-	if !ok {
-		t.Fatal("entity A is not stored in entity B's proximity list")
-	}
-
-	_, ok = pA.baseEntity.proximity.entities[pB.getHandle()]
-	if !ok {
-		t.Fatal("entity B is not stored in entity A's proximity list")
-	}
-}
-
-func Test_Entity_Out_Of_Range(t *testing.T) {
-	// Roumen
-	zm, err := loadMap(1)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// load players A and B in two distinct places
-	pA := &player{
-		baseEntity: &baseEntity{
-			handle: 1,
-			proximity: &entityProximity{
-				entities: make(map[uint16]entity),
-			},
-		},
-	}
-
-	pB := &player{
-		baseEntity: &baseEntity{
-			handle: 2,
-			proximity: &entityProximity{
-				entities: make(map[uint16]entity),
-			},
-		},
-	}
-
-	zm.addEntity(pA)
-	zm.addEntity(pB)
-
-	// Move entities to designated
-	x1, y1 := gameCoordinates(1060, 767)
-	x2, y2 := gameCoordinates(700, 763)
-
-	_ = pA.move(zm, x1, y1)
-	_ = pB.move(zm, x2, y2)
-
-	// move entity A closer to entity B
-	_ = pA.move(zm, x2+10, y2+10)
-
-	// manually find entities
-	addWithinRangeEntities(pA, zm)
-	addWithinRangeEntities(pB, zm)
-
-	// move entity back to its original position
-	_ = pA.move(zm, x1, y1)
-	removeOutOfRangeEntities(pA)
-	removeOutOfRangeEntities(pB)
-
-	// entities A and B should not be in range
-	if withinRange(pA, pB) {
-		t.Fatal("entity A should not be in range of entity B")
-	}
-
-	// assert entity A is NOT stored in entity B's proximity list
-	_, ok := pB.baseEntity.proximity.entities[pA.getHandle()]
-	if ok {
-		t.Fatal("entity A should not be stored in entity B's proximity list")
-	}
-
-	_, ok = pA.baseEntity.proximity.entities[pB.getHandle()]
-	if ok {
-		t.Fatal("entity B should not be stored in entity A's proximity list")
-	}
-}
-
-func Test_Entity_Cast_(t *testing.T) {
-
 }

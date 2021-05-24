@@ -2,13 +2,14 @@ package packet_sniffer
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"sync"
+
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcapgo"
 	"github.com/spf13/cobra"
-	"os"
-	"path/filepath"
-	"sync"
 )
 
 // Flows utility struct for storing raw packets
@@ -40,5 +41,4 @@ func (pf *Flows) persist() {
 }
 
 func Decode(cmd *cobra.Command, args []string) {
-
 }

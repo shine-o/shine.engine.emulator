@@ -2,6 +2,9 @@ package worldmaster
 
 import (
 	"fmt"
+	"net"
+	"net/http"
+
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	wm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world-master"
 	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
@@ -9,8 +12,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	"net"
-	"net/http"
 )
 
 var log = shinelog.NewLogger("world-master", "./output", logrus.DebugLevel)

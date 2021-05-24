@@ -1,12 +1,63 @@
 package zone
 
-import "time"
+import (
+	"time"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
+)
 
 type monster npc
 
+func (m *monster) getTargetPacketData() *structs.NcBatTargetInfoCmd {
+	m.targeting.RLock()
+	order := m.targeting.selectionOrder
+	m.targeting.RUnlock()
+	nc := monsterNcBatTargetInfo(m, order)
+	return nc
+}
+
+func (m *monster) getNextTargetPacketData() *structs.NcBatTargetInfoCmd {
+	m.targeting.RLock()
+	order := m.targeting.selectionOrder + 1
+	m.targeting.RUnlock()
+	nc := monsterNcBatTargetInfo(m, order)
+	return nc
+}
+
+func (m *monster) selects(e entity) {
+	m.targeting.Lock()
+	m.targeting.selectionOrder += 32
+	m.targeting.currentlySelected = e
+	m.targeting.Unlock()
+}
+
+func (m *monster) selectedBy(e entity) {
+	m.targeting.Lock()
+	m.targeting.selectedBy[e.getHandle()] = e
+	m.targeting.Unlock()
+}
+
+func (m *monster) currentlySelected() entity {
+	m.targeting.RLock()
+	defer m.targeting.RUnlock()
+	return m.targeting.currentlySelected
+}
+
+func monsterNcBatTargetInfo(m *monster, assignedOrder byte) *structs.NcBatTargetInfoCmd {
+	nc := &structs.NcBatTargetInfoCmd{
+		Order:       assignedOrder,
+		Handle:      m.getHandle(),
+		TargetMaxHP: m.data.mobInfo.MaxHP,               // todo: use the same player stat system for mobs and NPCs
+		TargetMaxSP: uint32(m.data.mobInfoServer.MaxSP), // todo: use the same player stat system for mobs and NPCs
+		TargetLevel: byte(m.data.mobInfo.Level),
+		TargetHP:    m.stats.sp,
+		TargetSP:    m.stats.hp,
+	}
+	return nc
+}
 
 func (m *monster) notifyAboutRemovedEntity(e entity) {
-	//panic("implement me")
+	// panic("implement me")
 }
 
 func (m *monster) alreadyNearbyEntity(e entity) bool {
@@ -55,7 +106,7 @@ func (m *monster) notifyAboutNewEntity(e entity) {
 	log.Info("implement me")
 }
 
-func (m *monster) getPacketData() interface{} {
+func (m *monster) getNewEntityNearbyPacketData() interface{} {
 	return monsterNcBriefInfoRegenMobCmd(m)
 }
 

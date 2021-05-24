@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
+
 	wm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world-master"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	"net"
 )
 
 type server struct {

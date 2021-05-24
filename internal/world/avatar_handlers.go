@@ -2,6 +2,7 @@ package world
 
 import (
 	"context"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
@@ -9,9 +10,7 @@ import (
 // NcAvatarCreateReq handles character creation request
 // NC_AVATAR_CREATE_REQ
 func ncAvatarCreateReq(ctx context.Context, np *networking.Parameters) {
-	var (
-		e createCharacterEvent
-	)
+	var e createCharacterEvent
 
 	e = createCharacterEvent{
 		nc: &structs.NcAvatarCreateReq{},
@@ -39,9 +38,7 @@ func ncAvatarCreateFailAck(np *networking.Parameters, errCode uint16) {
 // NcAvatarEraseReq handles a petition to delete a character
 // NC_AVATAR_ERASE_REQ
 func ncAvatarEraseReq(ctx context.Context, np *networking.Parameters) {
-	var (
-		e deleteCharacterEvent
-	)
+	var e deleteCharacterEvent
 
 	e = deleteCharacterEvent{
 		nc: &structs.NcAvatarEraseReq{},
@@ -55,5 +52,4 @@ func ncAvatarEraseReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	worldEvents[deleteCharacter] <- &e
-
 }

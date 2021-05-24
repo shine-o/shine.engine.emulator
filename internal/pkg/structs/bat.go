@@ -1,57 +1,57 @@
 package structs
 
-//struct PROTO_NC_BAT_ABSTATERESET_CMD
+// struct PROTO_NC_BAT_ABSTATERESET_CMD
 type NcBatAbstateResetCmd struct {
 	Handle       uint16
 	AbstateIndex uint32
 }
 
-//struct PROTO_NC_BAT_SPCHANGE_CMD
+// struct PROTO_NC_BAT_SPCHANGE_CMD
 type NcBatSpChangeCmd struct {
 	SP uint32
 }
 
-//struct PROTO_NC_BAT_LPCHANGE_CMD
+// struct PROTO_NC_BAT_LPCHANGE_CMD
 type NcBatLpChangeCmd struct {
 	LP uint32
 }
 
-//struct PROTO_NC_BAT_ABSTATEINFORM_NOEFFECT_CMD
+// struct PROTO_NC_BAT_ABSTATEINFORM_NOEFFECT_CMD
 type NcBatAbstateInformNoEffectCmd struct {
 	Abstate          uint32
 	KeepTimeMillisec uint32
 }
 
-//struct PROTO_NC_BAT_HPCHANGE_CMD
+// struct PROTO_NC_BAT_HPCHANGE_CMD
 type NcBatHpChangeCmd struct {
 	HP            uint32
 	HpChangeOrder uint16
 }
 
-//struct PROTO_NC_BAT_CEASE_FIRE_CMD
+// struct PROTO_NC_BAT_CEASE_FIRE_CMD
 type NcBatCeaseFireCmd struct {
 	Handle uint16
 }
 
-//struct PROTO_NC_BAT_ABSTATEINFORM_CMD
+// struct PROTO_NC_BAT_ABSTATEINFORM_CMD
 type NcBatAbstateInformCmd struct {
 	Abstate          uint32
 	KeepTimeMillisec uint32
 }
 
-//struct PROTO_NC_BAT_SKILLBASH_OBJ_CAST_REQ
+// struct PROTO_NC_BAT_SKILLBASH_OBJ_CAST_REQ
 type NcBatSkillBashObjCastReq struct {
 	Skill  uint16
 	Target uint16
 }
 
-//struct PROTO_NC_BAT_ABSTATESET_CMD
+// struct PROTO_NC_BAT_ABSTATESET_CMD
 type NcBatAbstateSetCmd struct {
 	Handle  uint16
 	Abstate uint32
 }
 
-//struct PROTO_NC_BAT_DOTDAMAGE_CMD
+// struct PROTO_NC_BAT_DOTDAMAGE_CMD
 type NcBatDotDamageCmd struct {
 	Object        uint16
 	RestHP        uint32
@@ -67,7 +67,7 @@ type NcBatTargetInfoReq struct {
 
 type NcBatUnTargetReq struct{}
 
-//struct PROTO_NC_BAT_TARGETINFO_CMD
+// struct PROTO_NC_BAT_TARGETINFO_CMD
 type NcBatTargetInfoCmd struct {
 	Order         byte
 	Handle        uint16
@@ -81,7 +81,7 @@ type NcBatTargetInfoCmd struct {
 	HpChangeOrder uint16
 }
 
-//struct PROTO_NC_BAT_SKILLBASH_HIT_DAMAGE_CMD
+// struct PROTO_NC_BAT_SKILLBASH_HIT_DAMAGE_CMD
 type NcBatSkillBashHitDamageCmd struct {
 	Index     uint16
 	Caster    uint16
@@ -91,13 +91,13 @@ type NcBatSkillBashHitDamageCmd struct {
 	Targets   []NcBatSkillBashHitDamageCmdSkillDamage `struct:"sizefrom=TargetNum"`
 }
 
-//struct PROTO_NC_BAT_SOMEONESKILLBASH_HIT_OBJ_START_CMD
+// struct PROTO_NC_BAT_SOMEONESKILLBASH_HIT_OBJ_START_CMD
 type NcBatSomeoneSkillBashHitObjStartCmd struct {
 	Caster   uint16
 	CastInfo NcBatSkillBashHitObjStartCmd
 }
 
-//struct PROTO_NC_BAT_SKILLBASH_HIT_OBJ_START_CMD
+// struct PROTO_NC_BAT_SKILLBASH_HIT_OBJ_START_CMD
 type NcBatSkillBashHitObjStartCmd struct {
 	Skill     uint16
 	TargetObj uint16
@@ -105,7 +105,7 @@ type NcBatSkillBashHitObjStartCmd struct {
 	Unk       uint32
 }
 
-//struct PROTO_NC_BAT_SKILLBASH_HIT_BLAST_CMD
+// struct PROTO_NC_BAT_SKILLBASH_HIT_BLAST_CMD
 type NcBatSkillBashHitBlastCmd struct {
 	Index   uint16
 	Caster  uint16
@@ -122,13 +122,13 @@ type NcBatSwingStartCmd struct {
 	AttackSequence byte
 }
 
-//struct PROTO_NC_BAT_SWING_DAMAGE_CMD::<unnamed-type-flag>
+// struct PROTO_NC_BAT_SWING_DAMAGE_CMD::<unnamed-type-flag>
 type NcBatSwingDamageCmdFlag struct {
 	Gap [1]byte
 	BF1 byte
 }
 
-//struct PROTO_NC_BAT_SWING_DAMAGE_CMD
+// struct PROTO_NC_BAT_SWING_DAMAGE_CMD
 type NcBatSwingDamageCmd struct {
 	Attacker       uint16
 	Defender       uint16

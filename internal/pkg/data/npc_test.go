@@ -4,7 +4,6 @@ import "testing"
 
 func TestLoadNpcData(t *testing.T) {
 	data, err := LoadNPCData(filesPath)
-
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -2,6 +2,7 @@ package zone
 
 import (
 	"context"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
@@ -58,14 +59,11 @@ func ncMapLoginCompleteCmd(ctx context.Context, np *networking.Parameters) {
 	}
 
 	zm.events.send[playerAppeared] <- &e
-
 }
 
-//NC_CHAR_LOGOUTCANCEL_CMD
+// NC_CHAR_LOGOUTCANCEL_CMD
 func ncCharLogoutCancelCmd(ctx context.Context, np *networking.Parameters) {
-	var (
-		e playerLogoutCancelEvent
-	)
+	var e playerLogoutCancelEvent
 
 	session, ok := np.Session.(*session)
 
@@ -81,11 +79,9 @@ func ncCharLogoutCancelCmd(ctx context.Context, np *networking.Parameters) {
 	zoneEvents[playerLogoutCancel] <- &e
 }
 
-//NC_CHAR_LOGOUTREADY_CMD
+// NC_CHAR_LOGOUTREADY_CMD
 func ncCharLogoutReadyCmd(ctx context.Context, np *networking.Parameters) {
-	var (
-		plse playerLogoutStartEvent
-	)
+	var plse playerLogoutStartEvent
 
 	session, ok := np.Session.(*session)
 

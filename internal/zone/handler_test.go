@@ -20,7 +20,6 @@ func Test_New_Handle(t *testing.T) {
 	go handler.handleWorker()
 
 	h, err := newHandle()
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,7 +42,6 @@ func Test_Remove_Handle(t *testing.T) {
 	go handler.handleWorker()
 
 	h, err := newHandle()
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +81,6 @@ func Test_10000_New_Handles(t *testing.T) {
 
 			defer wg.Done()
 			_, err := newHandle()
-
 			if err != nil {
 				t.Error(err)
 			}
@@ -94,7 +91,6 @@ func Test_10000_New_Handles(t *testing.T) {
 	wg.Wait()
 
 	h, err := newHandle()
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -133,7 +129,6 @@ func Test_Create_10000_New_Handles_And_Remove_Them(t *testing.T) {
 			defer iwg.Done()
 
 			h, err := newHandle()
-
 			if err != nil {
 				t.Error(err)
 			}
@@ -151,7 +146,6 @@ func Test_Create_10000_New_Handles_And_Remove_Them(t *testing.T) {
 	wg.Wait()
 
 	h, err := newHandle()
-
 	if err != nil {
 		t.Error(err)
 	}

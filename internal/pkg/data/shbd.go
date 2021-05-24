@@ -2,13 +2,14 @@ package data
 
 import (
 	"bytes"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
-	"golang.org/x/image/bmp"
 	"image"
 	"image/color"
 	"io/ioutil"
 	"math"
 	"os"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
+	"golang.org/x/image/bmp"
 )
 
 type SHBD struct {
@@ -75,11 +76,11 @@ func SHBDToImage(s *SHBD) (*image.RGBA, error) {
 }
 
 func ImageToSHBD(img *image.RGBA) SHBD {
-	//img = (*image.RGBA)(imaging.FlipV(img))
+	// img = (*image.RGBA)(imaging.FlipV(img))
 
 	bounds := img.Bounds()
 
-	var rs = SHBD{
+	rs := SHBD{
 		X:    bounds.Max.X / 8,
 		Y:    bounds.Max.Y,
 		Data: make([]byte, 0),
@@ -121,7 +122,6 @@ func SaveBmpFile(img *image.RGBA, path, fileName string) error {
 // SaveSHBDFile for debugging purposes
 func SaveSHBDFile(s *SHBD, path, fileName string) error {
 	data, err := structs.Pack(s)
-
 	if err != nil {
 		return err
 	}

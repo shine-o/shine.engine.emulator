@@ -20,7 +20,6 @@ func LoadItemData(path string) (*ItemData, error) {
 	)
 
 	err := Load(path+"/shn/ItemInfo.shn", &itemInfo)
-
 	if err != nil {
 		return itemData, err
 	}

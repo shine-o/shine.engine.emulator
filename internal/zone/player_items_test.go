@@ -1,12 +1,13 @@
 package zone
 
 import (
+	"reflect"
+	"testing"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
-	"reflect"
-	"testing"
 )
 
 func TestNewItem_Success(t *testing.T) {
@@ -15,20 +16,19 @@ func TestNewItem_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -49,7 +49,6 @@ func TestNewItem_Success(t *testing.T) {
 	if item1.itemData.itemInfo.InxName != "ShortStaff" {
 		t.Fail()
 	}
-
 }
 
 func TestNewItem_WithAttributes(t *testing.T) {
@@ -59,20 +58,19 @@ func TestNewItem_WithAttributes(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem(itemInxName, makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -221,20 +219,19 @@ func TestLoadItem_WithAttributes(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem(itemInxName, makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -389,13 +386,13 @@ func TestNewItem_BadItemIndex(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -838,7 +835,6 @@ func Test_AllItems_NC(t *testing.T) {
 
 func Test_AllItems_With_Attributes_NC(t *testing.T) {
 	persistence.CleanDB()
-
 	for _, row := range itemsData.ItemInfo.ShineRow {
 		item, icd, err := makeItem(row.InxName, makeItemOptions{})
 		if err != nil {
@@ -941,20 +937,19 @@ func TestNewItemStack_Success(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -999,13 +994,13 @@ func TestLoadNewPlayer_Mage_EquippedItems(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", true, "dummy")
 
 	player := &player{
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1028,13 +1023,13 @@ func TestLoadNewPlayer_Warrior_EquippedItems(t *testing.T) {
 	char := persistence.NewDummyCharacter("fighter", true, "dummy")
 
 	player := &player{
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1056,13 +1051,13 @@ func TestLoadNewPlayer_Archer_EquippedItems(t *testing.T) {
 	char := persistence.NewDummyCharacter("archer", true, "dummy")
 
 	player := &player{
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1084,13 +1079,13 @@ func TestLoadNewPlayer_Cleric_EquippedItems(t *testing.T) {
 	char := persistence.NewDummyCharacter("cleric", true, "dummy")
 
 	player := &player{
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1108,17 +1103,14 @@ func TestLoadNewPlayer_Cleric_EquippedItems(t *testing.T) {
 
 func TestPlayer_PicksUpItem(t *testing.T) {
 	t.Fail()
-
 }
 
 func TestPlayer_DropsItem(t *testing.T) {
 	t.Fail()
-
 }
 
 func TestPlayer_DeletesItem(t *testing.T) {
 	t.Fail()
-
 }
 
 func TestItemEquip_Success(t *testing.T) {
@@ -1134,14 +1126,12 @@ func TestItemEquip_Success(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1157,7 +1147,6 @@ func TestItemEquip_Success(t *testing.T) {
 	}
 
 	itemSlotChange, err := player.equip(int(nc.Slot))
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1207,7 +1196,6 @@ func TestItemEquip_Success(t *testing.T) {
 	if ok {
 		t.Fatal("item is NOT expected to be in slot")
 	}
-
 }
 
 func TestItemEquip_Success_ReplaceItem(t *testing.T) {
@@ -1223,13 +1211,11 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1242,7 +1228,6 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 
 	// create new item that will take the slot 0 that was recently occupied
 	item2, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1268,7 +1253,6 @@ func TestItemEquip_Success_ReplaceItem(t *testing.T) {
 	}
 
 	itemSlotChange2, err := player.equip(int(nc2.Slot))
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1313,14 +1297,12 @@ func TestItemEquip_Success_NC(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1336,13 +1318,11 @@ func TestItemEquip_Success_NC(t *testing.T) {
 	}
 
 	itemSlotChange, err := player.equip(int(nc.Slot))
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	nc1, _, err := ncItemEquipChangeCmd(itemSlotChange)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1364,7 +1344,6 @@ func TestItemEquip_Success_NC(t *testing.T) {
 	}
 
 	_, nc2, err := ncItemCellChangeCmd(itemSlotChange)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1380,7 +1359,6 @@ func TestItemEquip_Success_NC(t *testing.T) {
 	if len(nc2.Item.ItemAttr) != 0 {
 		t.Fatal("unexpected length for item attributes")
 	}
-
 }
 
 func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
@@ -1396,13 +1374,11 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1415,7 +1391,6 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 
 	// create new item that will take the slot 0 that was recently occupied
 	item2, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1441,13 +1416,11 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 	}
 
 	itemSlotChange, err := player.equip(int(nc2.Slot))
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	nc3, _, err := ncItemEquipChangeCmd(itemSlotChange)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1469,7 +1442,6 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 	}
 
 	_, nc4, err := ncItemCellChangeCmd(itemSlotChange)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1485,7 +1457,6 @@ func TestItemEquip_Success_ReplaceItem_NC(t *testing.T) {
 	if len(nc4.Item.ItemAttr) == 0 {
 		t.Fatal("unexpected length for item attributes")
 	}
-
 }
 
 func TestItemEquip_BadItemEquipOrClass(t *testing.T) {
@@ -1501,14 +1472,12 @@ func TestItemEquip_BadItemEquipOrClass(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem("El5", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1538,7 +1507,6 @@ func TestItemEquip_BadItemEquipOrClass(t *testing.T) {
 	if cErr.Code != errors.ZoneItemEquipBadType {
 		t.Fatal("unexpected error code")
 	}
-
 }
 
 func TestItemEquip_LowLevel(t *testing.T) {
@@ -1558,14 +1526,12 @@ func TestItemEquip_NoItemInSlot(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1598,7 +1564,7 @@ func TestItemEquip_NoItemInSlot(t *testing.T) {
 }
 
 func TestItemUnEquip_Success(t *testing.T) {
-	//t.Fail()
+	// t.Fail()
 	persistence.CleanDB()
 
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
@@ -1611,14 +1577,12 @@ func TestItemUnEquip_Success(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1645,7 +1609,6 @@ func TestItemUnEquip_Success(t *testing.T) {
 	}
 
 	itemSlotChange, err := player.unEquip(int(nc1.SlotEquip), int(nc1.SlotInven))
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1673,20 +1636,19 @@ func TestItemUnEquip_InventoryFull(t *testing.T) {
 	char := persistence.NewDummyCharacter("mage", false, "dummy")
 
 	player := &player{
+		baseEntity: &baseEntity{},
 		persistence: &playerPersistence{
 			char: char,
 		},
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1709,7 +1671,6 @@ func TestItemUnEquip_InventoryFull(t *testing.T) {
 
 	for i := 0; i < persistence.BagInventoryMax; i++ {
 		item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1741,7 +1702,6 @@ func TestItemUnEquip_InventoryFull(t *testing.T) {
 	if cErr.Code != errors.ZoneItemSlotInUse {
 		t.Fatalf("unexpected error code %v", cErr.Code)
 	}
-
 }
 
 func TestItemUnEquip_NonExistentSlot(t *testing.T) {
@@ -1757,14 +1717,12 @@ func TestItemUnEquip_NonExistentSlot(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1824,7 +1782,6 @@ func TestOpen_Deposit_Inventory_Success(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1834,7 +1791,6 @@ func TestOpen_Deposit_Inventory_Success(t *testing.T) {
 			overrideInventory: true,
 			inventoryType:     persistence.DepositInventory,
 		})
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1854,7 +1810,7 @@ func TestOpen_Deposit_Inventory_Success(t *testing.T) {
 		}
 
 		if page.currentPage != i {
-			t.Errorf("unexpected current page %v", page.currentPage)
+			t.Errorf("unexpected currentlySelected page %v", page.currentPage)
 		}
 
 		if len(page.items) != 36 {
@@ -1876,7 +1832,6 @@ func TestOpen_Deposit_Inventory_NC_Success(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1886,7 +1841,6 @@ func TestOpen_Deposit_Inventory_NC_Success(t *testing.T) {
 			overrideInventory: true,
 			inventoryType:     persistence.DepositInventory,
 		})
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1900,7 +1854,7 @@ func TestOpen_Deposit_Inventory_NC_Success(t *testing.T) {
 
 	deposit := playerDeposit(player.inventories)
 	// INFO : 2021/04/25 01:38:42.724707 handlers.go:272: 2021-04-25 01:38:42.715758 +0200 CEST 9120->40575 inbound NC_ACT_NPCMENUOPEN_REQ {"packetType":"small","length":4,"department":8,"command":"1C","opCode":8220,"data":"6c00","rawData":"041c206c00","friendlyName":""}
-	//INFO : 2021/04/25 01:38:45.942966 handlers.go:272: 2021-04-25 01:38:45.932944 +0200 CEST 40575->9120 outbound NC_ACT_NPCMENUOPEN_ACK {"packetType":"small","length":3,"department":8,"command":"1D","opCode":8221,"data":"01","rawData":"031d2001","friendlyName":""}
+	// INFO : 2021/04/25 01:38:45.942966 handlers.go:272: 2021-04-25 01:38:45.932944 +0200 CEST 40575->9120 outbound NC_ACT_NPCMENUOPEN_ACK {"packetType":"small","length":3,"department":8,"command":"1D","opCode":8221,"data":"01","rawData":"031d2001","friendlyName":""}
 	//  send as many of these packets as needed:
 	//  inbound NC_MENU_OPENSTORAGE_CMD {"packetType":"big","length":1460,"department":15,"command":"8","opCode":15368,
 	for i, page := range deposit {
@@ -1943,13 +1897,13 @@ func TestOpen_Reward_Inventory_Success(t *testing.T) {
 	// NcItemRewardInvenOpenAck
 
 	// page 1
-	//INFO : 2021/04/26 09:49:27.859090 handlers.go:272: 2021-04-26 09:49:27.848211 +0200 CEST 6233->9120 outbound NC_ITEM_REWARDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"2C","opCode":12332,"data":"0000","rawData":"042c300000","friendlyName":""}
-	//INFO : 2021/04/26 09:49:28.078648 handlers.go:272: 2021-04-26 09:49:28.074126 +0200 CEST 9120->6233 inbound NC_ITEM_REWARDINVENOPEN_ACK {"packetType":"big","length":424,"department":12,"command":"2D","opCode":12333,"data":"18450008023500000000000000ffff00000000ffff00000000ffff00000000ffff000000000000000000000000000000000000000000ffffffffffffffffff0000000000000000050108830e05450208e93600000000000000ffff00000000ffff00000000ffff00000000ffff000000000000000000000000000000000000000000ffffffffffffffffff00000000000000000503087e0e05050408920e05050508aa0e052a0608d10800000000000000000000000100000000000000000000000000000000000000000000000000002a0708d20800000000000000000000000100000000000000000000000000000000000000000000000000002a08084f090000000000000000000000010000000000000000000000000000000000000000000000000000050908ac0d052a0a0850090000000000000000000000010000000000000000000000000000000000000000000000000000050b08b10d05050c08840e04050d08491f0a050e08491f0a050f08491f0a051008491f0a051108491f0a051208431f02051308491f06051408f10b02051508ff0b23051608020c01051708040c0400","rawData":"00a8012d3018450008023500000000000000ffff00000000ffff00000000ffff00000000ffff000000000000000000000000000000000000000000ffffffffffffffffff0000000000000000050108830e05450208e93600000000000000ffff00000000ffff00000000ffff00000000ffff000000000000000000000000000000000000000000ffffffffffffffffff00000000000000000503087e0e05050408920e050
+	// INFO : 2021/04/26 09:49:27.859090 handlers.go:272: 2021-04-26 09:49:27.848211 +0200 CEST 6233->9120 outbound NC_ITEM_REWARDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"2C","opCode":12332,"data":"0000","rawData":"042c300000","friendlyName":""}
+	// INFO : 2021/04/26 09:49:28.078648 handlers.go:272: 2021-04-26 09:49:28.074126 +0200 CEST 9120->6233 inbound NC_ITEM_REWARDINVENOPEN_ACK {"packetType":"big","length":424,"department":12,"command":"2D","opCode":12333,"data":"18450008023500000000000000ffff00000000ffff00000000ffff00000000ffff000000000000000000000000000000000000000000ffffffffffffffffff0000000000000000050108830e05450208e93600000000000000ffff00000000ffff00000000ffff00000000ffff000000000000000000000000000000000000000000ffffffffffffffffff00000000000000000503087e0e05050408920e05050508aa0e052a0608d10800000000000000000000000100000000000000000000000000000000000000000000000000002a0708d20800000000000000000000000100000000000000000000000000000000000000000000000000002a08084f090000000000000000000000010000000000000000000000000000000000000000000000000000050908ac0d052a0a0850090000000000000000000000010000000000000000000000000000000000000000000000000000050b08b10d05050c08840e04050d08491f0a050e08491f0a050f08491f0a051008491f0a051108491f0a051208431f02051308491f06051408f10b02051508ff0b23051608020c01051708040c0400","rawData":"00a8012d3018450008023500000000000000ffff00000000ffff00000000ffff00000000ffff000000000000000000000000000000000000000000ffffffffffffffffff0000000000000000050108830e05450208e93600000000000000ffff00000000ffff00000000ffff00000000ffff000000000000000000000000000000000000000000ffffffffffffffffff00000000000000000503087e0e05050408920e050
 
 	// page 2
-	//INFO : 2021/04/26 09:49:56.300297 handlers.go:272: 2021-04-26 09:49:56.294153 +0200 CEST 6233->9120 outbound NC_ITEM_REWARDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"2C","opCode":12332,"data":"0100","rawData":"042c300100","friendlyName":""}
-	//INFO : 2021/04/26 09:49:56.300297 handlers.go:272: 2021-04-26 09:49:56.299559 +0200 CEST 9120->6233 inbound NC_ACT_SOMEONEMOVERUN_CMD {"packetType":"small","length":24,"department":8,"command":"1A","opCode":8218,"data":"6b58f110000069120000951000004e120000db007265","rawData":"181a206b58f110000069120000951000004e120000db007265","friendlyName":""}
-	//INFO : 2021/04/26 09:49:56.455715 handlers.go:272: 2021-04-26 09:49:56.452787 +0200 CEST 9120->6233 inbound NC_ITEM_REWARDINVENOPEN_ACK {"packetType":"small","length":76,"department":12,"command":"2D","opCode":12333,"data":"0a050008c40b32050108e90b22050208ce0b0c050308c40b0f050408ca0b32050508ca0b03050608b80b24110708f9a700000000000000000000000001050808af0f03050908340a120f","rawData":"4c2d300a050008c40b32050108e90b22050208ce0b0c050308c40b0f050408ca0b32050508ca0b03050608b80b24110708f9a700000000000000000000000001050808af0f03050908340a120f","friendlyName":""}
+	// INFO : 2021/04/26 09:49:56.300297 handlers.go:272: 2021-04-26 09:49:56.294153 +0200 CEST 6233->9120 outbound NC_ITEM_REWARDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"2C","opCode":12332,"data":"0100","rawData":"042c300100","friendlyName":""}
+	// INFO : 2021/04/26 09:49:56.300297 handlers.go:272: 2021-04-26 09:49:56.299559 +0200 CEST 9120->6233 inbound NC_ACT_SOMEONEMOVERUN_CMD {"packetType":"small","length":24,"department":8,"command":"1A","opCode":8218,"data":"6b58f110000069120000951000004e120000db007265","rawData":"181a206b58f110000069120000951000004e120000db007265","friendlyName":""}
+	// INFO : 2021/04/26 09:49:56.455715 handlers.go:272: 2021-04-26 09:49:56.452787 +0200 CEST 9120->6233 inbound NC_ITEM_REWARDINVENOPEN_ACK {"packetType":"small","length":76,"department":12,"command":"2D","opCode":12333,"data":"0a050008c40b32050108e90b22050208ce0b0c050308c40b0f050408ca0b32050508ca0b03050608b80b24110708f9a700000000000000000000000001050808af0f03050908340a120f","rawData":"4c2d300a050008c40b32050108e90b22050208ce0b0c050308c40b0f050408ca0b32050508ca0b03050608b80b24110708f9a700000000000000000000000001050808af0f03050908340a120f","friendlyName":""}
 
 	t.Fail()
 }
@@ -1962,14 +1916,13 @@ func TestOpen_Reward_Inventory_NC_Success(t *testing.T) {
 
 func TestOpen_Premium_Inventory_Success(t *testing.T) {
 	// INFO : 2021/04/25 17:39:35.246924 handlers.go:272: 2021-04-25 17:39:35.237462 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGEDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"20","opCode":12320,"data":"0000","rawData":"0420300000","friendlyName":""}
-	//INFO : 2021/04/25 17:39:35.480942 handlers.go:272: 2021-04-25 17:39:35.477496 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"big","length":391,"department":12,"command":"21","opCode":12321,
+	// INFO : 2021/04/25 17:39:35.480942 handlers.go:272: 2021-04-25 17:39:35.477496 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"big","length":391,"department":12,"command":"21","opCode":12321,
 	t.Fail()
 }
 
 func TestOpen_Premium_Inventory_NC_Success(t *testing.T) {
-
 	// INFO : 2021/04/25 17:39:35.246924 handlers.go:272: 2021-04-25 17:39:35.237462 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGEDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"20","opCode":12320,"data":"0000","rawData":"0420300000","friendlyName":""}
-	//INFO : 2021/04/25 17:39:35.480942 handlers.go:272: 2021-04-25 17:39:35.477496 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"big","length":391,"department":12,"command":"21","opCode":12321,
+	// INFO : 2021/04/25 17:39:35.480942 handlers.go:272: 2021-04-25 17:39:35.477496 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"big","length":391,"department":12,"command":"21","opCode":12321,
 
 	t.Fail()
 }
@@ -1987,14 +1940,12 @@ func TestChangeItemSlot_Inventory_EmptySlot_Success(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2015,7 +1966,6 @@ func TestChangeItemSlot_Inventory_EmptySlot_Success(t *testing.T) {
 	}
 
 	itemSlotChange, err := player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -2062,13 +2012,11 @@ func TestChangeItemSlot_Inventory_OccupiedSlot_Success(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2080,7 +2028,6 @@ func TestChangeItemSlot_Inventory_OccupiedSlot_Success(t *testing.T) {
 	}
 
 	item1, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2101,7 +2048,6 @@ func TestChangeItemSlot_Inventory_OccupiedSlot_Success(t *testing.T) {
 	}
 
 	itemSlotChange, err := player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -2165,14 +2111,12 @@ func TestChangeItemSlot_Inventory_EmptySlot_NC(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2193,7 +2137,6 @@ func TestChangeItemSlot_Inventory_EmptySlot_NC(t *testing.T) {
 	}
 
 	change, err := player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2226,7 +2169,6 @@ func TestChangeItemSlot_Inventory_EmptySlot_NC(t *testing.T) {
 	if len(enc2.Item.ItemAttr) != 0 {
 		t.Fatalf("item attributes length should be 0")
 	}
-
 }
 
 func TestChangeItemSlot_Inventory_OccupiedSlot_NC(t *testing.T) {
@@ -2242,13 +2184,11 @@ func TestChangeItemSlot_Inventory_OccupiedSlot_NC(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2260,7 +2200,6 @@ func TestChangeItemSlot_Inventory_OccupiedSlot_NC(t *testing.T) {
 	}
 
 	item1, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2281,7 +2220,6 @@ func TestChangeItemSlot_Inventory_OccupiedSlot_NC(t *testing.T) {
 	}
 
 	change, err := player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2314,7 +2252,6 @@ func TestChangeItemSlot_Inventory_OccupiedSlot_NC(t *testing.T) {
 	if len(enc2.Item.ItemAttr) == 0 {
 		t.Fatalf("item attributes length should not be 0")
 	}
-
 }
 
 func TestChangeItem_Inventory_NonExistentSlot(t *testing.T) {
@@ -2330,13 +2267,11 @@ func TestChangeItem_Inventory_NonExistentSlot(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2348,7 +2283,6 @@ func TestChangeItem_Inventory_NonExistentSlot(t *testing.T) {
 	}
 
 	item1, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2398,7 +2332,6 @@ func TestChangeItemSlot_Inventory_NoItemInSlot(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2456,7 +2389,6 @@ func TestChangeItemSlot_Deposit_EmptySlot_Success(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2466,7 +2398,6 @@ func TestChangeItemSlot_Deposit_EmptySlot_Success(t *testing.T) {
 		overrideInventory: true,
 		inventoryType:     persistence.DepositInventory,
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2487,7 +2418,6 @@ func TestChangeItemSlot_Deposit_EmptySlot_Success(t *testing.T) {
 	}
 
 	itemSlotChange, err := player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -2534,7 +2464,6 @@ func TestChangeItemSlot_Deposit_OccupiedSlot_Success(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2543,7 +2472,6 @@ func TestChangeItemSlot_Deposit_OccupiedSlot_Success(t *testing.T) {
 		overrideInventory: true,
 		inventoryType:     persistence.DepositInventory,
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2558,7 +2486,6 @@ func TestChangeItemSlot_Deposit_OccupiedSlot_Success(t *testing.T) {
 		overrideInventory: true,
 		inventoryType:     persistence.DepositInventory,
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2579,7 +2506,6 @@ func TestChangeItemSlot_Deposit_OccupiedSlot_Success(t *testing.T) {
 	}
 
 	itemSlotChange, err := player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -2643,7 +2569,6 @@ func TestChangeItemSlot_Deposit_NonExistentSlot(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2652,7 +2577,6 @@ func TestChangeItemSlot_Deposit_NonExistentSlot(t *testing.T) {
 		overrideInventory: true,
 		inventoryType:     persistence.DepositInventory,
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2667,7 +2591,6 @@ func TestChangeItemSlot_Deposit_NonExistentSlot(t *testing.T) {
 		overrideInventory: true,
 		inventoryType:     persistence.DepositInventory,
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2717,7 +2640,6 @@ func TestChangeItemSlot_Deposit_NoItemInSlot(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2761,14 +2683,12 @@ func TestChangeItemSlot_Deposit_To_Inventory_Success(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// item is not persisted here, only in memory
 	item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2789,7 +2709,6 @@ func TestChangeItemSlot_Deposit_To_Inventory_Success(t *testing.T) {
 	}
 
 	itemSlotChange, err := player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -2842,7 +2761,6 @@ func TestChangeItemSlot_RewardInventory_Should_Fail(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2852,7 +2770,6 @@ func TestChangeItemSlot_RewardInventory_Should_Fail(t *testing.T) {
 		overrideInventory: true,
 		inventoryType:     persistence.RewardInventory,
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2901,7 +2818,6 @@ func TestChangeItemSlot_RewardInventory_To_Inventory_Success(t *testing.T) {
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2911,7 +2827,6 @@ func TestChangeItemSlot_RewardInventory_To_Inventory_Success(t *testing.T) {
 		overrideInventory: true,
 		inventoryType:     persistence.RewardInventory,
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2932,7 +2847,6 @@ func TestChangeItemSlot_RewardInventory_To_Inventory_Success(t *testing.T) {
 	}
 
 	itemSlotChange, err := player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -2980,7 +2894,6 @@ func TestChangeItemSlot_RewardInventory_To_Inventory_InventoryFull(t *testing.T)
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2990,7 +2903,6 @@ func TestChangeItemSlot_RewardInventory_To_Inventory_InventoryFull(t *testing.T)
 		overrideInventory: true,
 		inventoryType:     persistence.RewardInventory,
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3003,7 +2915,6 @@ func TestChangeItemSlot_RewardInventory_To_Inventory_InventoryFull(t *testing.T)
 
 	for i := 0; i < persistence.BagInventoryMax; i++ {
 		item, _, err := makeItem("ShortStaff", makeItemOptions{})
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -3034,7 +2945,6 @@ func TestChangeItemSlot_RewardInventory_To_Inventory_InventoryFull(t *testing.T)
 	if cErr.Code != errors.PersistenceInventoryFull {
 		t.Fatal("unexpected error code", cErr.Code)
 	}
-
 }
 
 func TestChangeItemSlot_RewardInventory_To_PremiumInventory_Should_Fail(t *testing.T) {
@@ -3050,7 +2960,6 @@ func TestChangeItemSlot_RewardInventory_To_PremiumInventory_Should_Fail(t *testi
 	}
 
 	err := player.load(char.Name)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3060,7 +2969,6 @@ func TestChangeItemSlot_RewardInventory_To_PremiumInventory_Should_Fail(t *testi
 		overrideInventory: true,
 		inventoryType:     persistence.RewardInventory,
 	})
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -3098,30 +3006,30 @@ func TestChangeItemSlot_RewardInventory_To_PremiumInventory_Should_Fail(t *testi
 
 func TestChangeItemSlot_PremiumInventory_To_Inventory_Success(t *testing.T) {
 	t.Fail()
-	//INFO : 2021/04/25 17:42:10.691919 handlers.go:272: 2021-04-25 17:42:10.682141 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGED_WITHDRAW_REQ {"packetType":"small","length":6,"department":12,"command":"22","opCode":12322,"data":"c449b701","rawData":"062230c449b701","friendlyName":""}
-	//INFO : 2021/04/25 17:42:10.877594 handlers.go:272: 2021-04-25 17:42:10.874376 +0200 CEST 9120->50634 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":9,"department":12,"command":"1","opCode":12289,"data":"152415249a7501","rawData":"090130152415249a7501","friendlyName":""}
-	//INFO : 2021/04/25 17:42:10.877604 handlers.go:272: 2021-04-25 17:42:10.874376 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGED_WITHDRAW_ACK {"packetType":"small","length":8,"department":12,"command":"23","opCode":12323,"data":"c449b7014110","rawData":"082330c449b7014110","friendlyName":""}
+	// INFO : 2021/04/25 17:42:10.691919 handlers.go:272: 2021-04-25 17:42:10.682141 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGED_WITHDRAW_REQ {"packetType":"small","length":6,"department":12,"command":"22","opCode":12322,"data":"c449b701","rawData":"062230c449b701","friendlyName":""}
+	// INFO : 2021/04/25 17:42:10.877594 handlers.go:272: 2021-04-25 17:42:10.874376 +0200 CEST 9120->50634 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":9,"department":12,"command":"1","opCode":12289,"data":"152415249a7501","rawData":"090130152415249a7501","friendlyName":""}
+	// INFO : 2021/04/25 17:42:10.877604 handlers.go:272: 2021-04-25 17:42:10.874376 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGED_WITHDRAW_ACK {"packetType":"small","length":8,"department":12,"command":"23","opCode":12323,"data":"c449b7014110","rawData":"082330c449b7014110","friendlyName":""}
 }
 
 func TestChangeItemSlot_PremiumInventory_To_Inventory_NC_Success(t *testing.T) {
 	t.Fail()
 	// page 1
-	//INFO : 2021/04/25 17:39:35.246924 handlers.go:272: 2021-04-25 17:39:35.237462 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGEDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"20","opCode":12320,"data":"0000","rawData":"0420300000","friendlyName":""}
+	// INFO : 2021/04/25 17:39:35.246924 handlers.go:272: 2021-04-25 17:39:35.237462 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGEDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"20","opCode":12320,"data":"0000","rawData":"0420300000","friendlyName":""}
 	// page 2
-	//INFO : 2021/04/25 18:20:31.407229 handlers.go:272: 2021-04-25 18:20:31.392034 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGEDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"20","opCode":12320,"data":"0100","rawData":"0420300100","friendlyName":""}
+	// INFO : 2021/04/25 18:20:31.407229 handlers.go:272: 2021-04-25 18:20:31.392034 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGEDINVENOPEN_REQ {"packetType":"small","length":4,"department":12,"command":"20","opCode":12320,"data":"0100","rawData":"0420300100","friendlyName":""}
 
 	// page 1
-	//INFO : 2021/04/25 18:18:08.338040 handlers.go:272: 2021-04-25 18:18:08.335947 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"big","length":391,"department":12,"command":"21","opCode":12321,"data":"4110031800d2861100c2280000000000000de23808336d5700d3280000010000000e8c315c98e89101b028000001000000108790049b0b2202c12700000100000011854176ab5f2202c22700000100000011854176cc072302c42700000100000011854900dc5b2302c527000001000000118549001fac24026d2800000100000011854902300025026e280000010000001185490455aa4202ab5500000100000013e4483456aa4202ab5500000100000013e4483457aa4202ab5500000100000013e448343bdc4202aa2800000100000013a45136a10443027b2700000100000013045230c2044302a12900000100000013045238c3044302a85500000100000013045238c4044302a85500000100000013045238c5044302842b00000100000013045238c7044302542800000100000013045238c8044302a1290000010000001304523ac9044302822b0000010000001304523aca044302842b0000010000001304523ccd044302d4290000010000001304523ed3044302a85500000100000013045244","rawData":"00870121304110031800d2861100c2280000000000000de23808336d5700d3280000010000000e8c315c98e89101b028000001000000108790049b0b2202c12700000100000011854176ab5f2202c22700000100000011854176cc072302c42700000100000011854900dc5b2302c527000001000000118549001fac24026d2800000100000011854902300025026e280000010000001185490455aa4202ab5500000100000013e4483456aa4202ab5500000100000013e4483457aa4202ab5500000100000013e448343bdc4202aa2800000100000013a45136a10443027b2700000100000013045230c2044302a12900000100000013045238c3044302a85500000100000013045238c4044302a85500000100000013045238c5044302842b00000100000013045238c7044302542800000100000013045238c8044302a1290000010000001304523ac9044302822b0000010000001304523aca044302842b0000010000001304523ccd044302d4290000010000001304523ed3044302a85500000100000013045244","friendlyName":""}
+	// INFO : 2021/04/25 18:18:08.338040 handlers.go:272: 2021-04-25 18:18:08.335947 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"big","length":391,"department":12,"command":"21","opCode":12321,"data":"4110031800d2861100c2280000000000000de23808336d5700d3280000010000000e8c315c98e89101b028000001000000108790049b0b2202c12700000100000011854176ab5f2202c22700000100000011854176cc072302c42700000100000011854900dc5b2302c527000001000000118549001fac24026d2800000100000011854902300025026e280000010000001185490455aa4202ab5500000100000013e4483456aa4202ab5500000100000013e4483457aa4202ab5500000100000013e448343bdc4202aa2800000100000013a45136a10443027b2700000100000013045230c2044302a12900000100000013045238c3044302a85500000100000013045238c4044302a85500000100000013045238c5044302842b00000100000013045238c7044302542800000100000013045238c8044302a1290000010000001304523ac9044302822b0000010000001304523aca044302842b0000010000001304523ccd044302d4290000010000001304523ed3044302a85500000100000013045244","rawData":"00870121304110031800d2861100c2280000000000000de23808336d5700d3280000010000000e8c315c98e89101b028000001000000108790049b0b2202c12700000100000011854176ab5f2202c22700000100000011854176cc072302c42700000100000011854900dc5b2302c527000001000000118549001fac24026d2800000100000011854902300025026e280000010000001185490455aa4202ab5500000100000013e4483456aa4202ab5500000100000013e4483457aa4202ab5500000100000013e448343bdc4202aa2800000100000013a45136a10443027b2700000100000013045230c2044302a12900000100000013045238c3044302a85500000100000013045238c4044302a85500000100000013045238c5044302842b00000100000013045238c7044302542800000100000013045238c8044302a1290000010000001304523ac9044302822b0000010000001304523aca044302842b0000010000001304523ccd044302d4290000010000001304523ed3044302a85500000100000013045244","friendlyName":""}
 	// page 2 ? how the fuck does this work?
-	//INFO : 2021/04/25 18:20:31.654372 handlers.go:272: 2021-04-25 18:20:31.652235 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"small","length":231,"department":12,"command":"21","opCode":12321,"data":"4110030e00d40443028c5300000100000013045246d6044302a85500000100000013045246d8044302822b00000100000013045248da044302a85500000100000013045248db044302822b00000100000013045248e0044302842b00000100000013045248e20443028c530000010000001304524ae5044302a8550000010000001304524af4044302822b00000100000013045250f9044302842b00000100000013045252fe044302a8550000010000001304525407054302a8550000010000001304525a4e054302ce2b00000100000013045a0c2c7e5d02317500000100000014085276","rawData":"e721304110030e00d40443028c5300000100000013045246d6044302a85500000100000013045246d8044302822b00000100000013045248da044302a85500000100000013045248db044302822b00000100000013045248e0044302842b00000100000013045248e20443028c530000010000001304524ae5044302a8550000010000001304524af4044302822b00000100000013045250f9044302842b00000100000013045252fe044302a8550000010000001304525407054302a8550000010000001304525a4e054302ce2b00000100000013045a0c2c7e5d02317500000100000014085276","friendlyName":""}
+	// INFO : 2021/04/25 18:20:31.654372 handlers.go:272: 2021-04-25 18:20:31.652235 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGEDINVENOPEN_ACK {"packetType":"small","length":231,"department":12,"command":"21","opCode":12321,"data":"4110030e00d40443028c5300000100000013045246d6044302a85500000100000013045246d8044302822b00000100000013045248da044302a85500000100000013045248db044302822b00000100000013045248e0044302842b00000100000013045248e20443028c530000010000001304524ae5044302a8550000010000001304524af4044302822b00000100000013045250f9044302842b00000100000013045252fe044302a8550000010000001304525407054302a8550000010000001304525a4e054302ce2b00000100000013045a0c2c7e5d02317500000100000014085276","rawData":"e721304110030e00d40443028c5300000100000013045246d6044302a85500000100000013045246d8044302822b00000100000013045248da044302a85500000100000013045248db044302822b00000100000013045248e0044302842b00000100000013045248e20443028c530000010000001304524ae5044302a8550000010000001304524af4044302822b00000100000013045250f9044302842b00000100000013045252fe044302a8550000010000001304525407054302a8550000010000001304525a4e054302ce2b00000100000013045a0c2c7e5d02317500000100000014085276","friendlyName":""}
 
-	//INFO : 2021/04/25 17:42:10.691919 handlers.go:272: 2021-04-25 17:42:10.682141 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGED_WITHDRAW_REQ {"packetType":"small","length":6,"department":12,"command":"22","opCode":12322,"data":"c449b701","rawData":"062230c449b701","friendlyName":""}
-	//INFO : 2021/04/25 17:42:10.877594 handlers.go:272: 2021-04-25 17:42:10.874376 +0200 CEST 9120->50634 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":9,"department":12,"command":"1","opCode":12289,"data":"152415249a7501","rawData":"090130152415249a7501","friendlyName":""}
-	//INFO : 2021/04/25 17:42:10.877604 handlers.go:272: 2021-04-25 17:42:10.874376 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGED_WITHDRAW_ACK {"packetType":"small","length":8,"department":12,"command":"23","opCode":12323,"data":"c449b7014110","rawData":"082330c449b7014110","friendlyName":""}
+	// INFO : 2021/04/25 17:42:10.691919 handlers.go:272: 2021-04-25 17:42:10.682141 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGED_WITHDRAW_REQ {"packetType":"small","length":6,"department":12,"command":"22","opCode":12322,"data":"c449b701","rawData":"062230c449b701","friendlyName":""}
+	// INFO : 2021/04/25 17:42:10.877594 handlers.go:272: 2021-04-25 17:42:10.874376 +0200 CEST 9120->50634 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":9,"department":12,"command":"1","opCode":12289,"data":"152415249a7501","rawData":"090130152415249a7501","friendlyName":""}
+	// INFO : 2021/04/25 17:42:10.877604 handlers.go:272: 2021-04-25 17:42:10.874376 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGED_WITHDRAW_ACK {"packetType":"small","length":8,"department":12,"command":"23","opCode":12323,"data":"c449b7014110","rawData":"082330c449b7014110","friendlyName":""}
 
-	//INFO : 2021/04/25 17:59:04.123989 handlers.go:272: 2021-04-25 17:59:04.122346 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGED_WITHDRAW_REQ {"packetType":"small","length":6,"department":12,"command":"22","opCode":12322,"data":"ed206302","rawData":"062230ed206302","friendlyName":""}
-	//INFO : 2021/04/25 17:59:04.279049 handlers.go:272: 2021-04-25 17:59:04.270294 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGED_WITHDRAW_ACK {"packetType":"small","length":8,"department":12,"command":"23","opCode":12323,"data":"ed2063024110","rawData":"082330ed2063024110","friendlyName":""}
-	//INFO : 2021/04/25 17:59:04.279049 handlers.go:272: 2021-04-25 17:59:04.270294 +0200 CEST 9120->50634 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":16,"department":12,"command":"1","opCode":12289,"data":"16241624e0ff0000000000000000","rawData":"10013016241624e0ff0000000000000000","friendlyName":""}
+	// INFO : 2021/04/25 17:59:04.123989 handlers.go:272: 2021-04-25 17:59:04.122346 +0200 CEST 50634->9120 outbound NC_ITEM_CHARGED_WITHDRAW_REQ {"packetType":"small","length":6,"department":12,"command":"22","opCode":12322,"data":"ed206302","rawData":"062230ed206302","friendlyName":""}
+	// INFO : 2021/04/25 17:59:04.279049 handlers.go:272: 2021-04-25 17:59:04.270294 +0200 CEST 9120->50634 inbound NC_ITEM_CHARGED_WITHDRAW_ACK {"packetType":"small","length":8,"department":12,"command":"23","opCode":12323,"data":"ed2063024110","rawData":"082330ed2063024110","friendlyName":""}
+	// INFO : 2021/04/25 17:59:04.279049 handlers.go:272: 2021-04-25 17:59:04.270294 +0200 CEST 9120->50634 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":16,"department":12,"command":"1","opCode":12289,"data":"16241624e0ff0000000000000000","rawData":"10013016241624e0ff0000000000000000","friendlyName":""}
 }
 
 func TestChangeItemSlot_PremiumInventory_To_Inventory_InventoryFull(t *testing.T) {
@@ -3141,10 +3049,10 @@ func TestChangeItemSlot_MHInventory_Should_Fail(t *testing.T) { t.Fail() }
 func TestChangeItemSlot_MHInventory_Equip(t *testing.T) {
 	t.Fail()
 	// INFO : 2021/04/25 01:07:35.262832 handlers.go:267: 2021-04-25 01:07:35.250157 +0200 CEST 39878->9120 outbound NC_MINIHOUSE_ACTIV_REQ {"packetType":"small","length":3,"department":35,"command":"1","opCode":35841,"data":"0b","rawData":"03018c0b","friendlyName":""}
-	//INFO : 2021/04/25 01:07:35.371279 handlers.go:267: 2021-04-25 01:07:35.365524 +0200 CEST 9120->39878 inbound NC_MINIHOUSE_ACTIV_ACK {"packetType":"small","length":4,"department":35,"command":"2","opCode":35842,"data":"0110","rawData":"04028c0110","friendlyName":""}
-	//INFO : 2021/04/25 01:07:35.526755 handlers.go:267: 2021-04-25 01:07:35.524136 +0200 CEST 9120->39878 inbound NC_ITEM_RELOC_ACK {"packetType":"small","length":4,"department":12,"command":"C","opCode":12300,"data":"4102","rawData":"040c304102","friendlyName":""}
-	//INFO : 2021/04/25 01:07:35.527276 handlers.go:267: 2021-04-25 01:07:35.524136 +0200 CEST 9120->39878 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":12,"department":12,"command":"1","opCode":12289,"data":"0b3000303d79ffecbb76","rawData":"0c01300b3000303d79ffecbb76","friendlyName":""}
-	//INFO : 2021/04/25 01:07:35.527285 handlers.go:267: 2021-04-25 01:07:35.524136 +0200 CEST 9120->39878 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":12,"department":12,"command":"1","opCode":12289,"data":"00300b301879ffecbb76","rawData":"0c013000300b301879ffecbb76","friendlyName":""}
+	// INFO : 2021/04/25 01:07:35.371279 handlers.go:267: 2021-04-25 01:07:35.365524 +0200 CEST 9120->39878 inbound NC_MINIHOUSE_ACTIV_ACK {"packetType":"small","length":4,"department":35,"command":"2","opCode":35842,"data":"0110","rawData":"04028c0110","friendlyName":""}
+	// INFO : 2021/04/25 01:07:35.526755 handlers.go:267: 2021-04-25 01:07:35.524136 +0200 CEST 9120->39878 inbound NC_ITEM_RELOC_ACK {"packetType":"small","length":4,"department":12,"command":"C","opCode":12300,"data":"4102","rawData":"040c304102","friendlyName":""}
+	// INFO : 2021/04/25 01:07:35.527276 handlers.go:267: 2021-04-25 01:07:35.524136 +0200 CEST 9120->39878 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":12,"department":12,"command":"1","opCode":12289,"data":"0b3000303d79ffecbb76","rawData":"0c01300b3000303d79ffecbb76","friendlyName":""}
+	// INFO : 2021/04/25 01:07:35.527285 handlers.go:267: 2021-04-25 01:07:35.524136 +0200 CEST 9120->39878 inbound NC_ITEM_CELLCHANGE_CMD {"packetType":"small","length":12,"department":12,"command":"1","opCode":12289,"data":"00300b301879ffecbb76","rawData":"0c013000300b301879ffecbb76","friendlyName":""}
 }
 
 func TestSellItem_Success(t *testing.T) {
@@ -3157,7 +3065,6 @@ func TestSellItem_NonExistingItem(t *testing.T) {
 
 func TestBuyItem_Success(t *testing.T) {
 	t.Fail()
-
 }
 
 func TestOneUseItem_Success(t *testing.T) {
@@ -3167,5 +3074,4 @@ func TestOneUseItem_Success(t *testing.T) {
 // Like mounts, quest items
 func TestMultipleUseItem_Success(t *testing.T) {
 	t.Fail()
-
 }

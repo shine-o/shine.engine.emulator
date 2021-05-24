@@ -3,16 +3,17 @@ package world
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/login"
 	wm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world-master"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"github.com/spf13/viper"
-	"time"
 )
 
 type world struct {
-	//db *pg.DB
+	// db *pg.DB
 	events
 	dynamic
 }
@@ -22,7 +23,6 @@ var worldEvents sendEvents
 func (w *world) load() {
 	// register to world-master
 	err := registerWorld()
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -61,7 +61,6 @@ func registerWorld() error {
 	port := viper.GetInt32("world.port")
 
 	conn, err := newRPCClient("world_master")
-
 	if err != nil {
 		return err
 	}
@@ -77,7 +76,6 @@ func registerWorld() error {
 			Port: port,
 		},
 	})
-
 	if err != nil {
 		return err
 	}
@@ -112,7 +110,6 @@ func verifyUser(ws *session, req *structs.NcUserLoginWorldReq) error {
 	ui, err := c.AccountInfo(rpcCtx, &login.User{
 		UserName: req.User.Name,
 	})
-
 	if err != nil {
 		return errAccountInfo
 	}
@@ -134,7 +131,6 @@ func userCharacters(ws *session) (structs.NcUserLoginWorldAck, error) {
 	worldID := viper.GetInt("service.id")
 
 	chars, err := persistence.UserCharacters(ws.UserID)
-
 	if err != nil {
 		return structs.NcUserLoginWorldAck{}, err
 	}

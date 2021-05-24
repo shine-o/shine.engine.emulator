@@ -4,12 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/gorilla/websocket"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
-	"github.com/spf13/viper"
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/gorilla/websocket"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	"github.com/spf13/viper"
 )
 
 // PacketView is used to represent data to the frontend UI
@@ -43,7 +44,7 @@ func startUI(ctx context.Context) {
 			cons: make(map[*websocket.Conn]bool),
 		}
 
-		var addr = fmt.Sprintf("localhost:%v", viper.GetString("websocket.port"))
+		addr := fmt.Sprintf("localhost:%v", viper.GetString("websocket.port"))
 		log.Infof("starting websocket server on %v", addr)
 		http.HandleFunc("/packets", packets)
 
@@ -111,7 +112,6 @@ func packets(w http.ResponseWriter, r *http.Request) {
 		return true
 	}
 	c, err := upgrader.Upgrade(w, r, nil)
-
 	if err != nil {
 		log.Info("upgrade:", err)
 		return

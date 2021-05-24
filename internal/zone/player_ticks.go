@@ -1,8 +1,9 @@
 package zone
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"time"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 )
 
 func (p *player) heartbeat() {

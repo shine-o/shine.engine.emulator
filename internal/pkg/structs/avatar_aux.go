@@ -1,19 +1,19 @@
 package structs
 
-//struct CHAR_ID_CHANGE_DATA
+// struct CHAR_ID_CHANGE_DATA
 type CharIdChangeData struct {
 	NeedChangeId byte
 	Init         byte
 	RowNo        uint32
 }
 
-//struct PROTO_TUTORIAL_INFO
+// struct PROTO_TUTORIAL_INFO
 type ProtoTutorialInfo struct {
 	TutorialState int32
 	TutorialStep  byte
 }
 
-//enum TUTORIAL_STATE
+// enum TUTORIAL_STATE
 const (
 	TsProgress  = 0
 	TsDone      = 1
@@ -22,7 +22,7 @@ const (
 	TsMax       = 4
 )
 
-//struct PROTO_AVATARINFORMATION
+// struct PROTO_AVATARINFORMATION
 type AvatarInformation struct {
 	ChrRegNum        uint32
 	Name             Name5
@@ -57,7 +57,7 @@ type ProtoAvatarShapeInfo struct {
 	FaceShape byte
 }
 
-//struct PROTO_EQUIPMENT::<unnamed-type-upgrade>
+// struct PROTO_EQUIPMENT::<unnamed-type-upgrade>
 //  __int8 lefthand : 4;
 //  __int8 righthand : 4;
 //  __int8 body : 4;
@@ -66,11 +66,11 @@ type ProtoAvatarShapeInfo struct {
 type EquipmentUpgrade struct {
 	// first byte is the upgrade level
 	Gap [2]uint8 `struct:"[2]uint8"`
-	//Gap uint16
+	// Gap uint16
 	BF2 byte
 }
 
-//struct PROTO_EQUIPMENT
+// struct PROTO_EQUIPMENT
 type ProtoEquipment struct {
 	EquHead         uint16
 	EquMouth        uint16

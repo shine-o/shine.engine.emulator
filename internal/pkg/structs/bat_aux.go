@@ -1,6 +1,6 @@
 package structs
 
-//struct PROTO_NC_BAT_SKILLBASH_HIT_DAMAGE_CMD::SkillDamage
+// struct PROTO_NC_BAT_SKILLBASH_HIT_DAMAGE_CMD::SkillDamage
 type NcBatSkillBashHitDamageCmdSkillDamage struct {
 	Handle        uint16
 	Flag          NcBatSkillBashHitDamageCmdSkillDamageFlag
@@ -9,7 +9,7 @@ type NcBatSkillBashHitDamageCmdSkillDamage struct {
 	HpChangeOrder uint16
 }
 
-//struct PROTO_NC_BAT_SKILLBASH_HIT_DAMAGE_CMD::SkillDamage::<unnamed-type-flag>
+// struct PROTO_NC_BAT_SKILLBASH_HIT_DAMAGE_CMD::SkillDamage::<unnamed-type-flag>
 type NcBatSkillBashHitDamageCmdSkillDamageFlag struct {
 	Gap byte
 	BF1 byte

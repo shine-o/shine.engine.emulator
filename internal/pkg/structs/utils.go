@@ -3,10 +3,11 @@ package structs
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/go-restruct/restruct"
-	"github.com/google/logger"
 	"io/ioutil"
 	"reflect"
+
+	"github.com/go-restruct/restruct"
+	"github.com/google/logger"
 )
 
 var log *logger.Logger
@@ -21,7 +22,6 @@ func init() {
 // if struct size is bigger than available data, fill with zeros
 func Unpack(data []byte, nc interface{}) error {
 	err := restruct.Unpack(data, binary.LittleEndian, nc)
-
 	if err != nil {
 		size, _ := restruct.SizeOf(nc)
 		return fmt.Errorf("size of %v: %v, size of data %v, %v", reflect.TypeOf(nc).String(), size, len(data), err)

@@ -2,9 +2,10 @@ package networking
 
 import (
 	"encoding/hex"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"os"
 	"testing"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 )
 
 func TestMain(m *testing.M) {

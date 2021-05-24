@@ -1,8 +1,9 @@
 package data
 
 import (
-	"github.com/google/logger"
 	"os"
+
+	"github.com/google/logger"
 )
 
 var (

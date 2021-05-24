@@ -38,4 +38,5 @@ require (
 	google.golang.org/genproto v0.0.0-20210421164718-3947dc264843 // indirect
 	google.golang.org/grpc v1.37.0
 	gopkg.in/ini.v1 v1.62.0 // indirect
+	mvdan.cc/gofumpt v0.1.1 // indirect
 )

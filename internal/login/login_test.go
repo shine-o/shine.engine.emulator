@@ -3,11 +3,12 @@ package login
 import (
 	"encoding/hex"
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/utils"
-	"reflect"
-	"testing"
 )
 
 func netPackets() utils.TargetPackets {
@@ -41,7 +42,6 @@ func netPackets() utils.TargetPackets {
 	}
 
 	return tp
-
 }
 
 func TestPackets(t *testing.T) {

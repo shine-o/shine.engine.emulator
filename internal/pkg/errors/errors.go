@@ -31,7 +31,7 @@ const (
 	ZoneItemSlotEquipNoItem
 	ZoneItemSlotIsBound
 	ZoneItemSlotInUse
-	ZoneItemSlotGTS //Guild Tournament Storage
+	ZoneItemSlotGTS // Guild Tournament Storage
 	ZoneItemUnknownInventoryType
 	ZoneItemDeleteNoItem
 	ZoneItemNoItemInSlot
@@ -49,6 +49,7 @@ const (
 	ZoneHandlerMaxAttemptsReached
 	ZoneBadEntityType
 	ZoneNilPlayerFields
+	ZonePlayerSelectedUnknownEntity
 	UnitTestError
 )
 
@@ -65,7 +66,7 @@ type ErrDetails map[string]interface{}
 
 func (e Err) Error() string {
 	if len(e.Details) > 0 {
-		var res = e.Code.String() + " > "
+		res := e.Code.String() + " > "
 		if e.Message != "" {
 			res += e.Message + " > "
 		}

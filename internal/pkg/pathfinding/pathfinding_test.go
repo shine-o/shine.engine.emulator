@@ -3,14 +3,15 @@ package path
 import (
 	"bytes"
 	"fmt"
-	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"image"
 	"image/color"
 	"math"
 	"os"
 	"sync"
 	"testing"
+
+	"github.com/google/logger"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 )
 
 var (
@@ -26,7 +27,7 @@ var (
 func TestMain(m *testing.M) {
 	mn = "Rou"
 	s, _ = data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", mn))
-	//s, _ = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", mn))
+	// s, _ = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", mn))
 	v = RawGrid(s)
 	vNodesNoWalls = PresetNodesGrid(s, vNodesNoWallsMargin)
 	vNodesWithWalls = PresetNodesWithMargins(s, v, vNodesWithWallsMargin)
@@ -37,7 +38,6 @@ func Test_Path_A_astar_paint_large_distance(t *testing.T) {
 	v1 := copyGrid(vNodesNoWalls)
 
 	img1, err := data.SHBDToImage(s)
-
 	if err != nil {
 		logger.Error(err)
 	}
@@ -64,7 +64,6 @@ func Test_Path_A_astar_paint_large_distance(t *testing.T) {
 	v2 := copyGrid(vNodesWithWalls)
 
 	img2, err := data.SHBDToImage(s)
-
 	if err != nil {
 		logger.Error(err)
 	}
@@ -91,7 +90,6 @@ func Test_Path_A_astar_paint_large_distance(t *testing.T) {
 	v3 := copyGrid(v)
 
 	img3, err := data.SHBDToImage(s)
-
 	if err != nil {
 		logger.Error(err)
 	}
@@ -120,7 +118,6 @@ func Test_Path_A_astar_paint_short_distance(t *testing.T) {
 	v1 := copyGrid(vNodesNoWalls)
 
 	img1, err := data.SHBDToImage(s)
-
 	if err != nil {
 		logger.Error(err)
 	}
@@ -147,7 +144,6 @@ func Test_Path_A_astar_paint_short_distance(t *testing.T) {
 	v2 := copyGrid(vNodesWithWalls)
 
 	img2, err := data.SHBDToImage(s)
-
 	if err != nil {
 		logger.Error(err)
 	}
@@ -174,7 +170,6 @@ func Test_Path_A_astar_paint_short_distance(t *testing.T) {
 	v3 := copyGrid(v)
 
 	img3, err := data.SHBDToImage(s)
-
 	if err != nil {
 		logger.Error(err)
 	}
@@ -202,7 +197,7 @@ func Test_Path_A_astar_paint_short_distance(t *testing.T) {
 func Test_Paint_Path_Nodes(*testing.T) {
 	var (
 		m = "Rou"
-		//s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+		// s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
 		s, err = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", m))
 	)
 
@@ -217,7 +212,6 @@ func Test_Paint_Path_Nodes(*testing.T) {
 	}
 
 	img, err := PaintNodesAndWallMargins(s, v)
-
 	if err != nil {
 		logger.Error(err)
 	}
@@ -249,7 +243,6 @@ func Test_Paint_Path_Nodes_Multiple(*testing.T) {
 		go func(name string) {
 			defer wg.Done()
 			img, err := data.SHBDToImage(s)
-
 			if err != nil {
 				logger.Error(err)
 			}
@@ -276,7 +269,6 @@ func Test_Paint_Path_Nodes_Multiple(*testing.T) {
 			if err != nil {
 				logger.Fatal(err)
 			}
-
 		}(fmt.Sprintf("paintedpath%v", i))
 	}
 	wg.Wait()
@@ -309,13 +301,11 @@ func Test_Map_Intermitent_By_Speed_Path_A_B_AStar(t *testing.T) {
 	m := "Rou"
 	var s *data.SHBD
 	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
-
 	if err != nil {
 		logger.Error(err)
 	}
 
 	img, err := data.SHBDToImage(s)
-
 	if err != nil {
 		logger.Error(err)
 	}
@@ -344,7 +334,6 @@ func Test_Map_Intermitent_By_Speed_Path_A_B_AStar(t *testing.T) {
 	if err != nil {
 		logger.Error(err)
 	}
-
 }
 
 func Benchmark_algorithms(b *testing.B) {
@@ -395,13 +384,12 @@ func Benchmark_algorithms(b *testing.B) {
 	// trace
 	// bfs
 	// dijkstra
-
 }
 
 func Benchmark_InitVertices(b *testing.B) {
 	var (
 		m = "Rou"
-		//s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+		// s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
 		s, err = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", m))
 	)
 	if err != nil {
@@ -431,7 +419,6 @@ func Benchmark_ReduceVertices(b *testing.B) {
 	m := "Rou"
 	var s *data.SHBD
 	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
-
 	if err != nil {
 		logger.Error(err)
 	}
@@ -453,7 +440,7 @@ func Benchmark_ReduceVertices(b *testing.B) {
 func Benchmark_Copy_Grid(b *testing.B) {
 	var (
 		m = "Rou"
-		//s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
+		// s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
 		s, err = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", m))
 	)
 
@@ -483,7 +470,6 @@ func Benchmark_Copy_Grid(b *testing.B) {
 }
 
 func Benchmark_Close_Distance_Algorithms(b *testing.B) {
-
 }
 
 func PaintNodesAndWallMargins(s *data.SHBD, wv Grid) (*image.RGBA, error) {
@@ -533,7 +519,6 @@ func PaintNodesAndWallMargins(s *data.SHBD, wv Grid) (*image.RGBA, error) {
 						} else {
 							c = color.White
 						}
-
 					} else {
 						c = color.White
 					}
@@ -595,7 +580,6 @@ func PaintNodesWithoutWallMargins(s *data.SHBD, wv Grid) (*image.RGBA, error) {
 					} else {
 						c = color.White
 					}
-
 				} else {
 					c = color.Black
 				}
@@ -609,7 +593,7 @@ func PaintNodesWithoutWallMargins(s *data.SHBD, wv Grid) (*image.RGBA, error) {
 }
 
 func TestAllNearbyNodes(t *testing.T) {
-	//pathVertices3 := astar(v3, 835, 700, 1070, 1540, 1)
+	// pathVertices3 := astar(v3, 835, 700, 1070, 1540, 1)
 	nodes := allNearbyNodes(vNodesWithWalls, 835, 700, 100)
 	fmt.Println(nodes)
 }

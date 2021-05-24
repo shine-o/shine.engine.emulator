@@ -3,17 +3,20 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/google/logger"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
+
+	"github.com/google/logger"
+	"github.com/spf13/cobra"
 
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-var log *logger.Logger
+var (
+	cfgFile string
+	log     *logger.Logger
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
@@ -62,7 +65,7 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	if err := viper.ReadInConfig(); err == nil {
-		//fmt.Println("Using config file:", viper.ConfigFileUsed())
+		// fmt.Println("Using config file:", viper.ConfigFileUsed())
 		log.Infof("using config file: %v", viper.ConfigFileUsed())
 	}
 

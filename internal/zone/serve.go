@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"net/http"
+	"path/filepath"
+
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
@@ -12,13 +15,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"net/http"
-	"path/filepath"
 )
 
-var (
-	log = shinelog.NewLogger("zone", "../../output", logrus.DebugLevel)
-)
+var log = shinelog.NewLogger("zone", "../../output", logrus.DebugLevel)
 
 // Start initializes the TCP server and all the needed services and configuration for the zone
 func Start(cmd *cobra.Command, args []string) {
@@ -30,7 +29,6 @@ func Start(cmd *cobra.Command, args []string) {
 			http.Handle("/metrics", promhttp.Handler())
 			log.Info(http.ListenAndServe(fmt.Sprintf(":%v", port), nil))
 		}
-
 	}()
 
 	ctx := context.Background()
@@ -73,7 +71,6 @@ func Start(cmd *cobra.Command, args []string) {
 	s := networking.Settings{}
 
 	xk, err := hex.DecodeString(viper.GetString("crypt.xorKey"))
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -83,7 +80,6 @@ func Start(cmd *cobra.Command, args []string) {
 	s.XorLimit = uint16(viper.GetInt("crypt.xorLimit"))
 
 	path, err := filepath.Abs(viper.GetString("protocol.commands"))
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -99,7 +95,7 @@ func Start(cmd *cobra.Command, args []string) {
 			},
 			networking.NC_MISC_HEARTBEAT_ACK: networking.ShinePacket{
 				Handler: ncMiscHeartBeatAck,
-				//NcStruct: nil,
+				// NcStruct: nil,
 			},
 			networking.NC_MAP_LOGIN_REQ: networking.ShinePacket{
 				Handler: ncMapLoginReq,

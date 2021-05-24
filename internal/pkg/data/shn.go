@@ -1,8 +1,9 @@
 package data
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"io/ioutil"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
 type ShineDataType uint32
@@ -78,7 +79,6 @@ func Load(filesPath string, shn interface{}) error {
 func loadRawData(filesPath string) ([]byte, error) {
 	var srf ShineRawFile
 	data, err := ioutil.ReadFile(filesPath)
-
 	if err != nil {
 		return srf.Data, err
 	}

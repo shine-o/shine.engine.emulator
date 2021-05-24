@@ -1,11 +1,12 @@
 package zone
 
 import (
+	"sync"
+	"time"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
-	"sync"
-	"time"
 )
 
 type npcType int
@@ -32,12 +33,37 @@ const (
 
 type npc struct {
 	*baseEntity
-	data  *npcStaticData
-	ticks *entityTicks
-	state *entityState
-	stats *npcStats
-	nType npcType
+	data      *npcStaticData
+	ticks     *entityTicks
+	state     *entityState
+	stats     *npcStats
+	targeting *targeting
+	nType     npcType
 	sync.RWMutex
+}
+
+func (n *npc) getTargetPacketData() *structs.NcBatTargetInfoCmd {
+	panic("implement me")
+}
+
+func (n *npc) getNextTargetPacketData() *structs.NcBatTargetInfoCmd {
+	panic("implement me")
+}
+
+func (n *npc) selects(e entity) {
+	panic("implement me")
+}
+
+func (n *npc) selectedBy(e entity) {
+	panic("implement me")
+}
+
+func (n *npc) currentlySelected() entity {
+	panic("implement me")
+}
+
+func (n *npc) getCurrentTargetPacketData() []interface{} {
+	panic("implement me")
 }
 
 type npcStats struct {
@@ -52,7 +78,7 @@ type npcStaticData struct {
 }
 
 func (n *npc) notifyAboutRemovedEntity(e entity) {
-	//panic("implement me")
+	// panic("implement me")
 }
 
 func (n *npc) alreadyNearbyEntity(e entity) bool {
@@ -101,7 +127,7 @@ func (n *npc) notifyAboutNewEntity(e entity) {
 	log.Info("implement me")
 }
 
-func (n *npc) getPacketData() interface{} {
+func (n *npc) getNewEntityNearbyPacketData() interface{} {
 	return npcNcBriefInfoRegenMobCmd(n)
 }
 
@@ -167,7 +193,7 @@ func loadBaseNpc(inxName string, eType entityType) (*npc, error) {
 	n := &npc{
 		nType: nType,
 		baseEntity: &baseEntity{
-			eType:    eType,
+			eType: eType,
 			proximity: &entityProximity{
 				entities: make(map[uint16]entity),
 			},
@@ -245,7 +271,7 @@ func getNpcData(mobIndex string) (*data.MobInfo, *data.MobInfoServer) {
 	var (
 		mi  *data.MobInfo
 		mis *data.MobInfoServer
-		//sn  *data.ShineNPC
+		// sn  *data.ShineNPC
 	)
 
 	for i, row := range monsterData.MobInfo.ShineRow {
@@ -263,11 +289,11 @@ func getNpcData(mobIndex string) (*data.MobInfo, *data.MobInfoServer) {
 	return mi, mis
 }
 
-func ncBatTargetInfoCmd(n *npc) *structs.NcBatTargetInfoCmd {
-	var nc = structs.NcBatTargetInfoCmd{
+func npcNcBatTargetInfoCmd(n *npc) *structs.NcBatTargetInfoCmd {
+	nc := structs.NcBatTargetInfoCmd{
 		Handle:      n.getHandle(),
-		TargetMaxHP: n.data.mobInfo.MaxHP,               //todo: use the same player stat system for mobs and NPCs
-		TargetMaxSP: uint32(n.data.mobInfoServer.MaxSP), //todo: use the same player stat system for mobs and NPCs
+		TargetMaxHP: n.data.mobInfo.MaxHP,               // todo: use the same player stat system for mobs and NPCs
+		TargetMaxSP: uint32(n.data.mobInfoServer.MaxSP), // todo: use the same player stat system for mobs and NPCs
 		TargetLevel: byte(n.data.mobInfo.Level),
 	}
 
@@ -277,13 +303,27 @@ func ncBatTargetInfoCmd(n *npc) *structs.NcBatTargetInfoCmd {
 	return &nc
 }
 
+func monsterNcBatTargetInfoCmd(m *monster) *structs.NcBatTargetInfoCmd {
+	nc := structs.NcBatTargetInfoCmd{
+		Handle:      m.getHandle(),
+		TargetMaxHP: m.data.mobInfo.MaxHP,               // todo: use the same player stat system for mobs and NPCs
+		TargetMaxSP: uint32(m.data.mobInfoServer.MaxSP), // todo: use the same player stat system for mobs and NPCs
+		TargetLevel: byte(m.data.mobInfo.Level),
+	}
+
+	nc.TargetHP = m.stats.hp
+	nc.TargetSP = m.stats.sp
+
+	return &nc
+}
+
 // find a way to merge npc and monster structs
 func npcNcBriefInfoRegenMobCmd(n *npc) *structs.NcBriefInfoRegenMobCmd {
-	var nc = &structs.NcBriefInfoRegenMobCmd{
+	nc := &structs.NcBriefInfoRegenMobCmd{
 		Handle: n.getHandle(),
 		Mode:   byte(n.data.mobInfoServer.EnemyDetect),
 		MobID:  n.data.mobInfo.ID,
-		//AnimationLevel: 2,
+		// AnimationLevel: 2,
 	}
 	n.baseEntity.RLock()
 	nc.Coord = structs.ShineCoordType{
@@ -298,11 +338,11 @@ func npcNcBriefInfoRegenMobCmd(n *npc) *structs.NcBriefInfoRegenMobCmd {
 }
 
 func monsterNcBriefInfoRegenMobCmd(m *monster) *structs.NcBriefInfoRegenMobCmd {
-	var nc = &structs.NcBriefInfoRegenMobCmd{
+	nc := &structs.NcBriefInfoRegenMobCmd{
 		Handle: m.getHandle(),
 		Mode:   byte(m.data.mobInfoServer.EnemyDetect),
 		MobID:  m.data.mobInfo.ID,
-		//AnimationLevel: 2,
+		// AnimationLevel: 2,
 	}
 	m.baseEntity.RLock()
 	nc.Coord = structs.ShineCoordType{

@@ -3,6 +3,7 @@ package world
 import (
 	"context"
 	"encoding/hex"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )

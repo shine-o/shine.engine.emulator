@@ -2,6 +2,7 @@ package networking
 
 import (
 	"context"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 )
 
@@ -17,7 +18,7 @@ type Parameters struct {
 }
 
 // HandleWarden utility struct for triggering functions implemented by the calling shine service
-//type ShinePacketRegistry map[uint16]func(context.Context, *Parameters)
+// type ShinePacketRegistry map[uint16]func(context.Context, *Parameters)
 type ShinePacketRegistry map[OperationCode]ShinePacket
 
 type ShinePacket struct {

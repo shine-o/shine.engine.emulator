@@ -3,95 +3,72 @@ package zone
 import "testing"
 
 func TestNewPlayer_DefaultSkills(t *testing.T) {
-
 }
 
 func TestNewPlayer_Mage_DefaultSkills(t *testing.T) {
-
 }
 
 func TestPlayer_LearnSkill_Ok(t *testing.T) {
-
 }
 
 func TestPlayer_LearnSkill_Ok_NC(t *testing.T) {
-
 }
 
 func TestPlayer_LearnSkill_BadID(t *testing.T) {
-
 }
 
 func TestPlayer_LearnSkill_BadIndex(t *testing.T) {
-
 }
 
 func TestPlayer_LearnSkill_WrongClass(t *testing.T) {
-
 }
 
 func TestPlayer_LearnSkill_WrongClass_NC(t *testing.T) {
-
 }
 
 func TestPlayer_LearnSkill_WrongLevel(t *testing.T) {
-
 }
 
 func TestPlayer_LearnSkill_WrongLevel_NC(t *testing.T) {
-
 }
 
 func TestPlayer_LearnSkill_MissingRequirement(t *testing.T) {
-
 }
 
 func TestPlayer_LearnSkill_MissingRequirement_NC(t *testing.T) {
-
 }
 
 func TestPlayer_LearnSkill_AlreadyLearned(t *testing.T) {
-
 }
 
 func TestPlayer_LearnSkill_AlreadyLearned_NC(t *testing.T) {
-
 }
 
 func TestPlayer_UseSkill_Ok(t *testing.T) {
-
 }
 
 func TestPlayer_UseSkill_BadID(t *testing.T) {
-
 }
 
 func TestPlayer_UseSkill_BadIndex(t *testing.T) {
-
 }
 
 func TestPlayer_UseSkill_WrongClass(t *testing.T) {
-
 }
 
 func TestPlayer_UseSkill_WrongWeapon(t *testing.T) {
-
 }
 
 func TestPlayer_UseSkill_WrongWeapon_NC(t *testing.T) {
-
 }
 
 func TestPlayer_UseSkill_WrongLevel(t *testing.T) {
-
 }
 
 func TestPlayer_UseSkill_WrongLevel_NC(t *testing.T) {
-
 }
 
 func TestPlayer_UseSkill_NoTarget(t *testing.T) {
-
 }
 
 func TestPlayer_UseSkill_WeaponEquipped(t *testing.T) {
@@ -99,11 +76,9 @@ func TestPlayer_UseSkill_WeaponEquipped(t *testing.T) {
 }
 
 func TestPlayer_UseSkill_WeaponNotEquipped(t *testing.T) {
-
 }
 
 func TestPlayer_UseSkill_NotLearned(t *testing.T) {
-
 }
 
 func TestPlayer_UseSkill_OnCoolDown(t *testing.T) {

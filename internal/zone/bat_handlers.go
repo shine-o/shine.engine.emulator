@@ -2,6 +2,7 @@ package zone
 
 import (
 	"context"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
@@ -9,9 +10,7 @@ import (
 
 // NC_BAT_TARGETTING_REQ
 func ncBatTargetingReq(ctx context.Context, np *networking.Parameters) {
-	var (
-		e playerSelectsEntityEvent
-	)
+	var e playerSelectsEntityEvent
 
 	session, ok := np.Session.(*session)
 
@@ -47,8 +46,7 @@ func ncBatTargetingReq(ctx context.Context, np *networking.Parameters) {
 
 // NC_BAT_UNTARGET_REQ
 func ncBatUntargetReq(ctx context.Context, np *networking.Parameters) {
-
-	// remove current SelectionOrder value for player
+	// remove currentlySelected SelectionOrder value for player
 	var (
 		e playerUnselectsEntityEvent
 	)

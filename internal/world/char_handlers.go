@@ -2,6 +2,7 @@ package world
 
 import (
 	"context"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
@@ -9,9 +10,7 @@ import (
 // NcCharLoginReq handles a petition to login to the zone where the character's location map is running
 // NC_CHAR_LOGIN_REQ
 func ncCharLoginReq(ctx context.Context, np *networking.Parameters) {
-	var (
-		e characterLoginEvent
-	)
+	var e characterLoginEvent
 
 	e = characterLoginEvent{
 		nc: &structs.NcCharLoginReq{},

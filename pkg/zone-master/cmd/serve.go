@@ -3,13 +3,14 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+
 	"github.com/google/logger"
 	"github.com/mitchellh/go-homedir"
 	zm "github.com/shine-o/shine.engine.emulator/internal/zone-master"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
-	"os"
 )
 
 // serveCmd represents the serve command

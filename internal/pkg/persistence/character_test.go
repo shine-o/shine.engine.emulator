@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/google/logger"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
 func TestMain(m *testing.M) {
@@ -31,7 +32,6 @@ func TestMain(m *testing.M) {
 	})
 
 	err := database.CreateSchema(db, "world")
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -89,7 +89,6 @@ func TestDeleteCharacter(t *testing.T) {
 	}
 
 	err := DeleteCharacter(1, int(nc.Slot))
-
 	if err != nil {
 		log.Error(err)
 	}
@@ -258,7 +257,6 @@ func TestNewCharacter_DefaultItems(t *testing.T) {
 	createDummyCharacters()
 	// assert user has an inventory
 	characters, err := getCharacters(false)
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -273,7 +271,6 @@ func TestNewCharacter_DefaultItems(t *testing.T) {
 		clauses["shn_id = ?"] = miniHouseID
 
 		item, err := GetItemWhere(clauses, false)
-
 		if err != nil {
 			t.Error(err)
 		}
@@ -282,7 +279,6 @@ func TestNewCharacter_DefaultItems(t *testing.T) {
 			t.Error("no item")
 		}
 	}
-
 }
 
 func TestLoadNewCharacter_Mage_EquippedItems(t *testing.T) {
@@ -302,16 +298,14 @@ func TestLoadNewCharacter_Mage_EquippedItems(t *testing.T) {
 	clauses["shn_id = ?"] = rightHand
 
 	_, err := GetItemWhere(clauses, false)
-
 	if err != nil {
 		t.Error(err)
 	}
-
 }
 
 func TestLoadNewCharacter_Fighter_EquippedItems(t *testing.T) {
 	cleanDB()
-	//250	ShortSword	Short Sword
+	// 250	ShortSword	Short Sword
 	// bitField := 1 | 1 << 2 | 1 << 7
 
 	var rightHand uint16 = 250
@@ -327,7 +321,6 @@ func TestLoadNewCharacter_Fighter_EquippedItems(t *testing.T) {
 	clauses["shn_id = ?"] = rightHand
 
 	_, err := GetItemWhere(clauses, false)
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -350,7 +343,6 @@ func TestLoadNewCharacter_Archer_EquippedItems(t *testing.T) {
 	clauses["shn_id = ?"] = rightHand
 
 	_, err := GetItemWhere(clauses, false)
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -358,7 +350,7 @@ func TestLoadNewCharacter_Archer_EquippedItems(t *testing.T) {
 
 func TestLoadNewCharacter_Cleric_EquippedItems(t *testing.T) {
 	cleanDB()
-	//750	ShortMace	Short Mace
+	// 750	ShortMace	Short Mace
 	// bitField := 1 | 6 << 2 | 1 << 7
 	var rightHand uint16 = 750
 	character := newCharacter("cleric")
@@ -373,7 +365,6 @@ func TestLoadNewCharacter_Cleric_EquippedItems(t *testing.T) {
 	clauses["shn_id = ?"] = rightHand
 
 	_, err := GetItemWhere(clauses, false)
-
 	if err != nil {
 		t.Error(err)
 	}

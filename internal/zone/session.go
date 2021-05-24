@@ -2,6 +2,7 @@ package zone
 
 import (
 	"fmt"
+
 	"github.com/google/uuid"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 )

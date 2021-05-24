@@ -2,20 +2,20 @@ package zone
 
 import (
 	"context"
-	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
-	"github.com/spf13/viper"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
 	"testing"
+
+	"github.com/google/logger"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
+	"github.com/spf13/viper"
 )
 
 func TestMain(m *testing.M) {
-
 	ctx := context.Background()
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -31,7 +31,6 @@ func TestMain(m *testing.M) {
 	})
 
 	err := database.CreateSchema(persistence.DB(), "world")
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -51,9 +50,7 @@ func TestMain(m *testing.M) {
 }
 
 func loadTestData(filesPath string) {
-	var (
-		wg sync.WaitGroup
-	)
+	var wg sync.WaitGroup
 
 	wg.Add(4)
 

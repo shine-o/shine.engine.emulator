@@ -23,7 +23,7 @@ type NewUserLoginReq struct {
 	Unk2     string `struct:"[20]byte"`
 }
 
-//struct PROTO_NC_USER_LOGIN_ACK
+// struct PROTO_NC_USER_LOGIN_ACK
 type NcUserLoginAck struct {
 	NumOfWorld byte        `struct:"byte,sizeof=Worlds"`
 	Worlds     []WorldInfo `struct:"sizefrom=NumOfWorld"`
@@ -34,12 +34,12 @@ type NcUserLoginFailAck struct {
 	Err uint16
 }
 
-//struct PROTO_NC_USER_WORLDSELECT_REQ
+// struct PROTO_NC_USER_WORLDSELECT_REQ
 type NcUserWorldSelectReq struct {
 	WorldNo byte
 }
 
-//struct PROTO_NC_USER_WORLDSELECT_ACK
+// struct PROTO_NC_USER_WORLDSELECT_ACK
 type NcUserWorldSelectAck struct {
 	// 1: behaviour -> cannot enter, message -> The server is under maintenance.
 	// 2: behaviour -> cannot enter, message -> You cannot connect to an empty server.
@@ -58,7 +58,7 @@ type NcUserLoginWorldReq struct {
 	ValidateNew [32]uint16 `struct:"[32]uint16"`
 }
 
-//struct PROTO_NC_USER_LOGINWORLD_ACK
+// struct PROTO_NC_USER_LOGINWORLD_ACK
 type NcUserLoginWorldAck struct {
 	WorldManager uint16
 	NumOfAvatar  byte
@@ -76,7 +76,7 @@ type NcUserLoginWithOtpReq struct {
 	Otp Name8
 }
 
-//struct PROTO_NC_USER_USE_BEAUTY_SHOP_CMD
+// struct PROTO_NC_USER_USE_BEAUTY_SHOP_CMD
 type NcUserUseBeautyShopCmd struct {
 	Filler byte
 }

@@ -2,6 +2,9 @@ package zonemaster
 
 import (
 	"fmt"
+	"net"
+	"net/http"
+
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
@@ -9,15 +12,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	"net"
-	"net/http"
 )
 
 var log = shinelog.NewLogger("zone-master", "./output", logrus.DebugLevel)
 
 // Start initializes an intermediary service for the diverse zone services to connect to and acknowledge their status
 func Start(cmd *cobra.Command, args []string) {
-
 	go func() {
 		enabled := viper.GetBool("metrics.enabled")
 		if enabled {

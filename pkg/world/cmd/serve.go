@@ -16,5 +16,4 @@ var serveCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(serveCmd)
 	log.Info("serve init()")
-
 }

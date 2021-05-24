@@ -1,6 +1,6 @@
 package structs
 
-//struct PROTO_HOLY_PROMISE_INFO
+// struct PROTO_HOLY_PROMISE_INFO
 type HolyPromiseInfo struct {
 	PromiseCharID Name5
 	LogonInfo     HolyPromiseDate
@@ -8,7 +8,7 @@ type HolyPromiseInfo struct {
 	Flags         byte
 }
 
-//struct PROTO_HOLY_PROMISE_DATE
+// struct PROTO_HOLY_PROMISE_DATE
 type HolyPromiseDate struct {
 	BF0 int32
 }

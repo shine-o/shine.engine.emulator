@@ -5,9 +5,9 @@ package main
 import (
 	"fmt"
 	"os"
+
 	"github.com/magefile/mage/sh"
 )
-
 
 // Runs go mod download and then installs the binary.
 func Build() error {
@@ -35,7 +35,7 @@ func Build() error {
 }
 
 func runDocker() error {
-	return sh.Run("docker-compose","up", "-d")
+	return sh.Run("docker-compose", "up", "-d")
 }
 
 //func vendor() error {
@@ -52,7 +52,7 @@ func buildCmd(name string) error {
 	}
 
 	// TODO: build for linux
-	return sh.RunV("go", "build", "-mod", "mod",  "--race", "-o", out, workdir)
+	return sh.RunV("go", "build", "-mod", "mod", "--race", "-o", out, workdir)
 }
 
 func isWindows() bool {

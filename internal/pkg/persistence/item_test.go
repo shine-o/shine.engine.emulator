@@ -1,13 +1,13 @@
 package persistence
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"testing"
 	"time"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 )
 
 func TestGetCharacterItems(t *testing.T) {
-
 	//db.AddQueryHook(pgdebug.DebugHook{
 	//	// Print all queries.
 	//	Verbose: true,
@@ -27,7 +27,6 @@ func TestGetCharacterItems(t *testing.T) {
 		}
 
 		err := item.Insert()
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -35,7 +34,6 @@ func TestGetCharacterItems(t *testing.T) {
 	}
 
 	items, err := GetCharacterItems(1, BagInventory)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +48,7 @@ func TestGetCharacterItems(t *testing.T) {
 		}
 	}
 
-	//t.Fail()
+	// t.Fail()
 }
 
 func TestCreateItem_Ok(t *testing.T) {
@@ -67,7 +65,6 @@ func TestCreateItem_Ok(t *testing.T) {
 	}
 
 	err := item.Insert()
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +193,7 @@ func TestCreateItem_MissingValues(t *testing.T) {
 
 func TestCreateItem_CharacterNotExist(t *testing.T) {
 	cleanDB()
-	//newCharacter("mage")
+	// newCharacter("mage")
 
 	item := &Item{
 		CharacterID:   1,
@@ -225,7 +222,6 @@ func TestCreateItem_CharacterNotExist(t *testing.T) {
 	if cErr.Code != errors.PersistenceCharNotExists {
 		t.Fatalf("expected error code %v, got %v", errors.PersistenceCharNotExists, cErr.Code)
 	}
-
 }
 
 func TestCreateItem_BadAmount(t *testing.T) {
@@ -288,7 +284,6 @@ func TestCreateItem_BadAmount(t *testing.T) {
 	if cErr.Code != errors.PersistenceItemInvalidAmount {
 		t.Fatalf("expected error code %v, got %v", errors.PersistenceItemInvalidAmount, cErr.Code)
 	}
-
 }
 
 func TestCreateItem_BadPKeys(t *testing.T) {
@@ -308,7 +303,6 @@ func TestCreateItem_BadPKeys(t *testing.T) {
 	}
 
 	_, err := db.Model(item0).Insert()
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -331,7 +325,6 @@ func TestCreateItem_BadPKeys(t *testing.T) {
 	if err == nil {
 		t.Error("expected error, got nil")
 	}
-
 }
 
 func TestUpdateItem_Ok(t *testing.T) {
@@ -348,7 +341,6 @@ func TestUpdateItem_Ok(t *testing.T) {
 	}
 
 	err := item.Insert()
-
 	if err != nil {
 		t.Error(err)
 	}
@@ -375,7 +367,6 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 	}
 
 	err := item.Insert()
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -470,13 +461,11 @@ func TestItemSlot_MoveToUnusedSlot(t *testing.T) {
 	}
 
 	err := item0.Insert()
-
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	uItem0, err := item0.MoveTo(BagInventory, 1)
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -505,7 +494,6 @@ func TestItemSlot_MoveToUsedSlot(t *testing.T) {
 	}
 
 	err := item0.Insert()
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -556,7 +544,6 @@ func TestSoftDeleteItem(t *testing.T) {
 	}
 
 	err := item.Insert()
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -595,7 +582,6 @@ func TestInventoryFull(t *testing.T) {
 		}
 
 		err := item.Insert()
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -626,7 +612,6 @@ func TestInventoryFull(t *testing.T) {
 	if cErr.Code != errors.PersistenceInventoryFull {
 		t.Fatalf("expected error code %v, got %v", errors.PersistenceInventoryFull, cErr.Code)
 	}
-
 }
 
 func TestInventory_AutomaticSlot(t *testing.T) {
@@ -648,7 +633,6 @@ func TestInventory_AutomaticSlot(t *testing.T) {
 	}
 
 	err := item.Insert()
-
 	if err != nil {
 		t.Fatal(err)
 	}

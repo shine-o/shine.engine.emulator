@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"path/filepath"
+	"strconv"
+	"sync"
+
 	"github.com/google/gopacket"
 	"github.com/google/gopacket/layers"
 	"github.com/google/gopacket/pcap"
@@ -13,9 +17,6 @@ import (
 	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"path/filepath"
-	"strconv"
-	"sync"
 )
 
 var log = shinelog.NewLogger("packet-sniffer", "./output", logrus.DebugLevel)
@@ -77,7 +78,6 @@ func config() {
 	s.XorKey = xorKey
 
 	xorLimit, err := strconv.Atoi(viper.GetString("protocol.xorLimit"))
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -144,7 +144,7 @@ func (ss *shineStream) ReassembledSG(sg reassembly.ScatterGather, ac reassembly.
 		data: sg.Fetch(length),
 		seen: ac.GetCaptureInfo().Timestamp,
 	}
-	//log.Info(dir, ss.net.String())
+	// log.Info(dir, ss.net.String())
 	ss.mu.Lock()
 	if dir == reassembly.TCPDirClientToServer && !ss.isServer {
 		seg.direction = "outbound"

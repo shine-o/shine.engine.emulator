@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
+	"time"
+
 	w "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/world"
 	"github.com/spf13/viper"
 	"google.golang.org/grpc"
-	"net"
-	"time"
 )
 
 // server is used to implement helloworld.GreeterServer.

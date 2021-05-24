@@ -6,17 +6,20 @@ package zm
 import (
 	context "context"
 	fmt "fmt"
+	math "math"
+
 	proto "github.com/golang/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ = proto.Marshal
-var _ = fmt.Errorf
-var _ = math.Inf
+var (
+	_ = proto.Marshal
+	_ = fmt.Errorf
+	_ = math.Inf
+)
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the proto package it is being compiled against.
@@ -41,15 +44,19 @@ func (*MapQuery) Descriptor() ([]byte, []int) {
 func (m *MapQuery) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_MapQuery.Unmarshal(m, b)
 }
+
 func (m *MapQuery) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_MapQuery.Marshal(b, m, deterministic)
 }
+
 func (m *MapQuery) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_MapQuery.Merge(m, src)
 }
+
 func (m *MapQuery) XXX_Size() int {
 	return xxx_messageInfo_MapQuery.Size(m)
 }
+
 func (m *MapQuery) XXX_DiscardUnknown() {
 	xxx_messageInfo_MapQuery.DiscardUnknown(m)
 }
@@ -81,15 +88,19 @@ func (*ConnectionInfo) Descriptor() ([]byte, []int) {
 func (m *ConnectionInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ConnectionInfo.Unmarshal(m, b)
 }
+
 func (m *ConnectionInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ConnectionInfo.Marshal(b, m, deterministic)
 }
+
 func (m *ConnectionInfo) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ConnectionInfo.Merge(m, src)
 }
+
 func (m *ConnectionInfo) XXX_Size() int {
 	return xxx_messageInfo_ConnectionInfo.Size(m)
 }
+
 func (m *ConnectionInfo) XXX_DiscardUnknown() {
 	xxx_messageInfo_ConnectionInfo.DiscardUnknown(m)
 }
@@ -128,15 +139,19 @@ func (*ZoneDetails) Descriptor() ([]byte, []int) {
 func (m *ZoneDetails) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ZoneDetails.Unmarshal(m, b)
 }
+
 func (m *ZoneDetails) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ZoneDetails.Marshal(b, m, deterministic)
 }
+
 func (m *ZoneDetails) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ZoneDetails.Merge(m, src)
 }
+
 func (m *ZoneDetails) XXX_Size() int {
 	return xxx_messageInfo_ZoneDetails.Size(m)
 }
+
 func (m *ZoneDetails) XXX_DiscardUnknown() {
 	xxx_messageInfo_ZoneDetails.DiscardUnknown(m)
 }
@@ -175,15 +190,19 @@ func (*ZoneRegistered) Descriptor() ([]byte, []int) {
 func (m *ZoneRegistered) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_ZoneRegistered.Unmarshal(m, b)
 }
+
 func (m *ZoneRegistered) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_ZoneRegistered.Marshal(b, m, deterministic)
 }
+
 func (m *ZoneRegistered) XXX_Merge(src proto.Message) {
 	xxx_messageInfo_ZoneRegistered.Merge(m, src)
 }
+
 func (m *ZoneRegistered) XXX_Size() int {
 	return xxx_messageInfo_ZoneRegistered.Size(m)
 }
+
 func (m *ZoneRegistered) XXX_DiscardUnknown() {
 	xxx_messageInfo_ZoneRegistered.DiscardUnknown(m)
 }
@@ -237,8 +256,10 @@ var fileDescriptor_30404695abecb03a = []byte{
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
+var (
+	_ context.Context
+	_ grpc.ClientConnInterface
+)
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
@@ -285,12 +306,12 @@ type MasterServer interface {
 }
 
 // UnimplementedMasterServer can be embedded to have forward compatible implementations.
-type UnimplementedMasterServer struct {
-}
+type UnimplementedMasterServer struct{}
 
 func (*UnimplementedMasterServer) WhereIsMap(ctx context.Context, req *MapQuery) (*ConnectionInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WhereIsMap not implemented")
 }
+
 func (*UnimplementedMasterServer) RegisterZone(ctx context.Context, req *ZoneDetails) (*ZoneRegistered, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterZone not implemented")
 }

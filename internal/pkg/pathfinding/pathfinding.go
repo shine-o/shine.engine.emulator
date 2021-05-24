@@ -3,10 +3,11 @@ package path
 import (
 	"bytes"
 	"fmt"
-	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"math"
 	"sort"
+
+	"github.com/google/logger"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 )
 
 const (
@@ -327,8 +328,8 @@ func allNearbyNodes(g Grid, x, y int, perimeter int) Nodes {
 		trd  = make(chan bool)
 		bld  = make(chan bool)
 		brd  = make(chan bool)
-		//sem = make(chan int, 100)
-		//wg sync.WaitGroup
+		// sem = make(chan int, 100)
+		// wg sync.WaitGroup
 		topLeft, topRight, bottomLeft, bottomRight bool
 	)
 
@@ -485,7 +486,7 @@ func euclideanDistance(fx, fy, tx, ty int) int {
 }
 
 func octileDistance(fx, fy, tx, ty int) int {
-	var F = math.Sqrt2 - 1
+	F := math.Sqrt2 - 1
 	dx := math.Abs(float64(tx - fx))
 	dy := math.Abs(float64(ty - fy))
 
@@ -732,7 +733,7 @@ func solveForSpeed(d, t int) int {
 }
 
 func copyGrid(g Grid) Grid {
-	var ng = make(Grid)
+	ng := make(Grid)
 	for k1, v1 := range g {
 		for k2, v2 := range v1 {
 			n := *v2

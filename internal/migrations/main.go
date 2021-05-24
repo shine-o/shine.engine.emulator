@@ -4,8 +4,9 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"os"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 
 	"github.com/go-pg/migrations/v8"
 )

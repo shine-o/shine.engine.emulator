@@ -1,8 +1,9 @@
 package persistence
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"time"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 )
 
 type InventoryType int
@@ -59,7 +60,7 @@ type Item struct {
 	Attributes  *ItemAttributes `pg:"rel:belongs-to"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
-	//DeletedAt time.Time `pg:",soft_delete"`
+	// DeletedAt time.Time `pg:",soft_delete"`
 }
 
 type ItemAttributes struct {
@@ -92,7 +93,7 @@ type ItemAttributes struct {
 	MaxHPExtra        int      `pg:",use_zero"`
 	CreatedAt         time.Time
 	UpdatedAt         time.Time
-	//DeletedAt time.Time `pg:",soft_delete"`
+	// DeletedAt time.Time `pg:",soft_delete"`
 }
 
 type ItemParams struct {
@@ -123,16 +124,13 @@ func getInventoryType(val int) InventoryType {
 // Insert an Item
 // Items can only be persisted if they are linked to a character
 func (i *Item) Insert() error {
-
 	err := validateItem(i)
-
 	if err != nil {
 		return err
 	}
 
 	if InventoryType(i.InventoryType) != EquippedInventory {
 		slot, err := freeSlot(i.CharacterID, InventoryType(i.InventoryType))
-
 		if err != nil {
 			return err
 		}
@@ -141,7 +139,6 @@ func (i *Item) Insert() error {
 	}
 
 	tx, err := db.Begin()
-
 	if err != nil {
 		return err
 	}
@@ -183,9 +180,7 @@ func (i *Item) Insert() error {
 }
 
 func (i *Item) Update() error {
-
 	err := validateItem(i)
-
 	if err != nil {
 		return err
 	}
@@ -201,7 +196,6 @@ func (i *Item) Update() error {
 	}
 
 	tx, err := db.Begin()
-
 	if err != nil {
 		return err
 	}
@@ -276,12 +270,9 @@ func limitExceeded(inventoryType InventoryType, slot int) bool {
 }
 
 func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
-	var (
-		otherItem = &Item{}
-	)
+	otherItem := &Item{}
 
 	tx, err := db.Begin()
-
 	if err != nil {
 		return otherItem, err
 	}
@@ -383,7 +374,6 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 
 func DeleteItem(itemID int) error {
 	tx, err := db.Begin()
-
 	if err != nil {
 		return err
 	}
@@ -467,7 +457,6 @@ func freeSlot(characterID uint64, inventoryType InventoryType) (int, error) {
 		Where("character_id = ?", characterID).
 		Where("inventory_type = ?", inventoryType).
 		Select(&slots)
-
 	if err != nil {
 		return slot, err
 	}
@@ -569,7 +558,6 @@ func validateItem(item *Item) error {
 
 	var cId uint64 = 0
 	err := db.Model((*Character)(nil)).Column("id").Where("id = ?", item.CharacterID).Select(&cId)
-
 	if err != nil {
 		return errors.Err{
 			Code:    errors.PersistenceCharNotExists,

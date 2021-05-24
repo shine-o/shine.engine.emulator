@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/google/logger"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"strconv"
 	"strings"
+
+	"github.com/google/logger"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 )
 
 type NcDepartment uint16
@@ -16,7 +17,6 @@ const (
 )
 
 func main() {
-
 	// load network-commands.yml file
 
 	// for each command in department
@@ -28,7 +28,6 @@ func main() {
 
 	//
 	pcl, err := networking.LoadCommandList("configs/network-commands.yml")
-
 	if err != nil {
 		logger.Error(err)
 	}

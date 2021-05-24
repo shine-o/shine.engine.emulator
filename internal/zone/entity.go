@@ -1,14 +1,16 @@
 package zone
 
 import (
+	"sync"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	path "github.com/shine-o/shine.engine.emulator/internal/pkg/pathfinding"
-	"sync"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
 const (
-	//lengthX = 512
-	//lengthY = 512
+	// lengthX = 512
+	// lengthY = 512
 	lengthX = 256
 	lengthY = 256
 )
@@ -23,10 +25,13 @@ var _ entity = (*player)(nil)
 
 var _ entity = (*npc)(nil)
 
+var _ entity = (*monster)(nil)
+
 type entity interface {
 	getHandle() uint16
 	movement
 	proximity
+	target
 }
 
 type movement interface {
@@ -43,14 +48,28 @@ type proximity interface {
 	alreadyNearbyEntity(entity) bool
 	notifyAboutNewEntity(entity)
 	notifyAboutRemovedEntity(entity)
-	getPacketData() interface{}
+	// if data needs to be broadcast to player
+	// data can be for types: npc, monster, player
+	getNewEntityNearbyPacketData() interface{}
+}
+
+type target interface {
+	selects(entity)
+	currentlySelected() entity
+	selectedBy(entity)
+	// packet data for current entity
+	// will return packet with current order
+	getTargetPacketData() *structs.NcBatTargetInfoCmd
+	// packet data for selected entity by current entity
+	// will return packet with current order +1
+	getNextTargetPacketData() *structs.NcBatTargetInfoCmd
 }
 
 type location struct {
 	mapID   int
 	mapName string
 	x, y, d int
-	//movements []movement
+	// movements []movement
 }
 
 type entityType int
@@ -94,9 +113,27 @@ type targeting struct {
 	selectionOrder byte
 	selectingP     *player
 	selectingN     *npc
+	selectingM     *monster
 	selectedByP    []*player
 	selectedByN    []*npc
+	selectedByM    []*monster
+
+	currentlySelected entity
+	selectedBy        map[uint16]entity
+
 	sync.RWMutex
+}
+
+func (t *targeting) selectedByPlayers() <-chan *npc {
+	return nil
+}
+
+func (t *targeting) selectedByMonsters() <-chan *monster {
+	return nil
+}
+
+func (t *targeting) selectedByNPCs() <-chan *npc {
+	return nil
 }
 
 type entityState struct {

@@ -66,7 +66,7 @@ type maps struct {
 }
 
 func LoadMapData(shineFolder string) (*MapData, error) {
-	var mapData = &MapData{}
+	mapData := &MapData{}
 
 	allMaps := maps{
 		data:  make(map[int]*Map),
@@ -181,7 +181,6 @@ func loadMaps(filesPath string) ([]Map, error) {
 			return maps, err
 		}
 		mapAttributeID, err := strconv.Atoi(datum[1])
-
 		if err != nil {
 			return maps, err
 		}
@@ -194,10 +193,9 @@ func loadMaps(filesPath string) ([]Map, error) {
 }
 
 func loadAttributes(filesPath string) (map[int]Attributes, error) {
-	var attributes = make(map[int]Attributes, 0)
+	attributes := make(map[int]Attributes, 0)
 
 	data, err := loadTxtFile(filesPath)
-
 	if err != nil {
 		return attributes, err
 	}
@@ -224,7 +222,7 @@ func loadAttributes(filesPath string) (map[int]Attributes, error) {
 func mapAttributeFields(fields []string) (Attributes, error) {
 	var ma Attributes
 
-	//todo:  a better way to iterate over these fields
+	// todo:  a better way to iterate over these fields
 	id, err := strconv.Atoi(fields[0])
 	if err != nil {
 		return ma, err

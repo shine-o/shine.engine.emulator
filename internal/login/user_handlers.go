@@ -2,6 +2,7 @@ package login
 
 import (
 	"context"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
@@ -32,10 +33,9 @@ func ncUserClientVersionCheckReq(ctx context.Context, np *networking.Parameters)
 // NcUserUsLoginReq handles account login
 // NC_USER_US_LOGIN_REQ
 func ncUserUsLoginReq(ctx context.Context, np *networking.Parameters) {
-
 	var cle credentialsLoginEvent
 
-	//nc := structs.NcUserUsLoginReq{}
+	// nc := structs.NcUserUsLoginReq{}
 	nc := structs.NewUserLoginReq{}
 
 	if err := structs.Unpack(np.Command.Base.Data, &nc); err != nil {
@@ -74,7 +74,6 @@ func ncUserWorldSelectReq(ctx context.Context, np *networking.Parameters) {
 
 	nc := structs.NcUserWorldSelectReq{}
 	err := structs.Unpack(np.Command.Base.Data, &nc)
-
 	if err != nil {
 		log.Error(err)
 		unexpectedFailure()
@@ -92,7 +91,6 @@ func ncUserWorldSelectReq(ctx context.Context, np *networking.Parameters) {
 // NcUserNormalLogoutCmd not implemented yet ~~
 // NC_USER_NORMALLOGOUT_CMD
 func ncUserNormalLogoutCmd(ctx context.Context, np *networking.Parameters) {
-
 }
 
 // NcUserLoginWithOtpReq handles a petition where the client tries a false login
@@ -114,5 +112,4 @@ func ncUserLoginWithOtpReq(ctx context.Context, np *networking.Parameters) {
 	}
 
 	loginEvents[tokenLogin] <- &tl
-
 }

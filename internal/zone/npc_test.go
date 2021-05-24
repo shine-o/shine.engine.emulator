@@ -8,6 +8,7 @@ func Test_Load_NPC_Ok(t *testing.T) {
 	//zm := zoneMap{}
 	//
 	//err := zm.load()
+	t.Fail()
 }
 
 func Test_Load_All_Map_Npc(t *testing.T) {
@@ -94,48 +95,49 @@ func Test_Load_All_MobInfo_Monster_Npc(t *testing.T) {
 	//		}
 	//	}
 	//}
+	t.Fail()
 }
 
 func Test_Load_MonsterNPC_Ok(t *testing.T) {
-
+	t.Fail()
 }
 
 func Test_Load_NPC_MissingData(t *testing.T) {
-
+	t.Fail()
 }
 
 func Test_Load_MonsterNPC_MissingData(t *testing.T) {
-
+	t.Fail()
 }
 
 func Test_Load_VendorNPC_MissingData(t *testing.T) {
-
+	t.Fail()
 }
 
 func TestLoad_VendorNPC_Ok(t *testing.T) {
-
+	t.Fail()
 }
 
 func TestLoad_VendorNPC_LoadPages(t *testing.T) {
-
+	t.Fail()
 }
 
 func TestLoad_PortalNPC_Ok(t *testing.T) {
-
+	t.Fail()
 }
 
 func TestLoadNPC_Ok_NC(t *testing.T) {
-
+	t.Fail()
 }
 
 func TestLoad_MonsterNPC_NC(t *testing.T) {
-
+	t.Fail()
 }
 
 func TestLoad_VendorNPC_NC(t *testing.T) {
-
+	t.Fail()
 }
 
 func TestTrigger_NPC_Action(t *testing.T) {
-
+	t.Fail()
 }

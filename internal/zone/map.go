@@ -1,13 +1,14 @@
 package zone
 
 import (
+	"reflect"
+	"sync"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	path "github.com/shine-o/shine.engine.emulator/internal/pkg/pathfinding"
 	"github.com/spf13/viper"
-	"reflect"
-	"sync"
 )
 
 type zoneMap struct {
@@ -139,7 +140,7 @@ func (e *entities) allMonsters() <-chan *monster {
 
 	go func(el *entities, send chan<- *monster) {
 		el.RLock()
-		for _, e := range el.players {
+		for _, e := range el.monster {
 			m, ok := e.(*monster)
 			if ok {
 				send <- m
@@ -168,7 +169,6 @@ func (e *entities) removePlayer(h uint16) {
 }
 
 func (zm *zoneMap) run() {
-
 	num := viper.GetInt("workers.num_map_workers")
 
 	var wg sync.WaitGroup
@@ -229,14 +229,12 @@ func (zm *zoneMap) spawnNPCs() {
 
 func (zm *zoneMap) spawnNPC(inxName string, sn *data.ShineNPC) {
 	h, err := newHandle()
-
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
 	npc, err := loadBaseNpc(inxName, isNPC)
-
 	if err != nil {
 		log.Error(err)
 		return
@@ -300,9 +298,7 @@ func (zm *zoneMap) spawnMob(re *data.RegenEntry) {
 }
 
 func (zm *zoneMap) spawnMonster(baseNpc *npc, re *data.RegenEntry) {
-	var (
-		x, y, d int
-	)
+	var x, y, d int
 
 	staticMonster := false
 	mi := baseNpc.data.mobInfo
@@ -325,7 +321,6 @@ func (zm *zoneMap) spawnMonster(baseNpc *npc, re *data.RegenEntry) {
 	}
 
 	h, err := newHandle()
-
 	if err != nil {
 		log.Error(err)
 		return
@@ -372,7 +367,7 @@ func (zm *zoneMap) spawnMonster(baseNpc *npc, re *data.RegenEntry) {
 
 	if !staticMonster {
 		// for now its a weird thing, better not to use it
-		//go m.roam(zm)
+		// go m.roam(zm)
 	}
 }
 
@@ -409,14 +404,14 @@ func (zm *zoneMap) removeEntity(e entity) {
 }
 
 func validateLocation(zm *zoneMap, x, y, numSteps, speed int) bool {
-	var directions = make(map[string]bool)
+	directions := make(map[string]bool)
 
 	directions["left"] = false
 	directions["right"] = false
 	directions["up"] = false
 	directions["down"] = false
 
-	for k, _ := range directions {
+	for k := range directions {
 		lx := x
 		ly := y
 
@@ -489,7 +484,7 @@ func loadMap(mapID int) (*zoneMap, error) {
 		entities: &entities{
 			players: make(map[uint16]entity),
 			npc:     make(map[uint16]entity),
-			monster:     make(map[uint16]entity),
+			monster: make(map[uint16]entity),
 		},
 		events: &events{
 			send: make(sendEvents),

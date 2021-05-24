@@ -5,15 +5,16 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
-	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
-	"github.com/sirupsen/logrus"
 	"io"
 	"math/rand"
 	"net"
 	"reflect"
 	"time"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
+	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
 var log = shinelog.NewLogger("networking", "../../output", logrus.DebugLevel)
@@ -71,8 +72,10 @@ const (
 	XorOffset ContextKey = iota
 )
 
-var logInboundPackets chan<- *Command
-var logOutboundPackets chan<- *Command
+var (
+	logInboundPackets  chan<- *Command
+	logOutboundPackets chan<- *Command
+)
 
 // Set Settings specified by the shine service
 func (s *Settings) Set() {
@@ -239,8 +242,8 @@ func logPackets(ctx context.Context, in <-chan *Command, out <-chan *Command) {
 }
 
 func logDirection(pc Command, direction string) {
-	//pc.RLock()
-	//defer pc.RUnlock()
+	// pc.RLock()
+	// defer pc.RUnlock()
 	if pc.Base.OperationCodeName == 0 {
 		pc.Base.OperationCodeName = OperationCode(pc.Base.OperationCode)
 	}

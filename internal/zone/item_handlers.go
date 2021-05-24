@@ -2,6 +2,7 @@ package zone
 
 import (
 	"context"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
@@ -9,9 +10,7 @@ import (
 
 // NC_ITEM_RELOC_REQ
 func ncItemRelocReq(ctx context.Context, np *networking.Parameters) {
-	var (
-		e itemIsMovedEvent
-	)
+	var e itemIsMovedEvent
 
 	session, ok := np.Session.(*session)
 
@@ -47,9 +46,7 @@ func ncItemRelocReq(ctx context.Context, np *networking.Parameters) {
 
 // NC_ITEM_EQUIP_REQ
 func ncItemEquipReq(ctx context.Context, np *networking.Parameters) {
-	var (
-		e itemEquipEvent
-	)
+	var e itemEquipEvent
 
 	session, ok := np.Session.(*session)
 
@@ -86,9 +83,7 @@ func ncItemEquipReq(ctx context.Context, np *networking.Parameters) {
 
 // NC_ITEM_UNEQUIP_REQ
 func ncItemUnEquipReq(ctx context.Context, np *networking.Parameters) {
-	var (
-		e itemUnEquipEvent
-	)
+	var e itemUnEquipEvent
 
 	session, ok := np.Session.(*session)
 

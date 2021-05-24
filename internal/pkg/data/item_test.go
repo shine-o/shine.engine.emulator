@@ -4,7 +4,6 @@ import "testing"
 
 func TestLoadItemData(t *testing.T) {
 	data, err := LoadItemData(filesPath)
-
 	if err != nil {
 		t.Fatal(err)
 	}

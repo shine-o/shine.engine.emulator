@@ -6,12 +6,12 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"time"
+
 	"github.com/segmentio/ksuid"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/spf13/viper"
-	"strings"
-	"time"
 )
 
 type shineSegment struct {
@@ -209,7 +209,6 @@ func (ss *shineStream) handleDecodedPackets(ctx context.Context, decodedPackets 
 			return
 		case dp := <-decodedPackets:
 			go func(p decodedPacket) {
-
 				if params == nil {
 					return
 				}
@@ -262,9 +261,9 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 		tPorts = ss.transport.String()
 	}
 
-	if strings.Contains(fmt.Sprint(dp.packet.Base.OperationCodeName), "_BAT_") || strings.Contains(fmt.Sprint(dp.packet.Base.OperationCodeName), "_ABSTATE") {
-		return
-	}
+	//if strings.Contains(fmt.Sprint(dp.packet.Base.OperationCodeName), "_BAT_") || strings.Contains(fmt.Sprint(dp.packet.Base.OperationCodeName), "_ABSTATE") {
+	//	return
+	//}
 
 	if viper.GetBool("protocol.log.verbose") {
 		log.Infof("\n%v\n%v\n%v\n%v\n%v\nunpacked data: %v \n%v", dp.packet.Base.OperationCodeName, dp.seen, tPorts, dp.direction, dp.packet.Base.String(), pv.NcRepresentation.UnpackedData, hex.Dump(dp.packet.Base.Data))
@@ -284,5 +283,4 @@ func (ss *shineStream) logPacket(dp decodedPacket) {
 	}
 
 	// log packet
-
 }

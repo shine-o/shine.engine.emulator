@@ -3,9 +3,10 @@ package crypto
 import (
 	crand "crypto/rand"
 	"encoding/binary"
-	"github.com/google/logger"
 	"math/rand"
 	"time"
+
+	"github.com/google/logger"
 )
 
 type Source struct{}

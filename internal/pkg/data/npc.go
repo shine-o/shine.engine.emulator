@@ -40,14 +40,11 @@ type ShinePortal struct {
 }
 
 func LoadNPCData(shineFolder string) (*NpcData, error) {
-	var (
-		npc = &NpcData{
-			MapNPCs: make(map[string][]*ShineNPC),
-		}
-	)
+	npc := &NpcData{
+		MapNPCs: make(map[string][]*ShineNPC),
+	}
 
 	err := loadMapNPCs(shineFolder, npc)
-
 	if err != nil {
 		return npc, err
 	}
@@ -64,7 +61,6 @@ func loadMapNPCs(shineFolder string, npc *NpcData) error {
 	)
 
 	filesPath, err := ValidPath(shineFolder + "/world/" + "NPC.txt")
-
 	if err != nil {
 		return err
 	}
@@ -165,10 +161,10 @@ func loadMapNPCs(shineFolder string, npc *NpcData) error {
 		}
 	}
 
-	for i, _ := range npcs {
+	for i := range npcs {
 		n := npcs[i]
 		if n.Role == "IDGate" || n.Role == "Gate" || n.Role == "RandomGate" {
-			for j, _ := range portals {
+			for j := range portals {
 				p := portals[j]
 				if p.RoleArg == n.RoleArg {
 					n.ShinePortal = p

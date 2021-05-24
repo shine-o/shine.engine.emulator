@@ -13,13 +13,13 @@ var targetFiles []interface{}
 //}
 
 func filesWithDependencies() {
-	var f1 = &ShineItemInfo{}
+	f1 := &ShineItemInfo{}
 	err := Load(filesPath+"/shn/ItemInfo.shn", f1)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	var f2 = &ShineItemInfoServer{}
+	f2 := &ShineItemInfoServer{}
 	err = Load(filesPath+"/shn/ItemInfoServer.shn", f2)
 	if err != nil {
 		log.Fatal(err)
@@ -34,7 +34,6 @@ func TestLinkedFiles(t *testing.T) {
 
 	for _, file := range targetFiles {
 		t.Run(reflect.TypeOf(file).String(), func(t *testing.T) {
-
 			f, ok := file.(FileDependency)
 
 			if !ok {
@@ -42,7 +41,6 @@ func TestLinkedFiles(t *testing.T) {
 			}
 
 			idfs, err := f.MissingIdentifiers(filesPath)
-
 			if err != nil {
 				t.Error(err)
 			}

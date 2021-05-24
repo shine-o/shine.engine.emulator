@@ -2,14 +2,13 @@ package zone
 
 import (
 	"context"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 )
 
 // NC_USER_NORMALLOGOUT_CMD
 func ncUserNormalLogoutCmd(ctx context.Context, np *networking.Parameters) {
-	var (
-		e playerLogoutConcludeEvent
-	)
+	var e playerLogoutConcludeEvent
 
 	session, ok := np.Session.(*session)
 
