@@ -40,7 +40,13 @@ func (z *zone) playerSession() {
 			go func() {
 				ev, ok := e.(*changeMapEvent)
 				if !ok {
-					log.Errorf("expected event type %v but got %v", reflect.TypeOf(changeMapEvent{}).String(), reflect.TypeOf(ev).String())
+					log.Error(errors.Err{
+						Code: errors.ZoneUnexpectedEventType,
+						Details: errors.ErrDetails{
+							"expected": reflect.TypeOf(changeMapEvent{}).String(),
+							"got":      reflect.TypeOf(ev).String(),
+						},
+					})
 					return
 				}
 

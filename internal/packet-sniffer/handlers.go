@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
+
 	"github.com/segmentio/ksuid"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
@@ -30,12 +32,11 @@ type decodedPacket struct {
 func (ss *shineStream) decodeClientPackets(ctx context.Context, segments <-chan shineSegment, xorKeyFound <-chan bool, xorKey <-chan uint16) {
 	var (
 		data       []byte
-		offset     int
 		xorOffset  uint16
 		hasXorKey  bool
 		shouldQuit bool
 	)
-	offset = 0
+	offset := 0
 	logActivated := viper.GetBool("protocol.log.client")
 
 loop:
@@ -59,7 +60,12 @@ loop:
 			data = append(data, segment.data...)
 
 			if offset >= len(data) {
-				log.Warningf("not enough data, next offset is %v ", offset)
+				log.Warning(errors.Err{
+					Code: errors.PacketSnifferNotEnoughData,
+					Details: errors.ErrDetails{
+						"nextOffset": offset,
+					},
+				})
 				break
 			}
 

@@ -34,7 +34,7 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func Test_Path_A_astar_paint_large_distance(t *testing.T) {
+func TestPathAstarPaintLargeDistance(t *testing.T) {
 	v1 := copyGrid(vNodesNoWalls)
 
 	img1, err := data.SHBDToImage(s)
@@ -114,7 +114,7 @@ func Test_Path_A_astar_paint_large_distance(t *testing.T) {
 	}
 }
 
-func Test_Path_A_astar_paint_short_distance(t *testing.T) {
+func TestPathAstarPaintShortDistance(t *testing.T) {
 	v1 := copyGrid(vNodesNoWalls)
 
 	img1, err := data.SHBDToImage(s)
@@ -194,7 +194,7 @@ func Test_Path_A_astar_paint_short_distance(t *testing.T) {
 	}
 }
 
-func Test_Paint_Path_Nodes(*testing.T) {
+func TestPaintPathNodes(*testing.T) {
 	var (
 		m = "Rou"
 		// s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
@@ -235,7 +235,7 @@ func Test_Paint_Path_Nodes(*testing.T) {
 	// paint Nodes that will be used for paths.
 }
 
-func Test_Paint_Path_Nodes_Multiple(*testing.T) {
+func TestPaintPathNodesMultiple(*testing.T) {
 	var wg sync.WaitGroup
 
 	for i := 0; i < 5; i++ {
@@ -278,7 +278,7 @@ func Test_Paint_Path_Nodes_Multiple(*testing.T) {
 	// paint Nodes that will be used for paths.
 }
 
-func Test_Map_Intermitent_By_Speed_Path_A_B_AStar(t *testing.T) {
+func TestMapIntermitentBySpeedPathAStar(t *testing.T) {
 	// raw path has too many Nodes
 	// given a speed, reduce the raw path using the speed
 	// have a function that calculates how many Nodes should be sent per second
@@ -336,7 +336,7 @@ func Test_Map_Intermitent_By_Speed_Path_A_B_AStar(t *testing.T) {
 	}
 }
 
-func Benchmark_algorithms(b *testing.B) {
+func BenchmarkAlgorithms(b *testing.B) {
 	// astar
 	b.Run("astar_large_distance_raw", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
@@ -386,7 +386,7 @@ func Benchmark_algorithms(b *testing.B) {
 	// dijkstra
 }
 
-func Benchmark_InitVertices(b *testing.B) {
+func BenchmarkInitVertices(b *testing.B) {
 	var (
 		m = "Rou"
 		// s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
@@ -415,7 +415,7 @@ func Benchmark_InitVertices(b *testing.B) {
 	})
 }
 
-func Benchmark_ReduceVertices(b *testing.B) {
+func BenchmarkReduceVertices(b *testing.B) {
 	m := "Rou"
 	var s *data.SHBD
 	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
@@ -437,7 +437,7 @@ func Benchmark_ReduceVertices(b *testing.B) {
 	})
 }
 
-func Benchmark_Copy_Grid(b *testing.B) {
+func BenchmarkCopyGrid(b *testing.B) {
 	var (
 		m = "Rou"
 		// s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))
@@ -467,9 +467,6 @@ func Benchmark_Copy_Grid(b *testing.B) {
 			copyGrid(pn)
 		}
 	})
-}
-
-func Benchmark_Close_Distance_Algorithms(b *testing.B) {
 }
 
 func PaintNodesAndWallMargins(s *data.SHBD, wv Grid) (*image.RGBA, error) {
@@ -598,7 +595,7 @@ func TestAllNearbyNodes(t *testing.T) {
 	fmt.Println(nodes)
 }
 
-func Benchmark_AllNearbyNodes(b *testing.B) {
+func BenchmarkAllNearbyNodes(b *testing.B) {
 	b.Run("nodes_with_walls_10_perimeter", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			allNearbyNodes(vNodesWithWalls, 835, 700, 10)

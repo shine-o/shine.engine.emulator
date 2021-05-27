@@ -116,6 +116,7 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 				MobID: n.data.mobInfo.ID,
 			}
 
+			// TODO: edu event
 			p.targeting.Lock()
 			p.targeting.currentlySelected = n
 			p.targeting.Unlock()
@@ -168,6 +169,7 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 					return
 				}
 
+				// TODO: eduEvent
 				p.Lock()
 				p.next = location{
 					mapID:   md.ID,
@@ -300,28 +302,28 @@ func playerUnselectsEntityLogic(zm *zoneMap, e event) {
 		return
 	}
 
-	vp, err := zm.entities.getPlayer(ev.handle)
+	p, err := zm.entities.getPlayer(ev.handle)
 	if err != nil {
 		log.Error(err)
 		return
 	}
 
-	var order byte
-	vp.targeting.Lock()
-	order = vp.targeting.selectionOrder
-	vp.targeting.currentlySelected = nil
-	vp.targeting.Unlock()
+	// TODO: edu event
+	p.targeting.Lock()
+	order := p.targeting.selectionOrder
+	p.targeting.currentlySelected = nil
+	p.targeting.Unlock()
 
 	nc := structs.NcBatTargetInfoCmd{
 		Order:  order + 1,
 		Handle: 65535,
 	}
 
-	vp.targeting.RLock()
-	for p := range vp.targeting.selectedByPlayers() {
-		go networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, &nc)
+	p.targeting.RLock()
+	for op := range p.targeting.selectedByPlayers() {
+		go networking.Send(op.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, &nc)
 	}
-	vp.targeting.RUnlock()
+	p.targeting.RUnlock()
 }
 
 func itemEquipLogic(e event, zm *zoneMap) {
@@ -387,13 +389,13 @@ func itemEquipLogic(e event, zm *zoneMap) {
 
 	ph := p.getHandle()
 
-	switch ev1.change.from.item.itemData.itemInfo.Class {
+	switch ev1.change.from.item.data.itemInfo.Class {
 	case data.ItemClassWeapon, data.ItemClassShield:
 		nc3 := &structs.NcBriefInfoChangeWeaponCmd{
 			UpgradeInfo: structs.NcBriefInfoChangeUpgradeCmd{
 				Handle: ph,
-				Item:   ev1.change.from.item.itemData.itemInfo.ID,
-				Slot:   byte(ev1.change.from.item.itemData.itemInfo.Equip),
+				Item:   ev1.change.from.item.data.itemInfo.ID,
+				Slot:   byte(ev1.change.from.item.data.itemInfo.Equip),
 			},
 		}
 		mapEpicenterBroadcast(zm, p, networking.NC_BRIEFINFO_CHANGEWEAPON_CMD, nc3)
@@ -401,8 +403,8 @@ func itemEquipLogic(e event, zm *zoneMap) {
 	case data.ItemClassArmor, data.ItemClassBoot, data.ItemClassAmulet, data.ItemBracelet:
 		nc3 := &structs.NcBriefInfoChangeUpgradeCmd{
 			Handle: ph,
-			Item:   ev1.change.from.item.itemData.itemInfo.ID,
-			Slot:   byte(ev1.change.from.item.itemData.itemInfo.Equip),
+			Item:   ev1.change.from.item.data.itemInfo.ID,
+			Slot:   byte(ev1.change.from.item.data.itemInfo.Equip),
 		}
 		mapEpicenterBroadcast(zm, p, networking.NC_BRIEFINFO_CHANGEUPGRADE_CMD, nc3)
 		break
@@ -680,7 +682,7 @@ func equippedItems(p1 *player) {
 		}
 
 		eItem.RLock()
-		switch eItem.itemData.itemInfo.Class {
+		switch eItem.data.itemInfo.Class {
 		case data.ItemClassArmor:
 		case data.ItemClassAmulet:
 		case data.ItemBracelet:
@@ -688,16 +690,16 @@ func equippedItems(p1 *player) {
 		case data.ItemClassBoot:
 			nc3 = append(nc3, structs.NcBriefInfoChangeUpgradeCmd{
 				Handle: p1h,
-				Item:   eItem.itemData.itemInfo.ID,
-				// Slot:   byte(eItem.itemData.itemInfo.Equip),
+				Item:   eItem.data.itemInfo.ID,
+				// Slot:   byte(eItem.data.itemInfo.Equip),
 			})
 			break
 		case data.ItemClassWeapon:
 			nc2 = append(nc2, structs.NcBriefInfoChangeWeaponCmd{
 				UpgradeInfo: structs.NcBriefInfoChangeUpgradeCmd{
 					Handle: p1h,
-					Item:   eItem.itemData.itemInfo.ID,
-					// Slot:   byte(eItem.itemData.itemInfo.Equip),
+					Item:   eItem.data.itemInfo.ID,
+					// Slot:   byte(eItem.data.itemInfo.Equip),
 				},
 				CurrentMobID:     65535,
 				CurrentKillLevel: 255,
@@ -708,8 +710,8 @@ func equippedItems(p1 *player) {
 		case data.ItemClassDecoration:
 			nc4 = append(nc4, structs.NcBriefInfoChangeDecorateCmd{
 				Handle: p1h,
-				Item:   eItem.itemData.itemInfo.ID,
-				// Slot:   byte(eItem.itemData.itemInfo.Equip),
+				Item:   eItem.data.itemInfo.ID,
+				// Slot:   byte(eItem.data.itemInfo.Equip),
 			})
 			break
 		}

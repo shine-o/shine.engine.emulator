@@ -320,7 +320,7 @@ type itemBox struct {
 
 type item struct {
 	pItem     *persistence.Item
-	itemData  *itemData
+	data      *itemData
 	stats     itemStats
 	amount    int
 	stackable bool
@@ -422,11 +422,11 @@ func (i *item) generateStats() (int, []data.RandomOptionType) {
 	// first check if there are any random stats using (RandomOption / RandomOptionCount)
 	// apply those first, after that check GradeItemOption for fixed stats
 	// RNG for the number of stats that should be generated
-	amount := amountStats(i.itemData)
-	types := chosenStatTypes(amount, i.itemData)
+	amount := amountStats(i.data)
+	types := chosenStatTypes(amount, i.data)
 
 	value := func(t data.RandomOptionType) int {
-		ro := i.itemData.randomOption[t]
+		ro := i.data.randomOption[t]
 		if ro.Min == ro.Max {
 			return int(ro.Min)
 		}
@@ -435,7 +435,7 @@ func (i *item) generateStats() (int, []data.RandomOptionType) {
 
 	is := itemStats{}
 
-	is.staticStats(i.itemData)
+	is.staticStats(i.data)
 
 	for _, t := range types {
 		switch t {
@@ -658,7 +658,7 @@ func itemAttributesBytes(i *item) ([]byte, error) {
 	defer i.RUnlock()
 	var itemAttr []byte
 
-	switch i.itemData.itemInfo.Class {
+	switch i.data.itemInfo.Class {
 	case data.ItemClassByteLot:
 	case data.ItemUpRed:
 	case data.ItemUpBlue:
@@ -923,7 +923,7 @@ func protoItemPacketInformation(i *item) (*structs.ProtoItemPacketInformation, e
 
 	nc = &structs.ProtoItemPacketInformation{}
 	nc.Location.Inventory = uint16(i.pItem.InventoryType<<10 | i.pItem.Slot&1023)
-	nc.ItemID = i.itemData.itemInfo.ID
+	nc.ItemID = i.data.itemInfo.ID
 	nc.DataSize = 4
 
 	itemAttr, err := itemAttributesBytes(i)
@@ -1199,7 +1199,7 @@ func makeItem(itemIndex string, options makeItemOptions) (*item, itemCreationDet
 		}
 	}
 
-	i.itemData = itemData
+	i.data = itemData
 
 	if options.overrideInventory {
 		i.pItem = &persistence.Item{
@@ -1213,7 +1213,7 @@ func makeItem(itemIndex string, options makeItemOptions) (*item, itemCreationDet
 
 	// first check if there are any random stats using (RandomOption / RandomOptionCount)
 	// apply those first, after that check GradeItemOption for fixed stats
-	if i.itemData.randomOption != nil && i.itemData.randomOptionCount != nil {
+	if i.data.randomOption != nil && i.data.randomOptionCount != nil {
 		count, types := i.generateStats()
 		icd.randomCount = count
 		icd.randomTypes = types
@@ -1233,8 +1233,8 @@ func makeItem(itemIndex string, options makeItemOptions) (*item, itemCreationDet
 
 func loadItem(pItem *persistence.Item) *item {
 	i := &item{
-		pItem:    pItem,
-		itemData: getItemData(pItem.ShnInxName),
+		pItem: pItem,
+		data:  getItemData(pItem.ShnInxName),
 		stats: itemStats{
 			strength: itemStat{
 				base:  pItem.Attributes.StrengthBase,
@@ -1285,7 +1285,7 @@ func loadItem(pItem *persistence.Item) *item {
 		stackable: pItem.Stackable,
 	}
 
-	i.stats.staticStats(i.itemData)
+	i.stats.staticStats(i.data)
 
 	return i
 }
@@ -1443,7 +1443,7 @@ func ncItemCellChangeCmd(change itemSlotChange) (*structs.NcItemCellChangeCmd, *
 
 	nc1.Exchange.Inventory = change.gameFrom
 	nc1.Location.Inventory = change.gameTo
-	nc1.Item.ItemID = change.from.item.itemData.itemInfo.ID
+	nc1.Item.ItemID = change.from.item.data.itemInfo.ID
 	itemAttr, err := itemAttributesBytes(change.from.item)
 	if err != nil {
 		return nc1, nc2, err
@@ -1454,7 +1454,7 @@ func ncItemCellChangeCmd(change itemSlotChange) (*structs.NcItemCellChangeCmd, *
 	nc2.Exchange.Inventory = change.gameTo
 	nc2.Location.Inventory = change.gameFrom
 	if change.to.item != nil {
-		nc2.Item.ItemID = change.to.item.itemData.itemInfo.ID
+		nc2.Item.ItemID = change.to.item.data.itemInfo.ID
 		itemAttr1, err := itemAttributesBytes(change.to.item)
 		if err != nil {
 			return nc1, nc2, err
@@ -1482,7 +1482,7 @@ func ncItemEquipChangeCmd(change itemSlotChange) (structs.NcItemEquipChangeCmd, 
 		},
 		EquipSlot: byte(change.to.slot),
 		ItemData: structs.ShineItemVar{
-			ItemID: change.from.item.itemData.itemInfo.ID,
+			ItemID: change.from.item.data.itemInfo.ID,
 		},
 	}
 
@@ -1508,7 +1508,7 @@ func ncItemEquipChangeCmd(change itemSlotChange) (structs.NcItemEquipChangeCmd, 
 		if err != nil {
 			return fromNc, toNc, err
 		}
-		toNc.ItemData.ItemID = change.to.item.itemData.itemInfo.ID
+		toNc.ItemData.ItemID = change.to.item.data.itemInfo.ID
 		toNc.ItemData.ItemAttr = toAttr
 	}
 
@@ -1526,7 +1526,7 @@ func ncMenuOpenStorageCmd(page depositPage) structs.NcMenuOpenStorageCmd {
 		if err != nil {
 			log.Error(err)
 		}
-		itemNC.ItemID = item.itemData.itemInfo.ID
+		itemNC.ItemID = item.data.itemInfo.ID
 		item.RLock()
 		itemNC.Location.Inventory = uint16(item.pItem.InventoryType<<10 | item.pItem.Slot&1023)
 		item.RUnlock()

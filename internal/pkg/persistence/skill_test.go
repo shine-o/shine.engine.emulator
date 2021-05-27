@@ -2,14 +2,18 @@ package persistence
 
 import "testing"
 
-func TestLearnSkill_Ok(t *testing.T) {
+func TestLearnSkillOk(t *testing.T) {
+	t.Fail()
 }
 
-func TestLearnSkill_BadID(t *testing.T) {
+func TestLearnSkillBadID(t *testing.T) {
+	t.Fail()
 }
 
-func TestLearnSkill_BadIndex(t *testing.T) {
+func TestLearnSkillBadIndex(t *testing.T) {
+	t.Fail()
 }
 
-func TestGetPlayerSkills_Ok(t *testing.T) {
+func TestGetPlayerSkillsOk(t *testing.T) {
+	t.Fail()
 }

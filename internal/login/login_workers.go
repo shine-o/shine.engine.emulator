@@ -3,6 +3,8 @@ package login
 import (
 	"reflect"
 
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 	"google.golang.org/grpc/connectivity"
@@ -29,7 +31,13 @@ func clientVersionLogic(e event) {
 	ev, ok := e.(*clientVersionEvent)
 
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&clientVersionEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(errors.Err{
+			Code: errors.LoginMismatchedEventType,
+			Details: errors.ErrDetails{
+				"expected": reflect.TypeOf(&clientVersionEvent{}).String(),
+				"got":      reflect.TypeOf(ev).String(),
+			},
+		})
 		return
 	}
 

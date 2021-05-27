@@ -6,7 +6,7 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
 )
 
-func Test_Move_Entity_A_B(t *testing.T) {
+func TestMoveEntityAB(t *testing.T) {
 	zm, err := loadMap(1)
 	if err != nil {
 		t.Fatal(err)
@@ -38,7 +38,7 @@ func Test_Move_Entity_A_B(t *testing.T) {
 	}
 }
 
-func Test_Move_Entity_Collision(t *testing.T) {
+func TestMoveEntityCollision(t *testing.T) {
 	t.Fail()
 }
 
@@ -46,7 +46,7 @@ func Test_Move_Entity_Collision(t *testing.T) {
 // A, B are spawned apart from one another
 // A enters B range
 // A and B know about each other's existence
-func Test_Entity_Within_Range(t *testing.T) {
+func TestEntityWithinRange(t *testing.T) {
 	// Roumen
 	zm, err := loadMap(1)
 	if err != nil {
@@ -114,7 +114,7 @@ func Test_Entity_Within_Range(t *testing.T) {
 // A, B know about each other's existence
 // A moves out of range
 // A and B don't know about each other's existence anymore
-func Test_Entity_Out_Of_Range(t *testing.T) {
+func TestEntityOutOfRange(t *testing.T) {
 	// Roumen
 	zm, err := loadMap(1)
 	if err != nil {
@@ -186,7 +186,7 @@ func Test_Entity_Out_Of_Range(t *testing.T) {
 // C is aware of being selected by A
 // B is notified about A currentlySelected C
 // A is notified about currentlySelected C
-func Test_Entity_Selecting_Entity_Awareness(t *testing.T) {
+func TestEntitySelectingEntityAwareness(t *testing.T) {
 	// A selects C
 	// INFO : 2021/05/23 14:36:40.751225 handlers.go:271: 2021-05-23 14:36:40.738381 +0200 CEST 2388->9120 outbound NC_BAT_TARGETTING_REQ {"packetType":"small","length":4,"department":9,"command":"1","opCode":9217,"data":"3209","rawData":"0401243209","friendlyName":""}
 
@@ -199,7 +199,9 @@ func Test_Entity_Selecting_Entity_Awareness(t *testing.T) {
 			handle: 1,
 		},
 		targeting: &targeting{
-			selectedBy: make(map[uint16]entity),
+			players:  make(map[uint16]*player),
+			monsters: make(map[uint16]*monster),
+			npc:      make(map[uint16]*npc),
 		},
 	}
 
@@ -208,7 +210,9 @@ func Test_Entity_Selecting_Entity_Awareness(t *testing.T) {
 			handle: 2,
 		},
 		targeting: &targeting{
-			selectedBy: make(map[uint16]entity),
+			players:  make(map[uint16]*player),
+			monsters: make(map[uint16]*monster),
+			npc:      make(map[uint16]*npc),
 		},
 	}
 
@@ -217,7 +221,9 @@ func Test_Entity_Selecting_Entity_Awareness(t *testing.T) {
 			handle: 3,
 		},
 		targeting: &targeting{
-			selectedBy: make(map[uint16]entity),
+			players:  make(map[uint16]*player),
+			monsters: make(map[uint16]*monster),
+			npc:      make(map[uint16]*npc),
 		},
 	}
 
@@ -228,13 +234,13 @@ func Test_Entity_Selecting_Entity_Awareness(t *testing.T) {
 	eA.selectedBy(eB)
 
 	// C is aware of being selected by A
-	_, ok := eC.targeting.selectedBy[eA.getHandle()]
+	_, ok := eC.targeting.players[eA.getHandle()]
 	if !ok {
 		t.Fatal("A must be aware that its selected by B")
 	}
 
 	// A is aware of being selected by B
-	_, ok = eA.targeting.selectedBy[eB.getHandle()]
+	_, ok = eA.targeting.players[eB.getHandle()]
 	if !ok {
 		t.Fatal("A must be aware that its selected by B")
 	}
@@ -246,13 +252,15 @@ func Test_Entity_Selecting_Entity_Awareness(t *testing.T) {
 	}
 }
 
-func Test_Entity_Selects_Entity_Packet_Data(t *testing.T) {
+func TestEntitySelectsEntityPacketData(t *testing.T) {
 	eA := &player{
 		baseEntity: &baseEntity{
 			handle: 1,
 		},
 		targeting: &targeting{
-			selectedBy: make(map[uint16]entity),
+			players:  make(map[uint16]*player),
+			monsters: make(map[uint16]*monster),
+			npc:      make(map[uint16]*npc),
 		},
 		stats: &playerStats{},
 		state: &playerState{},
@@ -263,7 +271,9 @@ func Test_Entity_Selects_Entity_Packet_Data(t *testing.T) {
 			handle: 3,
 		},
 		targeting: &targeting{
-			selectedBy: make(map[uint16]entity),
+			players:  make(map[uint16]*player),
+			monsters: make(map[uint16]*monster),
+			npc:      make(map[uint16]*npc),
 		},
 	}
 
@@ -271,6 +281,7 @@ func Test_Entity_Selects_Entity_Packet_Data(t *testing.T) {
 	eA.selects(eC)
 
 	// A data
+	// TODO: implement methods for actually loading the entities, as this will panic because of nil values
 	packet1 := eA.getTargetPacketData()
 
 	if packet1.Order != 32 {
@@ -285,7 +296,7 @@ func Test_Entity_Selects_Entity_Packet_Data(t *testing.T) {
 	}
 }
 
-func Test_Entity_UnSelects_Entity(t *testing.T) {
+func TestEntityUnSelectsEntity(t *testing.T) {
 	// A unselects something
 	// INFO : 2021/05/23 14:30:52.071356 handlers.go:271: 2021-05-23 14:30:52.058449 +0200 CEST 2388->9120 outbound NC_BAT_UNTARGET_REQ {"packetType":"small","length":2,"department":9,"command":"8","opCode":9224,"data":"","rawData":"020824","friendlyName":""}
 

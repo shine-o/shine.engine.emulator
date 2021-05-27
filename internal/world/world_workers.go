@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
@@ -27,6 +29,13 @@ func serverTimeLogic(e event) {
 
 	if !ok {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&serverTimeEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(errors.Err{
+			Code: errors.WorldMismatchedEventType,
+			Details: errors.ErrDetails{
+				"expected": reflect.TypeOf(&serverTimeEvent{}).String(),
+				"got":      reflect.TypeOf(ev).String(),
+			},
+		})
 		return
 	}
 

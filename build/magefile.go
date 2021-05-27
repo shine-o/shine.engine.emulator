@@ -48,7 +48,7 @@ func buildCmd(name string) error {
 	if isWindows() {
 		out = fmt.Sprintf("./package/%v/%v", name, name+".exe")
 	} else {
-		out = fmt.Sprintf("./package/%v/%v", name, name+".exe")
+		out = fmt.Sprintf("./package/%v/%v", name, name)
 	}
 
 	// TODO: build for linux

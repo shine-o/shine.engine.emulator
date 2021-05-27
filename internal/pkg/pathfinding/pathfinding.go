@@ -74,11 +74,10 @@ func CanWalk(wv Grid, x, y int) bool {
 }
 
 func RawGrid(s *data.SHBD) Grid {
-	var (
-		wv    = make(Grid)
-		r     = bytes.NewReader(s.Data)
-		count = 0
-	)
+	wv := make(Grid)
+	r := bytes.NewReader(s.Data)
+	count := 0
+
 	for y := 0; y < s.Y; y++ {
 		for x := 0; x < s.X; x++ {
 			b, err := r.ReadByte()
@@ -109,12 +108,9 @@ func RawGrid(s *data.SHBD) Grid {
 }
 
 func PresetNodesGrid(s *data.SHBD, margin int) Grid {
-	var (
-		pn    = make(Grid)
-		r     = bytes.NewReader(s.Data)
-		count = 0
-	)
-
+	pn := make(Grid)
+	r := bytes.NewReader(s.Data)
+	count := 0
 	for y := 0; y < s.Y; y++ {
 		for x := 0; x < s.X; x++ {
 			b, err := r.ReadByte()

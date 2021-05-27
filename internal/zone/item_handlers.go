@@ -16,6 +16,9 @@ func ncItemRelocReq(ctx context.Context, np *networking.Parameters) {
 
 	if !ok {
 		log.Error("no session available")
+		log.Error(errors.Err{
+			Code: errors.ZoneNoSessionAvailable,
+		})
 		return
 	}
 

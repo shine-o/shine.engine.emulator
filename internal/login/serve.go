@@ -91,9 +91,6 @@ func Start(cmd *cobra.Command, args []string) {
 			networking.NC_USER_US_LOGIN_REQ: {
 				Handler: ncUserUsLoginReq,
 			},
-			networking.NC_USER_XTRAP_REQ: {
-				Handler: ncUserXtrapReq,
-			},
 			networking.NC_USER_WORLD_STATUS_REQ: {
 				Handler: ncUserWorldStatusReq,
 			},

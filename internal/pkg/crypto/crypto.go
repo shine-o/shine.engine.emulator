@@ -11,7 +11,9 @@ import (
 
 type Source struct{}
 
-func (s Source) Seed(seed int64) {}
+func (s Source) Seed(seed int64) {
+	// it is declared only to fulfill the interface
+}
 
 func (s Source) Int63() int64 {
 	return int64(s.Uint64() & ^uint64(1<<63))

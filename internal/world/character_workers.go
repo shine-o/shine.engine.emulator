@@ -4,6 +4,8 @@ import (
 	"context"
 	"reflect"
 
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
+
 	zm "github.com/shine-o/shine.engine.emulator/internal/pkg/grpc/zone-master"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/persistence"
@@ -46,14 +48,26 @@ func createCharacterLogic(e event) {
 	ev, ok := e.(*createCharacterEvent)
 
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&createCharacterEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(errors.Err{
+			Code: errors.WorldMismatchedEventType,
+			Details: errors.ErrDetails{
+				"expected": reflect.TypeOf(&createCharacterEvent{}).String(),
+				"got":      reflect.TypeOf(ev).String(),
+			},
+		})
 		return
 	}
 
 	s, ok := ev.np.Session.(*session)
 
 	if !ok {
-		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
+		log.Error(errors.Err{
+			Code: errors.WorldBadSessionType,
+			Details: errors.ErrDetails{
+				"expected": reflect.TypeOf(&session{}).String(),
+				"got":      reflect.TypeOf(ev.np.Session).String(),
+			},
+		})
 	}
 
 	err := persistence.ValidateCharacter(s.UserID, ev.nc)

@@ -42,8 +42,6 @@ func persistPacketData(dp decodedPacket) {
 // store info of packets that contain coordinates
 func persistMovement(dp decodedPacket) {
 	switch dp.packet.Base.OperationCode {
-	// server
-	// has handle identifier.
 	// TODO: fetch the packets that have info about surrounding entities
 	case 8211:
 		// NC_ACT_SOMEONESTOP_CMD

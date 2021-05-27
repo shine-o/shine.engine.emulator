@@ -185,15 +185,15 @@ func (i *Item) Update() error {
 		return err
 	}
 
-	if i.ShnID != i.ShnID {
-		return errors.Err{
-			Code: errors.PersistenceItemDistinctShnID,
-			Details: errors.ErrDetails{
-				"originalShnID": i.ShnID,
-				"newShnID":      i.ShnID,
-			},
-		}
-	}
+	//if i.ShnID != i.ShnID {
+	//	return errors.Err{
+	//		Code: errors.PersistenceItemDistinctShnID,
+	//		Details: errors.ErrDetails{
+	//			"originalShnID": i.ShnID,
+	//			"newShnID":      i.ShnID,
+	//		},
+	//	}
+	//}
 
 	tx, err := db.Begin()
 	if err != nil {

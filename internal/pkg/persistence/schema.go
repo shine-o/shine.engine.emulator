@@ -25,7 +25,6 @@ func CloseDB() {
 }
 
 // CreateTables if not yet created
-// TODO: https://github.com/go-pg/migrations#example
 func CreateTables() error {
 	tx, err := db.Begin()
 	if err != nil {

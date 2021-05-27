@@ -51,10 +51,6 @@ func ncUserUsLoginReq(ctx context.Context, np *networking.Parameters) {
 	loginEvents[credentialsLogin] <- &cle
 }
 
-// NcUserXtrapReq has no use, but client still sends it
-// NC_USER_XTRAP_REQ
-func ncUserXtrapReq(ctx context.Context, np *networking.Parameters) {}
-
 // NcUserWorldStatusReq pings the world server
 // NC_USER_WORLD_STATUS_REQ
 func ncUserWorldStatusReq(ctx context.Context, np *networking.Parameters) {

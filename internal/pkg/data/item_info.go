@@ -359,12 +359,15 @@ const (
 )
 
 func (s *ShineItemInfo) MissingIdentifiers(filesPath string) (Files, error) {
+	const (
+		itemInfoServer = "ItemInfoServer.shn"
+	)
 	var (
 		res = Files{}
 		iis = &ShineItemInfoServer{}
 	)
 
-	res["ItemInfoServer.shn"] = Identifiers{}
+	res[itemInfoServer] = Identifiers{}
 	err := Load(filesPath+"/shn/ItemInfoServer.shn", iis)
 	if err != nil {
 		return res, err

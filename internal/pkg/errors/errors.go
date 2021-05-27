@@ -22,6 +22,11 @@ const (
 	PersistenceUnknownInventory
 	PersistenceOutOfRangeSlot
 
+	LoginMismatchedEventType
+
+	WorldMismatchedEventType
+	WorldBadSessionType
+
 	ZoneItemEquipFailed
 	ZoneItemMissingData
 	ZoneInventorySlotOccupied
@@ -39,7 +44,7 @@ const (
 	ZoneItemEquipBadType
 	ZoneItemSlotChangeConstraint
 	ZoneMissingPlayer
-	ZoneUnexpectedEvent
+	ZoneUnexpectedEventType
 	ZoneMapCollisionDetected
 	ZoneUnknownNpcRole
 	ZoneMissingMapData
@@ -50,7 +55,10 @@ const (
 	ZoneBadEntityType
 	ZoneNilPlayerFields
 	ZonePlayerSelectedUnknownEntity
+	ZoneNoSessionAvailable
 	UnitTestError
+
+	PacketSnifferNotEnoughData
 )
 
 //go:generate stringer -type=ShineErrorCode

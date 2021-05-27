@@ -51,7 +51,7 @@ func TestGetCharacterItems(t *testing.T) {
 	// t.Fail()
 }
 
-func TestCreateItem_Ok(t *testing.T) {
+func TestCreateItemOk(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
@@ -93,7 +93,7 @@ func TestCreateItem_Ok(t *testing.T) {
 	}
 }
 
-func TestCreateItem_WithAttributes(t *testing.T) {
+func TestCreateItemWithAttributes(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
@@ -119,7 +119,7 @@ func TestCreateItem_WithAttributes(t *testing.T) {
 	}
 }
 
-func TestCreateItem_MissingValues(t *testing.T) {
+func TestCreateItemMissingValues(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
@@ -191,7 +191,7 @@ func TestCreateItem_MissingValues(t *testing.T) {
 	}
 }
 
-func TestCreateItem_CharacterNotExist(t *testing.T) {
+func TestCreateItemCharacterNotExist(t *testing.T) {
 	cleanDB()
 	// newCharacter("mage")
 
@@ -224,7 +224,7 @@ func TestCreateItem_CharacterNotExist(t *testing.T) {
 	}
 }
 
-func TestCreateItem_BadAmount(t *testing.T) {
+func TestCreateItemBadAmount(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
@@ -286,7 +286,7 @@ func TestCreateItem_BadAmount(t *testing.T) {
 	}
 }
 
-func TestCreateItem_BadPKeys(t *testing.T) {
+func TestCreateItemBadPKeys(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
@@ -327,7 +327,7 @@ func TestCreateItem_BadPKeys(t *testing.T) {
 	}
 }
 
-func TestUpdateItem_Ok(t *testing.T) {
+func TestUpdateItemOk(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
@@ -353,7 +353,7 @@ func TestUpdateItem_Ok(t *testing.T) {
 	}
 }
 
-func TestUpdateItem_BadAmount(t *testing.T) {
+func TestUpdateItemBadAmount(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
@@ -447,7 +447,7 @@ func TestUpdateItem_BadAmount(t *testing.T) {
 //	}
 //}
 
-func TestItemSlot_MoveToUnusedSlot(t *testing.T) {
+func TestItemSlotMoveToUnusedSlot(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
@@ -479,7 +479,7 @@ func TestItemSlot_MoveToUnusedSlot(t *testing.T) {
 	}
 }
 
-func TestItemSlot_MoveToUsedSlot(t *testing.T) {
+func TestItemSlotMoveToUsedSlot(t *testing.T) {
 	cleanDB()
 	newCharacter("mage")
 
@@ -614,7 +614,7 @@ func TestInventoryFull(t *testing.T) {
 	}
 }
 
-func TestInventory_AutomaticSlot(t *testing.T) {
+func TestInventoryAutomaticSlot(t *testing.T) {
 	cleanDB()
 
 	newCharacter("mage")

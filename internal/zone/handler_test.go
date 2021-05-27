@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func Test_New_Handle(t *testing.T) {
+func TestNewHandle(t *testing.T) {
 	handler := handler{
 		index: 0,
 		inUse: make(map[uint16]bool),
@@ -29,7 +29,7 @@ func Test_New_Handle(t *testing.T) {
 	}
 }
 
-func Test_Remove_Handle(t *testing.T) {
+func TestRemoveHandle(t *testing.T) {
 	handler := handler{
 		index: 0,
 		inUse: make(map[uint16]bool),
@@ -53,7 +53,7 @@ func Test_Remove_Handle(t *testing.T) {
 	}
 }
 
-func Test_10000_New_Handles(t *testing.T) {
+func Test10000NewHandles(t *testing.T) {
 	handler := handler{
 		index: 0,
 		inUse: make(map[uint16]bool),
@@ -100,7 +100,7 @@ func Test_10000_New_Handles(t *testing.T) {
 	}
 }
 
-func Test_Create_10000_New_Handles_And_Remove_Them(t *testing.T) {
+func TestCreate10000NewHandlesAndRemoveThem(t *testing.T) {
 	handler := handler{
 		index: 0,
 		inUse: make(map[uint16]bool),

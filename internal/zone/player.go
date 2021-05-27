@@ -325,7 +325,13 @@ func (p *player) notifyAboutNewEntity(e entity) {
 		networking.Send(p.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, e.getNewEntityNearbyPacketData())
 		break
 	default:
-		log.Errorf("unknown entity type %v", reflect.TypeOf(e).String())
+		log.Error(errors.Err{
+			Code:    errors.ZoneBadEntityType,
+			Message: "",
+			Details: errors.ErrDetails{
+				"got": reflect.TypeOf(e).String(),
+			},
+		})
 	}
 }
 
@@ -776,8 +782,8 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 	}
 
 	// slot that will be occupied
-	equip := int(fromItem.itemData.itemInfo.Equip)
-	class := int(fromItem.itemData.itemInfo.Class)
+	equip := int(fromItem.data.itemInfo.Equip)
+	class := int(fromItem.data.itemInfo.Class)
 
 	if !canBeEquipped(equip, class) {
 		return change, errors.Err{
@@ -902,8 +908,8 @@ func (p *player) newItem(i *item) error {
 		i.pItem = &persistence.Item{}
 	}
 	i.pItem.CharacterID = p.persistence.char.ID
-	i.pItem.ShnID = i.itemData.itemInfo.ID
-	i.pItem.ShnInxName = i.itemData.itemInfo.InxName
+	i.pItem.ShnID = i.data.itemInfo.ID
+	i.pItem.ShnInxName = i.data.itemInfo.InxName
 	i.pItem.Amount = i.amount
 	i.pItem.Stackable = i.stackable
 
@@ -1001,7 +1007,7 @@ func equippedID(pi *playerInventories, equip data.ItemEquipEnum) uint16 {
 	pi.RLock()
 	item, ok := pi.equipped.items[int(equip)]
 	if ok {
-		id = item.itemData.itemInfo.ID
+		id = item.data.itemInfo.ID
 	}
 	pi.RUnlock()
 	return id

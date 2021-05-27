@@ -4,14 +4,14 @@ import (
 	"testing"
 )
 
-func Test_Load_NPC_Ok(t *testing.T) {
+func TestLoadNPCOk(t *testing.T) {
 	//zm := zoneMap{}
 	//
 	//err := zm.load()
 	t.Fail()
 }
 
-func Test_Load_All_Map_Npc(t *testing.T) {
+func TestLoadAllMapNpc(t *testing.T) {
 	mapCount := 0
 	npcCount := 0
 	for _, npcs := range npcData.MapNPCs {
@@ -47,7 +47,7 @@ func Test_Load_All_Map_Npc(t *testing.T) {
 	log.Infof("npcs %v maps %v", npcCount, mapCount)
 }
 
-func Test_Load_All_MapRegen_Monster_Npc(t *testing.T) {
+func TestLoadAllMapRegenMonsterNpc(t *testing.T) {
 	// this is needed to avoid duplicate NPCs
 	mapCount := 0
 	mobCount := 0
@@ -86,11 +86,11 @@ func Test_Load_All_MapRegen_Monster_Npc(t *testing.T) {
 	log.Infof("mobs %v maps %v", mobCount, mapCount)
 }
 
-func Test_Load_All_MobInfo_Monster_Npc(t *testing.T) {
+func TestLoadAllMobInfoMonsterNpc(t *testing.T) {
 	// this is needed to avoid duplicate NPCs
-	//for _, mapRegen := range monsterData.MapRegens {
-	//	for _, group := range mapRegen.Groups {
-	//		for _, mob := range group.Mobs {
+	//for , mapRegen := range monsterData.MapRegens {
+	//	for , group := range mapRegen.Groups {
+	//		for , mob := range group.Mobs {
 	//			mob.
 	//		}
 	//	}
@@ -98,46 +98,46 @@ func Test_Load_All_MobInfo_Monster_Npc(t *testing.T) {
 	t.Fail()
 }
 
-func Test_Load_MonsterNPC_Ok(t *testing.T) {
+func TestLoadMonsterNPCOk(t *testing.T) {
 	t.Fail()
 }
 
-func Test_Load_NPC_MissingData(t *testing.T) {
+func TestLoadNPCMissingData(t *testing.T) {
 	t.Fail()
 }
 
-func Test_Load_MonsterNPC_MissingData(t *testing.T) {
+func TestLoadMonsterNPCMissingData(t *testing.T) {
 	t.Fail()
 }
 
-func Test_Load_VendorNPC_MissingData(t *testing.T) {
+func TestLoadVendorNPCMissingData(t *testing.T) {
 	t.Fail()
 }
 
-func TestLoad_VendorNPC_Ok(t *testing.T) {
+func TestLoadVendorNPCOk(t *testing.T) {
 	t.Fail()
 }
 
-func TestLoad_VendorNPC_LoadPages(t *testing.T) {
+func TestLoadVendorNPCLoadPages(t *testing.T) {
 	t.Fail()
 }
 
-func TestLoad_PortalNPC_Ok(t *testing.T) {
+func TestLoadPortalNPCOk(t *testing.T) {
 	t.Fail()
 }
 
-func TestLoadNPC_Ok_NC(t *testing.T) {
+func TestLoadNPCOkNC(t *testing.T) {
 	t.Fail()
 }
 
-func TestLoad_MonsterNPC_NC(t *testing.T) {
+func TestLoadMonsterNPCNC(t *testing.T) {
 	t.Fail()
 }
 
-func TestLoad_VendorNPC_NC(t *testing.T) {
+func TestLoadVendorNPCNC(t *testing.T) {
 	t.Fail()
 }
 
-func TestTrigger_NPC_Action(t *testing.T) {
+func TestTriggerNPCAction(t *testing.T) {
 	t.Fail()
 }

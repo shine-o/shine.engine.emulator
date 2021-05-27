@@ -15,7 +15,9 @@ func ncActMoveWalkCmd(ctx context.Context, np *networking.Parameters) {
 	session, ok := np.Session.(*session)
 
 	if !ok {
-		log.Error("no session available")
+		log.Error(errors.Err{
+			Code: errors.ZoneNoSessionAvailable,
+		})
 		return
 	}
 

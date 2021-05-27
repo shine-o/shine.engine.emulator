@@ -2,104 +2,140 @@ package zone
 
 import "testing"
 
-func TestNewPlayer_DefaultSkills(t *testing.T) {
+func TestNewPlayerDefaultSkills(t *testing.T) {
+	t.Fail()
 }
 
-func TestNewPlayer_Mage_DefaultSkills(t *testing.T) {
+func TestNewPlayerMageDefaultSkills(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_LearnSkill_Ok(t *testing.T) {
+func TestPlayerLearnSkillOk(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_LearnSkill_Ok_NC(t *testing.T) {
+func TestPlayerLearnSkillOkNC(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_LearnSkill_BadID(t *testing.T) {
+func TestPlayerLearnSkillBadID(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_LearnSkill_BadIndex(t *testing.T) {
+func TestPlayerLearnSkillBadIndex(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_LearnSkill_WrongClass(t *testing.T) {
+func TestPlayerLearnSkillWrongClass(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_LearnSkill_WrongClass_NC(t *testing.T) {
+func TestPlayerLearnSkillWrongClassNC(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_LearnSkill_WrongLevel(t *testing.T) {
+func TestPlayerLearnSkillWrongLevel(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_LearnSkill_WrongLevel_NC(t *testing.T) {
+func TestPlayerLearnSkillWrongLevelNC(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_LearnSkill_MissingRequirement(t *testing.T) {
+func TestPlayerLearnSkillMissingRequirement(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_LearnSkill_MissingRequirement_NC(t *testing.T) {
+func TestPlayerLearnSkillMissingRequirementNC(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_LearnSkill_AlreadyLearned(t *testing.T) {
+func TestPlayerLearnSkillAlreadyLearned(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_LearnSkill_AlreadyLearned_NC(t *testing.T) {
+func TestPlayerLearnSkillAlreadyLearnedNC(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_UseSkill_Ok(t *testing.T) {
+func TestPlayerUseSkillOk(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_UseSkill_BadID(t *testing.T) {
+func TestPlayerUseSkillBadID(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_UseSkill_BadIndex(t *testing.T) {
+func TestPlayerUseSkillBadIndex(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_UseSkill_WrongClass(t *testing.T) {
+func TestPlayerUseSkillWrongClass(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_UseSkill_WrongWeapon(t *testing.T) {
+func TestPlayerUseSkillWrongWeapon(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_UseSkill_WrongWeapon_NC(t *testing.T) {
+func TestPlayerUseSkillWrongWeaponNC(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_UseSkill_WrongLevel(t *testing.T) {
+func TestPlayerUseSkillWrongLevel(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_UseSkill_WrongLevel_NC(t *testing.T) {
+func TestPlayerUseSkillWrongLevelNC(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_UseSkill_NoTarget(t *testing.T) {
+func TestPlayerUseSkillNoTarget(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_UseSkill_WeaponEquipped(t *testing.T) {
+func TestPlayerUseSkillWeaponEquipped(t *testing.T) {
+	t.Fail()
 	// some skills work without a weapon
 }
 
-func TestPlayer_UseSkill_WeaponNotEquipped(t *testing.T) {
+func TestPlayerUseSkillWeaponNotEquipped(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_UseSkill_NotLearned(t *testing.T) {
+func TestPlayerUseSkillNotLearned(t *testing.T) {
+	t.Fail()
 }
 
-func TestPlayer_UseSkill_OnCoolDown(t *testing.T) {
+func TestPlayerUseSkillOnCoolDown(t *testing.T) {
+	t.Fail()
+
 	// cast skill
 	// try to cast the same skill immediately, should not work
 }
 
-func TestPlayer_UseSkill_Moving_Ok(t *testing.T) {
+func TestPlayerUseSkillMovingOk(t *testing.T) {
+	t.Fail()
+
 	// test a skill that can be used while the player has movements pending
 }
 
-func TestPlayer_UseSkill_Moving_Not_Ok(t *testing.T) {
+func TestPlayerUseSkillMovingNotOk(t *testing.T) {
+	t.Fail()
+
 	// test a skill that can NOT be used while the player has movements pending
 	// pending movements should be canceled, skill casts anyway
 }
 
-func TestPlayer_UseSkill_BadTarget_NPC(t *testing.T) {
+func TestPlayerUseSkillBadTargetNPC(t *testing.T) {
+	t.Fail()
+
 	// test a skill that can NOT be used while the player has movements pending
 	// pending movements should be canceled, skill casts anyway
 }
 
-func TestPlayer_UseSkill_UnableToUseSkills(t *testing.T) {
+func TestPlayerUseSkillUnableToUseSkills(t *testing.T) {
+	t.Fail()
+
 	// abstate that prevents user from casting skill
 }
