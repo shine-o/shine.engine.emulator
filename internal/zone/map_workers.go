@@ -262,38 +262,34 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 
 	// this must return the order for the player making the selection
 	// the way I do it now, I return the order of the selected entity which IS WRONG
-	p.selects(en)
+
+	// TODO: refactor into EDU event
+	order := p.selects(en)
 	en.selectedBy(p)
 
 	var (
 		current = en.getTargetPacketData()
-		next    *structs.NcBatTargetInfoCmd
+		next    = *current
 	)
 
-	// player 1 targets monster 1
-	// INFO : 2021/05/24 23:53:30.208108 handlers.go:271: 2021-05-24 23:53:30.19692 +0200 CEST 21390->9120 outbound NC_BAT_TARGETTING_REQ {"packetType":"small","length":4,"department":9,"command":"1","opCode":9217,"data":"1b1b","rawData":"0401241b1b","friendlyName":""}
-	// INFO : 2021/05/24 23:53:30.331586 handlers.go:271: 2021-05-24 23:53:30.330564 +0200 CEST 9120->21390 inbound NC_BAT_TARGETINFO_CMD {"packetType":"small","length":32,"department":9,"command":"2","opCode":9218,"data":"a01b1b90010000900100006400000064000000000000000000000007f60b","rawData":"200224a01b1b90010000900100006400000064000000000000000000000007f60b","friendlyName":""}
+	current.Order = order
+	next.Order = order + 1
 
-	// monster 1 targets player 1
-	// INFO : 2021/05/24 23:53:55.224533 handlers.go:271: 2021-05-24 23:53:55.22147 +0200 CEST 9120->21390 inbound NC_BAT_TARGETINFO_CMD {"packetType":"small","length":32,"department":9,"command":"2","opCode":9218,"data":"81b923be020000be020000ea030000fc030000000000000000000019df52","rawData":"20022481b923be020000be020000ea030000fc030000000000000000000019df52","friendlyName":""}
-
+	// send data about current selection
 	networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, current)
 
-	nnext := *current
-	nnext.Order++
+	// send data about new selection to any entity selecting this one
 	for sp := range p.targeting.selectedByPlayers() {
 		log.Info(sp.getHandle())
-		networking.Send(sp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, nnext)
+		networking.Send(sp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, &next)
 	}
 
+	// if selected entity is selecting another entity
+	// send data about this other entity
 	if en.currentlySelected() != nil {
-		next = en.getNextTargetPacketData()
-		networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, next)
-
-		for sp := range p.targeting.selectedByPlayers() {
-			log.Info(sp.getHandle())
-			networking.Send(sp.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, next)
-		}
+		next = *en.getNextTargetPacketData()
+		next.Order = order + 1
+		networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, &next)
 	}
 }
 

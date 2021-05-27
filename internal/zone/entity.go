@@ -55,7 +55,7 @@ type proximity interface {
 }
 
 type target interface {
-	selects(entity)
+	selects(entity) (order byte)
 	currentlySelected() entity
 	selectedBy(entity)
 	// packet data for current entity

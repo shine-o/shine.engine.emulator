@@ -17,19 +17,16 @@ func (m *monster) getTargetPacketData() *structs.NcBatTargetInfoCmd {
 }
 
 func (m *monster) getNextTargetPacketData() *structs.NcBatTargetInfoCmd {
-	m.targeting.RLock()
-	order := m.targeting.selectionOrder + 1
-	m.targeting.RUnlock()
-	nc := m.targeting.currentlySelected.getTargetPacketData()
-	nc.Order = order
-	return nc
+	return m.targeting.currentlySelected.getTargetPacketData()
 }
 
-func (m *monster) selects(e entity) {
+func (m *monster) selects(e entity) byte {
 	m.targeting.Lock()
 	m.targeting.selectionOrder += 32
+	order := m.targeting.selectionOrder
 	m.targeting.currentlySelected = e
 	m.targeting.Unlock()
+	return order
 }
 
 func (m *monster) selectedBy(e entity) {

@@ -51,19 +51,16 @@ func (n *npc) getTargetPacketData() *structs.NcBatTargetInfoCmd {
 }
 
 func (n *npc) getNextTargetPacketData() *structs.NcBatTargetInfoCmd {
-	n.targeting.RLock()
-	order := n.targeting.selectionOrder + 1
-	n.targeting.RUnlock()
-	nc := n.targeting.currentlySelected.getTargetPacketData()
-	nc.Order = order
-	return nc
+	return n.targeting.currentlySelected.getTargetPacketData()
 }
 
-func (n *npc) selects(e entity) {
+func (n *npc) selects(e entity) byte {
 	n.targeting.Lock()
 	n.targeting.selectionOrder += 32
+	order := n.targeting.selectionOrder
 	n.targeting.currentlySelected = e
 	n.targeting.Unlock()
+	return order
 }
 
 func (n *npc) selectedBy(e entity) {
