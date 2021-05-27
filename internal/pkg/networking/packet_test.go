@@ -164,7 +164,7 @@ func TestDecodeInboundStream(t *testing.T) {
 
 		pd = append(pd, data[offset+skipBytes:nextOffset]...)
 
-		crypto.XorCipher(pd, xorPos, &xorOffset)
+		crypto.XorCipher(pd, xorPos, &xorOffsetgi)
 
 		offset += skipBytes + int(pLen)
 
