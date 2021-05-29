@@ -2,13 +2,33 @@ package world
 
 import "sync"
 
+const (
+	serverTime eventIndex = iota
+	serverSelect
+	serverSelectToken
+
+	createCharacter
+	deleteCharacter
+
+	characterLogin
+
+	characterSettings
+	characterKeymap
+	characterShortcuts
+
+	// items that the player adds or removes from the quick access bars
+	updateShortcuts
+	// features that the player can activate / deactivate at Esc > Options > Game Settings
+	updateGameSettings
+	// keyboard keys that the player can map to game functions
+	updateKeymap
+
+	// when the player wants to return to the character select screen
+	characterSelect
+)
+
 // all events are something that either the player triggers or it should be broadcast to nearby players or mobs
-// all processes can define event structures with more channels on which to receive data
-// the reason for events and workers is to define access points for data.
-// a worker is typically a method which has access to data (map, mobs, players)
-type event interface { // notify the caller about an error while processing event
-	// the process triggering the event should handle next steps in case of error
-}
+type event interface{}
 
 type eventIndex uint32
 
@@ -45,34 +65,3 @@ func (d *dynamic) add(sid string, i eventIndex) chan event {
 	d.Unlock()
 	return c
 }
-
-// to use when no particular data is needed
-type emptyEvent struct {
-	err chan error
-}
-
-// todo: separate with different iotas, for now its simpler to have it like this, but in the future we'll have hundreds of events
-const (
-	serverTime eventIndex = iota
-	serverSelect
-	serverSelectToken
-
-	createCharacter
-	deleteCharacter
-
-	characterLogin
-
-	characterSettings
-	characterKeymap
-	characterShortcuts
-
-	// items that the player adds or removes from the quick access bars
-	updateShortcuts
-	// features that the player can activate / deactivate at Esc > Options > Game Settings
-	updateGameSettings
-	// keyboard keys that the player can map to game functions
-	updateKeymap
-
-	// when the player wants to return to the character select screen
-	characterSelect
-)

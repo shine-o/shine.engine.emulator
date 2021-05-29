@@ -34,7 +34,7 @@ func ncBatTargetingReq(ctx context.Context, np *networking.Parameters) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneMapNotFound,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"session": session,
 			},
 		})
@@ -66,7 +66,7 @@ func ncBatUntargetReq(ctx context.Context, np *networking.Parameters) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneMapNotFound,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"session": session,
 			},
 		})

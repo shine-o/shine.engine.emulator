@@ -3,6 +3,8 @@ package world
 import (
 	"context"
 
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
+
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
@@ -45,9 +47,16 @@ func ncAvatarEraseReq(ctx context.Context, np *networking.Parameters) {
 		np: np,
 	}
 
-	if err := structs.Unpack(np.Command.Base.Data, e.nc); err != nil {
-		// todo: error nc if possible
-		log.Error(err)
+	err := structs.Unpack(np.Command.Base.Data, e.nc)
+	if err != nil {
+		log.Error(errors.Err{
+			Code:    errors.WorldPacketUnpackFailed,
+			Message: "NC_AVATAR_ERASE_REQ failed to be unpacked",
+			Details: errors.Details{
+				"error": err,
+				"data":  np.Command.Base.Data,
+			},
+		})
 		return
 	}
 

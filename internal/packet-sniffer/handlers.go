@@ -62,7 +62,7 @@ loop:
 			if offset >= len(data) {
 				log.Warning(errors.Err{
 					Code: errors.PacketSnifferNotEnoughData,
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"nextOffset": offset,
 					},
 				})

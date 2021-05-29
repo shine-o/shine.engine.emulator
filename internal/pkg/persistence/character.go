@@ -7,10 +7,26 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/go-pg/pg/v10"
+
 	"github.com/google/logger"
 	"github.com/google/uuid"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
+)
+
+const (
+	genericIDEquals = "id = ?"
+
+	characterSlotEquals   = "slot = ?"
+	characterUserIDEquals = "user_id = ?"
+	characterIDEquals     = "character_id = ?"
+	characterNameEquals   = "name = ?"
+
+	itemIDEquals            = "item_id = ?"
+	itemShnIDEquals         = "shn_id = ?"
+	itemInventoryTypeEquals = "inventory_type = ?"
+	itemSlotEquals          = "slot = ?"
 )
 
 var log *logger.Logger
@@ -152,7 +168,7 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 	if req.SlotNum > 5 {
 		return errors.Err{
 			Code: errors.PersistenceCharInvalidSlot,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"userID":   userID,
 				"slotNum":  req.SlotNum,
 				"charName": req.Name.Name,
@@ -163,13 +179,13 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 	name := req.Name.Name
 
 	var charName string
-	err := db.Model((*Character)(nil)).Column("name").Where("name = ?", name).Select(&charName)
+	err := db.Model((*Character)(nil)).Column("name").Where(characterNameEquals, name).Select(&charName)
 
 	if err == nil {
 		// return ErrNameTaken
 		return errors.Err{
 			Code: errors.PersistenceCharNameTaken,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"userID":   userID,
 				"charName": req.Name.Name,
 			},
@@ -177,12 +193,12 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 	}
 
 	var chars []Character
-	err = db.Model(&chars).Where("user_id = ?", userID).Select()
+	err = db.Model(&chars).Where(characterUserIDEquals, userID).Select()
 
 	if len(chars) == 6 {
 		return errors.Err{
 			Code: errors.PersistenceCharNoSlot,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"userID": userID,
 			},
 		}
@@ -192,7 +208,7 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 	if !alphaNumeric(name) {
 		return errors.Err{
 			Code: errors.PersistenceCharInvalidName,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"userID":   userID,
 				"charName": req.Name.Name,
 			},
@@ -207,7 +223,7 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 	if isMale > 1 || isMale < 0 {
 		return errors.Err{
 			Code: errors.PersistenceCharInvalidClassGender,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"userID":   userID,
 				"charName": req.Name.Name,
 				"bfValue":  req.Shape.BF,
@@ -220,7 +236,7 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 	if class < 1 || class > 27 {
 		return errors.Err{
 			Code: errors.PersistenceCharInvalidClassGender,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"userID":   userID,
 				"charName": req.Name.Name,
 				"bfValue":  req.Shape.BF,
@@ -253,13 +269,7 @@ func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq, initialItems bo
 	_, err = tx.Model(char).Returning("*").Insert()
 
 	if err != nil {
-		return char, errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
+		return char, persistenceError(err, tx)
 	}
 
 	char.initialAppearance(req.Shape)
@@ -269,65 +279,29 @@ func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq, initialItems bo
 	char.initialEquippedItems()
 
 	if _, err = tx.Model(char.Appearance).Returning("*").Insert(); err != nil {
-		return char, errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
+		return char, persistenceError(err, tx)
 	}
 
 	if _, err = tx.Model(char.Attributes).Returning("*").Insert(); err != nil {
-		return char, errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
+		return char, persistenceError(err, tx)
 	}
 
 	if _, err = tx.Model(char.Location).Returning("*").Insert(); err != nil {
-		return char, errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
+		return char, persistenceError(err, tx)
 	}
 
 	if _, err = tx.Model(char.Options).Returning("*").Insert(); err != nil {
-		return char, errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
+		return char, persistenceError(err, tx)
 	}
 
 	if _, err = tx.Model(char.EquippedItems).Returning("*").Insert(); err != nil {
-		return char, errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
+		return char, persistenceError(err, tx)
 	}
 
 	if initialItems {
 		err = tx.Commit()
 		if err != nil {
-			return char, errors.Err{
-				Code: errors.PersistenceErrDB,
-				Details: errors.ErrDetails{
-					"err":   err,
-					"txErr": tx.Rollback(),
-				},
-			}
+			return char, persistenceError(err, tx)
 		}
 
 		char.initialItems()
@@ -342,19 +316,23 @@ func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq, initialItems bo
 		for _, item := range char.Items {
 			err := item.Insert()
 			if err != nil {
-				return char, errors.Err{
-					Code: errors.PersistenceErrDB,
-					Details: errors.ErrDetails{
-						"err":   err,
-						"txErr": tx.Rollback(),
-					},
-				}
+				return char, persistenceError(err, tx)
 			}
 		}
 		return char, itx.Commit()
 	}
 
 	return char, tx.Commit()
+}
+
+func persistenceError(err error, tx *pg.Tx) error {
+	return errors.Err{
+		Code: errors.PersistenceErrDB,
+		Details: errors.Details{
+			"err":   err,
+			"txErr": tx.Rollback(),
+		},
+	}
 }
 
 func GetCharacter(characterID uint64) (Character, error) {
@@ -397,8 +375,8 @@ func GetCharacterBySlot(slot byte, userID uint64) (Character, error) {
 		Relation("Items").
 		Relation("Options").
 		Relation("Location").
-		Where("user_id = ?", userID).
-		Where("slot = ?", slot).Select()
+		Where(characterUserIDEquals, userID).
+		Where(characterSlotEquals, slot).Select()
 	return c, err
 }
 
@@ -461,7 +439,7 @@ func UpdateLocation(c *Character) error {
 	if err != nil {
 		return errors.Err{
 			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -471,96 +449,51 @@ func UpdateLocation(c *Character) error {
 	return tx.Commit()
 }
 
-// Delete character for User with userID
-// soft deletion is performed
-// todo: switch to method
-// replace NC parameters
+// DeleteCharacter todo: switch to method
 func DeleteCharacter(userID uint64, slot int) error {
 	tx, err := db.Begin()
 	if err != nil {
-		return errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err": err,
-			},
-		}
+		return persistenceError(err, tx)
 	}
 
 	defer closeTx(tx)
 
 	var char Character
-	err = tx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", slot).Select()
+	err = tx.Model(&char).Where(characterUserIDEquals, userID).Where(characterSlotEquals, slot).Select()
 
 	if err != nil {
-		return errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
+		return persistenceError(err, tx)
 	}
 
 	name := fmt.Sprintf("%v@%v", char.Name, uuid.New().String())
-	_, err = tx.Model((*Character)(nil)).Set("name = ?", name).Where("user_id = ?", userID).Where("slot = ? ", slot).Update()
+	_, err = tx.Model((*Character)(nil)).Set(characterNameEquals, name).Where(characterUserIDEquals, userID).Where(characterSlotEquals, slot).Update()
 	if err != nil {
-		return errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
+		return persistenceError(err, tx)
 	}
 
-	if _, err = tx.Model(&char).Where("user_id = ?", userID).Where("slot = ?", slot).Delete(); err != nil {
-		return errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
+	_, err = tx.Model(&char).Where(characterUserIDEquals, userID).Where(characterSlotEquals, slot).Delete()
+	if err != nil {
+		return persistenceError(err, tx)
 	}
 
-	if _, err = tx.Model(char.Appearance).Where("character_id = ?", char.ID).Delete(); err != nil {
-		return errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
+	_, err = tx.Model(char.Appearance).Where(characterIDEquals, char.ID).Delete()
+	if err != nil {
+		return persistenceError(err, tx)
 	}
 
-	if _, err = tx.Model(char.Attributes).Where("character_id = ?", char.ID).Delete(); err != nil {
-		return errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
+	_, err = tx.Model(char.Attributes).Where(characterIDEquals, char.ID).Delete()
+	if err != nil {
+		return persistenceError(err, tx)
 	}
 
-	if _, err = tx.Model(char.Location).Where("character_id = ?", char.ID).Delete(); err != nil {
-		return errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
+	_, err = tx.Model(char.Location).Where(characterIDEquals, char.ID).Delete()
+	if err != nil {
+		return persistenceError(err, tx)
 	}
 
-	if _, err = tx.Model(char.EquippedItems).Where("character_id = ?", char.ID).Delete(); err != nil {
-		return errors.Err{
-			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
-				"err":   err,
-				"txErr": tx.Rollback(),
-			},
-		}
+	_, err = tx.Model(char.EquippedItems).Where(characterIDEquals, char.ID).Delete()
+	if err != nil {
+		return persistenceError(err, tx)
 	}
 
 	return tx.Commit()

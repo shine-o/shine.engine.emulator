@@ -36,7 +36,7 @@ func ncActMoveWalkCmd(ctx context.Context, np *networking.Parameters) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneMapNotFound,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"session": session,
 			},
 		})
@@ -52,7 +52,9 @@ func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 	session, ok := np.Session.(*session)
 
 	if !ok {
-		log.Error("no session available")
+		log.Error(errors.Err{
+			Code: errors.ZoneNoSessionAvailable,
+		})
 		return
 	}
 
@@ -71,7 +73,7 @@ func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneMapNotFound,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"session": session,
 			},
 		})
@@ -100,7 +102,7 @@ func ncActJumpCmd(ctx context.Context, np *networking.Parameters) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneMapNotFound,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"session": session,
 			},
 		})
@@ -136,7 +138,7 @@ func ncActStopReq(ctx context.Context, np *networking.Parameters) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneMapNotFound,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"session": session,
 			},
 		})
@@ -172,7 +174,7 @@ func ncActNpcClickCmd(ctx context.Context, np *networking.Parameters) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneMapNotFound,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"session": session,
 			},
 		})
@@ -221,7 +223,7 @@ func ncMenuServerMenuAck(ctx context.Context, np *networking.Parameters) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneMapNotFound,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"session": session,
 			},
 		})

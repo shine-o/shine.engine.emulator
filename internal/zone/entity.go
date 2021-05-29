@@ -132,7 +132,7 @@ func (t *targeting) selectedBy(e entity) {
 	default:
 		log.Error(errors.Err{
 			Code: errors.ZoneBadEntityType,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"got_type": reflect.TypeOf(e).String(),
 			},
 		})
@@ -222,7 +222,7 @@ func (b *baseEntity) move(m *zoneMap, igX, igY int) error {
 	if !path.CanWalk(m.rawNodes, rX, rY) {
 		return errors.Err{
 			Code: errors.ZoneMapCollisionDetected,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"entity": b.getHandle(),
 				"igX":    igX,
 				"igY":    igY,

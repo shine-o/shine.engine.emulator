@@ -50,7 +50,7 @@ func createCharacterLogic(e event) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.WorldMismatchedEventType,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"expected": reflect.TypeOf(&createCharacterEvent{}).String(),
 				"got":      reflect.TypeOf(ev).String(),
 			},
@@ -63,7 +63,7 @@ func createCharacterLogic(e event) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.WorldBadSessionType,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"expected": reflect.TypeOf(&session{}).String(),
 				"got":      reflect.TypeOf(ev.np.Session).String(),
 			},
@@ -97,13 +97,25 @@ func deleteCharacterLogic(e event) {
 	ev, ok := e.(*deleteCharacterEvent)
 
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&deleteCharacterEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(errors.Err{
+			Code: errors.WorldMismatchedEventType,
+			Details: errors.Details{
+				"expected": reflect.TypeOf(&deleteCharacterEvent{}).String(),
+				"got":      reflect.TypeOf(ev).String(),
+			},
+		})
 		return
 	}
 
 	s, ok := ev.np.Session.(*session)
 	if !ok {
-		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
+		log.Error(errors.Err{
+			Code: errors.WorldBadSessionType,
+			Details: errors.Details{
+				"expected": reflect.TypeOf(&session{}).String(),
+				"got":      reflect.TypeOf(ev.np.Session).String(),
+			},
+		})
 	}
 
 	err := persistence.DeleteCharacter(s.UserID, int(ev.nc.Slot))
@@ -122,13 +134,25 @@ func characterLoginLogic(e event) {
 	ev, ok := e.(*characterLoginEvent)
 
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&characterLoginEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(errors.Err{
+			Code: errors.WorldMismatchedEventType,
+			Details: errors.Details{
+				"expected": reflect.TypeOf(&characterLoginEvent{}).String(),
+				"got":      reflect.TypeOf(ev).String(),
+			},
+		})
 		return
 	}
 
 	s, ok := ev.np.Session.(*session)
 	if !ok {
-		log.Errorf("failed to cast given session %v to world session %v", reflect.TypeOf(ev.np.Session).String(), reflect.TypeOf(&session{}).String())
+		log.Error(errors.Err{
+			Code: errors.WorldBadSessionType,
+			Details: errors.Details{
+				"expected": reflect.TypeOf(&session{}).String(),
+				"got":      reflect.TypeOf(ev.np.Session).String(),
+			},
+		})
 		return
 	}
 
@@ -171,7 +195,13 @@ func characterSettingsLogic(e event) {
 	ev, ok := e.(*characterSettingsEvent)
 
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&characterSettingsEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(errors.Err{
+			Code: errors.WorldMismatchedEventType,
+			Details: errors.Details{
+				"expected": reflect.TypeOf(&characterSettingsEvent{}).String(),
+				"got":      reflect.TypeOf(ev).String(),
+			},
+		})
 		return
 	}
 
@@ -202,7 +232,13 @@ func updateShortcutsLogic(e event) {
 	ev, ok := e.(*updateShortcutsEvent)
 
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&updateShortcutsEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(errors.Err{
+			Code: errors.WorldMismatchedEventType,
+			Details: errors.Details{
+				"expected": reflect.TypeOf(&updateShortcutsEvent{}).String(),
+				"got":      reflect.TypeOf(ev).String(),
+			},
+		})
 		return
 	}
 
@@ -263,7 +299,13 @@ func characterSelectLogic(e event) {
 	ev, ok := e.(*characterSelectEvent)
 
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&characterSelectEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(errors.Err{
+			Code: errors.WorldMismatchedEventType,
+			Details: errors.Details{
+				"expected": reflect.TypeOf(&characterSelectEvent{}).String(),
+				"got":      reflect.TypeOf(ev).String(),
+			},
+		})
 		return
 	}
 
@@ -273,7 +315,6 @@ func characterSelectLogic(e event) {
 		return
 	}
 
-	// networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGOUT_DB, &nc)
 	networking.Send(ev.np.OutboundSegments.Send, networking.NC_USER_LOGINWORLD_ACK, &nc)
 }
 

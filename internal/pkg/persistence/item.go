@@ -169,7 +169,7 @@ func (i *Item) Insert() error {
 	if err != nil {
 		return errors.Err{
 			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -188,7 +188,7 @@ func (i *Item) Update() error {
 	//if i.ShnID != i.ShnID {
 	//	return errors.Err{
 	//		Code: errors.PersistenceItemDistinctShnID,
-	//		Details: errors.ErrDetails{
+	//		Details: errors.Details{
 	//			"originalShnID": i.ShnID,
 	//			"newShnID":      i.ShnID,
 	//		},
@@ -211,7 +211,7 @@ func (i *Item) Update() error {
 	if err != nil {
 		return errors.Err{
 			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -232,7 +232,7 @@ func (i *Item) Update() error {
 	if err != nil {
 		return errors.Err{
 			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"err":   err,
 				"txErr": tx.Rollback(),
 			},
@@ -288,7 +288,7 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 	if limitExceeded(inventoryType, slot) {
 		return otherItem, errors.Err{
 			Code: errors.PersistenceOutOfRangeSlot,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"slot":          slot,
 				"inventoryType": inventoryType,
 			},
@@ -296,9 +296,9 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 	}
 
 	err = tx.Model(otherItem).
-		Where("character_id = ?", i.CharacterID).
-		Where("inventory_type = ?", inventoryType).
-		Where("slot = ?", slot).
+		Where(characterIDEquals, i.CharacterID).
+		Where(itemInventoryTypeEquals, inventoryType).
+		Where(itemSlotEquals, slot).
 		Select()
 
 	if err == nil {
@@ -315,7 +315,7 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 		if err != nil {
 			return otherItem, errors.Err{
 				Code: errors.PersistenceItemSlotUpdate,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"err":           err,
 					"from":          i.Slot,
 					"to":            otherItem.Slot,
@@ -335,7 +335,7 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 		if err != nil {
 			return otherItem, errors.Err{
 				Code: errors.PersistenceItemSlotUpdate,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"err":           err,
 					"from":          i.Slot,
 					"to":            otherItem.Slot,
@@ -357,7 +357,7 @@ func (i *Item) MoveTo(inventoryType InventoryType, slot int) (*Item, error) {
 	if err != nil {
 		return otherItem, errors.Err{
 			Code: errors.PersistenceItemSlotUpdate,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"err":           err,
 				"txErr":         tx.Rollback(),
 				"from":          i.Slot,
@@ -380,12 +380,12 @@ func DeleteItem(itemID int) error {
 
 	defer closeTx(tx)
 
-	_, err = tx.Model((*ItemAttributes)(nil)).Where("item_id = ?", itemID).Delete()
+	_, err = tx.Model((*ItemAttributes)(nil)).Where(itemIDEquals, itemID).Delete()
 
 	if err != nil {
 		return errors.Err{
 			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"err":    err,
 				"txErr":  tx.Rollback(),
 				"itemID": itemID,
@@ -393,12 +393,12 @@ func DeleteItem(itemID int) error {
 		}
 	}
 
-	_, err = tx.Model((*Item)(nil)).Where("id = ?", itemID).Delete()
+	_, err = tx.Model((*Item)(nil)).Where(genericIDEquals, itemID).Delete()
 
 	if err != nil {
 		return errors.Err{
 			Code: errors.PersistenceErrDB,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"err":    err,
 				"txErr":  tx.Rollback(),
 				"itemID": itemID,
@@ -431,8 +431,8 @@ func GetCharacterItems(characterID int, inventoryType InventoryType) ([]*Item, e
 	var items []*Item
 
 	err := db.Model(&items).
-		Where("character_id = ?", characterID).
-		Where("inventory_type = ?", inventoryType).
+		Where(characterIDEquals, characterID).
+		Where(itemInventoryTypeEquals, inventoryType).
 		Relation("Attributes").
 		Select()
 
@@ -454,8 +454,8 @@ func freeSlot(characterID uint64, inventoryType InventoryType) (int, error) {
 
 	err := db.Model((*Item)(nil)).
 		Column("slot").
-		Where("character_id = ?", characterID).
-		Where("inventory_type = ?", inventoryType).
+		Where(characterUserIDEquals, characterID).
+		Where(itemInventoryTypeEquals, inventoryType).
 		Select(&slots)
 	if err != nil {
 		return slot, err
@@ -510,7 +510,7 @@ func validateItem(item *Item) error {
 	if inventoryType == UnknownInventory {
 		return errors.Err{
 			Code: errors.PersistenceUnknownInventory,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"inventoryType": inventoryType,
 			},
 		}
@@ -519,7 +519,7 @@ func validateItem(item *Item) error {
 	if item.Amount == 0 {
 		return errors.Err{
 			Code: errors.PersistenceItemInvalidAmount,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"stackable": item.Stackable,
 				"amount":    item.Amount,
 			},
@@ -529,7 +529,7 @@ func validateItem(item *Item) error {
 	if item.ShnID == 0 {
 		return errors.Err{
 			Code: errors.PersistenceItemInvalidShnId,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"shineID": item.ShnID,
 			},
 		}
@@ -538,7 +538,7 @@ func validateItem(item *Item) error {
 	if item.CharacterID == 0 {
 		return errors.Err{
 			Code: errors.PersistenceItemInvalidCharacterId,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"characterID": item.CharacterID,
 			},
 		}
@@ -548,7 +548,7 @@ func validateItem(item *Item) error {
 		if item.Amount > 1 {
 			return errors.Err{
 				Code: errors.PersistenceItemInvalidAmount,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"stackable": item.Stackable,
 					"amount":    item.Amount,
 				},
@@ -557,12 +557,12 @@ func validateItem(item *Item) error {
 	}
 
 	var cId uint64 = 0
-	err := db.Model((*Character)(nil)).Column("id").Where("id = ?", item.CharacterID).Select(&cId)
+	err := db.Model((*Character)(nil)).Column("id").Where(genericIDEquals, item.CharacterID).Select(&cId)
 	if err != nil {
 		return errors.Err{
 			Code:    errors.PersistenceCharNotExists,
 			Message: "could not fetch character with id",
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"err":          err,
 				"character_id": item.CharacterID,
 			},

@@ -4,6 +4,13 @@ import (
 	"testing"
 )
 
+const (
+	nilValue            = "value should not be nil"
+	atLeastOneNPC       = "there should be at least one npc active"
+	mismatchedNPCAmount = "incorrect npc amount %v"
+	unexpectedNPCType   = "unexpected npcType %v %v"
+)
+
 func TestLoadMap(t *testing.T) {
 	// Roumen
 	zm, err := loadMap(1)
@@ -12,27 +19,27 @@ func TestLoadMap(t *testing.T) {
 	}
 
 	if zm.events == nil {
-		t.Fatal("value should not be nil")
+		t.Fatal()
 	}
 
 	if zm.data == nil {
-		t.Fatal("value should not be nil")
+		t.Fatal(nilValue)
 	}
 
 	if zm.rawNodes == nil {
-		t.Fatal("value should not be nil")
+		t.Fatal(nilValue)
 	}
 
 	if zm.presetNodes == nil {
-		t.Fatal("value should not be nil")
+		t.Fatal(nilValue)
 	}
 
 	if zm.presetNodesWithMargin == nil {
-		t.Fatal("value should not be nil")
+		t.Fatal(nilValue)
 	}
 
 	if zm.entities == nil {
-		t.Fatal("value should not be nil")
+		t.Fatal(nilValue)
 	}
 
 	expectedMapEvents := []eventIndex{
@@ -69,16 +76,16 @@ func TestMapSpawnNpc(t *testing.T) {
 	zm.spawnNPCs()
 
 	if len(zm.entities.npc) == 0 {
-		t.Fatal("there should be at least one npc active")
+		t.Fatal(atLeastOneNPC)
 	}
 
 	if len(zm.entities.npc) != 29 {
-		t.Fatalf("incorrect npc amount %v", len(zm.entities.npc))
+		t.Fatalf(mismatchedNPCAmount, len(zm.entities.npc))
 	}
 
 	for npc := range zm.entities.allNpc() {
 		if npc.nType == npcNoRole {
-			t.Errorf("unexpected npcType %v %v", npc.nType, npc.data.mobInfo.InxName)
+			t.Errorf(unexpectedNPCType, npc.nType, npc.data.mobInfo.InxName)
 		}
 	}
 
@@ -90,16 +97,16 @@ func TestMapSpawnNpc(t *testing.T) {
 	zm1.spawnNPCs()
 
 	if len(zm1.entities.npc) == 0 {
-		t.Fatal("there should be at least one npc active")
+		t.Fatal(atLeastOneNPC)
 	}
 
 	if len(zm1.entities.npc) != 8 {
-		t.Fatalf("incorrect npc amount %v", len(zm1.entities.npc))
+		t.Fatalf(mismatchedNPCAmount, len(zm1.entities.npc))
 	}
 
 	for npc := range zm1.entities.allNpc() {
 		if npc.nType == npcNoRole {
-			t.Errorf("unexpected npcType %v %v", npc.nType, npc.data.mobInfo.InxName)
+			t.Errorf(unexpectedNPCType, npc.nType, npc.data.mobInfo.InxName)
 		}
 	}
 }
@@ -122,11 +129,11 @@ func TestMapSpawnMonsterNpc(t *testing.T) {
 	zm.spawnMobs()
 
 	if len(zm.entities.npc) == 0 {
-		t.Fatal("there should be at least one npc active")
+		t.Fatal(atLeastOneNPC)
 	}
 
 	if len(zm.entities.npc) != 48 {
-		t.Fatalf("incorrect npc amount %v", len(zm.entities.npc))
+		t.Fatalf(mismatchedNPCAmount, len(zm.entities.npc))
 	}
 	// 48
 }
@@ -146,6 +153,6 @@ func TestEntityChase(t *testing.T) {
 	t.Fail()
 }
 
-func Test_Path_A_B_Speed_Race(t *testing.T) {
+func TestPathABSpeedRace(t *testing.T) {
 	t.Fail()
 }

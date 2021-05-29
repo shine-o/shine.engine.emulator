@@ -42,7 +42,7 @@ func eduUnEquipItemLogic(e event, player *player) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneUnexpectedEventType,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"expected": reflect.TypeOf(eduUnEquipItemEvent{}).String(),
 				"actual":   reflect.TypeOf(ev).String(),
 			},
@@ -59,7 +59,7 @@ func eduEquipItemLogic(e event, player *player) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneUnexpectedEventType,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"expected": reflect.TypeOf(eduEquipItemEvent{}).String(),
 				"got":      reflect.TypeOf(ev).String(),
 			},
@@ -76,7 +76,7 @@ func eduPositionLogic(e event, player *player) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneUnexpectedEventType,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"expected": reflect.TypeOf(eduPositionEvent{}).String(),
 				"actual":   reflect.TypeOf(ev).String(),
 			},

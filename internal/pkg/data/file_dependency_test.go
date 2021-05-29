@@ -5,12 +5,9 @@ import (
 	"testing"
 )
 
-var targetFiles []interface{}
+const fileDependencyUnimplemented = "file type %v does not implement interface FileDependency"
 
-//func TestMain(m *testing.M) {
-//	filesWithDependencies()
-//	os.Exit(m.Run())
-//}
+var targetFiles []interface{}
 
 func filesWithDependencies() {
 	f1 := &ShineItemInfo{}
@@ -37,7 +34,7 @@ func TestLinkedFiles(t *testing.T) {
 			f, ok := file.(FileDependency)
 
 			if !ok {
-				t.Errorf("file type %v does not implement interface FileDependency", reflect.TypeOf(file).String())
+				t.Errorf(fileDependencyUnimplemented, reflect.TypeOf(file).String())
 			}
 
 			idfs, err := f.MissingIdentifiers(filesPath)

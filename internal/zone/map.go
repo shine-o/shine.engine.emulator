@@ -34,7 +34,7 @@ func (e *entities) getPlayer(handle uint16) (*player, error) {
 	if !ok {
 		return nil, errors.Err{
 			Code: errors.ZoneMissingPlayer,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"handle": handle,
 			},
 		}
@@ -90,7 +90,7 @@ func (e *entities) allPlayers() <-chan *player {
 				log.Error(errors.Err{
 					Code:    errors.ZoneBadEntityType,
 					Message: "",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"expected": "player",
 						"got":      reflect.TypeOf(e).String(),
 					},
@@ -119,7 +119,7 @@ func (e *entities) allNpc() <-chan *npc {
 				log.Error(errors.Err{
 					Code:    errors.ZoneBadEntityType,
 					Message: "",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"expected": "npc",
 						"got":      reflect.TypeOf(e).String(),
 					},
@@ -148,7 +148,7 @@ func (e *entities) allMonsters() <-chan *monster {
 				log.Error(errors.Err{
 					Code:    errors.ZoneBadEntityType,
 					Message: "",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"expected": "monster",
 						"got":      reflect.TypeOf(e).String(),
 					},
@@ -230,7 +230,7 @@ func (zm *zoneMap) spawnNPCs() {
 	log.Error(errors.Err{
 		Code:    errors.ZoneMissingNpcData,
 		Message: "",
-		Details: errors.ErrDetails{
+		Details: errors.Details{
 			"mapInx": zm.data.MapInfoIndex,
 		},
 	})
@@ -478,7 +478,7 @@ func loadMap(mapID int) (*zoneMap, error) {
 		return nil, errors.Err{
 			Code:    errors.ZoneMissingMapData,
 			Message: "",
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"mapID": mapID,
 			},
 		}

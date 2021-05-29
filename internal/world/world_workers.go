@@ -31,7 +31,7 @@ func serverTimeLogic(e event) {
 		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&serverTimeEvent{}).String(), reflect.TypeOf(ev).String())
 		log.Error(errors.Err{
 			Code: errors.WorldMismatchedEventType,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"expected": reflect.TypeOf(&serverTimeEvent{}).String(),
 				"got":      reflect.TypeOf(ev).String(),
 			},

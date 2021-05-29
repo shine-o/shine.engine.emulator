@@ -328,7 +328,7 @@ func (p *player) notifyAboutNewEntity(e entity) {
 		log.Error(errors.Err{
 			Code:    errors.ZoneBadEntityType,
 			Message: "",
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"got": reflect.TypeOf(e).String(),
 			},
 		})
@@ -773,7 +773,7 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 		p.persistence.RUnlock()
 		return change, errors.Err{
 			Code: errors.ZoneItemSlotEquipNoItem,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"slot":          slot,
 				"handle":        p.getHandle(),
 				"characterName": characterName,
@@ -788,7 +788,7 @@ func (p *player) equip(slot int) (itemSlotChange, error) {
 	if !canBeEquipped(equip, class) {
 		return change, errors.Err{
 			Code: errors.ZoneItemEquipBadType,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"slot":   slot,
 				"handle": p.getHandle(),
 				"equip":  equip,
@@ -852,7 +852,7 @@ func (p *player) unEquip(from, to int) (itemSlotChange, error) {
 		p.persistence.RUnlock()
 		return change, errors.Err{
 			Code: errors.ZoneItemSlotEquipNoItem,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"equip":         from,
 				"handle":        p.getHandle(),
 				"characterName": characterName,
@@ -867,7 +867,7 @@ func (p *player) unEquip(from, to int) (itemSlotChange, error) {
 		p.persistence.RUnlock()
 		return change, errors.Err{
 			Code: errors.ZoneItemSlotInUse,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"equip":         from,
 				"handle":        p.getHandle(),
 				"characterName": characterName,
@@ -1025,7 +1025,7 @@ func validatePlayerEntity(p *player) error {
 		return errors.Err{
 			Code:    errors.ZoneNilPlayerFields,
 			Message: "some player fields are nil which can cause a panic",
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"player": p,
 			},
 		}

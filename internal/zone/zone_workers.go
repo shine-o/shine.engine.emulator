@@ -42,7 +42,7 @@ func (z *zone) playerSession() {
 				if !ok {
 					log.Error(errors.Err{
 						Code: errors.ZoneUnexpectedEventType,
-						Details: errors.ErrDetails{
+						Details: errors.Details{
 							"expected": reflect.TypeOf(changeMapEvent{}).String(),
 							"got":      reflect.TypeOf(ev).String(),
 						},
@@ -175,7 +175,7 @@ func playerMapLoginLogic(e event) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneMapNotFound,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"mapID": p.current.mapID,
 			},
 		})
@@ -243,7 +243,7 @@ func hearbeatUpdateLogic(e event) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneMapNotFound,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"session": ev.session,
 			},
 		})

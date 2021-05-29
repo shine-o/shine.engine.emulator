@@ -33,7 +33,7 @@ func clientVersionLogic(e event) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.LoginMismatchedEventType,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"expected": reflect.TypeOf(&clientVersionEvent{}).String(),
 				"got":      reflect.TypeOf(ev).String(),
 			},
@@ -54,7 +54,13 @@ func clientVersionLogic(e event) {
 func worldManagerStatusLogic(e event) {
 	ev, ok := e.(*worldManagerStatusEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&worldManagerStatusEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(errors.Err{
+			Code: errors.LoginMismatchedEventType,
+			Details: errors.Details{
+				"expected": reflect.TypeOf(&worldManagerStatusEvent{}).String(),
+				"got":      reflect.TypeOf(ev).String(),
+			},
+		})
 		return
 	}
 
@@ -78,7 +84,13 @@ func credentialsLoginLogic(e event, l *login) {
 	ev, ok := e.(*credentialsLoginEvent)
 
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&credentialsLoginEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(errors.Err{
+			Code: errors.LoginMismatchedEventType,
+			Details: errors.Details{
+				"expected": reflect.TypeOf(&credentialsLoginEvent{}).String(),
+				"got":      reflect.TypeOf(ev).String(),
+			},
+		})
 		return
 	}
 
@@ -104,7 +116,13 @@ func ncUserLoginFailAck(np *networking.Parameters, errCode uint16) {
 func tokenLoginLogic(l *login, e event) {
 	ev, ok := e.(*tokenLoginEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&tokenLoginEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(errors.Err{
+			Code: errors.LoginMismatchedEventType,
+			Details: errors.Details{
+				"expected": reflect.TypeOf(&tokenLoginEvent{}).String(),
+				"got":      reflect.TypeOf(ev).String(),
+			},
+		})
 		return
 	}
 	_, err := redisClient.Get(ev.nc.Otp.Name).Result()
@@ -136,7 +154,13 @@ func loginSuccessful(l *login, np *networking.Parameters) {
 func serverSelectLogic(l *login, e event) {
 	ev, ok := e.(*serverSelectEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&serverSelectEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(errors.Err{
+			Code: errors.LoginMismatchedEventType,
+			Details: errors.Details{
+				"expected": reflect.TypeOf(&serverSelectEvent{}).String(),
+				"got":      reflect.TypeOf(ev).String(),
+			},
+		})
 		return
 	}
 	for _, w := range l.worlds {

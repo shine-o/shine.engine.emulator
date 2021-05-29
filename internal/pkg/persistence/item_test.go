@@ -1,6 +1,7 @@
 package persistence
 
 import (
+	"reflect"
 	"testing"
 	"time"
 
@@ -138,7 +139,7 @@ func TestCreateItemMissingValues(t *testing.T) {
 	err := item.Insert()
 
 	if err == nil {
-		t.Error("expected error, got none")
+		t.Error(nilError)
 	}
 
 	// missing shn_id
@@ -154,7 +155,7 @@ func TestCreateItemMissingValues(t *testing.T) {
 	err = item.Insert()
 
 	if err == nil {
-		t.Error("expected error, got none")
+		t.Error(nilError)
 	}
 
 	// missing shn_inx_name
@@ -171,7 +172,7 @@ func TestCreateItemMissingValues(t *testing.T) {
 	err = item.Insert()
 
 	if err == nil {
-		t.Error("expected error, got none")
+		t.Error(nilError)
 	}
 
 	// missing character_id
@@ -187,13 +188,12 @@ func TestCreateItemMissingValues(t *testing.T) {
 	err = item.Insert()
 
 	if err == nil {
-		t.Error("expected error, got none")
+		t.Error(nilError)
 	}
 }
 
 func TestCreateItemCharacterNotExist(t *testing.T) {
 	cleanDB()
-	// newCharacter("mage")
 
 	item := &Item{
 		CharacterID:   1,
@@ -210,17 +210,17 @@ func TestCreateItemCharacterNotExist(t *testing.T) {
 	err := item.Insert()
 
 	if err == nil {
-		t.Error("expected error, got nil")
+		t.Error(nilError)
 	}
 
 	cErr, ok := err.(errors.Err)
 
 	if !ok {
-		t.Error("expected custom error type Err")
+		t.Errorf(unexpectedErrorType, "errors.Err", reflect.TypeOf(cErr).String())
 	}
 
 	if cErr.Code != errors.PersistenceCharNotExists {
-		t.Fatalf("expected error code %v, got %v", errors.PersistenceCharNotExists, cErr.Code)
+		t.Fatalf(unexpectedErrorCode, errors.PersistenceCharNotExists, cErr.Code)
 	}
 }
 
@@ -243,17 +243,17 @@ func TestCreateItemBadAmount(t *testing.T) {
 	err := item.Insert()
 
 	if err == nil {
-		t.Error("expected error, got nil")
+		t.Error(nilError)
 	}
 
 	cErr, ok := err.(errors.Err)
 
 	if !ok {
-		t.Error("expected custom error type Err")
+		t.Errorf(unexpectedErrorType, "errors.Err", reflect.TypeOf(cErr).String())
 	}
 
 	if cErr.Code != errors.PersistenceItemInvalidAmount {
-		t.Fatalf("expected error code %v, got %v", errors.PersistenceItemInvalidAmount, cErr.Code)
+		t.Fatalf(unexpectedErrorCode, errors.PersistenceItemInvalidAmount, cErr.Code)
 	}
 
 	// 0 amount
@@ -272,17 +272,17 @@ func TestCreateItemBadAmount(t *testing.T) {
 	err = item.Insert()
 
 	if err == nil {
-		t.Error("expected error, got nil")
+		t.Error(nilError)
 	}
 
 	cErr, ok = err.(errors.Err)
 
 	if !ok {
-		t.Error("expected custom error type Err")
+		t.Errorf(unexpectedErrorType, "errors.Err", reflect.TypeOf(cErr).String())
 	}
 
 	if cErr.Code != errors.PersistenceItemInvalidAmount {
-		t.Fatalf("expected error code %v, got %v", errors.PersistenceItemInvalidAmount, cErr.Code)
+		t.Fatalf(unexpectedErrorCode, errors.PersistenceItemInvalidAmount, cErr.Code)
 	}
 }
 
@@ -323,7 +323,7 @@ func TestCreateItemBadPKeys(t *testing.T) {
 	_, err = db.Model(item1).Insert()
 
 	if err == nil {
-		t.Error("expected error, got nil")
+		t.Error(nilError)
 	}
 }
 
@@ -376,17 +376,17 @@ func TestUpdateItemBadAmount(t *testing.T) {
 	err = item.Update()
 
 	if err == nil {
-		t.Fatal("expected error, got none")
+		t.Fatal(nilError)
 	}
 
 	cErr, ok := err.(errors.Err)
 
 	if !ok {
-		t.Fatal("expected custom error type Err")
+		t.Fatalf(unexpectedErrorType, "errors.Err", reflect.TypeOf(cErr).String())
 	}
 
 	if cErr.Code != errors.PersistenceItemInvalidAmount {
-		t.Fatalf("expected error code %v, got %v", errors.PersistenceItemInvalidAmount, cErr.Code)
+		t.Fatalf(unexpectedErrorCode, errors.PersistenceItemInvalidAmount, cErr.Code)
 	}
 
 	// zero amount
@@ -395,57 +395,19 @@ func TestUpdateItemBadAmount(t *testing.T) {
 	err = item.Update()
 
 	if err == nil {
-		t.Fatal("expected error, got nil")
+		t.Fatal(nilError)
 	}
 
 	cErr, ok = err.(errors.Err)
 
 	if !ok {
-		t.Fatal("expected custom error type Err")
+		t.Fatalf(unexpectedErrorType, "errors.Err", reflect.TypeOf(cErr).String())
 	}
 
 	if cErr.Code != errors.PersistenceItemInvalidAmount {
-		t.Fatalf("expected error code %v, got %v", errors.PersistenceItemInvalidAmount, cErr.Code)
+		t.Fatalf(unexpectedErrorCode, errors.PersistenceItemInvalidAmount, cErr.Code)
 	}
 }
-
-// not sure if needed
-//func TestUpdateItem_DistinctShnID(t *testing.T) {
-//	cleanDB()
-//	newCharacter("mage")
-//
-//	item := &Item{
-//		CharacterID:   1,
-//		ShnID:         1,
-//		ShnInxName: "ShortStaff",
-//		Stackable:     false,
-//		Amount:        1,
-//		InventoryType: int(BagInventory),
-//	}
-//
-//	err := item.Insert()
-//
-//	if err != nil {
-//		t.Fatal(err)
-//	}
-//
-//	item.ShnID = 2
-//	err = item.UpdateCharacter()
-//
-//	if err == nil {
-//		t.Fatal("expected error, got nil")
-//	}
-//
-//	cErr, ok := err.(errors.Err)
-//
-//	if !ok {
-//		t.Fatal("expected custom error type Err")
-//	}
-//
-//	if cErr.Code != errors.PersistenceItemDistinctShnID {
-//		t.Fatalf("expected error code %v, got %v", errors.PersistenceItemDistinctShnID, cErr.Code)
-//	}
-//}
 
 func TestItemSlotMoveToUnusedSlot(t *testing.T) {
 	cleanDB()
@@ -471,7 +433,7 @@ func TestItemSlotMoveToUnusedSlot(t *testing.T) {
 	}
 
 	if uItem0 != nil {
-		t.Fatal("updated item should be nil")
+		t.Fatal(nilError)
 	}
 
 	if item0.Slot != 1 {
@@ -519,7 +481,7 @@ func TestItemSlotMoveToUsedSlot(t *testing.T) {
 	}
 
 	if uItem1 == nil {
-		t.Fatal("item should not be nil")
+		t.Fatal(nilItem)
 	}
 
 	if uItem1.ID != item1.ID {
@@ -557,11 +519,11 @@ func TestSoftDeleteItem(t *testing.T) {
 	var uItem1 Item
 
 	err = db.Model(&uItem1).
-		Where("id = ?", 1).
+		Where(genericIDEquals, 1).
 		Select()
 
 	if err == nil {
-		t.Fatal("expected error, got nil")
+		t.Fatal(nilError)
 	}
 }
 
@@ -600,17 +562,17 @@ func TestInventoryFull(t *testing.T) {
 	err := item.Insert()
 
 	if err == nil {
-		t.Fatal("expected error, got nil")
+		t.Fatal(nilError)
 	}
 
 	cErr, ok := err.(errors.Err)
 
 	if !ok {
-		t.Error("expected custom error type Err")
+		t.Fatalf(unexpectedErrorType, "errors.Err", reflect.TypeOf(cErr).String())
 	}
 
 	if cErr.Code != errors.PersistenceInventoryFull {
-		t.Fatalf("expected error code %v, got %v", errors.PersistenceInventoryFull, cErr.Code)
+		t.Fatalf(unexpectedErrorCode, errors.PersistenceInventoryFull, cErr.Code)
 	}
 }
 
@@ -619,10 +581,6 @@ func TestInventoryAutomaticSlot(t *testing.T) {
 
 	newCharacter("mage")
 
-	// create 3 items
-	// delete 2nd item
-	// try to create another item
-	// the slot should be the one freed up by deleting the 2nd item
 	item := &Item{
 		CharacterID:   1,
 		ShnID:         1,
@@ -691,7 +649,7 @@ func TestInventoryAutomaticSlot(t *testing.T) {
 	var uItem1 Item
 
 	err = db.Model(&uItem1).
-		Where("id = ?", 4).
+		Where(genericIDEquals, 4).
 		Select()
 
 	if uItem1.Slot != 1 {

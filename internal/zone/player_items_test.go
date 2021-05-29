@@ -419,7 +419,7 @@ func Test_AllItemsNC(t *testing.T) {
 			t.Error(errors.Err{
 				Code:    errors.UnitTestError,
 				Message: "error creating item nc struct",
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"err":       err,
 					"itemIndex": row.InxName,
 					"nc":        inc,
@@ -447,7 +447,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -465,7 +465,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -481,7 +481,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -497,7 +497,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -513,7 +513,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -529,7 +529,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -545,7 +545,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -561,7 +561,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -577,7 +577,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -593,7 +593,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -609,7 +609,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -625,7 +625,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -641,7 +641,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -657,7 +657,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -673,7 +673,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -689,7 +689,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -705,7 +705,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -721,7 +721,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -737,7 +737,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -753,7 +753,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -769,7 +769,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -788,7 +788,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -804,7 +804,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -820,7 +820,7 @@ func Test_AllItemsNC(t *testing.T) {
 				t.Error(errors.Err{
 					Code:    errors.UnitTestError,
 					Message: "bad ItemAttr NC for item class",
-					Details: errors.ErrDetails{
+					Details: errors.Details{
 						"err":       err,
 						"itemIndex": row.InxName,
 						"data":      inc.ItemAttr,
@@ -855,7 +855,7 @@ func Test_AllItemsWithAttributesNC(t *testing.T) {
 					t.Error(errors.Err{
 						Code:    errors.UnitTestError,
 						Message: "error serializing item attr nc struct",
-						Details: errors.ErrDetails{
+						Details: errors.Details{
 							"err":             err,
 							"itemIndex":       row.InxName,
 							"creationDetails": icd,
@@ -866,7 +866,7 @@ func Test_AllItemsWithAttributesNC(t *testing.T) {
 					t.Error(errors.Err{
 						Code:    errors.UnitTestError,
 						Message: "missing stats, expected at least 1 or more stats",
-						Details: errors.ErrDetails{
+						Details: errors.Details{
 							"itemIndex":       row.InxName,
 							"rotIndex":        item.data.itemInfoServer.RandomOptionDropGroup,
 							"creationDetails": icd,
@@ -881,7 +881,7 @@ func Test_AllItemsWithAttributesNC(t *testing.T) {
 					t.Error(errors.Err{
 						Code:    errors.UnitTestError,
 						Message: "error serializing item attr nc struct",
-						Details: errors.ErrDetails{
+						Details: errors.Details{
 							"err":             err,
 							"itemIndex":       row.InxName,
 							"creationDetails": icd,
@@ -892,7 +892,7 @@ func Test_AllItemsWithAttributesNC(t *testing.T) {
 					t.Error(errors.Err{
 						Code:    errors.UnitTestError,
 						Message: "missing stats, expected at least 1 or more stats",
-						Details: errors.ErrDetails{
+						Details: errors.Details{
 							"itemIndex":       row.InxName,
 							"rotIndex":        item.data.itemInfoServer.RandomOptionDropGroup,
 							"creationDetails": icd,
@@ -907,7 +907,7 @@ func Test_AllItemsWithAttributesNC(t *testing.T) {
 					t.Error(errors.Err{
 						Code:    errors.UnitTestError,
 						Message: "error serializing item attr nc struct",
-						Details: errors.ErrDetails{
+						Details: errors.Details{
 							"err":             err,
 							"itemIndex":       row.InxName,
 							"creationDetails": icd,
@@ -918,7 +918,7 @@ func Test_AllItemsWithAttributesNC(t *testing.T) {
 					t.Error(errors.Err{
 						Code:    errors.UnitTestError,
 						Message: "missing stats, expected at least 1 or more stats",
-						Details: errors.ErrDetails{
+						Details: errors.Details{
 							"itemIndex":       row.InxName,
 							"rotIndex":        item.data.itemInfoServer.RandomOptionDropGroup,
 							"creationDetails": icd,
@@ -1975,7 +1975,7 @@ func TestChangeItemSlotInventoryEmptySlotSuccess(t *testing.T) {
 		t.Fatal(errors.Err{
 			Code:    errors.UnitTestError,
 			Message: "item should be nil",
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"itemSlotChange": itemSlotChange,
 			},
 		})
@@ -2056,7 +2056,7 @@ func TestChangeItemSlotInventoryOccupiedSlotSuccess(t *testing.T) {
 		t.Fatal(errors.Err{
 			Code:    errors.UnitTestError,
 			Message: "item should not be nil",
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"itemSlotChange": itemSlotChange,
 			},
 		})
@@ -2427,7 +2427,7 @@ func TestChangeItemSlotDepositEmptySlotSuccess(t *testing.T) {
 		t.Fatal(errors.Err{
 			Code:    errors.UnitTestError,
 			Message: "item should be nil",
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"itemSlotChange": itemSlotChange,
 			},
 		})
@@ -2514,7 +2514,7 @@ func TestChangeItemSlotDepositOccupiedSlotSuccess(t *testing.T) {
 		t.Fatal(errors.Err{
 			Code:    errors.UnitTestError,
 			Message: "item should not be nil",
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"itemSlotChange": itemSlotChange,
 			},
 		})
@@ -2718,7 +2718,7 @@ func TestChangeItemSlotDepositToInventorySuccess(t *testing.T) {
 		t.Fatal(errors.Err{
 			Code:    errors.UnitTestError,
 			Message: "item should be nil",
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"itemSlotChange": itemSlotChange,
 			},
 		})
@@ -2856,7 +2856,7 @@ func TestChangeItemSlotRewardInventoryToInventorySuccess(t *testing.T) {
 		t.Fatal(errors.Err{
 			Code:    errors.UnitTestError,
 			Message: "item should be nil",
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"itemSlotChange": itemSlotChange,
 			},
 		})

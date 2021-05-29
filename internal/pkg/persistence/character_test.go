@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"reflect"
 	"testing"
 	"time"
 
@@ -13,6 +14,14 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/database"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
+)
+
+const (
+	unexpectedErrorType    = "expected %v, got %v"
+	unexpectedErrorCode    = "expected error code %v, got %v"
+	nilError               = "expected an error but got nil"
+	nilItem                = "no item"
+	unexpectedEquippedItem = "id =%v, expected id =%v"
 )
 
 func TestMain(m *testing.M) {
@@ -132,10 +141,10 @@ func TestCharacterNameInUseError(t *testing.T) {
 
 	errChar, ok := err.(errors.Err)
 	if !ok {
-		t.Error("expected an error of type Err")
+		t.Errorf(unexpectedErrorType, "errors.Err", reflect.TypeOf(errChar))
 	}
 	if errChar.Code != errors.PersistenceCharNameTaken {
-		t.Errorf("expected error %v, got %v", errors.PersistenceCharNameTaken, errChar.Code)
+		t.Errorf(unexpectedErrorCode, errors.PersistenceCharNameTaken, errChar.Code)
 	}
 }
 
@@ -157,14 +166,14 @@ func TestNoSlotAvailableError(t *testing.T) {
 		if err != nil {
 			cErr, ok := err.(errors.Err)
 			if !ok {
-				t.Error("unexpected error type")
+				t.Errorf(unexpectedErrorType, "errors.Err", reflect.TypeOf(cErr))
 			}
 			if cErr.Code != errors.PersistenceCharNoSlot {
-				t.Errorf("expected error %v, got %v", errors.PersistenceCharNoSlot, cErr.Code)
+				t.Errorf(unexpectedErrorCode, errors.PersistenceCharNoSlot, cErr.Code)
 			}
 			return
 		}
-		t.Error("expected an error but got nil")
+		t.Error(nilError)
 	}
 }
 
@@ -186,11 +195,11 @@ func TestInvalidSlotError(t *testing.T) {
 				t.Error("unexpected error type")
 			}
 			if cErr.Code != errors.PersistenceCharInvalidSlot {
-				t.Errorf("expected error %v, got %v", errors.PersistenceCharInvalidSlot, cErr.Code)
+				t.Errorf(unexpectedErrorCode, errors.PersistenceCharInvalidSlot, cErr.Code)
 			}
 			return
 		}
-		t.Error("expected an error but got nil")
+		t.Error(nilError)
 	}
 }
 
@@ -214,11 +223,11 @@ func TestInvalidNameError(t *testing.T) {
 				t.Error("unexpected error type")
 			}
 			if cErr.Code != errors.PersistenceCharInvalidName {
-				t.Errorf("expected error %v, got %v", errors.PersistenceCharInvalidName, cErr.Code)
+				t.Errorf(unexpectedErrorCode, errors.PersistenceCharInvalidName, cErr.Code)
 			}
 			return
 		}
-		t.Error("expected an error but got nil")
+		t.Error(nilError)
 	}
 }
 
@@ -241,18 +250,18 @@ func TestInvalidGenderClassBinaryOperation(t *testing.T) {
 		if err != nil {
 			errChar, ok := err.(errors.Err)
 			if !ok {
-				t.Error("expected an error of type Err")
+				t.Errorf(unexpectedErrorType, "errors.Err", reflect.TypeOf(errChar))
 			}
 			if errChar.Code != errors.PersistenceCharInvalidClassGender {
-				t.Errorf("expected error %v, got %v", errors.PersistenceCharInvalidClassGender, errChar.Code)
+				t.Errorf(unexpectedErrorCode, errors.PersistenceCharInvalidClassGender, errChar.Code)
 			}
 		} else {
-			t.Error("expected an error but got nil")
+			t.Error(nilError)
 		}
 	}
 }
 
-func TestNewCharacter_DefaultItems(t *testing.T) {
+func TestNewCharacterDefaultItems(t *testing.T) {
 	cleanDB()
 	createDummyCharacters()
 	// assert user has an inventory
@@ -267,8 +276,8 @@ func TestNewCharacter_DefaultItems(t *testing.T) {
 
 		clauses := make(map[string]interface{})
 
-		clauses["character_id = ?"] = character.ID
-		clauses["shn_id = ?"] = miniHouseID
+		clauses[characterIDEquals] = character.ID
+		clauses[itemShnIDEquals] = miniHouseID
 
 		item, err := GetItemWhere(clauses, false)
 		if err != nil {
@@ -276,12 +285,12 @@ func TestNewCharacter_DefaultItems(t *testing.T) {
 		}
 
 		if item == nil {
-			t.Error("no item")
+			t.Error(nilItem)
 		}
 	}
 }
 
-func TestLoadNewCharacter_Mage_EquippedItems(t *testing.T) {
+func TestLoadNewCharacterMageEquippedItems(t *testing.T) {
 	cleanDB()
 	// should have 1 staff
 	// 1750	ShortStaff	Short Staff
@@ -289,13 +298,13 @@ func TestLoadNewCharacter_Mage_EquippedItems(t *testing.T) {
 	character := newCharacter("mage")
 
 	if character.EquippedItems.RightHand != rightHand {
-		t.Errorf("id =%v, expected id =%v", character.EquippedItems.RightHand, rightHand)
+		t.Errorf(unexpectedEquippedItem, character.EquippedItems.RightHand, rightHand)
 	}
 
 	clauses := make(map[string]interface{})
 
-	clauses["character_id = ?"] = character.ID
-	clauses["shn_id = ?"] = rightHand
+	clauses[characterIDEquals] = character.ID
+	clauses[itemShnIDEquals] = rightHand
 
 	_, err := GetItemWhere(clauses, false)
 	if err != nil {
@@ -303,7 +312,7 @@ func TestLoadNewCharacter_Mage_EquippedItems(t *testing.T) {
 	}
 }
 
-func TestLoadNewCharacter_Fighter_EquippedItems(t *testing.T) {
+func TestLoadNewCharacterFighterEquippedItems(t *testing.T) {
 	cleanDB()
 	// 250	ShortSword	Short Sword
 	// bitField := 1 | 1 << 2 | 1 << 7
@@ -312,13 +321,13 @@ func TestLoadNewCharacter_Fighter_EquippedItems(t *testing.T) {
 	character := newCharacter("fighter")
 
 	if character.EquippedItems.RightHand != rightHand {
-		t.Errorf("id =%v, expected id =%v", character.EquippedItems.RightHand, rightHand)
+		t.Errorf(unexpectedEquippedItem, character.EquippedItems.RightHand, rightHand)
 	}
 
 	clauses := make(map[string]interface{})
 
-	clauses["character_id = ?"] = character.ID
-	clauses["shn_id = ?"] = rightHand
+	clauses[characterIDEquals] = character.ID
+	clauses[itemShnIDEquals] = rightHand
 
 	_, err := GetItemWhere(clauses, false)
 	if err != nil {
@@ -326,7 +335,7 @@ func TestLoadNewCharacter_Fighter_EquippedItems(t *testing.T) {
 	}
 }
 
-func TestLoadNewCharacter_Archer_EquippedItems(t *testing.T) {
+func TestLoadNewCharacterArcherEquippedItems(t *testing.T) {
 	cleanDB()
 	// 1250	ShortBow	Short Bow
 	// bitField := 1 | 11 << 2 | 1 << 7
@@ -334,13 +343,13 @@ func TestLoadNewCharacter_Archer_EquippedItems(t *testing.T) {
 	character := newCharacter("archer")
 
 	if character.EquippedItems.RightHand != rightHand {
-		t.Errorf("id =%v, expected id =%v", character.EquippedItems.RightHand, rightHand)
+		t.Errorf(unexpectedEquippedItem, character.EquippedItems.RightHand, rightHand)
 	}
 
 	clauses := make(map[string]interface{})
 
-	clauses["character_id = ?"] = character.ID
-	clauses["shn_id = ?"] = rightHand
+	clauses[characterIDEquals] = character.ID
+	clauses[itemShnIDEquals] = rightHand
 
 	_, err := GetItemWhere(clauses, false)
 	if err != nil {
@@ -348,7 +357,7 @@ func TestLoadNewCharacter_Archer_EquippedItems(t *testing.T) {
 	}
 }
 
-func TestLoadNewCharacter_Cleric_EquippedItems(t *testing.T) {
+func TestLoadNewCharacterClericEquippedItems(t *testing.T) {
 	cleanDB()
 	// 750	ShortMace	Short Mace
 	// bitField := 1 | 6 << 2 | 1 << 7
@@ -356,13 +365,13 @@ func TestLoadNewCharacter_Cleric_EquippedItems(t *testing.T) {
 	character := newCharacter("cleric")
 
 	if character.EquippedItems.RightHand != rightHand {
-		t.Errorf("id =%v, expected id =%v", character.EquippedItems.RightHand, rightHand)
+		t.Errorf(unexpectedEquippedItem, character.EquippedItems.RightHand, rightHand)
 	}
 
 	clauses := make(map[string]interface{})
 
-	clauses["character_id = ?"] = character.ID
-	clauses["shn_id = ?"] = rightHand
+	clauses[characterIDEquals] = character.ID
+	clauses[itemShnIDEquals] = rightHand
 
 	_, err := GetItemWhere(clauses, false)
 	if err != nil {

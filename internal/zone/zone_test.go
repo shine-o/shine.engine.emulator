@@ -75,7 +75,7 @@ func TestPackets(t *testing.T) {
 						t.Error(errors.Err{
 							Code:    errors.UnitTestError,
 							Message: "",
-							Details: errors.ErrDetails{
+							Details: errors.Details{
 								"err":    err,
 								"struct": reflect.TypeOf(packet.NcStruct).String(),
 								"data":   dataString,
@@ -87,7 +87,7 @@ func TestPackets(t *testing.T) {
 						t.Error(errors.Err{
 							Code:    errors.UnitTestError,
 							Message: "",
-							Details: errors.ErrDetails{
+							Details: errors.Details{
 								"err":    err,
 								"struct": reflect.TypeOf(packet.NcStruct).String(),
 								"data":   dataString,
@@ -110,7 +110,7 @@ func netPackets() utils.TargetPackets {
 					return errors.Err{
 						Code:    errors.UnitTestError,
 						Message: "",
-						Details: errors.ErrDetails{
+						Details: errors.Details{
 							"struct": reflect.TypeOf(ncS).String(),
 						},
 					}
@@ -119,7 +119,7 @@ func netPackets() utils.TargetPackets {
 					return errors.Err{
 						Code:    errors.UnitTestError,
 						Message: "",
-						Details: errors.ErrDetails{
+						Details: errors.Details{
 							"seed": ncS.Seed,
 						},
 					}

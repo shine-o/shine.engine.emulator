@@ -73,9 +73,6 @@ func persistMovement(dp decodedPacket) {
 			Y:         nc.To.Y,
 		})
 		em.Unlock()
-
-	// client
-	// only register the player moving
 	case 8215:
 		// NC_ACT_MOVEWALK_CMD
 		nc := structs.NcActMoveWalkCmd{}

@@ -2,7 +2,7 @@ package zone
 
 import (
 	"math/rand"
-	sort "sort"
+	"sort"
 	"sync"
 	"time"
 
@@ -32,7 +32,7 @@ func (pi *playerInventories) get(inventoryType persistence.InventoryType, slot i
 		if !ok {
 			return nil, errors.Err{
 				Code: errors.ZoneItemNoItemInSlot,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"inventoryType": inventoryType,
 					"slot":          slot,
 				},
@@ -44,7 +44,7 @@ func (pi *playerInventories) get(inventoryType persistence.InventoryType, slot i
 		if !ok {
 			return nil, errors.Err{
 				Code: errors.ZoneItemNoItemInSlot,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"inventoryType": inventoryType,
 					"slot":          slot,
 				},
@@ -56,7 +56,7 @@ func (pi *playerInventories) get(inventoryType persistence.InventoryType, slot i
 		if !ok {
 			return nil, errors.Err{
 				Code: errors.ZoneItemNoItemInSlot,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"inventoryType": inventoryType,
 					"slot":          slot,
 				},
@@ -68,7 +68,7 @@ func (pi *playerInventories) get(inventoryType persistence.InventoryType, slot i
 		if !ok {
 			return nil, errors.Err{
 				Code: errors.ZoneItemNoItemInSlot,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"inventoryType": inventoryType,
 					"slot":          slot,
 				},
@@ -79,7 +79,7 @@ func (pi *playerInventories) get(inventoryType persistence.InventoryType, slot i
 
 	return nil, errors.Err{
 		Code: errors.ZoneItemUnknownInventoryType,
-		Details: errors.ErrDetails{
+		Details: errors.Details{
 			"inventoryType": inventoryType,
 			"slot":          slot,
 		},
@@ -95,7 +95,7 @@ func (pi *playerInventories) delete(inventoryType persistence.InventoryType, slo
 		if !ok {
 			return errors.Err{
 				Code: errors.ZoneItemDeleteNoItem,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"inventoryType": inventoryType,
 					"slot":          slot,
 				},
@@ -108,7 +108,7 @@ func (pi *playerInventories) delete(inventoryType persistence.InventoryType, slo
 		if !ok {
 			return errors.Err{
 				Code: errors.ZoneItemDeleteNoItem,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"inventoryType": inventoryType,
 					"slot":          slot,
 				},
@@ -120,7 +120,7 @@ func (pi *playerInventories) delete(inventoryType persistence.InventoryType, slo
 		if !ok {
 			return errors.Err{
 				Code: errors.ZoneItemDeleteNoItem,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"inventoryType": inventoryType,
 					"slot":          slot,
 				},
@@ -133,7 +133,7 @@ func (pi *playerInventories) delete(inventoryType persistence.InventoryType, slo
 		if !ok {
 			return errors.Err{
 				Code: errors.ZoneItemDeleteNoItem,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"inventoryType": inventoryType,
 					"slot":          slot,
 				},
@@ -145,7 +145,7 @@ func (pi *playerInventories) delete(inventoryType persistence.InventoryType, slo
 
 	return errors.Err{
 		Code: errors.ZoneItemUnknownInventoryType,
-		Details: errors.ErrDetails{
+		Details: errors.Details{
 			"inventoryType": inventoryType,
 			"slot":          slot,
 		},
@@ -161,7 +161,7 @@ func (pi *playerInventories) add(inventoryType persistence.InventoryType, slot i
 		if ok {
 			return errors.Err{
 				Code: errors.ZoneItemSlotIsOccupied,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"inventoryType": inventoryType,
 					"slot":          slot,
 				},
@@ -174,7 +174,7 @@ func (pi *playerInventories) add(inventoryType persistence.InventoryType, slot i
 		if ok {
 			return errors.Err{
 				Code: errors.ZoneItemSlotIsOccupied,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"inventoryType": inventoryType,
 					"slot":          slot,
 				},
@@ -187,7 +187,7 @@ func (pi *playerInventories) add(inventoryType persistence.InventoryType, slot i
 		if ok {
 			return errors.Err{
 				Code: errors.ZoneItemSlotIsOccupied,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"inventoryType": inventoryType,
 					"slot":          slot,
 				},
@@ -200,7 +200,7 @@ func (pi *playerInventories) add(inventoryType persistence.InventoryType, slot i
 		if ok {
 			return errors.Err{
 				Code: errors.ZoneItemSlotIsOccupied,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"inventoryType": inventoryType,
 					"slot":          slot,
 				},
@@ -212,7 +212,7 @@ func (pi *playerInventories) add(inventoryType persistence.InventoryType, slot i
 
 	return errors.Err{
 		Code: errors.ZoneItemUnknownInventoryType,
-		Details: errors.ErrDetails{
+		Details: errors.Details{
 			"inventoryType": inventoryType,
 			"slot":          slot,
 		},
@@ -245,7 +245,7 @@ func (pi *playerInventories) moveItem(from, to uint16) (itemSlotChange, error) {
 	if sameInventoryConstraint(fromInventoryType, toInventoryType) {
 		return change, errors.Err{
 			Code: errors.ZoneItemSlotChangeConstraint,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"fromInventoryType": fromInventoryType,
 				"toInventoryType":   toInventoryType,
 			},
@@ -906,7 +906,7 @@ func itemAttributesBytes(i *item) ([]byte, error) {
 	default:
 		return itemAttr, errors.Err{
 			Code: errors.ZoneUnknownItemClass,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"itemID": i.pItem.ID,
 			},
 		}
@@ -1182,7 +1182,7 @@ func makeItem(itemIndex string, options makeItemOptions) (*item, itemCreationDet
 	if itemData.itemInfo == nil {
 		return i, icd, errors.Err{
 			Code: errors.ZoneItemMissingData,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"itemIndex": itemIndex,
 				"type":      "ItemInfo",
 			},
@@ -1192,7 +1192,7 @@ func makeItem(itemIndex string, options makeItemOptions) (*item, itemCreationDet
 	if itemData.itemInfoServer == nil {
 		return i, icd, errors.Err{
 			Code: errors.ZoneItemMissingData,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"itemIndex": itemIndex,
 				"type":      "ItemInfoServer",
 			},

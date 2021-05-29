@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+const (
+	unexpectedHandleValue = "unexpected newHandle value %v"
+)
+
 func TestNewHandle(t *testing.T) {
 	handler := handler{
 		index: 0,
@@ -25,7 +29,7 @@ func TestNewHandle(t *testing.T) {
 	}
 
 	if h != 1 {
-		t.Fatalf("unexpected newHandle value %v", h)
+		t.Fatalf(unexpectedHandleValue, h)
 	}
 }
 
@@ -96,7 +100,7 @@ func Test10000NewHandles(t *testing.T) {
 	}
 
 	if h != 10001 {
-		t.Errorf("unexpected newHandle value %v", h)
+		t.Errorf(unexpectedHandleValue, h)
 	}
 }
 
@@ -157,6 +161,6 @@ func TestCreate10000NewHandlesAndRemoveThem(t *testing.T) {
 	}
 
 	if h != 10001 {
-		t.Errorf("unexpected newHandle value %v", h)
+		t.Errorf(unexpectedHandleValue, h)
 	}
 }

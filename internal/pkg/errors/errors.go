@@ -26,6 +26,7 @@ const (
 
 	WorldMismatchedEventType
 	WorldBadSessionType
+	WorldPacketUnpackFailed
 
 	ZoneItemEquipFailed
 	ZoneItemMissingData
@@ -67,10 +68,10 @@ type ShineErrorCode int
 type Err struct {
 	Code    ShineErrorCode
 	Message string
-	Details ErrDetails
+	Details Details
 }
 
-type ErrDetails map[string]interface{}
+type Details map[string]interface{}
 
 func (e Err) Error() string {
 	if len(e.Details) > 0 {

@@ -211,7 +211,7 @@ func loadBaseNpc(inxName string, eType entityType) (*npc, error) {
 	if mi == nil || mis == nil {
 		return nil, errors.Err{
 			Code: errors.ZoneMissingNpcData,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"mobIndex": inxName,
 			},
 		}
@@ -290,7 +290,7 @@ func getNpcType(role, arg string) npcType {
 		default:
 			log.Error(errors.Err{
 				Code: errors.ZoneUnknownNpcRole,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"role+arg": role + arg,
 				},
 			})

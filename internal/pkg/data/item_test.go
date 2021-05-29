@@ -2,6 +2,8 @@ package data
 
 import "testing"
 
+const nilValue = "value cannot be nil"
+
 func TestLoadItemData(t *testing.T) {
 	data, err := LoadItemData(filesPath)
 	if err != nil {
@@ -9,23 +11,23 @@ func TestLoadItemData(t *testing.T) {
 	}
 
 	if &data.ItemInfo == nil {
-		t.Fatal("value cannot be nil")
+		t.Fatal(nilValue)
 	}
 
 	if &data.ItemInfoServer == nil {
-		t.Fatal("value cannot be nil")
+		t.Fatal(nilValue)
 	}
 
 	if &data.GradeItemOptions == nil {
-		t.Fatal("value cannot be nil")
+		t.Fatal(nilValue)
 	}
 
 	if &data.RandomOption == nil {
-		t.Fatal("value cannot be nil")
+		t.Fatal(nilValue)
 	}
 
 	if &data.RandomOptionCount == nil {
-		t.Fatal("value cannot be nil")
+		t.Fatal(nilValue)
 	}
 
 	//if data.ItemDropGroup == nil {

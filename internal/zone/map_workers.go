@@ -216,7 +216,7 @@ func playerPromptReplyLogic(zm *zoneMap, e event) {
 		log.Error(errors.Err{
 			Code:    errors.ZoneBadEntityType,
 			Message: "expected npc type for prompt reply logic",
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"got_type": reflect.TypeOf(n).String(),
 			},
 		})
@@ -229,7 +229,7 @@ func playerPromptReplyLogic(zm *zoneMap, e event) {
 		if !ok {
 			log.Error(errors.Err{
 				Code: errors.ZoneMapNotFound,
-				Details: errors.ErrDetails{
+				Details: errors.Details{
 					"mapID": p.next.mapID,
 				},
 			})

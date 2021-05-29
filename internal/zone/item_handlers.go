@@ -15,7 +15,6 @@ func ncItemRelocReq(ctx context.Context, np *networking.Parameters) {
 	session, ok := np.Session.(*session)
 
 	if !ok {
-		log.Error("no session available")
 		log.Error(errors.Err{
 			Code: errors.ZoneNoSessionAvailable,
 		})
@@ -37,7 +36,7 @@ func ncItemRelocReq(ctx context.Context, np *networking.Parameters) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneMapNotFound,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"session": session,
 			},
 		})
@@ -74,7 +73,7 @@ func ncItemEquipReq(ctx context.Context, np *networking.Parameters) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneMapNotFound,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"session": session,
 			},
 		})
@@ -111,7 +110,7 @@ func ncItemUnEquipReq(ctx context.Context, np *networking.Parameters) {
 	if !ok {
 		log.Error(errors.Err{
 			Code: errors.ZoneMapNotFound,
-			Details: errors.ErrDetails{
+			Details: errors.Details{
 				"session": session,
 			},
 		})

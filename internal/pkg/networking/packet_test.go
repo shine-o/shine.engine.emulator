@@ -132,8 +132,7 @@ func TestDecodeOutboundStream(t *testing.T) {
 }
 
 func TestDecodeInboundStream(t *testing.T) {
-	var xorOffset uint16
-	xorOffset = 181
+	var xorOffset uint16 = 181
 
 	results := make([]string, 0)
 	expectedResults := []string{
@@ -164,7 +163,7 @@ func TestDecodeInboundStream(t *testing.T) {
 
 		pd = append(pd, data[offset+skipBytes:nextOffset]...)
 
-		crypto.XorCipher(pd, xorPos, &xorOffsetgi)
+		crypto.XorCipher(pd, xorKey, &xorOffset, xorLimit)
 
 		offset += skipBytes + int(pLen)
 
