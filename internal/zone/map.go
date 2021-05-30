@@ -168,13 +168,19 @@ func (e *entities) removePlayer(h uint16) {
 	e.Unlock()
 }
 
-func (e *entities) getEntity(handle uint16) entity {
+func (e *entities) getEntity(handle uint16) (entity, error) {
 	for en := range e.all() {
 		if en.getHandle() == handle {
-			return en
+			return en, nil
 		}
 	}
-	return nil
+	return nil, errors.Err{
+		Code:    errors.ZoneEntityNotFound,
+		Message: "",
+		Details: errors.Details{
+			"handle": handle,
+		},
+	}
 }
 
 func (zm *zoneMap) run() {

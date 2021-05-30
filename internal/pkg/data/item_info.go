@@ -1,5 +1,9 @@
 package data
 
+const (
+	itemInfoServer = "ItemInfoServer.shn"
+)
+
 type ShineItemInfo struct {
 	DataSize    uint32
 	RowsCount   uint32
@@ -9,7 +13,6 @@ type ShineItemInfo struct {
 	ShineRow    []ItemInfo    `struct:"sizefrom=RowsCount"`
 }
 
-// ItemInfo
 type ItemInfo struct {
 	_                uint16
 	ID               uint16
@@ -71,7 +74,6 @@ type ItemInfo struct {
 	ItemFunc         ItemFuncEnum
 }
 
-// ItemTypeEnum
 type ItemTypeEnum uint32
 
 const (
@@ -85,7 +87,6 @@ const (
 	MaxItemTypeEnum
 )
 
-// ItemClassEnum
 type ItemClassEnum uint32
 
 const (
@@ -131,7 +132,6 @@ const (
 	MaxItemEnum
 )
 
-// ItemEquipEnum
 type ItemEquipEnum uint32
 
 const (
@@ -168,7 +168,6 @@ const (
 	MaxItemEquipEnum
 )
 
-// AuctionGroup
 type AuctionGroup uint32
 
 const (
@@ -218,7 +217,6 @@ const (
 	MaxAuctionGroup
 )
 
-// GradeType
 type GradeType uint32
 
 const (
@@ -233,7 +231,6 @@ const (
 	MaxGradeType
 )
 
-// UseClassType
 type UseClassType uint32
 
 const (
@@ -279,7 +276,6 @@ const (
 	MaxUseClassType
 )
 
-// WeaponTypeEnum
 type WeaponTypeEnum uint32
 
 const (
@@ -308,7 +304,6 @@ const (
 	MaxWeaponTypeEnum
 )
 
-// ArmorTypeEnum
 type ArmorTypeEnum uint32
 
 const (
@@ -344,7 +339,6 @@ const (
 	MaxEBelongType
 )
 
-// ItemFuncEnum
 type ItemFuncEnum uint32
 
 const (
@@ -359,9 +353,6 @@ const (
 )
 
 func (s *ShineItemInfo) MissingIdentifiers(filesPath string) (Files, error) {
-	const (
-		itemInfoServer = "ItemInfoServer.shn"
-	)
 	var (
 		res = Files{}
 		iis = &ShineItemInfoServer{}
@@ -390,8 +381,8 @@ func itemInfoServerDeps(s *ShineItemInfo, iis *ShineItemInfoServer, res Files) {
 		}
 
 		if !ok {
-			res["ItemInfoServer.shn"]["ID"] = append(res["ItemInfoServer.shn"]["ID"], i.ID)
-			res["ItemInfoServer.shn"]["InxName"] = append(res["ItemInfoServer.shn"]["InxName"], i.InxName)
+			res[itemInfoServer]["ID"] = append(res[itemInfoServer]["ID"], i.ID)
+			res[itemInfoServer]["InxName"] = append(res[itemInfoServer]["InxName"], i.InxName)
 		}
 	}
 }

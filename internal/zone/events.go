@@ -1,6 +1,10 @@
 package zone
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
+)
 
 // all events are something that either the player triggers or it should be broadcast to nearby players or mobs
 // all processes can define event structures with more channels on which to receive data
@@ -78,6 +82,8 @@ const (
 	eduStats
 	eduEquipItem
 	eduUnEquipItem
+	eduSelectEntity
+	eduUnselectsEntity
 
 	// dynamically registered events
 	// events that are defined at run time
@@ -102,7 +108,7 @@ var (
 	}
 
 	playerEvents = []eventIndex{
-		eduPosition, eduState, eduStats, eduEquipItem, eduUnEquipItem,
+		eduPosition, eduState, eduStats, eduEquipItem, eduUnEquipItem, eduSelectEntity, eduUnselectsEntity,
 	}
 )
 
@@ -120,4 +126,14 @@ func (de *dynamicEvents) add(sid string, i eventIndex) chan event {
 	de.events[sid].recv[i] = c
 	de.Unlock()
 	return c
+}
+
+func eventTypeCastError(expected, got string) error {
+	return errors.Err{
+		Code: errors.ZoneUnexpectedEventType,
+		Details: errors.Details{
+			"expected": expected,
+			"got":      got,
+		},
+	}
 }

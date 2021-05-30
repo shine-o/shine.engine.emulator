@@ -251,20 +251,18 @@ func ValidateCharacter(userID uint64, req *structs.NcAvatarCreateReq) error {
 
 // NewCharacter creates character for the User with userID and returns data the client can understand
 func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq, initialItems bool) (*Character, error) {
-	var char *Character
+	char := &Character{
+		UserID:     userID,
+		AdminLevel: 0,
+		Name:       req.Name.Name,
+		Slot:       req.SlotNum,
+	}
 	tx, err := db.Begin()
 	if err != nil {
 		return char, err
 	}
 
 	defer closeTx(tx)
-
-	char = &Character{
-		UserID:     userID,
-		AdminLevel: 0,
-		Name:       req.Name.Name,
-		Slot:       req.SlotNum,
-	}
 
 	_, err = tx.Model(char).Returning("*").Insert()
 
@@ -278,23 +276,28 @@ func NewCharacter(userID uint64, req *structs.NcAvatarCreateReq, initialItems bo
 	char.initialClientOptions()
 	char.initialEquippedItems()
 
-	if _, err = tx.Model(char.Appearance).Returning("*").Insert(); err != nil {
+	_, err = tx.Model(char.Appearance).Returning("*").Insert()
+	if err != nil {
 		return char, persistenceError(err, tx)
 	}
 
-	if _, err = tx.Model(char.Attributes).Returning("*").Insert(); err != nil {
+	_, err = tx.Model(char.Attributes).Returning("*").Insert()
+	if err != nil {
 		return char, persistenceError(err, tx)
 	}
 
-	if _, err = tx.Model(char.Location).Returning("*").Insert(); err != nil {
+	_, err = tx.Model(char.Location).Returning("*").Insert()
+	if err != nil {
 		return char, persistenceError(err, tx)
 	}
 
-	if _, err = tx.Model(char.Options).Returning("*").Insert(); err != nil {
+	_, err = tx.Model(char.Options).Returning("*").Insert()
+	if err != nil {
 		return char, persistenceError(err, tx)
 	}
 
-	if _, err = tx.Model(char.EquippedItems).Returning("*").Insert(); err != nil {
+	_, err = tx.Model(char.EquippedItems).Returning("*").Insert()
+	if err != nil {
 		return char, persistenceError(err, tx)
 	}
 

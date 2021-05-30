@@ -21,3 +21,12 @@ type eduUnEquipItemEvent struct {
 	change   itemSlotChange
 	err      chan error
 }
+
+type eduSelectEntityEvent struct {
+	entity entity
+	err    chan error
+}
+
+type eduUnselectEntityEvent struct {
+	err chan error
+}

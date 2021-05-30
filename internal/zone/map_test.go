@@ -145,7 +145,7 @@ func TestMapPathABAstar(t *testing.T) {
 func TestMapIntermittentSpeedChangePathABAStar(t *testing.T) {
 	t.Fail()
 	// start moving entity from point A to point B using speed X
-	// midway, change speed to Y, point A will now be currentlySelected point
+	// midway, change speed to Y, point A will now be selected point
 	// assert entity arrives at destination in Z seconds ( time = distance / speed )
 }
 

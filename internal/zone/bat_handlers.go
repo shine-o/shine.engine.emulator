@@ -46,7 +46,7 @@ func ncBatTargetingReq(ctx context.Context, np *networking.Parameters) {
 
 // NC_BAT_UNTARGET_REQ
 func ncBatUntargetReq(ctx context.Context, np *networking.Parameters) {
-	// remove currentlySelected SelectionOrder value for player
+	// remove selected SelectionOrder value for player
 	var (
 		e playerUnselectsEntityEvent
 	)

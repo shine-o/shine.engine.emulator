@@ -216,7 +216,7 @@ func TestCreateItemCharacterNotExist(t *testing.T) {
 	cErr, ok := err.(errors.Err)
 
 	if !ok {
-		t.Errorf(unexpectedErrorType, "errors.Err", reflect.TypeOf(cErr).String())
+		t.Errorf(unexpectedErrorType, reflect.TypeOf(errors.Err{}), reflect.TypeOf(cErr).String())
 	}
 
 	if cErr.Code != errors.PersistenceCharNotExists {
@@ -249,7 +249,7 @@ func TestCreateItemBadAmount(t *testing.T) {
 	cErr, ok := err.(errors.Err)
 
 	if !ok {
-		t.Errorf(unexpectedErrorType, "errors.Err", reflect.TypeOf(cErr).String())
+		t.Errorf(unexpectedErrorType, reflect.TypeOf(errors.Err{}), reflect.TypeOf(cErr).String())
 	}
 
 	if cErr.Code != errors.PersistenceItemInvalidAmount {
@@ -278,7 +278,7 @@ func TestCreateItemBadAmount(t *testing.T) {
 	cErr, ok = err.(errors.Err)
 
 	if !ok {
-		t.Errorf(unexpectedErrorType, "errors.Err", reflect.TypeOf(cErr).String())
+		t.Errorf(unexpectedErrorType, reflect.TypeOf(errors.Err{}), reflect.TypeOf(cErr).String())
 	}
 
 	if cErr.Code != errors.PersistenceItemInvalidAmount {
@@ -382,7 +382,7 @@ func TestUpdateItemBadAmount(t *testing.T) {
 	cErr, ok := err.(errors.Err)
 
 	if !ok {
-		t.Fatalf(unexpectedErrorType, "errors.Err", reflect.TypeOf(cErr).String())
+		t.Fatalf(unexpectedErrorType, reflect.TypeOf(errors.Err{}), reflect.TypeOf(cErr).String())
 	}
 
 	if cErr.Code != errors.PersistenceItemInvalidAmount {
@@ -401,7 +401,7 @@ func TestUpdateItemBadAmount(t *testing.T) {
 	cErr, ok = err.(errors.Err)
 
 	if !ok {
-		t.Fatalf(unexpectedErrorType, "errors.Err", reflect.TypeOf(cErr).String())
+		t.Fatalf(unexpectedErrorType, reflect.TypeOf(errors.Err{}), reflect.TypeOf(cErr).String())
 	}
 
 	if cErr.Code != errors.PersistenceItemInvalidAmount {
@@ -568,7 +568,7 @@ func TestInventoryFull(t *testing.T) {
 	cErr, ok := err.(errors.Err)
 
 	if !ok {
-		t.Fatalf(unexpectedErrorType, "errors.Err", reflect.TypeOf(cErr).String())
+		t.Fatalf(unexpectedErrorType, reflect.TypeOf(errors.Err{}), reflect.TypeOf(cErr).String())
 	}
 
 	if cErr.Code != errors.PersistenceInventoryFull {

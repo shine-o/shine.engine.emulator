@@ -1810,7 +1810,7 @@ func TestOpenDepositInventorySuccess(t *testing.T) {
 		}
 
 		if page.currentPage != i {
-			t.Errorf("unexpected currentlySelected page %v", page.currentPage)
+			t.Errorf("unexpected selected page %v", page.currentPage)
 		}
 
 		if len(page.items) != 36 {

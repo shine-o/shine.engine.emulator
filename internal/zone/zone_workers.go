@@ -40,13 +40,7 @@ func (z *zone) playerSession() {
 			go func() {
 				ev, ok := e.(*changeMapEvent)
 				if !ok {
-					log.Error(errors.Err{
-						Code: errors.ZoneUnexpectedEventType,
-						Details: errors.Details{
-							"expected": reflect.TypeOf(changeMapEvent{}).String(),
-							"got":      reflect.TypeOf(ev).String(),
-						},
-					})
+					log.Error(eventTypeCastError(reflect.TypeOf(changeMapEvent{}).String(), reflect.TypeOf(ev).String()))
 					return
 				}
 
@@ -114,7 +108,7 @@ func (z *zone) playerGameData() {
 func playerSHNLogic(e event) {
 	ev, ok := e.(*playerSHNEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerSHNEvent{}).String(), reflect.TypeOf(ev).String())
+		ev.err <- eventTypeCastError(reflect.TypeOf(playerSHNEvent{}).String(), reflect.TypeOf(ev).String())
 		return
 	}
 	// u.u'
@@ -124,7 +118,8 @@ func playerSHNLogic(e event) {
 func playerMapLoginLogic(e event) {
 	ev, ok := e.(*playerMapLoginEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerMapLoginEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(playerMapLoginEvent{}).String(), reflect.TypeOf(ev).String()))
+		return
 	}
 
 	var (
@@ -213,7 +208,8 @@ func playerMapLoginLogic(e event) {
 func playerDataLogic(e event) {
 	ev, ok := e.(*playerDataEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerDataEvent{}).String(), reflect.TypeOf(ev).String())
+		ev.err <- eventTypeCastError(reflect.TypeOf(playerDataEvent{}).String(), reflect.TypeOf(ev).String())
+		return
 	}
 
 	p := &player{
@@ -236,7 +232,8 @@ func playerDataLogic(e event) {
 func hearbeatUpdateLogic(e event) {
 	ev, ok := e.(*heartbeatUpdateEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(heartbeatUpdateEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(heartbeatUpdateEvent{}).String(), reflect.TypeOf(ev).String()))
+		return
 	}
 
 	zm, ok := maps.list[ev.session.mapID]
@@ -256,6 +253,7 @@ func hearbeatUpdateLogic(e event) {
 		return
 	}
 
+	// TODO: edu event
 	p.conn.Lock()
 	p.conn.lastHeartBeat = time.Now()
 	p.conn.Unlock()
@@ -266,7 +264,7 @@ func hearbeatUpdateLogic(e event) {
 func playerLogoutStartLogic(z *zone, e event) {
 	ev, ok := e.(*playerLogoutStartEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerLogoutStartEvent{}).String(), reflect.TypeOf(ev).String())
+		ev.err <- eventTypeCastError(reflect.TypeOf(playerLogoutStartEvent{}).String(), reflect.TypeOf(ev).String())
 		return
 	}
 
@@ -295,7 +293,7 @@ func playerLogoutStartLogic(z *zone, e event) {
 func playerLogoutCancelLogic(z *zone, e event) {
 	ev, ok := e.(*playerLogoutCancelEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerLogoutCancelEvent{}).String(), reflect.TypeOf(ev).String())
+		ev.err <- eventTypeCastError(reflect.TypeOf(playerLogoutCancelEvent{}).String(), reflect.TypeOf(ev).String())
 		return
 	}
 
@@ -316,7 +314,7 @@ func playerLogoutCancelLogic(z *zone, e event) {
 func playerLogoutConcludeLogic(z *zone, e event) {
 	ev, ok := e.(*playerLogoutConcludeEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerLogoutConcludeEvent{}).String(), reflect.TypeOf(ev).String())
+		ev.err <- eventTypeCastError(reflect.TypeOf(playerLogoutConcludeEvent{}).String(), reflect.TypeOf(ev).String())
 		return
 	}
 
@@ -337,10 +335,11 @@ func playerLogoutConcludeLogic(z *zone, e event) {
 func persistPLayerPositionLogic(e event) {
 	ev, ok := e.(*persistPlayerPositionEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(persistPlayerPositionEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(persistPlayerPositionEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 
+	// TODO: edu event
 	ev.p.persistence.Lock()
 	c := ev.p.persistence.char
 	ev.p.baseEntity.RLock()

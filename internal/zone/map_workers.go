@@ -93,7 +93,7 @@ func (zm *zoneMap) monsterActivity() {
 func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 	ev, ok := e.(*playerClicksOnNpcEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerClicksOnNpcEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(playerClicksOnNpcEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 
@@ -116,10 +116,18 @@ func playerClicksOnNpcLogic(zm *zoneMap, e event) {
 				MobID: n.data.mobInfo.ID,
 			}
 
-			// TODO: edu event
-			p.targeting.Lock()
-			p.targeting.currentlySelected = n
-			p.targeting.Unlock()
+			ev1 := &eduSelectEntityEvent{
+				entity: n,
+				err:    make(chan error),
+			}
+
+			p.events.send[eduSelectEntity] <- ev1
+
+			err := <-ev1.err
+			if err != nil {
+				log.Error(err)
+				return
+			}
 
 			if n.nType == npcPortal {
 				var md *data.Map
@@ -191,7 +199,8 @@ func playerPromptReplyLogic(zm *zoneMap, e event) {
 	log.Info(e)
 	ev, ok := e.(*playerPromptReplyEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerPromptReplyEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(playerPromptReplyEvent{}).String(), reflect.TypeOf(ev).String()))
+
 		return
 	}
 
@@ -206,7 +215,7 @@ func playerPromptReplyLogic(zm *zoneMap, e event) {
 	}
 
 	if p.targeting.currentlySelected == nil {
-		log.Error("prompt cannot be answered, player is no longer currentlySelected an NPC")
+		log.Error("prompt cannot be answered, player is no longer selected an NPC")
 		return
 	}
 
@@ -250,7 +259,8 @@ func playerPromptReplyLogic(zm *zoneMap, e event) {
 func playerSelectsEntityLogic(zm *zoneMap, e event) {
 	ev, ok := e.(*playerSelectsEntityEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerSelectsEntityEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(playerSelectsEntityEvent{}).String(), reflect.TypeOf(ev).String()))
+
 		return
 	}
 
@@ -260,19 +270,31 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 		return
 	}
 
-	en := zm.entities.getEntity(ev.nc.TargetHandle)
+	en, err := zm.entities.getEntity(ev.nc.TargetHandle)
+	if err != nil {
+		log.Error(err)
+		return
+	}
 
-	// this must return the order for the player making the selection
-	// the way I do it now, I return the order of the selected entity which IS WRONG
+	ev1 := &eduSelectEntityEvent{
+		entity: en,
+		err:    make(chan error),
+	}
 
-	// TODO: refactor into EDU event
-	order := p.selects(en)
-	en.selectedBy(p)
+	p.events.send[eduSelectEntity] <- ev1
 
-	var (
-		current = en.getTargetPacketData()
-		next    = *current
-	)
+	err = <-ev1.err
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	p.targeting.RLock()
+	order := p.targeting.selectionOrder
+	p.targeting.RUnlock()
+
+	current := en.getTargetPacketData()
+	next := *current
 
 	current.Order = order
 	next.Order = order + 1
@@ -288,7 +310,7 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 
 	// if selected entity is selecting another entity
 	// send data about this other entity
-	if en.currentlySelected() != nil {
+	if en.selected() != nil {
 		next = *en.getNextTargetPacketData()
 		next.Order = order + 1
 		networking.Send(p.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, &next)
@@ -298,7 +320,7 @@ func playerSelectsEntityLogic(zm *zoneMap, e event) {
 func playerUnselectsEntityLogic(zm *zoneMap, e event) {
 	ev, ok := e.(*playerUnselectsEntityEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerUnselectsEntityEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(playerUnselectsEntityEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 
@@ -308,22 +330,31 @@ func playerUnselectsEntityLogic(zm *zoneMap, e event) {
 		return
 	}
 
-	// TODO: edu event
-	p.targeting.Lock()
+	ev1 := &eduUnselectEntityEvent{
+		err: make(chan error),
+	}
+
+	p.events.send[eduUnselectsEntity] <- ev1
+
+	err = <-ev1.err
+
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	p.targeting.RLock()
 	order := p.targeting.selectionOrder
-	p.targeting.currentlySelected = nil
-	p.targeting.Unlock()
+	p.targeting.RUnlock()
 
 	nc := structs.NcBatTargetInfoCmd{
 		Order:  order + 1,
 		Handle: 65535,
 	}
 
-	p.targeting.RLock()
 	for op := range p.targeting.selectedByPlayers() {
 		go networking.Send(op.conn.outboundData, networking.NC_BAT_TARGETINFO_CMD, &nc)
 	}
-	p.targeting.RUnlock()
 }
 
 func itemEquipLogic(e event, zm *zoneMap) {
@@ -334,7 +365,7 @@ func itemEquipLogic(e event, zm *zoneMap) {
 
 	ev, ok := e.(*itemEquipEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&itemEquipEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(itemEquipEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 
@@ -419,7 +450,7 @@ func itemUnEquipLogic(e event, zm *zoneMap) {
 
 	ev, ok := e.(*itemUnEquipEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&itemUnEquipEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(itemUnEquipEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 
@@ -494,7 +525,7 @@ func itemUnEquipLogic(e event, zm *zoneMap) {
 func itemIsMovedLogic(e event, zm *zoneMap) {
 	ev, ok := e.(*itemIsMovedEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&itemIsMovedEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(itemIsMovedEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 
@@ -535,7 +566,7 @@ func itemIsMovedLogic(e event, zm *zoneMap) {
 func npcWalksLogic(zm *zoneMap, e event) {
 	ev, ok := e.(*npcWalksEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&npcWalksEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(npcWalksEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 	for ap := range zm.entities.allPlayers() {
@@ -551,7 +582,7 @@ func npcRunsLogic(zm *zoneMap, e event) {
 	ev, ok := e.(*npcRunsEvent)
 
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&npcRunsEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(npcRunsEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 
@@ -607,7 +638,8 @@ func playerHandleMaintenanceLogic(zm *zoneMap) {
 func playerHandleLogic(e event, zm *zoneMap) {
 	ev, ok := e.(*playerHandleEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&playerHandleEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(playerHandleEvent{}).String(), reflect.TypeOf(ev).String()))
+
 		return
 	}
 
@@ -632,7 +664,8 @@ func playerHandleLogic(e event, zm *zoneMap) {
 func playerAppearedLogic(e event, zm *zoneMap) {
 	ev, ok := e.(*playerAppearedEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String()))
+
 		return
 	}
 
@@ -659,86 +692,11 @@ func playerAppearedLogic(e event, zm *zoneMap) {
 	}()
 }
 
-// send data about equippedID or unequipped slots
-// this is used on changing maps, for example when you leave the KQ arena and the hammer is automatically removed when you leave the map
-func equippedItems(p1 *player) {
-	var (
-		nc1 []structs.NcBriefInfoUnEquipCmd
-		nc2 []structs.NcBriefInfoChangeWeaponCmd
-		nc3 []structs.NcBriefInfoChangeUpgradeCmd
-		nc4 []structs.NcBriefInfoChangeDecorateCmd
-	)
-
-	p1h := p1.getHandle()
-	p1.inventories.RLock()
-	for i := 1; i <= 29; i++ {
-		eItem, ok := p1.inventories.equipped.items[i]
-		if !ok {
-			nc1 = append(nc1, structs.NcBriefInfoUnEquipCmd{
-				Handle: p1h,
-				Slot:   byte(i),
-			})
-			continue
-		}
-
-		eItem.RLock()
-		switch eItem.data.itemInfo.Class {
-		case data.ItemClassArmor:
-		case data.ItemClassAmulet:
-		case data.ItemBracelet:
-		case data.ItemClassShield:
-		case data.ItemClassBoot:
-			nc3 = append(nc3, structs.NcBriefInfoChangeUpgradeCmd{
-				Handle: p1h,
-				Item:   eItem.data.itemInfo.ID,
-				// Slot:   byte(eItem.data.itemInfo.Equip),
-			})
-			break
-		case data.ItemClassWeapon:
-			nc2 = append(nc2, structs.NcBriefInfoChangeWeaponCmd{
-				UpgradeInfo: structs.NcBriefInfoChangeUpgradeCmd{
-					Handle: p1h,
-					Item:   eItem.data.itemInfo.ID,
-					// Slot:   byte(eItem.data.itemInfo.Equip),
-				},
-				CurrentMobID:     65535,
-				CurrentKillLevel: 255,
-			})
-			break
-		case data.ItemCosWeapon:
-		case data.ItemCosShield:
-		case data.ItemClassDecoration:
-			nc4 = append(nc4, structs.NcBriefInfoChangeDecorateCmd{
-				Handle: p1h,
-				Item:   eItem.data.itemInfo.ID,
-				// Slot:   byte(eItem.data.itemInfo.Equip),
-			})
-			break
-		}
-		eItem.RUnlock()
-
-	}
-	p1.inventories.RUnlock()
-
-	for _, nc := range nc1 {
-		networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_UNEQUIP_CMD, &nc)
-	}
-	for _, nc := range nc2 {
-		networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_CHANGEWEAPON_CMD, &nc)
-	}
-	for _, nc := range nc3 {
-		networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_CHANGEUPGRADE_CMD, &nc)
-	}
-	for _, nc := range nc4 {
-		networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_CHANGEDECORATE_CMD, &nc)
-	}
-}
-
 func playerDisappearedLogic(e event, zm *zoneMap) {
 	ev, ok := e.(*playerDisappearedEvent)
 
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerDisappearedEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(playerDisappearedEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 
@@ -769,7 +727,7 @@ func playerWalksLogic(e event, zm *zoneMap) {
 	)
 	ev, ok := e.(*playerWalksEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 
@@ -830,7 +788,7 @@ func playerRunsLogic(e event, zm *zoneMap) {
 
 	ev, ok := e.(*playerRunsEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(playerAppearedEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 
@@ -885,7 +843,7 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	)
 	ev, ok := e.(*playerStoppedEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerStoppedEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(playerStoppedEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 
@@ -926,7 +884,7 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 func playerJumpedLogic(e event, zm *zoneMap) {
 	ev, ok := e.(*playerJumpedEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(playerJumpedEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(playerJumpedEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 
@@ -946,7 +904,7 @@ func playerJumpedLogic(e event, zm *zoneMap) {
 func unknownHandleLogic(e event, zm *zoneMap) {
 	ev, ok := e.(*unknownHandleEvent)
 	if !ok {
-		log.Errorf("expected event type %v but got %v", reflect.TypeOf(&unknownHandleEvent{}).String(), reflect.TypeOf(ev).String())
+		log.Error(eventTypeCastError(reflect.TypeOf(unknownHandleEvent{}).String(), reflect.TypeOf(ev).String()))
 		return
 	}
 
@@ -986,43 +944,6 @@ func unknownHandleLogic(e event, zm *zoneMap) {
 		nc := npcNcBriefInfoRegenMobCmd(n)
 		go networking.Send(p1.conn.outboundData, networking.NC_BRIEFINFO_REGENMOB_CMD, &nc)
 	}
-}
-
-func findFirstEntity(zm *zoneMap, handle uint16) (chan *player, chan *npc, chan *monster) {
-	pc := make(chan *player, 1)
-	nc := make(chan *npc, 1)
-	mc := make(chan *monster, 1)
-
-	go func(pc chan<- *player, zm *zoneMap, targetHandle uint16) {
-		for p := range zm.entities.allPlayers() {
-			if p.getHandle() == targetHandle {
-				pc <- p
-				return
-			}
-		}
-		pc <- nil
-	}(pc, zm, handle)
-
-	go func(nc chan<- *npc, zm *zoneMap, targetHandle uint16) {
-		for n := range zm.entities.allNpc() {
-			if n.getHandle() == targetHandle {
-				nc <- n
-				return
-			}
-		}
-		nc <- nil
-	}(nc, zm, handle)
-
-	go func(mc chan<- *monster, zm *zoneMap, targetHandle uint16) {
-		for m := range zm.entities.allMonsters() {
-			if m.getHandle() == targetHandle {
-				mc <- m
-			}
-		}
-		mc <- nil
-	}(mc, zm, handle)
-
-	return pc, nc, mc
 }
 
 func portalMatchesLocation(portal *data.ShinePortal, next location) bool {

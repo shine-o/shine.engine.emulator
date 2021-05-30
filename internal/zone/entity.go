@@ -55,14 +55,13 @@ type proximity interface {
 }
 
 type target interface {
-	selects(entity) (order byte)
-	currentlySelected() entity
+	selects(entity)
+	selected() entity
 	selectedBy(entity)
+	removeSelection()
 	// packet data for current entity
-	// will return packet with current order
 	getTargetPacketData() *structs.NcBatTargetInfoCmd
 	// packet data for selected entity by current entity
-	// will return packet with current order +1
 	getNextTargetPacketData() *structs.NcBatTargetInfoCmd
 }
 

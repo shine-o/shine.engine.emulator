@@ -48,6 +48,12 @@ type player struct {
 	sync.RWMutex
 }
 
+func (p *player) removeSelection() {
+	p.targeting.Lock()
+	p.targeting.currentlySelected = nil
+	p.targeting.Unlock()
+}
+
 // return this entity's target data
 func (p *player) getTargetPacketData() *structs.NcBatTargetInfoCmd {
 	p.targeting.RLock()
@@ -64,20 +70,18 @@ func (p *player) getNextTargetPacketData() *structs.NcBatTargetInfoCmd {
 
 // set entity as currentlySelected target
 // return currentlySelected target's selected entity
-func (p *player) selects(e entity) byte {
+func (p *player) selects(e entity) {
 	p.targeting.Lock()
 	p.targeting.selectionOrder += 32
-	order := p.targeting.selectionOrder
 	p.targeting.currentlySelected = e
 	p.targeting.Unlock()
-	return order
 }
 
 func (p *player) selectedBy(e entity) {
 	p.targeting.selectedBy(e)
 }
 
-func (p *player) currentlySelected() entity {
+func (p *player) selected() entity {
 	p.targeting.RLock()
 	defer p.targeting.RUnlock()
 	return p.targeting.currentlySelected
@@ -383,8 +387,9 @@ func (p *player) load(name string) error {
 		p.baseEntity.events.recv[ev] = c
 	}
 
-	go p.eduPlayerEvents001()
-	go p.eduPlayerEvents002()
+	go p.eduPlayerSyncEvents001()
+	go p.eduPlayerSyncEvents002()
+	// go p.eduPlayerAsyncEvents()
 
 	p.baseEntity.current.mapName = char.Location.MapName
 	p.baseEntity.current.mapID = int(char.Location.MapID)
@@ -525,8 +530,8 @@ func (p *player) stateData() {
 
 func (p *player) statsData() {
 	// given all:
-	//  class base stats for currentlySelected level, equippedID items, charged buffs, buffs/debuffs, assigned stat points
-	// calculate base stats (class base stats for currentlySelected level, assigned stat points) , and stats with gear on (equippedID items, charged buffs, buffs/debuffs)
+	//  class base stats for selected level, equippedID items, charged buffs, buffs/debuffs, assigned stat points
+	// calculate base stats (class base stats for selected level, assigned stat points) , and stats with gear on (equippedID items, charged buffs, buffs/debuffs)
 	// given that equippedID
 	s := &playerStats{
 		str: stat{

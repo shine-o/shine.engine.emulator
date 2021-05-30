@@ -57,6 +57,7 @@ const (
 	ZoneNilPlayerFields
 	ZonePlayerSelectedUnknownEntity
 	ZoneNoSessionAvailable
+	ZoneEntityNotFound
 	UnitTestError
 
 	PacketSnifferNotEnoughData

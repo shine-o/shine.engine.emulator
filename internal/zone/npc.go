@@ -42,6 +42,12 @@ type npc struct {
 	sync.RWMutex
 }
 
+func (n *npc) removeSelection() {
+	n.targeting.Lock()
+	n.targeting.currentlySelected = nil
+	n.targeting.Unlock()
+}
+
 func (n *npc) getTargetPacketData() *structs.NcBatTargetInfoCmd {
 	n.targeting.RLock()
 	order := n.targeting.selectionOrder
@@ -54,20 +60,18 @@ func (n *npc) getNextTargetPacketData() *structs.NcBatTargetInfoCmd {
 	return n.targeting.currentlySelected.getTargetPacketData()
 }
 
-func (n *npc) selects(e entity) byte {
+func (n *npc) selects(e entity) {
 	n.targeting.Lock()
 	n.targeting.selectionOrder += 32
-	order := n.targeting.selectionOrder
 	n.targeting.currentlySelected = e
 	n.targeting.Unlock()
-	return order
 }
 
 func (n *npc) selectedBy(e entity) {
 	n.targeting.selectedBy(e)
 }
 
-func (n *npc) currentlySelected() entity {
+func (n *npc) selected() entity {
 	n.targeting.RLock()
 	defer n.targeting.RUnlock()
 	return n.targeting.currentlySelected

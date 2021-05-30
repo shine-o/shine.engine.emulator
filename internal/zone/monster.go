@@ -8,6 +8,12 @@ import (
 
 type monster npc
 
+func (m *monster) removeSelection() {
+	m.targeting.Lock()
+	m.targeting.currentlySelected = nil
+	m.targeting.Unlock()
+}
+
 func (m *monster) getTargetPacketData() *structs.NcBatTargetInfoCmd {
 	m.targeting.RLock()
 	order := m.targeting.selectionOrder
@@ -20,20 +26,18 @@ func (m *monster) getNextTargetPacketData() *structs.NcBatTargetInfoCmd {
 	return m.targeting.currentlySelected.getTargetPacketData()
 }
 
-func (m *monster) selects(e entity) byte {
+func (m *monster) selects(e entity) {
 	m.targeting.Lock()
 	m.targeting.selectionOrder += 32
-	order := m.targeting.selectionOrder
 	m.targeting.currentlySelected = e
 	m.targeting.Unlock()
-	return order
 }
 
 func (m *monster) selectedBy(e entity) {
 	m.targeting.selectedBy(e)
 }
 
-func (m *monster) currentlySelected() entity {
+func (m *monster) selected() entity {
 	m.targeting.RLock()
 	defer m.targeting.RUnlock()
 	return m.targeting.currentlySelected

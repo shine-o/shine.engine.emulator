@@ -33,9 +33,9 @@ func Build() error {
 		ch <- sh.RunV("go", "run", "../cmd/login/login.go", "--config", "../configs/login.yml", "serve")
 	}()
 
-	go func() {
-		ch <- sh.RunV("go", "run", "../cmd/zone/zone.go", "--config", "../configs/zone.yml", "serve")
-	}()
+	//go func() {
+	//	ch <- sh.RunV("go", "run", "../cmd/zone/zone.go", "--config", "../configs/zone.yml", "serve")
+	//}()
 
 	<-ch
 	return nil
