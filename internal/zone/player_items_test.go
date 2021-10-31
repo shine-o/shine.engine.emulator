@@ -2419,7 +2419,7 @@ func TestChangeItemSlotDepositEmptySlotSuccess(t *testing.T) {
 
 	itemSlotChange, err := player.inventories.moveItem(nc.From.Inventory, nc.To.Inventory)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	// should be nil as I'm moving it to an empty slot

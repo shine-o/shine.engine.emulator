@@ -115,6 +115,7 @@ func (pi *playerInventories) delete(inventoryType persistence.InventoryType, slo
 			}
 		}
 		delete(pi.deposit.items, slot)
+		return nil
 	case persistence.RewardInventory:
 		_, ok := pi.reward.items[slot]
 		if !ok {
@@ -234,13 +235,14 @@ func sameInventoryConstraint(from, to persistence.InventoryType) bool {
 func (pi *playerInventories) moveItem(from, to uint16) (itemSlotChange, error) {
 	var (
 		change            itemSlotChange
-		fromInventoryType = persistence.InventoryType(from >> 10)
-		toInventoryType   = persistence.InventoryType(to >> 10)
-		fromInventorySlot = int(from & 1023)
-		toInventorySlot   = int(to & 1023)
 		fromItem          *item
 		toItem            *item
 	)
+
+	fromInventoryType := persistence.InventoryType(from >> 10)
+	toInventoryType   := persistence.InventoryType(to >> 10)
+	fromInventorySlot := int(from & 1023)
+	toInventorySlot   := int(to & 1023)
 
 	if sameInventoryConstraint(fromInventoryType, toInventoryType) {
 		return change, errors.Err{

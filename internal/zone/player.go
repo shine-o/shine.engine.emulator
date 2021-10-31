@@ -48,6 +48,10 @@ type player struct {
 	sync.RWMutex
 }
 
+func (p *player) unselectedBy(e entity) {
+	p.targeting.unselectedBy(e)
+}
+
 func (p *player) removeSelection() {
 	p.targeting.Lock()
 	p.targeting.currentlySelected = nil

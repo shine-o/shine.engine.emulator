@@ -187,13 +187,6 @@ func TestEntityOutOfRange(t *testing.T) {
 // B is notified about A selected C
 // A is notified about selected C
 func TestEntitySelectingEntityAwareness(t *testing.T) {
-	// A selects C
-	// INFO : 2021/05/23 14:36:40.751225 handlers.go:271: 2021-05-23 14:36:40.738381 +0200 CEST 2388->9120 outbound NC_BAT_TARGETTING_REQ {"packetType":"small","length":4,"department":9,"command":"1","opCode":9217,"data":"3209","rawData":"0401243209","friendlyName":""}
-
-	// A and B get info about A selected C
-	// INFO : 2021/05/23 14:36:40.891327 handlers.go:271: 2021-05-23 14:36:40.888524 +0200 CEST 9120->2388 inbound NC_BAT_TARGETINFO_CMD {"packetType":"small","length":32,"department":9,"command":"2","opCode":9218,"data":"40320990010000900100006400000064000000000000000000000007fc03","rawData":"20022440320990010000900100006400000064000000000000000000000007fc03","friendlyName":""}
-	// INFO : 2021/05/23 14:36:41.000782 handlers.go:271: 2021-05-23 14:36:40.988085 +0200 CEST 9120->2377 inbound NC_BAT_TARGETINFO_CMD {"packetType":"small","length":32,"department":9,"command":"2","opCode":9218,"data":"41320990010000900100006400000064000000000000000000000007fd03","rawData":"20022441320990010000900100006400000064000000000000000000000007fd03","friendlyName":""}
-
 	eA := &player{
 		baseEntity: &baseEntity{
 			handle: 1,
@@ -258,4 +251,57 @@ func TestEntityUnSelectsEntity(t *testing.T) {
 
 	// B gets this info about A unselecting something
 	// INFO : 2021/05/23 14:30:52.211170 handlers.go:271: 2021-05-23 14:30:52.202183 +0200 CEST 9120->2377 inbound NC_BAT_TARGETINFO_CMD {"packetType":"small","length":32,"department":9,"command":"2","opCode":9218,"data":"01ffff000000000000000000000000000000000000000000000000000000","rawData":"20022401ffff000000000000000000000000000000000000000000000000000000","friendlyName":""}
+	eA := &player{
+		baseEntity: &baseEntity{
+			handle: 1,
+		},
+		targeting: &targeting{
+			players:  make(map[uint16]*player),
+			monsters: make(map[uint16]*monster),
+			npc:      make(map[uint16]*npc),
+		},
+	}
+
+	eB := &player{
+		baseEntity: &baseEntity{
+			handle: 2,
+		},
+		targeting: &targeting{
+			players:  make(map[uint16]*player),
+			monsters: make(map[uint16]*monster),
+			npc:      make(map[uint16]*npc),
+		},
+	}
+
+	eC := &monster{
+		baseEntity: &baseEntity{
+			handle: 3,
+		},
+		targeting: &targeting{
+			players:  make(map[uint16]*player),
+			monsters: make(map[uint16]*monster),
+			npc:      make(map[uint16]*npc),
+		},
+	}
+
+	eA.selects(eC)
+	eC.selectedBy(eA)
+
+	eB.selects(eA)
+	eA.selectedBy(eB)
+
+	eC.unselectedBy(eA)
+	eA.unselectedBy(eB)
+
+	_, ok := eC.targeting.players[eA.getHandle()]
+	if ok {
+		t.Fatal("A must NOT be aware that its selected by B")
+	}
+
+	_, ok = eA.targeting.players[eB.getHandle()]
+	if ok {
+		t.Fatal("A must NOT be aware that its selected by B")
+	}
+
 }
+

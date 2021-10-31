@@ -42,6 +42,10 @@ type npc struct {
 	sync.RWMutex
 }
 
+func (n *npc) unselectedBy(e entity) {
+	n.targeting.unselectedBy(e)
+}
+
 func (n *npc) removeSelection() {
 	n.targeting.Lock()
 	n.targeting.currentlySelected = nil

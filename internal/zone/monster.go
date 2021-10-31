@@ -8,6 +8,10 @@ import (
 
 type monster npc
 
+func (m *monster) unselectedBy(e entity) {
+	m.targeting.unselectedBy(e)
+}
+
 func (m *monster) removeSelection() {
 	m.targeting.Lock()
 	m.targeting.currentlySelected = nil

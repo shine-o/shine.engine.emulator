@@ -58,6 +58,7 @@ type target interface {
 	selects(entity)
 	selected() entity
 	selectedBy(entity)
+	unselectedBy(entity)
 	removeSelection()
 	// packet data for current entity
 	getTargetPacketData() *structs.NcBatTargetInfoCmd
@@ -135,6 +136,22 @@ func (t *targeting) selectedBy(e entity) {
 				"got_type": reflect.TypeOf(e).String(),
 			},
 		})
+	}
+	t.Unlock()
+}
+
+func (t * targeting) unselectedBy(e entity) {
+	t.Lock()
+	switch e.(type) {
+	case *monster:
+		delete(t.monsters, e.getHandle())
+		break
+	case *player:
+		delete(t.players, e.getHandle())
+		break
+	case *npc:
+		delete(t.npc, e.getHandle())
+		break
 	}
 	t.Unlock()
 }

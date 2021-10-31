@@ -126,16 +126,16 @@ func TestMapSpawnMonsterNpc(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	zm.spawnMobs()
+	//zm.spawnMobs()
+	zm.spawnNPCs()
 
 	if len(zm.entities.npc) == 0 {
 		t.Fatal(atLeastOneNPC)
 	}
 
-	if len(zm.entities.npc) != 48 {
+	if len(zm.entities.npc) != 29 {
 		t.Fatalf(mismatchedNPCAmount, len(zm.entities.npc))
 	}
-	// 48
 }
 
 func TestMapPathABAstar(t *testing.T) {

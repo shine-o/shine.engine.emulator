@@ -454,7 +454,7 @@ func freeSlot(characterID uint64, inventoryType InventoryType) (int, error) {
 
 	err := db.Model((*Item)(nil)).
 		Column("slot").
-		Where(characterUserIDEquals, characterID).
+		Where(characterIDEquals, characterID).
 		Where(itemInventoryTypeEquals, inventoryType).
 		Select(&slots)
 	if err != nil {
