@@ -7,15 +7,15 @@ import (
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/data"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
-	path "github.com/shine-o/shine.engine.emulator/internal/pkg/pathfinding"
 	"github.com/spf13/viper"
 )
 
 type zoneMap struct {
-	data                  *data.Map
-	rawNodes              path.Grid
-	presetNodes           path.Grid
-	presetNodesWithMargin path.Grid
+	data *data.Map
+	//rawNodes              path.Grid
+	validCoordinates      ValidCoordinates
+	presetNodes           Grid
+	presetNodesWithMargin Grid
 	entities              *entities
 	events                *events
 }
@@ -452,7 +452,7 @@ func validateLocation(zm *zoneMap, x, y, numSteps, speed int) bool {
 			}
 
 			rx, ry := bitmapCoordinates(lx, ly)
-			if path.CanWalk(zm.presetNodesWithMargin, rx, ry) {
+			if CanWalk(zm.presetNodes, rx, ry) {
 				continue
 			}
 
@@ -491,14 +491,16 @@ func loadMap(mapID int) (*zoneMap, error) {
 	}
 
 	var (
-		rawNodes               = path.RawGrid(md.SHBD)
-		presetNodes            = path.PresetNodesGrid(md.SHBD, path.PresetNodesMargin)
-		presetNodesWallMargins = path.PresetNodesWithMargins(md.SHBD, rawNodes, path.PresetNodesMargin)
+		//rawNodes               = path.RawGrid(md.SHBD)
+		validCoordinates       = GetValidCoordinates(md.SHBD)
+		presetNodes            = PresetNodesGrid(md.SHBD, PresetNodesMargin)
+		presetNodesWallMargins = PresetNodesWithMargins(md.SHBD, presetNodes, PresetNodesMargin)
 	)
 
 	zm := &zoneMap{
-		data:                  md,
-		rawNodes:              rawNodes,
+		data: md,
+		//rawNodes:              rawNodes,
+		validCoordinates:      validCoordinates,
 		presetNodes:           presetNodes,
 		presetNodesWithMargin: presetNodesWallMargins,
 		entities: &entities{

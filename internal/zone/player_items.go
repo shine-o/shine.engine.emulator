@@ -234,15 +234,15 @@ func sameInventoryConstraint(from, to persistence.InventoryType) bool {
 // the input from/to are values sent by the client
 func (pi *playerInventories) moveItem(from, to uint16) (itemSlotChange, error) {
 	var (
-		change            itemSlotChange
-		fromItem          *item
-		toItem            *item
+		change   itemSlotChange
+		fromItem *item
+		toItem   *item
 	)
 
 	fromInventoryType := persistence.InventoryType(from >> 10)
-	toInventoryType   := persistence.InventoryType(to >> 10)
+	toInventoryType := persistence.InventoryType(to >> 10)
 	fromInventorySlot := int(from & 1023)
-	toInventorySlot   := int(to & 1023)
+	toInventorySlot := int(to & 1023)
 
 	if sameInventoryConstraint(fromInventoryType, toInventoryType) {
 		return change, errors.Err{

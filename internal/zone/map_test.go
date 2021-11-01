@@ -26,7 +26,7 @@ func TestLoadMap(t *testing.T) {
 		t.Fatal(nilValue)
 	}
 
-	if zm.rawNodes == nil {
+	if zm.validCoordinates == nil {
 		t.Fatal(nilValue)
 	}
 

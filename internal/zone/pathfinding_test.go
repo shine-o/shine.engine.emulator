@@ -1,4 +1,4 @@
-package path
+package zone
 
 import (
 	"bytes"
@@ -6,7 +6,6 @@ import (
 	"image"
 	"image/color"
 	"math"
-	"os"
 	"sync"
 	"testing"
 
@@ -23,16 +22,6 @@ var (
 	vNodesWithWalls       Grid
 	vNodesNoWalls         Grid
 )
-
-func TestMain(m *testing.M) {
-	mn = "Rou"
-	s, _ = data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", mn))
-	// s, _ = data.LoadSHBDFile(fmt.Sprintf("/home/marius/projects/shine/shine.engine.emulator/files/blocks/%v.shbd", mn))
-	v = RawGrid(s)
-	vNodesNoWalls = PresetNodesGrid(s, vNodesNoWallsMargin)
-	vNodesWithWalls = PresetNodesWithMargins(s, v, vNodesWithWallsMargin)
-	os.Exit(m.Run())
-}
 
 func TestPathAstarPaintLargeDistance(t *testing.T) {
 	v1 := copyGrid(vNodesNoWalls)
@@ -279,25 +268,6 @@ func TestPaintPathNodesMultiple(*testing.T) {
 }
 
 func TestMapIntermitentBySpeedPathAStar(t *testing.T) {
-	// raw path has too many Nodes
-	// given a speed, reduce the raw path using the speed
-	// have a function that calculates how many Nodes should be sent per second
-
-	// speed is a constant, the entity may be walking / running, e.G for entities 120, 60
-
-	// s = d / t
-	// 120 = d / t
-
-	// 120 = 180 / t
-
-	// t = 180 / 120
-	// t = 1.5
-
-	// t will be the time in seconds
-	// create a ticker that will send those packets
-
-	// I will also need to calculate the euclideanDistance per second
-
 	m := "Rou"
 	var s *data.SHBD
 	s, err := data.LoadSHBDFile(fmt.Sprintf("C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.emulator\\files\\blocks\\%v.shbd", m))

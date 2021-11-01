@@ -1,20 +1,12 @@
-FROM shineo/dev-game-data
-
-FROM golang:1.15.2-alpine3.12
-
-COPY build/wait-for /usr/local/bin
-
-RUN chmod +x /usr/local/bin/wait-for
-
-RUN mkdir /app
+FROM golang:1.16-alpine
 
 RUN apk add gcc
 
-#ADD . /app
+RUN mkdir /app
 
-RUN mkdir /game-data
+ADD . /app
 
-COPY --from=0 /game-data /game-data
+RUN chmod +x /app/build/wait-for
 
 WORKDIR /app
 

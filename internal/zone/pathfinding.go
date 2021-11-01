@@ -1,4 +1,4 @@
-package path
+package zone
 
 import (
 	"bytes"
@@ -16,6 +16,8 @@ const (
 	neighborNodes     = 8
 	gridWeight        = 2
 )
+
+type ValidCoordinates map[uint16]map[uint16]uint8
 
 type Grid map[int]map[int]*Node
 
@@ -71,6 +73,38 @@ func (g Grid) Get(x, y int) *Node {
 func CanWalk(wv Grid, x, y int) bool {
 	_, ok := wv[x][y]
 	return ok
+}
+
+func CanWalk2(wv ValidCoordinates, x, y int) bool {
+	_, ok := wv[uint16(x)][uint16(y)]
+	return ok
+}
+
+func GetValidCoordinates(s *data.SHBD) ValidCoordinates {
+	vc := make(ValidCoordinates)
+	r := bytes.NewReader(s.Data)
+
+	for y := 0; y < s.Y; y++ {
+		for x := 0; x < s.X; x++ {
+			b, err := r.ReadByte()
+			if err != nil {
+				return vc
+			}
+
+			for i := 0; i < 8; i++ {
+				if b&byte(math.Pow(2, float64(i))) == 0 {
+					rX := uint16(x*8 + i)
+					rY := uint16(y)
+					_, ok := vc[rX]
+					if !ok {
+						vc[rX] = make(map[uint16]uint8)
+					}
+					vc[rX][rY] = 1
+				}
+			}
+		}
+	}
+	return vc
 }
 
 func RawGrid(s *data.SHBD) Grid {

@@ -3,11 +3,11 @@ serve:
 
 session:
   redis:
-    host: redis
-    port: 60000
+    host: 127.0.0.1
+    port: 63790
     db: 3
 
 metrics:
-  enabled: true
+  enabled: false
   prometheus:
-    port: 30000
+    port: 30005

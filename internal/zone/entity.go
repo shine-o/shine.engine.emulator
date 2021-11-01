@@ -5,7 +5,6 @@ import (
 	"sync"
 
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/errors"
-	path "github.com/shine-o/shine.engine.emulator/internal/pkg/pathfinding"
 	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
@@ -140,7 +139,7 @@ func (t *targeting) selectedBy(e entity) {
 	t.Unlock()
 }
 
-func (t * targeting) unselectedBy(e entity) {
+func (t *targeting) unselectedBy(e entity) {
 	t.Lock()
 	switch e.(type) {
 	case *monster:
@@ -235,7 +234,7 @@ func (b *baseEntity) getLocation() location {
 func (b *baseEntity) move(m *zoneMap, igX, igY int) error {
 	rX, rY := bitmapCoordinates(igX, igY)
 
-	if !path.CanWalk(m.rawNodes, rX, rY) {
+	if !CanWalk2(m.validCoordinates, rX, rY) {
 		return errors.Err{
 			Code: errors.ZoneMapCollisionDetected,
 			Details: errors.Details{

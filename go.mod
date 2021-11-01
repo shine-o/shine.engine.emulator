@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/RoaringBitmap/roaring v0.6.0
-	github.com/disintegration/imaging v1.6.2 // indirect
 	github.com/go-pg/migrations/v8 v8.1.0
 	github.com/go-pg/pg/v10 v10.9.1
 	github.com/go-redis/redis/v7 v7.4.0
@@ -20,6 +19,7 @@ require (
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
 	github.com/pelletier/go-toml v1.9.0 // indirect
+	github.com/pkg/profile v1.6.0
 	github.com/prometheus/client_golang v1.10.0
 	github.com/prometheus/common v0.21.0 // indirect
 	github.com/segmentio/ksuid v1.0.3
@@ -38,5 +38,4 @@ require (
 	google.golang.org/genproto v0.0.0-20210421164718-3947dc264843 // indirect
 	google.golang.org/grpc v1.37.0
 	gopkg.in/ini.v1 v1.62.0 // indirect
-	mvdan.cc/gofumpt v0.1.1 // indirect
 )

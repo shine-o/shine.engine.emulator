@@ -10,6 +10,17 @@ volumes:
 
 services:
   #######################################
+  ############## SONARQUBE ##############
+  ################################## #####
+  sonarqube:
+    image: sonarqube:latest
+    container_name: shineo_sonarqube
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    ports:
+      - "9000:9000"
+
+  #######################################
   ############## POSTGRES ###############
   #######################################
   postgres:
@@ -18,7 +29,7 @@ services:
     volumes:
       - ${DATA_PATH_HOST}/data:/var/lib/postgresql/data
     ports:
-    - "5432:5432"
+    - "54320:5432"
     networks:
       - intranet
     environment:
@@ -50,30 +61,13 @@ services:
       - redis
     volumes:
       - ./:/app
-  
-  ######################################
-  ############# MIGRATE LOGIN ##########
-  ######################################
-  migrate-login:
-    image: shineo/dev-services:${BUILD_VERSION}
-    container_name: shineo_login_db_migrate
-    depends_on:
-      - build
-      - postgres
-      - redis
-    networks:
-      - intranet
-    volumes:
-      - ./:/app
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 --  go run -mod=vendor  /app/cmd/login/login.go migrate --config "/app/configs/docker/login.docker.yml" --purge "true"'
-    tty: false
 
   ######################################
-  ############# MIGRATE WORLD ##########
+  ############# MIGRATIONS #############
   ######################################
-  migrate-world:
+  migrations:
     image: shineo/dev-services:${BUILD_VERSION}
-    container_name: shineo_world_db_migrate
+    container_name: shineo_db_migrate
     depends_on:
       - build
       - postgres
@@ -82,7 +76,7 @@ services:
       - intranet
     volumes:
       - ./:/app
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world/world.go migrate --config "/app/configs/docker/world.docker.yml"'
+    entrypoint: sh -c '/app/build/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/migrations/main.go up'
     tty: false
 
   ######################################
@@ -95,7 +89,7 @@ services:
       - redis
       - build
       - postgres
-      - migrate-login
+      - migrations
       - world-master
     networks:
       - intranet
@@ -104,7 +98,7 @@ services:
     ports:
       - "51000:51000"
       - "51001:51001"
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/login/login.go serve --config "/app/configs/docker/login.docker.yml"'
+    entrypoint: sh -c '/app/build/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/login/login.go serve --config "/app/configs/login.yml"'
 
   ######################################
   ############# WORLD MASTER ###########
@@ -122,7 +116,7 @@ services:
       - ./:/app
     ports:
       - "53000:53000"
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world-master/world-master.go serve --config "/app/configs/docker/world-master.docker.yml"'
+    entrypoint: sh -c '/app/build/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world-master/world-master.go serve --config "/app/configs/world-master.yml"'
 
   ######################################
   ############# WORLD ##################
@@ -135,7 +129,7 @@ services:
       - world-master
       - postgres
       - redis
-      - migrate-world
+      - migrations
     networks:
       - intranet
     volumes:
@@ -143,7 +137,7 @@ services:
     ports:
       - "52000:52000"
       - "52001:52001"
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world/world.go serve --config "/app/configs/docker/world.docker.yml"'
+    entrypoint: sh -c '/app/build/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/world/world.go serve --config "/app/configs/world.yml"'
 
   ######################################
   ############# ZONE MASTER ############
@@ -161,7 +155,7 @@ services:
       - ./:/app
     ports:
       - "54000:54000"
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/zone-master/zone-master.go serve --config "/app/configs/docker/zone-master.docker.yml"'
+    entrypoint: sh -c '/app/build/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/zone-master/zone-master.go serve --config "/app/configs/zone-master.yml"'
 
   ######################################
   ############# ZONE ###################
@@ -175,98 +169,10 @@ services:
       - postgres
       - redis
     volumes:
-    - ./:/app
+      - ./:/app
     networks:
       - intranet
     ports:
       - "55000:55000"
       - "55001:55001"
-    entrypoint: sh -c '/usr/local/bin/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/zone/zone.go serve --config "/app/configs/docker/zone.docker.yml"'
-
-  ######################################
-  ############# METRICS ################
-  ######################################
-  prometheus:
-    image: prom/prometheus:latest
-    container_name: metrics_prometheus
-    restart: unless-stopped
-    user: "0"
-    volumes:
-      - ./deployments/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./data/prometheus/data:/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.external-url=http://alertmanager:9093'
-    networks:
-      - intranet
-    expose:
-      - 9090
-    ports:
-      - 9090:9090
-    links:
-      - cadvisor:cadvisor
-      - node-exporter:node-exporter
-
-  node-exporter:
-    image: prom/node-exporter:latest
-    container_name: metrics_node_exporter
-    networks:
-      - intranet
-    restart: unless-stopped
-    expose:
-      - 9100
-
-  cadvisor:
-    image: google/cadvisor:latest
-    container_name: metrics_cadvisor
-    restart: unless-stopped
-    networks:
-      - intranet
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-    expose:
-      - 8080
-  loki:
-    image: grafana/loki:1.5.0
-    container_name: metrics_loki
-    ports:
-      - "3100:3100"
-    command: -config.file=/etc/loki/local-config.yaml
-    networks:
-      - intranet
-
-  promtail:
-    image: grafana/promtail:1.5.0
-    container_name: metrics_promtail
-    volumes:
-      - ./output:/var/log
-    command: -config.file=/etc/promtail/docker-config.yaml
-    networks:
-      - intranet
-
-  grafana:
-    image: grafana/grafana
-    container_name: metrics_grafana
-    restart: unless-stopped
-    user: "0"
-    networks:
-      - intranet
-    ports:
-      - "3000:3000"
-    links:
-      - prometheus:prometheus
-    volumes:
-      - ./data/grafana:/var/lib/grafana
-    environment:
-      #      - GF_SECURITY_ADMIN_PASSWORD=MYPASSWORT
-      - GF_USERS_ALLOW_SIGN_UP=false
-      - GF_SERVER_DOMAIN=myrul.com
-      - GF_SMTP_ENABLED=true
-      - GF_SMTP_HOST=smtp.gmail.com:587
-      - GF_SMTP_USER=myadrress@gmail.com
-      - GF_SMTP_PASSWORD=mypassword
-      - GF_SMTP_FROM_ADDRESS=myaddress@gmail.com
+    entrypoint: sh -c '/app/build/wait-for postgres:5432 -- go run -mod=vendor /app/cmd/zone/zone.go serve --config "/app/configs/zone.yml"'

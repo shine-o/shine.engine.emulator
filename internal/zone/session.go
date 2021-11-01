@@ -13,9 +13,8 @@ type session struct {
 	id            string
 	characterID   uint64
 	characterName string
-	// TODO: check if its viable to new directly the pointers to map, player objects to increase performance
-	mapID  int
-	handle uint16
+	mapID         int
+	handle        uint16
 }
 
 func (s sessionFactory) New() networking.Session {
