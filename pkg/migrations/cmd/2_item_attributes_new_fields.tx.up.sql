@@ -31,31 +31,31 @@ alter table world.item_attributes
 
 --gopg:split
 alter table world.item_attributes
-    add column pattack_base smallint;
+    add column p_attack_base smallint;
 
 alter table world.item_attributes
-    add column pattack_extra smallint;
-
---gopg:split
-alter table world.item_attributes
-    add column mattack_base smallint;
-
-alter table world.item_attributes
-    add column mattack_extra smallint;
+    add column p_attack_extra smallint;
 
 --gopg:split
 alter table world.item_attributes
-    add column mdefense_base smallint;
+    add column m_attack_base smallint;
 
 alter table world.item_attributes
-    add column mdefense_extra smallint;
+    add column m_attack_extra smallint;
 
 --gopg:split
 alter table world.item_attributes
-    add column pdefense_base smallint;
+    add column m_defense_base smallint;
 
 alter table world.item_attributes
-    add column pdefense_extra smallint;
+    add column m_defense_extra smallint;
+
+--gopg:split
+alter table world.item_attributes
+    add column p_defense_base smallint;
+
+alter table world.item_attributes
+    add column p_defense_extra smallint;
 
 --gopg:split
 alter table world.item_attributes

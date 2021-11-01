@@ -447,8 +447,6 @@ func (p *player) load(name string) error {
 		p.skillData()
 	}()
 
-	// check if you can iterate over the channel
-
 	wg.Wait()
 
 	return <-errC
