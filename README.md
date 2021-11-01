@@ -36,14 +36,15 @@ Videos showcase:
      go mod download
     
     # run migrations on the database
-     go run /app/cmd/migrations/main.go up
-    
+     go run cmd/migrations/main.go init  --config "configs/local/migrate.yml"
+     go run cmd/migrations/main.go up  --config "configs/local/migrate.yml"
+        
      # run services    
-     go run /app/cmd/world-master/world-master.go serve --config "/app/configs/local/world-master.yml"
-     go run /app/cmd/zone-master/zone-master.go serve --config "/app/configs/local/zone-master.yml"
-     go run /app/cmd/world/world.go serve --config "/app/configs/local/world.yml"
-     go run /app/cmd/login/login.go serve --config "/app/configs/local/login.yml"
-     go run /app/cmd/zone/zone.go serve --config "/app/configs/local/zone.yml"
+     go run cmd/world-master/world-master.go serve --config "configs/local/world-master.yml"
+     go run cmd/zone-master/zone-master.go serve --config "configs/local/zone-master.yml"
+     go run cmd/world/world.go serve --config "configs/local/world.yml"
+     go run cmd/login/login.go serve --config "configs/local/login.yml"
+     go run cmd/zone/zone.go serve --config "configs/local/zone.yml"
 
 ## Metrics
    
