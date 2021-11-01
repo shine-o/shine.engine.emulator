@@ -1,0 +1,6 @@
+database:
+  user: user
+  password: password
+  host: postgres
+  port: 5432
+  db_name: shine

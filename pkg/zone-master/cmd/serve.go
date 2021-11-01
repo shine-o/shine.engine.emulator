@@ -1,4 +1,3 @@
-// Package cmd various CLI commands related to the login service
 package cmd
 
 import (

@@ -32,7 +32,7 @@ Videos showcase:
         
      # run only postgres + redis
      docker-compose -f docker-compose.local.yml up -d
-
+     
      go mod download
     
     # run migrations on the database
