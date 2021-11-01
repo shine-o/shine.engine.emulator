@@ -16,45 +16,32 @@ Videos showcase:
 - [zone  - entity interaction range 2](https://www.youtube.com/watch?v=roSZNHxg7o4)
 - [zone  - monsters!!](https://www.youtube.com/watch?v=f7nPVcIaKfw)
 
-## Dev setup
-    
-    git clone https://github.com/shine-o/shine.engine.emulator
-    
-    cd shine.engine.emulator
-    
-    go mod vendor
-    
+## Docker setup
+    git submodule sync
+
     cp .env.dist .env
+     
+    docker-compose up -d
+
+## Manual setup (easier for development of individual services)
+     git submodule sync
     
-    # if you have access
-    git submodule add  https://github.com/shine-o/files.git files
+     cp .env.dist .env
         
-    docker-compose -f docker-compose.dev.yml up -d
+     # run only postgres + redis
+     docker-compose -f docker-compose.local.yml up -d
 
-
-## Deployment setup
+     go mod download
     
-**NOTE**: Do check the ports used in **docker-compose.yml** are not in use on your machine!
-
+    # run migrations on the database
+     go run /app/cmd/migrations/main.go up
     
-    git clone https://github.com/shine-o/shine.engine.emulator
-    
-    cd shine.engine.emulator
-    
-    go mod vendor
-    
-    cp .env.dist .env
-    
-    docker-compose up --build
-        
-    # if you made any change to a service:
-    docker-compose up -d --force-recreate --no-deps <service-name>
-    
-    
-If everything is okay, you should see something like this when using **docker-compose ps**:
-
-
-![](assets/docker-services.PNG)    
+     # run services    
+     go run /app/cmd/world-master/world-master.go serve --config "/app/configs/local/world-master.yml"
+     go run /app/cmd/zone-master/zone-master.go serve --config "/app/configs/local/zone-master.yml"
+     go run /app/cmd/world/world.go serve --config "/app/configs/local/world.yml"
+     go run /app/cmd/login/login.go serve --config "/app/configs/local/login.yml"
+     go run /app/cmd/zone/zone.go serve --config "/app/configs/local/zone.yml"
 
 ## Metrics
    
@@ -63,7 +50,7 @@ For metrics I use the following services:
     - Loki
     - Grafana
 
-The services are configured and ready to use in the **docker-compose.yml** file. You can get something like this:
+The services are configured and ready to use in the **docker-compose.metrics.yml** file. You can get something like this:
 
 ![](assets/grafana.PNG)
     
