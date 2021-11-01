@@ -65,7 +65,7 @@ services:
       - intranet
     volumes:
       - ./:/app
-    entrypoint: sh -c '/app/build/wait-for postgres:5432 -- go run /app/cmd/migrations/main.go init --config "configs/migrate.yml"'
+    entrypoint: sh -c '/app/build/wait-for postgres:5432 -- go run /app/cmd/migrations/main.go init --config "configs/migrate.yml" && go run /app/cmd/migrations/main.go up --config "configs/migrate.yml"'
     tty: false
 
   ######################################
