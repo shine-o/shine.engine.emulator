@@ -95,20 +95,19 @@ func newRPCClient(name string) (*grpc.ClientConn, error) {
 }
 
 func newRPCServer(name string) {
-	clientKey := fmt.Sprintf("gRPC.servers.%v", name)
-	if viper.IsSet(clientKey) {
-		port := viper.GetString(fmt.Sprintf("%v.%v", clientKey, "port"))
-		address := fmt.Sprintf(":%v", port)
-		lis, err := net.Listen("tcp", address)
-		if err != nil {
-			log.Errorf("could listen on port %v for service %v : %v", name, port, err)
-		}
-		s := grpc.NewServer()
-		wm.RegisterMasterServer(s, &server{})
+	// clientKey := fmt.Sprintf("gRPC.servers.%v", name)
+	// TODO: check if viper.IsSet(clientKey)?
+	port := viper.GetString("serve.port")
+	address := fmt.Sprintf(":%v", port)
+	lis, err := net.Listen("tcp", address)
+	if err != nil {
+		log.Errorf("could listen on port %v for service %v : %v", name, port, err)
+	}
+	s := grpc.NewServer()
+	wm.RegisterMasterServer(s, &server{})
 
-		log.Infof("Loading gRPC server connection %v@::%v", name, port)
-		if err := s.Serve(lis); err != nil {
-			log.Errorf("failed to serve: %v", err)
-		}
+	log.Infof("Loading gRPC server connection %v@::%v", name, port)
+	if err := s.Serve(lis); err != nil {
+		log.Errorf("failed to serve: %v", err)
 	}
 }
