@@ -1,0 +1,13 @@
+serve:
+  port: 54000
+
+session:
+  redis:
+    host: 127.0.0.1
+    port: 63790
+    db: 3
+
+metrics:
+  enabled: false
+  prometheus:
+    port: 30005

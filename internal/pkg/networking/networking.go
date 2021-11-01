@@ -5,17 +5,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
-	"github.com/sirupsen/logrus"
 	"io"
 	"math/rand"
 	"net"
 	"reflect"
 	"time"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
+	shinelog "github.com/shine-o/shine.engine.emulator/pkg/log"
+	"github.com/sirupsen/logrus"
 )
 
-var log = shinelog.NewLogger("networking default", "./output", logrus.DebugLevel)
+var log = shinelog.NewLogger("networking", "../../output", logrus.DebugLevel)
 
 type ShineService struct {
 	Settings
@@ -70,8 +72,10 @@ const (
 	XorOffset ContextKey = iota
 )
 
-var logInboundPackets chan<- *Command
-var logOutboundPackets chan<- *Command
+var (
+	logInboundPackets  chan<- *Command
+	logOutboundPackets chan<- *Command
+)
 
 // Set Settings specified by the shine service
 func (s *Settings) Set() {
@@ -105,14 +109,16 @@ func (ss *ShineService) Listen(ctx context.Context, port string) {
 	}
 
 	log.Infof("listening for TCP connections on: %v", l.Addr())
+
 	defer l.Close()
-	var src cryptoSource
+
+	var src crypto.Source
 	rnd := rand.New(src)
 
 	rand.Seed(rnd.Int63n(time.Now().Unix()))
 
-	t1 := time.Tick(time.Duration(int64(RandomIntBetween(0, 15))) * time.Second)
-	t2 := time.Tick(time.Duration(int64(RandomIntBetween(0, 60))) * time.Second)
+	t1 := time.Tick(time.Duration(int64(crypto.RandomIntBetween(0, 15))) * time.Second)
+	t2 := time.Tick(time.Duration(int64(crypto.RandomIntBetween(0, 60))) * time.Second)
 
 	for {
 		select {
@@ -204,7 +210,7 @@ func (ss *ShineService) handleConnection(conn net.Conn) {
 //	logOutboundPackets <- pc
 //}
 
-func Send(outboundStream chan<- []byte, opCode OperationCode, ncStruct interface{})  {
+func Send(outboundStream chan<- []byte, opCode OperationCode, ncStruct interface{}) {
 	pc := Command{
 		Base: CommandBase{
 			OperationCode: uint16(opCode),
@@ -236,8 +242,8 @@ func logPackets(ctx context.Context, in <-chan *Command, out <-chan *Command) {
 }
 
 func logDirection(pc Command, direction string) {
-	//pc.RLock()
-	//defer pc.RUnlock()
+	// pc.RLock()
+	// defer pc.RUnlock()
 	if pc.Base.OperationCodeName == 0 {
 		pc.Base.OperationCodeName = OperationCode(pc.Base.OperationCode)
 	}

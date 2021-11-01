@@ -13,10 +13,10 @@ gRPC:
 
   clients:
     world:
-      host: 127.0.0.1
+      host: world
       port: 52001
     zone_master:
-      host: 127.0.0.1
+      host: zone-master
       port: 54000
 
 crypt:
@@ -26,10 +26,10 @@ crypt:
 protocol:
   commands: "configs/network-commands.yml"
 
-shine_folder: 'C:\\Users\\marbo\\go\\src\\github.com\\shine-o\\shine.engine.files'
+shine_folder: 'files'
 
 # world/NormalMaps.txt
-# if using --race, only use one map
+# if using --race, only use one map as the amount of routines (for each entity within a map) is off the scale
 normal_maps:
   - 1
   - 2
@@ -46,51 +46,50 @@ normal_maps:
   - 14
   - 15
   - 16
-  - 17
-  - 18
-  - 19
-  - 20
-  - 21
-  - 22
-  - 23
-  - 24
-  - 25
-  - 26
-  - 27
-  - 28
-  - 29
-  - 30
-  - 31
-  - 32
-  - 33
-  - 34
-  - 35
-  - 36
-  - 37
-  - 38
-  - 39
-  - 40
-  - 41
-  - 42
-  - 43
-  - 44
-  - 45
-  - 46
-  - 47
-  - 48
-  - 49
-  - 50
-  - 51
-  - 52
-  - 53
-  - 54
-  - 55
-  - 56
-  - 57
-
+#  - 17
+#  - 18
+#  - 19
+#  - 20
+#  - 21
+#  - 22
+#  - 23
+#  - 24
+#  - 25
+#  - 26
+#  - 27
+#  - 28
+#  - 29
+#  - 30
+#  - 31
+#  - 32
+#  - 33
+#  - 34
+#  - 35
+#  - 36
+#  - 37
+#  - 38
+#  - 39
+#  - 40
+#  - 41
+#  - 42
+#  - 43
+#  - 44
+#  - 45
+#  - 46
+#  - 47
+#  - 48
+#  - 49
+#  - 50
+#  - 51
+#  - 52
+#  - 53
+#  - 54
+#  - 55
+#  - 56
+#  - 57
 
 world_database:
-  host: 127.0.0.1
+  host: postgres
   port: 5432
   db_name: shine
   db_user: user
@@ -98,11 +97,11 @@ world_database:
 
 session:
   redis:
-    host: 127.0.0.1
-    port: 60000
+    host: redis
+    port: 6379
     db: 3
 
 metrics:
-  enabled: true
+  enabled: false
   prometheus:
     port: 30004

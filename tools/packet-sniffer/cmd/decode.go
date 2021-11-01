@@ -2,7 +2,7 @@
 package cmd
 
 import (
-	ps "github.com/shine-o/shine.engine.emulator/internal/app/packet-sniffer"
+	ps "github.com/shine-o/shine.engine.emulator/internal/packet-sniffer"
 	"github.com/spf13/cobra"
 )
 

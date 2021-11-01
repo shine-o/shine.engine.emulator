@@ -17,17 +17,20 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/google/logger"
-	"github.com/spf13/cobra"
 	"io/ioutil"
 	"os"
 
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/google/logger"
+	"github.com/spf13/cobra"
+
+	"github.com/mitchellh/go-homedir"
 	"github.com/spf13/viper"
 )
 
-var cfgFile string
-var log *logger.Logger
+var (
+	cfgFile string
+	log     *logger.Logger
+)
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{

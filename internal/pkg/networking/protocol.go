@@ -32,19 +32,19 @@ type Department struct {
 // Command type used to unmarshal data from the protocol commands file
 type Command struct {
 	Base CommandBase // common data in every command, like operation code and length
-	//NcStruct interface{} // any kind of structure that is the representation in bytes of the network packet
+	// NcStruct interface{} // any kind of structure that is the representation in bytes of the network packet
 	NcStruct interface{} // any kind of structure that is the representation in bytes of the network packet
 }
 
 // CommandBase type used to store decoded data from a packet
 type CommandBase struct {
-	Length           int
-	Department       uint16
-	Command          uint16
-	OperationCode    uint16
-	OperationCodeName    OperationCode
-	//ClientStructName string
-	//OperationCodeString OperationCode
+	Length            int
+	Department        uint16
+	Command           uint16
+	OperationCode     uint16
+	OperationCodeName OperationCode
+	// ClientStructName string
+	// OperationCodeString OperationCode
 	Data []byte
 }
 
@@ -126,7 +126,6 @@ func (pcb *CommandBase) String() string {
 	}
 
 	rawJSON, err := json.Marshal(&ePcb)
-
 	if err != nil {
 		log.Error(err)
 		return ""
@@ -148,8 +147,8 @@ type ExportedPcb struct {
 
 // JSON representation of a processed network command
 func (pcb *CommandBase) JSON() ExportedPcb {
-	//department = opCode >> 10
-	//command = opCode & 1023
+	// department = opCode >> 10
+	// command = opCode & 1023
 	ePcb := ExportedPcb{
 		Length:        pcb.PacketLength(),
 		Department:    uint16(pcb.OperationCode) >> 10,

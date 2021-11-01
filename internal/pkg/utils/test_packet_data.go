@@ -5,25 +5,25 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
-	"github.com/shine-o/shine.engine.emulator/pkg/structs"
 	"io/ioutil"
 	"log"
 	"reflect"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/networking"
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/structs"
 )
 
 type TestablePacket struct {
 	NcStruct interface{}
-	Assert func(interface{}) error
+	Assert   func(interface{}) error
 }
 
 type TargetPackets map[networking.OperationCode]TestablePacket
 
 func LoadPacketData(filePath string) map[uint16][]string {
-	var packetData = make(map[uint16][]string)
+	packetData := make(map[uint16][]string)
 
 	data, err := ioutil.ReadFile(filePath)
-
 	if err != nil {
 		log.Fatal(err)
 	}

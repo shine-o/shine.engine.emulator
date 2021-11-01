@@ -1,11 +1,13 @@
 .idea
 /configs/game-data.db
-
+*.exe
 build/package/login/login*
 build/package/world/world*
 build/package/world-master/world-master*
 build/package/zone/zone*
 build/package/zone-master/zone-master*
+
+tools/shbd-pathfinding/*.bmp
 
 /.env
 /assets/*.shn
@@ -23,3 +25,12 @@ output/*
 /build/databases/
 /build/output/
 files
+/internal/zone/output/
+/internal/login/output/
+/internal/world/output/
+
+/*.bmp
+/*.shbd
+/tools/shbd-pathfinding/*.bmp
+/internal/pkg/pathfinding/*.bmp
+/.scannerwork/

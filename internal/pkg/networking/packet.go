@@ -6,9 +6,9 @@ import (
 )
 
 var (
-	xorKey      []byte
-	xorLimit    uint16
-	//commandList *PCList
+	xorKey   []byte
+	xorLimit uint16
+	// commandList *PCList
 )
 
 // PacketBoundary of a packet in a data segment
@@ -43,7 +43,6 @@ func PacketBoundary(offset int, data []byte) (uint16, int) {
 
 // DecodePacket data into a struct
 func DecodePacket(data []byte) (Command, error) {
-
 	var (
 		opCode     uint16
 		department uint16
@@ -62,11 +61,11 @@ func DecodePacket(data []byte) (Command, error) {
 	command = opCode & 1023
 
 	pc.Base = CommandBase{
-		Department:    department,
-		Command:       command,
-		OperationCode: opCode,
+		Department:        department,
+		Command:           command,
+		OperationCode:     opCode,
 		OperationCodeName: OperationCode(opCode),
-		Data:          data[2:], // omit operationCode bytes
+		Data:              data[2:], // omit operationCode bytes
 	}
 
 	return pc, nil

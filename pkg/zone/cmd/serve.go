@@ -2,7 +2,7 @@
 package cmd
 
 import (
-	"github.com/shine-o/shine.engine.emulator/internal/app/zone"
+	"github.com/shine-o/shine.engine.emulator/internal/zone"
 	"github.com/spf13/cobra"
 )
 

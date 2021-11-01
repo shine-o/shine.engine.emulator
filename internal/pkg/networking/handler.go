@@ -2,6 +2,8 @@ package networking
 
 import (
 	"context"
+
+	"github.com/shine-o/shine.engine.emulator/internal/pkg/crypto"
 )
 
 // ContextKey identifier for values of common use within the Context
@@ -16,11 +18,11 @@ type Parameters struct {
 }
 
 // HandleWarden utility struct for triggering functions implemented by the calling shine service
-//type ShinePacketRegistry map[uint16]func(context.Context, *Parameters)
+// type ShinePacketRegistry map[uint16]func(context.Context, *Parameters)
 type ShinePacketRegistry map[OperationCode]ShinePacket
 
 type ShinePacket struct {
-	Handler func(context.Context, *Parameters)
+	Handler  func(context.Context, *Parameters)
 	NcStruct interface{}
 }
 
@@ -92,7 +94,7 @@ func (ss *ShineService) handleInboundSegments(ctx context.Context, n *Network) {
 				packetData := make([]byte, pLen)
 
 				copy(packetData, data[offset+skipBytes:nextOffset])
-				XorCipher(packetData, &xorOffset)
+				crypto.XorCipher(packetData, xorKey, &xorOffset, xorLimit)
 				c, _ := DecodePacket(packetData)
 
 				n.Commands.Send <- &c
