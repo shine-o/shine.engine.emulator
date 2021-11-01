@@ -10,3 +10,4 @@ RUN chmod +x /app/build/wait-for
 
 WORKDIR /app
 
+RUN go mod download

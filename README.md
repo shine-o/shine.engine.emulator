@@ -17,14 +17,16 @@ Videos showcase:
 - [zone  - monsters!!](https://www.youtube.com/watch?v=f7nPVcIaKfw)
 
 ## Docker setup
-    git submodule sync
+     # you may need access to some private repositories, contact me if so   
+     git submodule update --init
 
-    cp .env.dist .env
+     cp .env.dist .env
      
-    docker-compose up -d
+     docker-compose up -d --build
 
 ## Manual setup (easier for development of individual services)
-     git submodule sync
+     # you may need access to some private repositories, contact me if so
+      git submodule update --init
     
      cp .env.dist .env
         
