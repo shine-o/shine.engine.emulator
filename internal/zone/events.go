@@ -57,6 +57,7 @@ const (
 	playerDisappeared
 	playerWalks
 	playerRuns
+	playerEmoted
 	playerJumped
 	playerStopped
 	unknownHandle
@@ -102,7 +103,7 @@ var (
 		playerHandle,
 		playerHandleMaintenance,
 		queryPlayer, queryMonster,
-		playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
+		playerAppeared, playerDisappeared, playerEmoted, playerJumped, playerWalks, playerRuns, playerStopped,
 		unknownHandle, monsterAppeared, monsterDisappeared, monsterWalks, monsterRuns,
 		playerSelectsEntity, playerUnselectsEntity, playerClicksOnNpc, playerPromptReply, itemIsMoved, itemEquip, itemUnEquip,
 	}
