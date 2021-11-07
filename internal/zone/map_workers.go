@@ -896,11 +896,11 @@ func playerEmotedLogic(e event, zm *zoneMap) {
 		return
 	}
 
-	nc := &structs.NcActEmoticonCmd{
+	nc := &structs.NcActSomeoneEmotedCmd{
 		Handle: ev.handle,
 	}
 
-	mapEpicenterBroadcast(zm, p1, networking.NC_ACT_EMOTICON_CMD, nc)
+	mapEpicenterBroadcast(zm, p1, networking.NC_ACT_SOMEONEEMOTICON_CMD, nc)
 }
 
 func playerJumpedLogic(e event, zm *zoneMap) {

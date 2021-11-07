@@ -192,6 +192,9 @@ func netPackets() utils.TargetPackets {
 		networking.NC_ACT_SOMEONESTOP_CMD: {
 			NcStruct: &structs.NcActSomeoneStopCmd{},
 		},
+		networking.NC_ACT_SOMEONEEMOTICON_CMD: {
+			NcStruct: &structs.NcActSomeoneEmotedCmd{},
+		},
 		networking.NC_ACT_SOMEEONEJUMP_CMD: {
 			NcStruct: &structs.NcActSomeoneJumpCmd{},
 		},

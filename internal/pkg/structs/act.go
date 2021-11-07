@@ -84,8 +84,11 @@ type NcActSomeoneProduceMakeCmd struct {
 	Item   uint16
 }
 
-// Question: Why specify "SOMEONE" in the names here? Looks like it's
-// NC_ACT_JUMP_CMD so should we remove that part for clarity?
+// struct PROTO_NC_ACT_SOMEONEEMOTICON_CMD
+type NcActSomeoneEmotedCmd struct {
+	Handle uint16
+	Emote  []byte
+}
 
 // struct PROTO_NC_ACT_SOMEEONEJUMP_CMD
 type NcActSomeoneJumpCmd struct {
