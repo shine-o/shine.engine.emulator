@@ -46,7 +46,7 @@ func TestLoadMap(t *testing.T) {
 		playerHandle,
 		playerHandleMaintenance,
 		queryPlayer, queryMonster,
-		playerAppeared, playerDisappeared, playerJumped, playerWalks, playerRuns, playerStopped,
+		playerAppeared, playerDisappeared, playerEmoted, playerJumped, playerWalks, playerRuns, playerStopped,
 		unknownHandle, monsterAppeared, monsterDisappeared, monsterWalks, monsterRuns,
 		playerSelectsEntity, playerUnselectsEntity, playerClicksOnNpc, playerPromptReply, itemIsMoved, itemEquip, itemUnEquip,
 	}

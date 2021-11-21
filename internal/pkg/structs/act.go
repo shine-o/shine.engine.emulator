@@ -84,6 +84,12 @@ type NcActSomeoneProduceMakeCmd struct {
 	Item   uint16
 }
 
+// struct PROTO_NC_ACT_SOMEONEEMOTICON_CMD
+type NcActSomeoneEmotedCmd struct {
+	Handle  uint16
+	EmoteID byte
+}
+
 // struct PROTO_NC_ACT_SOMEEONEJUMP_CMD
 type NcActSomeoneJumpCmd struct {
 	Handle uint16

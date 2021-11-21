@@ -115,6 +115,9 @@ func Start(cmd *cobra.Command, args []string) {
 			networking.NC_ACT_MOVERUN_CMD: networking.ShinePacket{
 				Handler: ncActMoveRunCmd,
 			},
+			networking.NC_ACT_EMOTICON_CMD: networking.ShinePacket{
+				Handler: ncActEmoticonCmd,
+			},
 			networking.NC_ACT_JUMP_CMD: networking.ShinePacket{
 				Handler: ncActJumpCmd,
 			},

@@ -83,6 +83,46 @@ func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 	zm.events.send[playerRuns] <- &e
 }
 
+// NC_ACT_EMOTICON_CMD
+func ncActEmoticonCmd(ctx context.Context, np *networking.Parameters) {
+	var e playerEmotedEvent
+
+	err := structs.Unpack(np.Command.Base.Data, &e.emoteID)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	session, ok := np.Session.(*session)
+
+	if !ok {
+		log.Error(errors.Err{
+			Code: errors.ZoneNoSessionAvailable,
+		})
+		return
+	}
+
+	e = playerEmotedEvent{
+		handle:  session.handle,
+		emoteID: e.emoteID,
+	}
+
+	log.Infof("player %v emoted with emote ID %v", e.handle, e.emoteID)
+
+	zm, ok := maps.list[session.mapID]
+	if !ok {
+		log.Error(errors.Err{
+			Code: errors.ZoneMapNotFound,
+			Details: errors.Details{
+				"session": session,
+			},
+		})
+		return
+	}
+
+	zm.events.send[playerEmoted] <- &e
+}
+
 // NC_ACT_JUMP_CMD
 func ncActJumpCmd(ctx context.Context, np *networking.Parameters) {
 	var e playerJumpedEvent

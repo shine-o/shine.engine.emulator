@@ -44,6 +44,8 @@ func (zm *zoneMap) playerActivity() {
 			go playerRunsLogic(e, zm)
 		case e := <-zm.events.recv[playerStopped]:
 			go playerStoppedLogic(e, zm)
+		case e := <-zm.events.recv[playerEmoted]:
+			go playerEmotedLogic(e, zm)
 		case e := <-zm.events.recv[playerJumped]:
 			go playerJumpedLogic(e, zm)
 		case e := <-zm.events.recv[unknownHandle]:
@@ -879,6 +881,27 @@ func playerStoppedLogic(e event, zm *zoneMap) {
 	}
 
 	mapEpicenterBroadcast(zm, p1, networking.NC_ACT_SOMEONESTOP_CMD, nc)
+}
+
+func playerEmotedLogic(e event, zm *zoneMap) {
+	ev, ok := e.(*playerEmotedEvent)
+	if !ok {
+		log.Error(eventTypeCastError(reflect.TypeOf(playerEmotedEvent{}).String(), reflect.TypeOf(ev).String()))
+		return
+	}
+
+	p1, err := zm.entities.getPlayer(ev.handle)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
+	nc := &structs.NcActSomeoneEmotedCmd{
+		Handle:  ev.handle,
+		EmoteID: ev.emoteID,
+	}
+
+	mapEpicenterBroadcast(zm, p1, networking.NC_ACT_SOMEONEEMOTICON_CMD, nc)
 }
 
 func playerJumpedLogic(e event, zm *zoneMap) {
