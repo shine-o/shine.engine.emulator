@@ -897,7 +897,8 @@ func playerEmotedLogic(e event, zm *zoneMap) {
 	}
 
 	nc := &structs.NcActSomeoneEmotedCmd{
-		Handle: ev.handle,
+		Handle:  ev.handle,
+		EmoteID: ev.emoteID,
 	}
 
 	mapEpicenterBroadcast(zm, p1, networking.NC_ACT_SOMEONEEMOTICON_CMD, nc)

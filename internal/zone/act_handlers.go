@@ -87,6 +87,12 @@ func ncActMoveRunCmd(ctx context.Context, np *networking.Parameters) {
 func ncActEmoticonCmd(ctx context.Context, np *networking.Parameters) {
 	var e playerEmotedEvent
 
+	err := structs.Unpack(np.Command.Base.Data, &e.emoteID)
+	if err != nil {
+		log.Error(err)
+		return
+	}
+
 	session, ok := np.Session.(*session)
 
 	if !ok {
@@ -97,8 +103,11 @@ func ncActEmoticonCmd(ctx context.Context, np *networking.Parameters) {
 	}
 
 	e = playerEmotedEvent{
-		handle: session.handle,
+		handle:  session.handle,
+		emoteID: e.emoteID,
 	}
+
+	log.Infof("player %v emoted with emote ID %v", e.handle, e.emoteID)
 
 	zm, ok := maps.list[session.mapID]
 	if !ok {

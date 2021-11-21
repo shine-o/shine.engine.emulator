@@ -28,7 +28,8 @@ type playerRunsEvent struct {
 }
 
 type playerEmotedEvent struct {
-	handle uint16
+	handle  uint16
+	emoteID byte
 }
 
 type playerJumpedEvent struct {
